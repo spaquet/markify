@@ -10,8 +10,8 @@ import SwiftUI
 @main
 struct MarkifyApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        DocumentGroup(newDocument: { MarkifyDocument() }) { file in
+            ContentView(document: file.document)
         }
     }
 }

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		76A591142DC953870033A6AC /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 76A591132DC953870033A6AC /* MarkdownUI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		76A590F62DC952980033A6AC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,9 +33,22 @@
 		76A590FF2DC952980033A6AC /* MarkifyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkifyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		76EB964B2DC960AE0056409F /* Exceptions for "Markify" folder in "Markify" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 76A590E62DC952970033A6AC /* Markify */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		76A590E92DC952970033A6AC /* Markify */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				76EB964B2DC960AE0056409F /* Exceptions for "Markify" folder in "Markify" target */,
+			);
 			path = Markify;
 			sourceTree = "<group>";
 		};
@@ -52,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				76A591142DC953870033A6AC /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +130,7 @@
 			);
 			name = Markify;
 			packageProductDependencies = (
+				76A591132DC953870033A6AC /* MarkdownUI */,
 			);
 			productName = Markify;
 			productReference = 76A590E72DC952970033A6AC /* Markify.app */;
@@ -195,6 +214,9 @@
 			);
 			mainGroup = 76A590DE2DC952970033A6AC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 76A590E82DC952970033A6AC /* Products */;
 			projectDirPath = "";
@@ -402,11 +424,15 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_FILE = Markify/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Markify;
+				INFOPLIST_KEY_LSApplicationCategoryType = CFBundleDocumentTypes;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Stephane Paquet";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -429,11 +455,15 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_FILE = Markify/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Markify;
+				INFOPLIST_KEY_LSApplicationCategoryType = CFBundleDocumentTypes;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Stephane Paquet";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -551,6 +581,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		76A591132DC953870033A6AC /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 76A590DF2DC952970033A6AC /* Project object */;
 }
