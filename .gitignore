@@ -1,0 +1,74 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*~
+
+# Xcode build artifacts
+build/
+DerivedData/
+.build/
+
+# Xcode project artifacts
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+xcuserdata/
+
+# Xcode IDE files
+*.pbxuser
+*.perspective
+*.perspectivev3
+*.mode1v3
+*.mode2v3
+
+# Xcode scheme settings
+*.xcscheme
+*.xcscheme_old
+
+# Xcode build settings
+*.resolved
+
+# Swift Package Manager
+.swiftpm/
+*.xcconfig
+
+# SPM dependencies
+Packages/
+Package.resolved
+
+# CocoaPods (if used)
+Pods/
+Podfile.lock
+
+# Carthage (if used)
+Carthage/Build/
+Cartfile.resolved
+
+# IDE temporary files
+*.iml
+.idea/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
