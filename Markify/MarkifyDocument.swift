@@ -18,6 +18,7 @@ extension UTType {
     }
 }
 
+@MainActor
 class MarkifyDocument: ReferenceFileDocument {
     @Published var content: String = ""
     @Published var editingContent: String = ""
@@ -66,20 +67,18 @@ class MarkifyDocument: ReferenceFileDocument {
         saveTask?.cancel()
 
         // Schedule a new save task
-        saveTask = Task {
+        saveTask = Task { [weak self] in
+            guard let self else { return }
             do {
+                // Perform the delay off the main actor
                 try await Task.sleep(nanoseconds: settings.autoSaveDelayNanoseconds)
-                if !Task.isCancelled {
-                    self.content = editingText
-                    // Mark document as modified to trigger save on main thread
-                    DispatchQueue.main.async {
-                        if let nsDoc = self.getNSDocument() {
-                            nsDoc.updateChangeCount(.changeDone)
-                        }
-                        // Signal that auto-save happened
-                        self.didAutoSave.toggle()
-                    }
+                if Task.isCancelled { return }
+                // Back on main actor due to @MainActor on the class
+                self.content = editingText
+                if let nsDoc = self.getNSDocument() {
+                    nsDoc.updateChangeCount(.changeDone)
                 }
+                self.didAutoSave.toggle()
             } catch {
                 // Task was cancelled or errored, ignore
                 return
@@ -92,12 +91,10 @@ class MarkifyDocument: ReferenceFileDocument {
         saveTask?.cancel()
         saveTask = nil
 
-        // Immediately update content and save on main thread
-        DispatchQueue.main.async {
-            self.content = editingText
-            if let nsDoc = self.getNSDocument() {
-                nsDoc.updateChangeCount(.changeDone)
-            }
+        // Immediately update content and save
+        self.content = editingText
+        if let nsDoc = self.getNSDocument() {
+            nsDoc.updateChangeCount(.changeDone)
         }
     }
     
