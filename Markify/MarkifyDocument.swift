@@ -71,12 +71,12 @@ class MarkifyDocument: ReferenceFileDocument {
                 try await Task.sleep(nanoseconds: settings.autoSaveDelayNanoseconds)
                 if !Task.isCancelled {
                     self.content = editingText
-                    // Mark document as modified to trigger save
-                    if let nsDoc = self.getNSDocument() {
-                        nsDoc.updateChangeCount(.changeDone)
-                    }
-                    // Signal that auto-save happened
+                    // Mark document as modified to trigger save on main thread
                     DispatchQueue.main.async {
+                        if let nsDoc = self.getNSDocument() {
+                            nsDoc.updateChangeCount(.changeDone)
+                        }
+                        // Signal that auto-save happened
                         self.didAutoSave.toggle()
                     }
                 }
@@ -92,10 +92,12 @@ class MarkifyDocument: ReferenceFileDocument {
         saveTask?.cancel()
         saveTask = nil
 
-        // Immediately update content and save
-        content = editingText
-        if let nsDoc = getNSDocument() {
-            nsDoc.updateChangeCount(.changeDone)
+        // Immediately update content and save on main thread
+        DispatchQueue.main.async {
+            self.content = editingText
+            if let nsDoc = self.getNSDocument() {
+                nsDoc.updateChangeCount(.changeDone)
+            }
         }
     }
     
