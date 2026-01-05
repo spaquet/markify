@@ -2,8 +2,8 @@
 
 [![GitHub Release](https://img.shields.io/github/v/release/spaquet/markify)](https://github.com/spaquet/markify/releases)
 [![License](https://img.shields.io/badge/license-Commons%20Clause%20%2B%20MIT-blue)](LICENSE)
-[![macOS](https://img.shields.io/badge/macOS-13.0+-lightgrey)](https://www.apple.com/macos/)
-[![Swift](https://img.shields.io/badge/Swift-5.9+-orange)](https://swift.org)
+[![macOS](https://img.shields.io/badge/macOS-14.8+-lightgrey)](https://www.apple.com/macos/)
+[![Swift](https://img.shields.io/badge/Swift-6.2+-orange)](https://swift.org)
 
 A beautiful, minimal markdown editor for macOS with live preview. Write and preview Markdown (.md) and MDX (.mdx) files with a clean split-pane interface.
 
@@ -21,7 +21,7 @@ A beautiful, minimal markdown editor for macOS with live preview. Write and prev
 
 ## Requirements
 
-- macOS 13.0 or later
+- macOS 14.8 or later
 - Xcode 15.0 or later (for building from source)
 
 ## Installation
