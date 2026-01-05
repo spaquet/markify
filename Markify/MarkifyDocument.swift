@@ -20,20 +20,28 @@ extension UTType {
 
 class MarkifyDocument: ReferenceFileDocument {
     @Published var content: String = ""
-    
-    // Store the fileURL as a property but don't try to set it directly
-    // ReferenceFileDocument will handle the file URL internally
-    
+    @Published var editingContent: String = ""
+    @Published var didAutoSave: Bool = false
+
+    private var saveTask: Task<Void, Error>?
+
+    private func getNSDocument() -> NSDocument? {
+        let appDelegate = NSApp.delegate as? NSDocumentController
+        return appDelegate?.currentDocument as? NSDocument
+    }
+
     static var readableContentTypes: [UTType] {
         [.markdown, .mdx]
     }
-    
+
     static var writableContentTypes: [UTType] {
         [.markdown, .mdx]
     }
-    
+
     init() {
         content = ""
+        editingContent = ""
+        didAutoSave = false
     }
     
     required init(configuration: ReadConfiguration) throws {
@@ -43,7 +51,52 @@ class MarkifyDocument: ReferenceFileDocument {
             throw CocoaError(.fileReadCorruptFile)
         }
         content = string
+        editingContent = string
+        didAutoSave = false
         // Don't try to set fileURL here - it's handled by the system
+    }
+
+    func debouncedSave(from editingText: String, settings: AppSettings) {
+        editingContent = editingText
+
+        // Check if auto-save is enabled
+        guard settings.autoSaveEnabled else { return }
+
+        // Cancel the previous save task
+        saveTask?.cancel()
+
+        // Schedule a new save task
+        saveTask = Task {
+            do {
+                try await Task.sleep(nanoseconds: settings.autoSaveDelayNanoseconds)
+                if !Task.isCancelled {
+                    self.content = editingText
+                    // Mark document as modified to trigger save
+                    if let nsDoc = self.getNSDocument() {
+                        nsDoc.updateChangeCount(.changeDone)
+                    }
+                    // Signal that auto-save happened
+                    DispatchQueue.main.async {
+                        self.didAutoSave.toggle()
+                    }
+                }
+            } catch {
+                // Task was cancelled or errored, ignore
+                return
+            }
+        }
+    }
+
+    func explicitSave(from editingText: String) {
+        // Cancel any pending debounced save
+        saveTask?.cancel()
+        saveTask = nil
+
+        // Immediately update content and save
+        content = editingText
+        if let nsDoc = getNSDocument() {
+            nsDoc.updateChangeCount(.changeDone)
+        }
     }
     
     func snapshot(contentType: UTType) throws -> String {

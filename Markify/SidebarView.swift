@@ -15,6 +15,7 @@ struct ListButtonIdentifier: Identifiable {
 
 struct SidebarView: View {
     @Binding var content: String
+    @EnvironmentObject var settings: AppSettings
     @State private var files: [FileInfo] = []
     @State private var showError = false
     @State private var errorMessage = ""
@@ -26,7 +27,7 @@ struct SidebarView: View {
     @State private var isWebLink: Bool = false
     @State private var linkURL: String = ""
     @State private var listButtonId: ListButtonIdentifier? = nil
-    
+
     // Reference to the document from ContentView for file operations
     var document: MarkifyDocument?
     
@@ -44,43 +45,45 @@ struct SidebarView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Recent Files Section
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Recent Files")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal)
-                    .padding(.top, 12)
-                    .padding(.bottom, 4)
-                
-                if files.isEmpty {
-                    Text("No recent files")
+            if settings.showRecentFiles {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Recent Files")
+                        .font(.headline)
                         .foregroundColor(.secondary)
                         .padding(.horizontal)
-                        .padding(.vertical, 6)
-                } else {
-                    ForEach(files.prefix(5)) { file in
-                        Button(action: {
-                            loadFile(at: file.url)
-                        }) {
-                            HStack {
-                                Image(systemName: "doc.text")
-                                    .foregroundColor(.secondary)
-                                
-                                Text(file.name)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
+                        .padding(.top, 12)
+                        .padding(.bottom, 4)
+
+                    if files.isEmpty {
+                        Text("No recent files")
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal)
+                            .padding(.vertical, 6)
+                    } else {
+                        ForEach(files.prefix(settings.recentFilesCount)) { file in
+                            Button(action: {
+                                loadFile(at: file.url)
+                            }) {
+                                HStack {
+                                    Image(systemName: "doc.text")
+                                        .foregroundColor(.secondary)
+
+                                    Text(file.name)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .buttonStyle(PlainButtonStyle())
+                            .padding(.horizontal)
+                            .padding(.vertical, 2)
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.horizontal)
-                        .padding(.vertical, 2)
                     }
                 }
+
+                Divider()
+                    .padding(.vertical, 12)
             }
-            
-            Divider()
-                .padding(.vertical, 12)
             
             // Insert Tools Section
             VStack(alignment: .leading, spacing: 4) {
@@ -269,11 +272,11 @@ struct SidebarView: View {
         // Get recent documents from NSDocumentController
         let docController = NSDocumentController.shared
         let recentDocURLs = docController.recentDocumentURLs
-        
-        // Convert to our FileInfo model, limit to 5 most recent
-        files = recentDocURLs.prefix(5).compactMap { url in
+
+        // Convert to our FileInfo model
+        files = recentDocURLs.compactMap { url in
             guard url.pathExtension == "md" || url.pathExtension == "mdx" else { return nil }
-            
+
             do {
                 let attributes = try url.resourceValues(forKeys: [.contentModificationDateKey, .nameKey])
                 return FileInfo(
