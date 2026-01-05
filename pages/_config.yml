@@ -1,0 +1,25 @@
+# Jekyll configuration for Markify GitHub Pages
+title: Markify
+description: A beautiful, minimal markdown editor for macOS with live preview
+url: https://spaquet.github.io/markify
+repository: spaquet/markify
+theme: null
+plugins: []
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: true
+
+# Build settings
+exclude:
+  - .gitignore
+  - .ruby-version
+  - Gemfile
+  - Gemfile.lock
+
+# Collections
+collections_dir: .
+
+# Assets
+sass:
+  sass_dir: _sass
