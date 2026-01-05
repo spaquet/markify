@@ -60,6 +60,9 @@ class MarkifyDocument: ReferenceFileDocument {
     func debouncedSave(from editingText: String, settings: AppSettings) {
         editingContent = editingText
 
+        // If nothing actually changed compared to the last saved content, do nothing
+        if editingText == content { return }
+
         // Check if auto-save is enabled
         guard settings.autoSaveEnabled else { return }
 
@@ -73,6 +76,8 @@ class MarkifyDocument: ReferenceFileDocument {
                 // Perform the delay off the main actor
                 try await Task.sleep(nanoseconds: settings.autoSaveDelayNanoseconds)
                 if Task.isCancelled { return }
+                // Double-check just before committing, in case content synced meanwhile
+                if editingText == self.content { return }
                 // Back on main actor due to @MainActor on the class
                 self.content = editingText
                 if let nsDoc = self.getNSDocument() {
@@ -92,6 +97,8 @@ class MarkifyDocument: ReferenceFileDocument {
         saveTask = nil
 
         // Immediately update content and save
+        // If there is no actual change, skip updating change count
+        if editingText == self.content { return }
         self.content = editingText
         if let nsDoc = self.getNSDocument() {
             nsDoc.updateChangeCount(.changeDone)
@@ -121,3 +128,4 @@ class MarkifyDocument: ReferenceFileDocument {
         return nil
     }
 }
+
