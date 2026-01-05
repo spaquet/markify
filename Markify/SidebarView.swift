@@ -292,22 +292,15 @@ struct SidebarView: View {
     }
 
     private func loadFile(at url: URL) {
-        do {
-            content = try String(contentsOf: url, encoding: .utf8)
-            
-            // Attempt to open the document in the app
-            NSDocumentController.shared.openDocument(
-                withContentsOf: url,
-                display: true
-            ) { (document, documentWasAlreadyOpen, error) in
-                if let error = error {
-                    errorMessage = "Failed to open document: \(error.localizedDescription)"
-                    showError = true
-                }
+        // Open the document in a new window
+        NSDocumentController.shared.openDocument(
+            withContentsOf: url,
+            display: true
+        ) { (document, documentWasAlreadyOpen, error) in
+            if let error = error {
+                errorMessage = "Failed to open document: \(error.localizedDescription)"
+                showError = true
             }
-        } catch {
-            errorMessage = "Failed to open file: \(error.localizedDescription)"
-            showError = true
         }
     }
     
