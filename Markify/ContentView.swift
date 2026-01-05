@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var editorText: String = ""
     @State private var showSaveNotification = false
     @State private var saveNotificationTask: Task<Void, Never>?
+    @State private var isInitializing = true
 
     var body: some View {
         NavigationSplitView {
@@ -34,7 +35,10 @@ struct ContentView: View {
                         .background(Color(.windowBackgroundColor))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .onChange(of: editorText) { oldValue, newValue in
-                            document.debouncedSave(from: newValue, settings: settings)
+                            // Skip auto-save during initial document load
+                            if !isInitializing {
+                                document.debouncedSave(from: newValue, settings: settings)
+                            }
                         }
                 }
 
@@ -92,6 +96,8 @@ struct ContentView: View {
                 updateDocumentTitle()
                 editorText = document.editingContent
                 showEditor = settings.showEditorOnLaunch
+                // Mark initialization as complete to enable auto-save on user edits
+                isInitializing = false
             }
             .onChange(of: document.fileURL) { oldValue, newValue in
                 updateDocumentTitle()
