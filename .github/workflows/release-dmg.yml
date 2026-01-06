@@ -81,10 +81,11 @@ jobs:
           cat "markify-${{ matrix.suffix }}.dmg.sha256"
 
       - name: Upload DMG and checksum to release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            markify-${{ matrix.suffix }}.dmg
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} \
+            markify-${{ matrix.suffix }}.dmg \
             markify-${{ matrix.suffix }}.dmg.sha256
 
       - name: Upload build artifacts for debugging
