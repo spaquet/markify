@@ -1,0 +1,93 @@
+name: Build and Release DMG
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:  # Allow manual trigger for testing
+
+permissions:
+  contents: write  # Required to upload release assets
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            suffix: as
+            derived_data_path: build-as
+          - arch: x86_64
+            suffix: intel
+            derived_data_path: build-intel
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.3'
+
+      - name: Resolve Swift Package Dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project Markify.xcodeproj \
+            -scheme Markify
+
+      - name: Build Markify for ${{ matrix.arch }}
+        run: |
+          xcodebuild \
+            -project Markify.xcodeproj \
+            -scheme Markify \
+            -configuration Release \
+            -arch ${{ matrix.arch }} \
+            -derivedDataPath ${{ matrix.derived_data_path }} \
+            clean build
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Create DMG for ${{ matrix.arch }}
+        run: |
+          create-dmg \
+            --volname "Markify ${{ env.VERSION }} (${{ matrix.suffix == 'as' && 'Apple Silicon' || 'Intel' }})" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Markify.app" 175 120 \
+            --hide-extension "Markify.app" \
+            --app-drop-link 425 120 \
+            "markify-${{ matrix.suffix }}.dmg" \
+            "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
+
+      - name: Generate SHA256 checksum
+        run: |
+          shasum -a 256 "markify-${{ matrix.suffix }}.dmg" > \
+            "markify-${{ matrix.suffix }}.dmg.sha256"
+          cat "markify-${{ matrix.suffix }}.dmg.sha256"
+
+      - name: Upload DMG and checksum to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            markify-${{ matrix.suffix }}.dmg
+            markify-${{ matrix.suffix }}.dmg.sha256
+
+      - name: Upload build artifacts for debugging
+        uses: actions/upload-artifact@v4
+        with:
+          name: markify-${{ matrix.suffix }}-v${{ env.VERSION }}
+          path: |
+            markify-${{ matrix.suffix }}.dmg
+            markify-${{ matrix.suffix }}.dmg.sha256
+          retention-days: 90

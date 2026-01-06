@@ -19,14 +19,43 @@ A beautiful, minimal markdown editor for macOS with live preview. Write and prev
 - **Native macOS Integration**: Built with SwiftUI for seamless macOS experience
 - **Auto-Save**: Documents are automatically saved as you work
 
+## Download
+
+Get the latest version of Markify from the [Releases page](https://github.com/spaquet/markify/releases).
+
+### Pre-built Binaries
+
+Two versions are available for download:
+
+- **`markify-as.dmg`** - For Apple Silicon Macs (M1, M2, M3, M4 and newer)
+- **`markify-intel.dmg`** - For Intel Macs
+
+Not sure which one to choose? Check your Mac:
+- Apple menu → About This Mac → Look at the "Chip" field
+- If it says "Apple M1", "M2", "M3", or "M4": Download **Apple Silicon (as)**
+- If it says "Intel Core": Download **Intel**
+
+### Installation from DMG
+
+1. Download the appropriate DMG file for your Mac
+2. Double-click the DMG file to open it
+3. Drag the **Markify** app to your **Applications** folder
+4. On first launch, you may see a security warning (since the app is unsigned)
+   - Right-click on Markify in Applications folder
+   - Select "Open" from the context menu
+   - Click "Open" in the security dialog
+5. On subsequent launches, you can open Markify normally from Applications or Spotlight
+
+> **Note**: Markify is currently distributed as an unsigned application. You will see a security warning on first launch. This is expected and safe. For more information about unsigned apps, see the [FAQ](#faq).
+
 ## Requirements
 
 - macOS 14.8 or later
 - Xcode 15.0 or later (for building from source)
 
-## Installation
+## Building from Source
 
-### From Source
+### Installation
 
 1. Clone the repository:
 ```bash
@@ -107,6 +136,45 @@ Contributions are welcome, but please note the licensing restrictions. Any contr
 ## Author
 
 Created by [Stéphane PAQUET](https://github.com/spaquet)
+
+## FAQ
+
+### Why is Markify unsigned?
+
+Markify is currently distributed as an unsigned application without Apple's Developer ID certificate. This means:
+
+- **First launch security warning**: macOS will show a warning dialog asking if you want to open the app
+- **Workaround**: Right-click the app and select "Open" - this bypasses the Gatekeeper check
+- **Future plans**: As Markify grows, we plan to add code signing and notarization for a cleaner user experience
+
+### Is it safe to use an unsigned app?
+
+Yes, absolutely! The source code is open and available on GitHub. You can review it yourself or build it directly from source. Unsigned just means we haven't purchased an Apple Developer ID certificate yet.
+
+### How do I know which version to download?
+
+Check your Mac's architecture:
+1. Click the Apple menu in the top-left
+2. Select "About This Mac"
+3. Look at the "Chip" field:
+   - **Apple M1, M2, M3, M4**: Download `markify-as.dmg` (Apple Silicon)
+   - **Intel Core**: Download `markify-intel.dmg` (Intel)
+
+### Can I verify the downloaded file is authentic?
+
+Yes! Each DMG file comes with a SHA256 checksum file (`.sha256`). After downloading:
+
+```bash
+# Navigate to your Downloads folder
+cd ~/Downloads
+
+# Verify the checksum
+shasum -c markify-as.dmg.sha256
+# or
+shasum -c markify-intel.dmg.sha256
+```
+
+You should see `OK` if the file is authentic.
 
 ## Support
 
