@@ -52,6 +52,10 @@ jobs:
             -configuration Release \
             -arch ${{ matrix.arch }} \
             -derivedDataPath ${{ matrix.derived_data_path }} \
+            -allowProvisioningUpdates \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_STYLE=Manual \
             clean build
 
       - name: Install create-dmg
