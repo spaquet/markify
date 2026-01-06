@@ -7,10 +7,11 @@ This document describes how to create a new release of Markify with automated DM
 ### Step 1: Update the Version in Xcode
 
 1. Open `Markify.xcodeproj`
-2. Select the Markify target
-3. Go to Build Settings
-4. Find `MARKETING_VERSION` and update it to your new version (e.g., `1.1`)
-5. Test the app thoroughly to ensure everything works correctly
+2. Select the **Markify** target
+3. Go to the **General** tab
+4. Update **Version** to your new version (e.g., `1.1`)
+5. The **Build** number is also displayed here (incremented automatically)
+6. Test the app thoroughly to ensure everything works correctly
 
 ### Step 2: Commit and Create a Tag
 
