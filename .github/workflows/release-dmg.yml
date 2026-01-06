@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-and-release:
-    runs-on: macos-14
+    runs-on: macos-latest
 
     strategy:
       matrix:
@@ -33,10 +33,10 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '16.3'
+      - name: Show Xcode version
+        run: |
+          xcode-select -p
+          xcodebuild -version
 
       - name: Resolve Swift Package Dependencies
         run: |
