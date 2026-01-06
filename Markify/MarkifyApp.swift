@@ -24,6 +24,12 @@ struct MarkifyApp: App {
                     openWindow(id: "about")
                 }
             }
+            CommandGroup(replacing: CommandGroupPlacement.help) {
+                Button("Markify Help") {
+                    openWindow(id: "help")
+                }
+                .keyboardShortcut("?", modifiers: [.command])
+            }
         }
 
         Settings {
@@ -34,6 +40,12 @@ struct MarkifyApp: App {
         Window("About Markify", id: "about") {
             AboutView()
                 .frame(maxWidth: 380)
+        }
+        .windowResizability(.contentSize)
+
+        Window("Markify Help", id: "help") {
+            HelpView()
+                .frame(minWidth: 500)
         }
         .windowResizability(.contentSize)
     }
