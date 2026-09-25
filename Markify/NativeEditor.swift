@@ -139,7 +139,11 @@ struct NativeEditor: NSViewRepresentable {
             storage.addAttribute(.font, value: font, range: match.range(at: 2))
             marker(NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
         }
-        matches("(?m)^(?:[ \\t]*)([-*+] |>[ \\t]?|[-*+] \\[ ?[xX]?\\] )") { match in marker(match.range(at: 1)) }
+        matches("(?m)^(?:[ \\t]*)(>[ \\t]?)") { match in marker(match.range(at: 1)) }
+        matches("(?m)^[ \\t]*([-*+] )(?!\\[[ xX]\\] )") { match in
+            if markdownLens { marker(match.range(at: 1)) }
+            else { storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.monospacedSystemFont(ofSize: 18, weight: .regular)], range: match.range(at: 1)) }
+        }
         matches("(?m)^[ \\t]*([0-9]+\\.) ") { match in
             if markdownLens { marker(match.range(at: 1)) }
             else { storage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: match.range(at: 1)) }
@@ -176,6 +180,12 @@ struct NativeEditor: NSViewRepresentable {
             if (source.substring(with: match.range(at: 1))).lowercased() == "x" {
                 storage.addAttributes([.foregroundColor: dim, .strikethroughStyle: NSUnderlineStyle.single.rawValue], range: match.range(at: 2))
             }
+        }
+        // Hanging indent: wrapped lines of a list item align with its text, not its marker.
+        matches("(?m)^[ \\t]*(?:[-*+] \\[[ xX]\\] |[-*+] |[0-9]+[.)] )") { match in
+            let style = paragraph.mutableCopy() as! NSMutableParagraphStyle
+            style.headIndent = storage.attributedSubstring(from: match.range).size().width
+            storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: match.range))
         }
         if !markdownLens {
             for table in MarkdownTable.blocks(in: editor.string) {
@@ -403,6 +413,28 @@ final class MarkdownTextView: NSTextView {
         super.keyDown(with: event)
     }
 
+    private var isRenumbering = false
+
+    /// Keeps ordered lists counting up after any edit, in the same undo group as the edit.
+    override func didChangeText() {
+        super.didChangeText()
+        guard !isRenumbering, !(undoManager?.isUndoing ?? false), !(undoManager?.isRedoing ?? false) else { return }
+        let fixes = MarkdownList.renumbering(string)
+        guard !fixes.isEmpty, let storage = textStorage,
+              shouldChangeText(inRanges: fixes.map { NSValue(range: $0.range) }, replacementStrings: fixes.map(\.value)) else { return }
+        var selection = selectedRange()
+        isRenumbering = true
+        storage.beginEditing()
+        for fix in fixes.reversed() {
+            storage.replaceCharacters(in: fix.range, with: fix.value)
+            if NSMaxRange(fix.range) <= selection.location { selection.location += (fix.value as NSString).length - fix.range.length }
+        }
+        storage.endEditing()
+        didChangeText()
+        setSelectedRange(selection)
+        isRenumbering = false
+    }
+
     /// Return inside a list item starts the next item; Return on an empty item ends the list.
     func continueList() -> Bool {
         let selection = selectedRange()
@@ -458,6 +490,15 @@ final class MarkdownTextView: NSTextView {
         super.draw(dirtyRect)
         if rendered { drawImages(in: dirtyRect) }
         if rendered { drawMath(in: dirtyRect) }
+        if rendered, let window, let bullets = try? NSRegularExpression(pattern: #"(?m)^[ \t]*([-*+]) (?!\[[ xX]\] )"#) {
+            let dot = NSAttributedString(string: "•", attributes: [.font: NSFont.systemFont(ofSize: 18), .foregroundColor: NSColor.secondaryLabelColor])
+            for match in bullets.matches(in: string, range: NSRange(location: 0, length: (string as NSString).length)) {
+                let screen = firstRect(forCharacterRange: match.range(at: 1), actualRange: nil)
+                let rect = convert(window.convertFromScreen(screen), from: nil)
+                guard rect.intersects(dirtyRect) else { continue }
+                dot.draw(at: NSPoint(x: rect.midX - dot.size().width / 2, y: rect.midY - dot.size().height / 2))
+            }
+        }
         for match in taskMatches() {
             guard let rect = checkboxRect(for: match), rect.intersects(dirtyRect) else { continue }
             let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
@@ -650,6 +691,43 @@ private final class TableCellField: NSTextField, NSTextFieldDelegate {
         if selector == #selector(NSResponder.insertTab(_:)) { onTab?(sourceRange, false); return true }
         if selector == #selector(NSResponder.insertBacktab(_:)) { onTab?(sourceRange, true); return true }
         return false
+    }
+}
+
+enum MarkdownList {
+    /// Number fixes that make each ordered list count up from its first item.
+    static func renumbering(_ text: String) -> [(range: NSRange, value: String)] {
+        let source = text as NSString
+        let item = try! NSRegularExpression(pattern: #"^([ \t]*)(?:([0-9]{1,9})([.)])|[-*+])[ \t]"#)
+        var lists: [(indent: Int, delimiter: String, next: Int)] = []
+        var fixes: [(range: NSRange, value: String)] = []
+        var fenced = false
+        source.enumerateSubstrings(in: NSRange(location: 0, length: source.length), options: .byLines) { line, range, _, _ in
+            guard let line else { return }
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") { fenced.toggle(); lists.removeAll(); return }
+            guard !fenced, !trimmed.isEmpty else { return }
+            let indent = line.prefix { $0 == " " || $0 == "\t" }.utf16.count
+            guard let match = item.firstMatch(in: line, range: NSRange(location: 0, length: (line as NSString).length)),
+                  match.range(at: 2).location != NSNotFound else {
+                // A bullet or paragraph at this depth ends the ordered lists it does not nest inside.
+                while let last = lists.last, last.indent >= indent { lists.removeLast() }
+                return
+            }
+            while let last = lists.last, last.indent > indent { lists.removeLast() }
+            let number = Int((line as NSString).substring(with: match.range(at: 2))) ?? 1
+            let delimiter = (line as NSString).substring(with: match.range(at: 3))
+            if let last = lists.last, last.indent == indent, last.delimiter == delimiter {
+                if number != last.next {
+                    fixes.append((NSRange(location: range.location + match.range(at: 2).location, length: match.range(at: 2).length), "\(last.next)"))
+                }
+                lists[lists.count - 1].next += 1
+            } else {
+                if lists.last?.indent == indent { lists.removeLast() }
+                lists.append((indent, delimiter, number + 1))
+            }
+        }
+        return fixes
     }
 }
 

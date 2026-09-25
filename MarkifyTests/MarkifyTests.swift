@@ -100,6 +100,24 @@ struct MarkifyTests {
         #expect((editor.string as NSString).substring(with: cell) == "Alpha")
     }
 
+    @Test func orderedListsRenumberFromTheirStart() {
+        let text = "1. a\n3. b\n   1. nested\n   5. nested\n7. c\n\nText\n\n4. new\n9. list\n- bullet\n1. after\n```\n1. code\n1. code\n```"
+        var fixed = text as NSString
+        for fix in MarkdownList.renumbering(text).reversed() { fixed = fixed.replacingCharacters(in: fix.range, with: fix.value) as NSString }
+        #expect(fixed as String == "1. a\n2. b\n   1. nested\n   2. nested\n3. c\n\nText\n\n4. new\n5. list\n- bullet\n1. after\n```\n1. code\n1. code\n```")
+    }
+
+    @Test @MainActor func editingAListKeepsItNumbered() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "1. a\n2. b\n3. c"
+        editor.insertText("", replacementRange: NSRange(location: 5, length: 5))
+        #expect(editor.string == "1. a\n2. c")
+        editor.setSelectedRange(NSRange(location: 4, length: 0))
+        #expect(editor.continueList())
+        #expect(editor.string == "1. a\n2. \n3. c")
+        #expect(editor.selectedRange().location == 8)
+    }
+
     @Test @MainActor func returnContinuesAndEndsLists() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.string = "1. First"
