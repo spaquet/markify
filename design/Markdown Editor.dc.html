@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#efede9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}a{color:#0a64d6}a:hover{color:#0850ad}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}.dv-intro{max-width:820px;font:13px/1.55 system-ui,sans-serif;color:rgba(0,0,0,.62);margin:0 0 26px;text-wrap:pretty}.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px;max-width:1052px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.4 system-ui,sans-serif;color:rgba(0,0,0,.58)}.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}</style></helmet>
+<sc-for list="{{ turns }}" as="turn" hint-placeholder-count="1">
+<section class="dv-turn" id="{{ turn.sid }}">
+<div class="dv-thd"><a class="dv-tid" href="#{{ turn.sid }}">{{ turn.num }}</a><span class="dv-tname">{{ turn.name }}</span></div>
+<p class="dv-intro">{{ turn.intro }}</p>
+<div class="dv-opts">
+<sc-for list="{{ turn.windows }}" as="w" hint-placeholder-count="2">
+<div class="dv-opt" id="{{ w.id }}">
+<div class="dv-olabel"><a class="dv-oid" href="#{{ w.id }}">{{ w.id }}</a><span>{{ w.label }}</span></div>
+<div class="dv-card" style="width:{{ w.cardW }}">
+<div style="zoom:{{ w.zoom }}">
+<div style="padding:36px;background:{{ w.t.desk }}">
+<div onMouseMove="{{ w.onMove }}" style="position:relative;width:980px;height:660px;border-radius:26px;background:{{ w.t.page }};overflow:hidden;box-shadow:{{ w.t.winShadow }};color:{{ w.t.ink }}">
+
+<div style="position:absolute;inset:0;opacity:{{ w.richOp }};transition:opacity 240ms ease;overflow:{{ w.overflow }};pointer-events:{{ w.richPE }}">
+<sc-if value="{{ w.empty }}" hint-placeholder-val="{{ false }}">
+<div style="width:640px;margin:0 auto;padding:120px 0 0;font-family:{{ font }}">
+<div style="display:flex;align-items:center;gap:2px"><span style="width:2px;height:38px;background:{{ w.t.accent }}"></span><span style="font-size:36px;font-weight:700;color:{{ w.t.ink3 }}">Untitled</span></div>
+<p style="margin:18px 0 0;font-size:18px;line-height:1.65;color:{{ w.t.ink3 }}">Start writing, or type / to insert a block.</p>
+</div>
+<div style="position:absolute;bottom:26px;left:0;right:0;display:flex;justify-content:center;gap:18px;font-size:12px;color:{{ w.t.ink3 }}"><span>⌘/  Markdown</span><span>⌃⌘S  Library</span><span>⌘O  Open file</span></div>
+</sc-if>
+<sc-if value="{{ w.showDoc }}" hint-placeholder-val="{{ true }}">
+<div style="width:640px;margin:0 auto;padding:96px 0 90px;margin-top:{{ w.scrollY }};font-family:{{ font }}">
+<div style="display:flex;align-items:center;gap:6px;margin:0 0 20px;font:500 11.5px -apple-system,sans-serif;color:{{ w.t.ink2 }}"><span style="padding:3px 9px;border-radius:999px;background:{{ w.t.field }}">essay</span><span style="padding:3px 9px;border-radius:999px;background:{{ w.t.field }}">editor</span><span style="padding:3px 4px">Sep 25, 2026</span></div>
+<h1 style="margin:0 0 18px;font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em">One Page, Two Lenses</h1>
+<div style="position:relative">
+<sc-if value="{{ w.formatBar }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:-14px;left:20px;height:38px;padding:3px;display:flex;align-items:center;gap:1px;border-radius:999px;background:{{ w.t.glassStrong }};backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);box-shadow:{{ w.t.popShadow }};font:13px -apple-system,sans-serif;color:{{ w.t.ink }};z-index:4">
+<sc-if value="{{ w.aiBtn }}" hint-placeholder-val="{{ false }}">
+<span style="height:32px;padding:0 12px 0 10px;display:flex;align-items:center;gap:6px;border-radius:999px;background:{{ w.aiChipBg }};font-weight:600"><span style="background:{{ w.t.ai }};-webkit-background-clip:text;background-clip:text;color:transparent;font-size:14px">✦</span>Writing Tools</span>
+<span style="width:1px;height:18px;background:{{ w.t.rule }}"></span>
+</sc-if>
+<span style="position:relative;padding:0 10px 0 12px;height:32px;display:flex;align-items:center;gap:4px;border-radius:999px;background:{{ w.bodyBg }};color:{{ w.t.ink2 }}">Body <span style="font-size:9px">▼</span></span>
+<span style="width:1px;height:18px;background:{{ w.t.rule }}"></span>
+<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:999px;font-weight:800;background:{{ w.t.accentSoft }};color:{{ w.t.accent }}">B</span>
+<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font:italic 16px ui-serif,Georgia,serif">I</span>
+<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;text-decoration:line-through">S</span>
+<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font:600 11px ui-monospace,Menlo,monospace">`c`</span>
+<span style="width:1px;height:18px;background:{{ w.t.rule }}"></span>
+<span style="padding:0 10px;height:32px;display:flex;align-items:center">Link</span>
+<span style="padding:0 10px;height:32px;display:flex;align-items:center">Comment</span>
+</div>
+</sc-if>
+<sc-if value="{{ w.blockMenu }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:30px;left:24px;width:250px;padding:6px;border-radius:18px;background:{{ w.t.glassStrong }};backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);box-shadow:{{ w.t.popShadow }};color:{{ w.t.ink }};display:flex;flex-direction:column;gap:1px;z-index:6">
+<div style="padding:6px 10px 4px;font-size:11px;font-weight:600;color:{{ w.t.ink2 }}">Text</div>
+<div style="height:38px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1;font:700 20px ui-serif,'New York',Georgia,serif">Title</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">#</span></div>
+<div style="height:34px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1;font:700 16px ui-serif,'New York',Georgia,serif">Heading</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">##</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1;font:600 14px ui-serif,'New York',Georgia,serif">Subheading</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">###</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px;background:{{ w.t.accent }};color:#fff"><span style="width:14px;font-size:11px">✓</span><span style="flex:1;font:14px ui-serif,'New York',Georgia,serif">Body</span><span style="font-size:11.5px;opacity:.85">⌥⌘0</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1;font:italic 14px ui-serif,'New York',Georgia,serif;color:{{ w.t.ink2 }}">Quote</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">&gt;</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1;font:12.5px ui-monospace,'SF Mono',Menlo,monospace">Code block</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">```</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1">Callout</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">&gt; [!NOTE]</span></div>
+<div style="height:1px;background:{{ w.t.rule }};margin:4px 8px"></div>
+<div style="padding:4px 10px 2px;font-size:11px;font-weight:600;color:{{ w.t.ink2 }}">Lists</div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1">• Bulleted list</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">-</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1">1. Numbered list</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">1.</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:11px"><span style="width:14px"></span><span style="flex:1">☐ Task list</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">- [ ]</span></div>
+</div>
+</sc-if>
+<sc-if value="{{ w.aiMenu }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:66px;left:20px;width:340px;padding:8px;border-radius:20px;background:{{ w.t.glassStrong }};backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);box-shadow:{{ w.t.popShadow }};font:13px -apple-system,sans-serif;color:{{ w.t.ink }};display:flex;flex-direction:column;gap:6px;z-index:5">
+<div style="height:36px;padding:0 12px;display:flex;align-items:center;gap:8px;border-radius:12px;background:{{ w.t.field }}"><span style="background:{{ w.t.ai }};-webkit-background-clip:text;background-clip:text;color:transparent;font-size:14px">✦</span><span style="flex:1;color:{{ w.t.ink2 }}">Describe your change</span><span style="color:{{ w.t.ink3 }}">↩</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="padding:10px 12px;border-radius:12px;background:{{ w.t.field }};display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;color:{{ w.t.accent }}">✓</span><span style="font-weight:600">Proofread</span></div><div style="padding:10px 12px;border-radius:12px;background:{{ w.t.field }};display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;color:{{ w.t.accent }}">↻</span><span style="font-weight:600">Rewrite</span></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"><div style="height:32px;border-radius:10px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center">Friendly</div><div style="height:32px;border-radius:10px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center">Professional</div><div style="height:32px;border-radius:10px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center">Concise</div></div>
+<div style="height:1px;background:{{ w.t.rule }};margin:2px 6px"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px"><div style="height:30px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:9px"><span style="color:{{ w.t.ink2 }}">≡</span>Summary</div><div style="height:30px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:9px"><span style="color:{{ w.t.ink2 }}">•</span>Key Points</div><div style="height:30px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:9px"><span style="color:{{ w.t.ink2 }}">☰</span>List</div><div style="height:30px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:9px"><span style="color:{{ w.t.ink2 }}">▦</span>Table</div></div>
+<div style="padding:2px 10px 4px;display:flex;justify-content:space-between;font-size:11px;color:{{ w.t.ink2 }}"><span>On this Mac</span><span>Selection · 4 words</span></div>
+</div>
+</sc-if>
+<sc-if value="{{ w.plainP }}" hint-placeholder-val="{{ true }}">
+<p style="margin:0 0 16px;font-size:18px;line-height:1.65;text-wrap:pretty">Most Markdown editors split the window in two: code on the left, preview on the right. Markify <strong style="background:{{ w.selBg }};border-radius:2px">keeps a single page</strong> and lets you change the <span style="background:{{ w.hlCur }};border-radius:3px">lens</span> instead.<sup style="font:600 11px -apple-system,sans-serif;color:{{ w.t.accent }}">1</sup></p>
+</sc-if>
+<sc-if value="{{ w.proof }}" hint-placeholder-val="{{ false }}">
+<p style="margin:0 0 16px;font-size:18px;line-height:1.65;text-wrap:pretty">Most Markdown editors split the window in <span style="text-decoration:underline;text-decoration-color:{{ w.t.accent }};text-decoration-thickness:2px;text-underline-offset:5px;background:{{ w.t.accentSoft }};border-radius:3px">too</span>: code on the left, preview on the right. Markify <span style="text-decoration:underline;text-decoration-color:{{ w.t.accent }};text-decoration-thickness:2px;text-underline-offset:5px">keep</span> a single page and lets you change the <span style="text-decoration:underline;text-decoration-color:{{ w.t.accent }};text-decoration-thickness:2px;text-underline-offset:5px">lense</span> instead.<sup style="font:600 11px -apple-system,sans-serif;color:{{ w.t.accent }}">1</sup></p>
+<div style="position:absolute;top:36px;left:300px;width:250px;padding:12px;border-radius:16px;background:{{ w.t.glassStrong }};backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);box-shadow:{{ w.t.popShadow }};font:13px -apple-system,sans-serif;color:{{ w.t.ink }};display:flex;flex-direction:column;gap:10px;z-index:5">
+<div style="font-size:11px;font-weight:600;color:{{ w.t.ink2 }}">Spelling</div>
+<div style="display:flex;align-items:baseline;gap:8px;font:17px ui-serif,'New York',Georgia,serif"><span style="color:{{ w.t.ink2 }};text-decoration:line-through">too</span><span style="color:{{ w.t.ink3 }};font-size:13px">→</span><span style="font-weight:700">two</span></div>
+<div style="display:flex;gap:6px"><span style="height:28px;padding:0 14px;display:flex;align-items:center;border-radius:999px;background:{{ w.t.accent }};color:#fff;font-weight:600">Accept</span><span style="height:28px;padding:0 14px;display:flex;align-items:center;border-radius:999px;background:{{ w.t.field }}">Ignore</span></div>
+</div>
+</sc-if>
+<sc-if value="{{ w.rewrite }}" hint-placeholder-val="{{ false }}">
+<div style="margin:0 -14px 12px;padding:8px 14px;border-radius:14px;border:1.5px solid transparent;background:linear-gradient({{ w.t.page }},{{ w.t.page }}) padding-box,{{ w.t.ai }} border-box;box-shadow:0 0 28px {{ w.t.aiGlow }}"><p style="margin:0;font-size:18px;line-height:1.65;text-wrap:pretty">Instead of splitting code and preview into two panes, Markify keeps one page and simply changes the lens.<sup style="font:600 11px -apple-system,sans-serif;color:{{ w.t.accent }}">1</sup></p></div>
+<div style="width:fit-content;height:38px;margin:0 0 20px -6px;padding:3px 3px 3px 12px;display:flex;align-items:center;gap:2px;border-radius:999px;background:{{ w.t.glassStrong }};backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:{{ w.t.popShadow }};font:13px -apple-system,sans-serif;color:{{ w.t.ink }}"><span style="background:{{ w.t.ai }};-webkit-background-clip:text;background-clip:text;color:transparent;font-size:14px;margin-right:6px">✦</span><span style="font-weight:600">Rewrite</span><span style="color:{{ w.t.ink2 }};margin:0 10px 0 5px">· Concise</span><span style="width:1px;height:18px;background:{{ w.t.rule }}"></span><span style="padding:0 10px">Try Again</span><span style="padding:0 10px">Compare</span><span style="padding:0 10px">Revert</span><span style="height:32px;padding:0 14px;display:flex;align-items:center;gap:8px;border-radius:999px;background:{{ w.t.accent }};color:#fff;font-weight:600">Accept <span style="font-weight:400;opacity:.8">⌘↩</span></span></div>
+</sc-if>
+</div>
+<sc-if value="{{ w.slash }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;margin:0 0 16px">
+<p style="margin:0;font-size:18px;line-height:1.65;display:flex;align-items:center"><span style="color:{{ w.t.ink2 }}">/tab</span><span style="width:2px;height:21px;background:{{ w.t.accent }};margin-left:1px"></span></p>
+<div style="position:absolute;top:36px;left:-8px;width:310px;padding:6px;border-radius:18px;background:{{ w.t.glassStrong }};backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);box-shadow:{{ w.t.popShadow }};font:13px -apple-system,sans-serif;color:{{ w.t.ink }};display:flex;flex-direction:column;gap:1px;z-index:4">
+<div style="padding:6px 10px 4px;font-size:11px;font-weight:600;color:{{ w.t.ink2 }}">Insert</div>
+<div style="height:36px;padding:0 10px;display:flex;align-items:center;gap:10px;border-radius:11px;background:{{ w.t.accent }};color:#fff"><span style="width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:12px">▦</span><span style="flex:1">Table</span><span style="font:12px ui-monospace,Menlo,monospace;opacity:.85">| — |</span></div>
+<div style="height:36px;padding:0 10px;display:flex;align-items:center;gap:10px;border-radius:11px"><span style="width:24px;height:24px;border-radius:7px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center;font-size:12px">☐</span><span style="flex:1">Task list</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">- [ ]</span></div>
+<div style="height:36px;padding:0 10px;display:flex;align-items:center;gap:10px;border-radius:11px"><span style="width:24px;height:24px;border-radius:7px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center;font:600 10px ui-monospace,Menlo,monospace">{}</span><span style="flex:1">Code block</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">```</span></div>
+<div style="height:36px;padding:0 10px;display:flex;align-items:center;gap:10px;border-radius:11px"><span style="width:24px;height:24px;border-radius:7px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center;font-size:12px">i</span><span style="flex:1">Callout</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">&gt; [!NOTE]</span></div>
+<div style="height:36px;padding:0 10px;display:flex;align-items:center;gap:10px;border-radius:11px"><span style="width:24px;height:24px;border-radius:7px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center;font:italic 13px ui-serif,Georgia,serif">∑</span><span style="flex:1">Math</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">$$</span></div>
+<div style="height:36px;padding:0 10px;display:flex;align-items:center;gap:10px;border-radius:11px"><span style="width:24px;height:24px;border-radius:7px;background:{{ w.t.field }};display:flex;align-items:center;justify-content:center;font-size:12px">▭</span><span style="flex:1">Image</span><span style="font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">![]()</span></div>
+<div style="height:1px;background:{{ w.t.rule }};margin:4px 8px"></div>
+<div style="padding:4px 10px 6px;display:flex;justify-content:space-between;font-size:11px;color:{{ w.t.ink2 }}"><span>↑↓ navigate</span><span>↩ insert · esc dismiss</span></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ w.gen }}" hint-placeholder-val="{{ false }}">
+<div style="margin:0 -14px 16px;padding:12px 14px;border-radius:16px;border:1.5px solid transparent;background:linear-gradient({{ w.t.page }},{{ w.t.page }}) padding-box,{{ w.t.ai }} border-box;box-shadow:0 8px 30px {{ w.t.aiGlow }};font:14px -apple-system,sans-serif;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><span style="background:{{ w.t.ai }};-webkit-background-clip:text;background-clip:text;color:transparent;font-size:15px">✦</span><span style="flex:1">Write a short section introducing the keyboard shortcuts</span><span style="font-size:11.5px;color:{{ w.t.ink3 }}">esc</span></div>
+<div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="height:24px;padding:0 10px;display:flex;align-items:center;border-radius:999px;background:{{ w.t.field }}">Length: Short ⌄</span><span style="height:24px;padding:0 10px;display:flex;align-items:center;border-radius:999px;background:{{ w.t.field }}">Tone: Friendly ⌄</span><span style="height:24px;padding:0 10px;display:flex;align-items:center;border-radius:999px;background:{{ w.t.field }}">Format: Paragraph ⌄</span><span style="flex:1"></span><span style="color:{{ w.t.ink2 }}">Writing on this Mac…</span><span style="height:26px;padding:0 12px;display:flex;align-items:center;border-radius:999px;background:{{ w.t.field }};font-weight:600">Stop</span></div>
+</div>
+<p style="margin:0 0 18px;font-size:18px;line-height:1.65;color:{{ w.t.ink2 }};text-wrap:pretty">Markify is built to keep your hands on the keyboard. Press ⌘/ to flip between the page and its Markdown, type / to insert any block, and select text to <span style="display:inline-block;width:9px;height:19px;border-radius:3px;vertical-align:-3px;background:{{ w.t.ai }}"></span></p>
+</sc-if>
+<div style="background:{{ w.t.callout }};border-radius:14px;padding:14px 18px;margin:0 0 26px;font:15px/1.55 -apple-system,sans-serif"><div style="font-weight:600;font-size:13px;color:{{ w.t.accent }};margin-bottom:3px">Note</div>Press ⌘/ anywhere to flip between the rendered page and its Markdown. The <span style="background:{{ w.hl }};border-radius:3px">lens</span> changes; your caret and scroll stay put.</div>
+<h2 style="margin:0 0 12px;font-size:22px;font-weight:700">Getting started</h2>
+<div style="display:flex;flex-direction:column;gap:9px;margin:0 0 26px;font-size:17px">
+<div style="display:flex;align-items:center;gap:12px"><span style="width:18px;height:18px;border-radius:6px;background:{{ w.t.accent }};color:#fff;font:700 11px -apple-system,sans-serif;display:flex;align-items:center;justify-content:center">✓</span><span style="color:{{ w.t.ink2 }};text-decoration:line-through">Write in the rendered lens</span></div>
+<div style="display:flex;align-items:center;gap:12px"><span style="width:18px;height:18px;border-radius:6px;background:{{ w.t.accent }};color:#fff;font:700 11px -apple-system,sans-serif;display:flex;align-items:center;justify-content:center">✓</span><span style="color:{{ w.t.ink2 }};text-decoration:line-through">Select text to format it</span></div>
+<div style="display:flex;align-items:center;gap:12px"><span style="width:16px;height:16px;border-radius:6px;border:1.5px solid {{ w.t.ink3 }}"></span><span>Switch to the Markdown <span style="background:{{ w.hl }};border-radius:3px">lens</span> once</span></div>
+</div>
+<div style="display:grid;grid-template-columns:120px 1fr 120px;font:14px/1.4 -apple-system,sans-serif;margin:0 0 28px;border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px {{ w.t.rule }}">
+<div style="padding:9px 14px;font-weight:600;font-size:12.5px;color:{{ w.t.ink2 }};background:{{ w.t.field }}">Shortcut</div><div style="padding:9px 14px;font-weight:600;font-size:12.5px;color:{{ w.t.ink2 }};background:{{ w.t.field }}">Action</div><div style="padding:9px 14px;font-weight:600;font-size:12.5px;color:{{ w.t.ink2 }};background:{{ w.t.field }}">Lens</div>
+<div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">⌘/</div><div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">Toggle Markdown</div><div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">Both</div>
+<div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">/</div><div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">Insert block</div><div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">Rendered</div>
+<div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">⌃⌘S</div><div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">Show library</div><div style="padding:9px 14px;border-top:1px solid {{ w.t.rule }}">Both</div>
+</div>
+<div style="position:relative;background:{{ w.t.code }};border-radius:12px;padding:16px 18px;font:13.5px/1.75 ui-monospace,'SF Mono',Menlo,monospace;margin:0 0 28px;white-space:pre-wrap"><span style="position:absolute;top:10px;right:14px;font:500 11px -apple-system,sans-serif;color:{{ w.t.ink3 }}">swift</span><span style="color:{{ w.t.com }}">// Flip lenses without losing place</span><br><span style="color:{{ w.t.kw }}">func</span> toggleLens() {<br>    <span style="color:{{ w.t.kw }}">let</span> anchor = editor.<span style="color:{{ w.t.typ }}">caretOffset</span><br>    editor.lens = editor.lens == <span style="color:{{ w.t.str }}">.rendered</span> ? <span style="color:{{ w.t.str }}">.source</span> : <span style="color:{{ w.t.str }}">.rendered</span><br>    editor.<span style="color:{{ w.t.typ }}">restore</span>(anchor)<br>}</div>
+<div style="text-align:center;margin:0 0 28px;font:italic 22px ui-serif,'New York',Georgia,serif;letter-spacing:.02em">∫<sub style="font-size:13px">0</sub><sup style="font-size:13px">1</sup> x<sup style="font-size:13px">2</sup> dx = <span style="display:inline-flex;flex-direction:column;vertical-align:middle;font-size:16px;line-height:1.1;text-align:center"><span style="border-bottom:1px solid {{ w.t.ink }};padding:0 3px">1</span><span>3</span></span></div>
+<div style="height:260px;border-radius:14px;margin:0 0 8px;background:repeating-linear-gradient(135deg,{{ w.t.field }} 0 10px,transparent 10px 20px);box-shadow:inset 0 0 0 1px {{ w.t.rule }};display:flex;align-items:center;justify-content:center;font:12px ui-monospace,Menlo,monospace;color:{{ w.t.ink2 }}">hero image — hero.png</div>
+<div style="font:13px -apple-system,sans-serif;color:{{ w.t.ink2 }};text-align:center;margin:0 0 34px">One window, one column.</div>
+<div style="border-top:1px solid {{ w.t.rule }};padding-top:12px;font:13px/1.5 -apple-system,sans-serif;color:{{ w.t.ink2 }}"><span style="color:{{ w.t.accent }};font-weight:600">1</span>  Both lenses edit the same file — nothing is ever exported or synced between panes.</div>
+</div>
+</sc-if>
+</div>
+
+<div style="position:absolute;inset:0;opacity:{{ w.srcOp }};transition:opacity 240ms ease;overflow:{{ w.overflow }};pointer-events:{{ w.srcPE }}">
+<div style="width:660px;margin:0 auto;padding:96px 0 90px;margin-top:{{ w.scrollY }};font:14px/1.85 ui-monospace,'SF Mono',Menlo,monospace;white-space:pre-wrap;text-wrap:pretty">
+<div style="color:{{ w.t.ink3 }}">---</div>
+<div><span style="color:{{ w.t.typ }}">tags</span><span style="color:{{ w.t.ink3 }}">:</span> [essay, editor]</div>
+<div><span style="color:{{ w.t.typ }}">date</span><span style="color:{{ w.t.ink3 }}">:</span> 2026-09-25</div>
+<div style="color:{{ w.t.ink3 }};margin-bottom:12px">---</div>
+<div style="font-weight:700;font-size:16px;margin-bottom:12px"><span style="color:{{ w.t.ink3 }}"># </span>One Page, Two Lenses</div>
+<div style="margin-bottom:14px">Most Markdown editors split the window in two: code on the left, preview on the right. Markify <span style="color:{{ w.t.ink3 }}">**</span><b>keeps a single page</b><span style="color:{{ w.t.ink3 }}">**</span> and lets you change the lens instead.<span style="color:{{ w.t.accent }}">[^1]</span><span style="display:inline-block;width:2px;height:18px;background:{{ w.t.accent }};vertical-align:-3px;margin-left:1px"></span></div>
+<div><span style="color:{{ w.t.ink3 }}">&gt; </span><span style="color:{{ w.t.accent }}">[!NOTE]</span></div>
+<div style="margin-bottom:14px"><span style="color:{{ w.t.ink3 }}">&gt; </span>Press ⌘/ anywhere to flip between the rendered page and its Markdown. The lens changes; your caret and scroll stay put.</div>
+<div style="font-weight:700;margin-bottom:6px"><span style="color:{{ w.t.ink3 }}">## </span>Getting started</div>
+<div><span style="color:{{ w.t.ink3 }}">- [x] </span><span style="color:{{ w.t.ink2 }}">Write in the rendered lens</span></div>
+<div><span style="color:{{ w.t.ink3 }}">- [x] </span><span style="color:{{ w.t.ink2 }}">Select text to format it</span></div>
+<div style="margin-bottom:14px"><span style="color:{{ w.t.ink3 }}">- [ ] </span>Switch to the Markdown lens once</div>
+<div><span style="color:{{ w.t.ink3 }}">| </span>Shortcut<span style="color:{{ w.t.ink3 }}"> | </span>Action         <span style="color:{{ w.t.ink3 }}"> | </span>Lens    <span style="color:{{ w.t.ink3 }}"> |</span></div>
+<div style="color:{{ w.t.ink3 }}">| -------- | -------------- | -------- |</div>
+<div><span style="color:{{ w.t.ink3 }}">| </span>⌘/      <span style="color:{{ w.t.ink3 }}"> | </span>Toggle Markdown<span style="color:{{ w.t.ink3 }}"> | </span>Both    <span style="color:{{ w.t.ink3 }}"> |</span></div>
+<div><span style="color:{{ w.t.ink3 }}">| </span>/       <span style="color:{{ w.t.ink3 }}"> | </span>Insert block   <span style="color:{{ w.t.ink3 }}"> | </span>Rendered<span style="color:{{ w.t.ink3 }}"> |</span></div>
+<div style="margin-bottom:14px"><span style="color:{{ w.t.ink3 }}">| </span>⌃⌘S     <span style="color:{{ w.t.ink3 }}"> | </span>Show library   <span style="color:{{ w.t.ink3 }}"> | </span>Both    <span style="color:{{ w.t.ink3 }}"> |</span></div>
+<div style="color:{{ w.t.ink3 }}">```swift</div>
+<div style="color:{{ w.t.com }}">// Flip lenses without losing place</div>
+<div><span style="color:{{ w.t.kw }}">func</span> toggleLens() {</div>
+<div>    <span style="color:{{ w.t.kw }}">let</span> anchor = editor.<span style="color:{{ w.t.typ }}">caretOffset</span></div>
+<div>    editor.lens = editor.lens == <span style="color:{{ w.t.str }}">.rendered</span> ? <span style="color:{{ w.t.str }}">.source</span> : <span style="color:{{ w.t.str }}">.rendered</span></div>
+<div>    editor.<span style="color:{{ w.t.typ }}">restore</span>(anchor)</div>
+<div>}</div>
+<div style="color:{{ w.t.ink3 }};margin-bottom:14px">```</div>
+<div style="margin-bottom:14px"><span style="color:{{ w.t.ink3 }}">$$</span> \int_0^1 x^2\,dx = \frac{1}{3} <span style="color:{{ w.t.ink3 }}">$$</span></div>
+<div style="margin-bottom:14px"><span style="color:{{ w.t.ink3 }}">![</span>One window, one column.<span style="color:{{ w.t.ink3 }}">](</span><span style="color:{{ w.t.accent }}">hero.png</span><span style="color:{{ w.t.ink3 }}">)</span></div>
+<div><span style="color:{{ w.t.accent }}">[^1]</span><span style="color:{{ w.t.ink3 }}">:</span> Both lenses edit the same file — nothing is ever exported or synced between panes.</div>
+</div>
+</div>
+
+<div style="position:absolute;top:8px;left:8px;bottom:8px;width:260px;border-radius:20px;background:{{ w.t.glass }};backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);box-shadow:{{ w.t.edge }};padding:54px 10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;font-size:13px;transform:translateX({{ w.sidebarX }});transition:transform 320ms cubic-bezier(.2,.8,.2,1);z-index:6">
+<div style="height:30px;margin:0 2px 12px;padding:0 10px;display:flex;align-items:center;border-radius:10px;background:{{ w.t.field }};color:{{ w.t.ink2 }};font-size:12.5px">Search</div>
+<div style="padding:4px 10px;font-size:11px;font-weight:600;color:{{ w.t.ink2 }}">Open Files</div>
+<div style="padding:7px 10px;border-radius:10px;background:{{ w.t.rowSel }};display:flex;flex-direction:column;gap:1px"><span style="font-weight:600">One Page, Two Lenses.md</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">~/Documents</span></div>
+<div style="padding:7px 10px;border-radius:10px;display:flex;flex-direction:column;gap:1px"><span>README.md</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">~/Developer/markify</span></div>
+<div style="padding:14px 10px 4px;font-size:11px;font-weight:600;color:{{ w.t.ink2 }}">Library</div>
+<div style="padding:7px 10px;border-radius:10px;display:flex;flex-direction:column;gap:1px"><span>Release Notes 2.0</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">This release focuses on speed…</span></div>
+<div style="padding:7px 10px;border-radius:10px;display:flex;flex-direction:column;gap:1px"><span>Interview — Lena K.</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">Notes from Tuesday’s call…</span></div>
+<div style="padding:7px 10px;border-radius:10px;display:flex;flex-direction:column;gap:1px"><span>Reading List</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">- [ ] The Elements of Typo…</span></div>
+<div style="padding:7px 10px;border-radius:10px;display:flex;flex-direction:column;gap:1px"><span>Q4 Planning</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">| Goal | Owner | Due |</span></div>
+<div style="flex:1"></div>
+<div style="padding:8px 10px;display:flex;justify-content:space-between;color:{{ w.t.ink2 }};font-size:12.5px"><span>New Document</span><span>⌘N</span></div>
+</div>
+
+<div style="position:absolute;top:22px;left:22px;display:flex;gap:8px;z-index:8"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+
+<div style="position:absolute;inset:0;pointer-events:none;opacity:{{ w.chromeOp }};transition:opacity 400ms ease;z-index:7">
+<div onClick="{{ w.toggleSidebar }}" style="pointer-events:auto;cursor:default;position:absolute;top:10px;left:88px;width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:{{ w.sbBtnBg }};backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:{{ w.t.edge }}"><div style="width:15px;height:12px;border:1.5px solid {{ w.t.ink }};border-radius:3px;display:flex;opacity:.85"><div style="width:5px;border-right:1.5px solid {{ w.t.ink }}"></div></div></div>
+<div style="position:absolute;top:10px;left:{{ w.titleX }};transition:left 320ms cubic-bezier(.2,.8,.2,1);height:36px;padding:0 15px;display:flex;align-items:center;gap:7px;border-radius:999px;background:{{ w.t.glass }};backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:{{ w.t.edge }};font-size:13px"><span style="font-weight:600">{{ w.title }}</span><span style="color:{{ w.t.ink2 }}">{{ w.titleSub }}</span></div>
+<div style="position:absolute;top:10px;right:12px;height:36px;padding:3px;display:flex;align-items:center;gap:2px;border-radius:999px;background:{{ w.t.glass }};backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:{{ w.t.edge }};pointer-events:auto">
+<sc-if value="{{ w.aiBtn }}" hint-placeholder-val="{{ false }}"><div title="Apple Intelligence" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:{{ w.aiBtnBg }}"><span style="background:{{ w.t.ai }};-webkit-background-clip:text;background-clip:text;color:transparent;font-size:15px">✦</span></div></sc-if>
+<div onClick="{{ w.toggleMode }}" title="Show Markdown  ⌘/" style="height:30px;padding:0 13px;display:flex;align-items:center;border-radius:999px;cursor:default;font:700 11.5px ui-monospace,'SF Mono',Menlo,monospace;letter-spacing:.02em;background:{{ w.mdBg }};color:{{ w.mdColor }};transition:background 200ms,color 200ms">MD</div>
+<div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:999px;font-size:15px;color:{{ w.t.ink }}">⋯</div>
+</div>
+<div style="position:absolute;bottom:14px;right:16px;height:28px;padding:0 12px;display:flex;align-items:center;gap:8px;border-radius:999px;background:{{ w.t.glass }};backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:{{ w.t.edge }};font-size:11.5px;color:{{ w.t.ink2 }}"><span>{{ w.status }}</span></div>
+</div>
+
+<sc-if value="{{ w.proof }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);height:40px;padding:4px 4px 4px 14px;display:flex;align-items:center;gap:4px;border-radius:999px;background:{{ w.t.glassStrong }};backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);box-shadow:{{ w.t.popShadow }};font:13px -apple-system,sans-serif;color:{{ w.t.ink }};white-space:nowrap;z-index:9"><span style="background:{{ w.t.ai }};-webkit-background-clip:text;background-clip:text;color:transparent;font-size:14px;margin-right:4px">✦</span><span style="font-weight:600">Proofread</span><span style="color:{{ w.t.ink2 }};margin:0 8px 0 4px">3 suggestions</span><span style="width:1px;height:18px;background:{{ w.t.rule }}"></span><span style="width:28px;text-align:center;color:{{ w.t.ink2 }}">‹</span><span style="color:{{ w.t.ink2 }};font-size:12px">1 of 3</span><span style="width:28px;text-align:center;color:{{ w.t.ink2 }}">›</span><span style="width:1px;height:18px;background:{{ w.t.rule }}"></span><span style="padding:0 10px">Accept All</span><span style="height:32px;padding:0 16px;display:flex;align-items:center;border-radius:999px;background:{{ w.t.accent }};color:#fff;font-weight:600">Done</span></div>
+</sc-if>
+<sc-if value="{{ w.docAI }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:56px;right:12px;width:320px;padding:8px;border-radius:20px;background:{{ w.t.glassStrong }};backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);box-shadow:{{ w.t.popShadow }};font:13px -apple-system,sans-serif;color:{{ w.t.ink }};display:flex;flex-direction:column;gap:2px;z-index:9">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px 8px"><span style="display:flex;align-items:center;gap:7px;font-weight:600"><span style="background:{{ w.t.ai }};-webkit-background-clip:text;background-clip:text;color:transparent;font-size:14px">✦</span>Apple Intelligence</span><span style="padding:3px 9px;border-radius:999px;background:{{ w.t.field }};font-size:11.5px;color:{{ w.t.ink2 }}">Whole document</span></div>
+<div style="height:36px;padding:0 12px;display:flex;align-items:center;border-radius:12px;background:{{ w.t.field }};color:{{ w.t.ink2 }};margin-bottom:6px">Describe a change to the document…</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px"><div style="padding:10px 12px;border-radius:12px;background:{{ w.t.field }};display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;color:{{ w.t.accent }}">✓</span><span style="font-weight:600">Proofread</span></div><div style="padding:10px 12px;border-radius:12px;background:{{ w.t.field }};display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;color:{{ w.t.accent }}">↻</span><span style="font-weight:600">Rewrite…</span></div></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;border-radius:9px;background:{{ w.t.rowSel }}"><span style="flex:1">Summarize</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">Insert at top</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;border-radius:9px"><span style="flex:1">Key points</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">New section</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;border-radius:9px"><span style="flex:1">Suggest title &amp; tags</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">Frontmatter</span></div>
+<div style="height:32px;padding:0 10px;display:flex;align-items:center;border-radius:9px"><span style="flex:1">Continue writing</span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">At caret · ⌘↩</span></div>
+<div style="height:1px;background:{{ w.t.rule }};margin:6px 8px"></div>
+<div style="padding:2px 10px 6px;font-size:11px;line-height:1.45;color:{{ w.t.ink2 }}">Runs on this Mac with Apple Intelligence. Your text never leaves it.</div>
+</div>
+</sc-if>
+<sc-if value="{{ w.find }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:56px;right:12px;width:380px;padding:8px;border-radius:18px;background:{{ w.t.glassStrong }};backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);box-shadow:{{ w.t.popShadow }};display:flex;flex-direction:column;gap:6px;font:13px -apple-system,sans-serif;z-index:9">
+<div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:30px;padding:0 10px;display:flex;align-items:center;gap:8px;border-radius:9px;background:{{ w.t.field }};box-shadow:0 0 0 2px {{ w.t.accentSoft }}"><span>lens</span><span style="flex:1"></span><span style="font-size:11.5px;color:{{ w.t.ink2 }}">1 of 4</span></div><div style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:{{ w.t.ink2 }}">‹</div><div style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:{{ w.t.ink2 }}">›</div><div style="height:30px;padding:0 8px;border-radius:9px;display:flex;align-items:center;font-size:12px;color:{{ w.t.ink2 }}">Aa</div></div>
+<div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:30px;padding:0 10px;display:flex;align-items:center;border-radius:9px;background:{{ w.t.field }}">view</div><div style="height:30px;padding:0 11px;border-radius:9px;display:flex;align-items:center;background:{{ w.t.field }}">Replace</div><div style="height:30px;padding:0 11px;border-radius:9px;display:flex;align-items:center;background:{{ w.t.accent }};color:#fff">All</div></div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-for>
+
+<sc-if value="{{ turn.hasSettings }}" hint-placeholder-val="{{ false }}">
+<div class="dv-opt" id="1n">
+<div class="dv-olabel"><a class="dv-oid" href="#1n">1n</a><span>Settings (⌘,) — click the tabs: General, Editor, Appearance, Intelligence, Shortcuts. Standard grouped form, glass tab toolbar.</span></div>
+<div class="dv-card" style="width:852px">
+<div style="padding:36px;background:radial-gradient(circle at 18% 22%,#f2d8c6 0,transparent 48%),radial-gradient(circle at 82% 28%,#c8d7f2 0,transparent 52%),radial-gradient(circle at 55% 95%,#d4e7d6 0,transparent 55%),#e8e5ee">
+<div style="position:relative;width:780px;border-radius:26px;background:#f5f4f2;overflow:hidden;box-shadow:0 30px 80px rgba(40,30,60,.28),0 0 0 .5px rgba(0,0,0,.18);color:#1d1d1f;font-size:13px">
+<div style="position:absolute;top:22px;left:22px;display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+<div style="padding:16px 0 10px;display:flex;flex-direction:column;align-items:center;gap:10px">
+<div style="font-weight:600">{{ settingsTitle }}</div>
+<div style="padding:4px;display:flex;gap:2px;border-radius:999px;background:rgba(255,255,255,.62);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 0 0 .5px rgba(0,0,0,.09),0 6px 20px rgba(0,0,0,.08),inset 0 1px 0 #fff">
+<sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="5">
+<div onClick="{{ tab.onClick }}" style="width:80px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:14px;cursor:default;background:{{ tab.bg }};color:{{ tab.color }}"><span style="height:20px;font-size:16px;line-height:20px">{{ tab.icon }}</span><span style="font-size:11px;font-weight:{{ tab.weight }}">{{ tab.name }}</span></div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{ isGeneral }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 28px 28px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Documents</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>New documents are saved to</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px">Library <span style="color:#6e6e73">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Library location</span><span style="font-size:11.5px;color:#6e6e73">~/Documents/Markify · 128 notes</span></div><span style="padding:4px 12px;border-radius:7px;background:rgba(0,0,0,.05)">Choose…</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Save pasted images to</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px;font-family:ui-monospace,Menlo,monospace;font-size:12px">./assets <span style="color:#6e6e73;font-family:-apple-system,sans-serif">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Reload when changed on disk</span><span style="font-size:11.5px;color:#6e6e73">Picks up edits made in other apps or by Git.</span></div><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Startup</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>On launch</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px">Reopen last documents <span style="color:#6e6e73">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Default Markdown app</span><span style="font-size:11.5px;color:#6e6e73">Open .md files from Finder in Markify.</span></div><span style="padding:4px 12px;border-radius:7px;background:rgba(0,0,0,.05)">Make Default</span></div>
+</div></div>
+</div>
+</sc-if>
+<sc-if value="{{ isAppearance }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 28px 28px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Appearance</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px"><span style="padding-top:4px">Theme</span><div style="display:flex;gap:14px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:78px;height:50px;border-radius:9px;background:#fcfbf9;box-shadow:0 0 0 .5px rgba(0,0,0,.15);display:flex;flex-direction:column;gap:4px;padding:10px;box-sizing:border-box"><span style="height:4px;width:60%;border-radius:2px;background:#1d1d1f"></span><span style="height:3px;border-radius:2px;background:#c7c7cc"></span><span style="height:3px;width:80%;border-radius:2px;background:#c7c7cc"></span></div><span style="font-size:11.5px;color:#6e6e73">Light</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:78px;height:50px;border-radius:9px;background:#1e1e20;box-shadow:0 0 0 .5px rgba(0,0,0,.15);display:flex;flex-direction:column;gap:4px;padding:10px;box-sizing:border-box"><span style="height:4px;width:60%;border-radius:2px;background:#f2f2f7"></span><span style="height:3px;border-radius:2px;background:#5c5c61"></span><span style="height:3px;width:80%;border-radius:2px;background:#5c5c61"></span></div><span style="font-size:11.5px;color:#6e6e73">Dark</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:78px;height:50px;border-radius:9px;background:linear-gradient(90deg,#fcfbf9 50%,#1e1e20 50%);box-shadow:0 0 0 .5px rgba(0,0,0,.15),0 0 0 3px #0a64d6"></div><span style="font-size:11.5px;font-weight:600;color:#1d1d1f">Auto</span></div>
+</div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Page color</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px">Paper <span style="color:#6e6e73">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Code theme</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px">Match appearance <span style="color:#6e6e73">⌃</span></span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Controls</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><div style="display:flex;flex-direction:column;gap:2px"><span>Glass style</span><span style="font-size:11.5px;color:#6e6e73">Follows System Settings unless changed here.</span></div><div style="display:flex;padding:2px;border-radius:8px;background:rgba(0,0,0,.06)"><span style="padding:3px 12px;border-radius:6px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)">System</span><span style="padding:3px 12px">Clear</span><span style="padding:3px 12px">Tinted</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Accent color</span><div style="display:flex;gap:7px"><span style="width:16px;height:16px;border-radius:50%;background:conic-gradient(#ff3b30,#ff9500,#ffcc00,#34c759,#0a84ff,#af52de,#ff3b30);box-shadow:0 0 0 2px #fff,0 0 0 3.5px #0a64d6"></span><span style="width:16px;height:16px;border-radius:50%;background:#0a84ff"></span><span style="width:16px;height:16px;border-radius:50%;background:#af52de"></span><span style="width:16px;height:16px;border-radius:50%;background:#ff2d55"></span><span style="width:16px;height:16px;border-radius:50%;background:#ff9500"></span><span style="width:16px;height:16px;border-radius:50%;background:#34c759"></span><span style="width:16px;height:16px;border-radius:50%;background:#8e8e93"></span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Show status capsule</span><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+</div></div>
+</div>
+</sc-if>
+<sc-if value="{{ isIntelligence }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 28px 28px;display:flex;flex-direction:column;gap:18px">
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08);padding:14px;display:flex;align-items:center;gap:12px"><span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ff9f0a,#ff375f,#bf5af2,#0a84ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px">✦</span><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-weight:600">Apple Intelligence is on</span><span style="font-size:11.5px;color:#6e6e73">On-device model ready. Markify never sends your text off this Mac.</span></div><span style="padding:4px 12px;border-radius:7px;background:rgba(0,0,0,.05)">System Settings…</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Features</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><div style="display:flex;flex-direction:column;gap:2px"><span>Writing Tools in the format bar</span><span style="font-size:11.5px;color:#6e6e73">Proofread, rewrite and transform selected text.</span></div><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Generate at caret with ⌘↩</span><span style="font-size:11.5px;color:#6e6e73">Also available as /write in the insert menu.</span></div><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Suggest title &amp; tags for new documents</span><span style="font-size:11.5px;color:#6e6e73">Written to frontmatter only after you accept.</span></div><span style="width:38px;height:22px;border-radius:999px;background:rgba(0,0,0,.12);position:relative"><span style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Generation</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>Default tone</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px">Match document <span style="color:#6e6e73">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Use surrounding section as context</span><span style="font-size:11.5px;color:#6e6e73">Helps generated text match your voice.</span></div><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+</div></div>
+</div>
+</sc-if>
+<sc-if value="{{ isShortcuts }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 28px 28px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;display:flex;justify-content:space-between;font-size:11.5px;color:#6e6e73"><span style="font-weight:600">Editor</span><span>Double-click a shortcut to change it</span></div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span>Toggle Markdown lens</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌘ /</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Show library</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌃ ⌘ S</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Insert block</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">/</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Find · Find &amp; Replace</span><span style="display:flex;gap:6px"><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌘ F</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌥ ⌘ F</span></span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Formatting</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span>Bold · Italic · Strikethrough</span><span style="display:flex;gap:6px"><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌘ B</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌘ I</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⇧ ⌘ X</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Inline code · Link</span><span style="display:flex;gap:6px"><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌘ E</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌘ K</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Heading 1–3</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌥ ⌘ 1–3</span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Apple Intelligence</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span>Writing Tools for selection</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⇧ ⌘ W</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Generate / continue at caret</span><span style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.05);box-shadow:inset 0 -1px 0 rgba(0,0,0,.08);font-size:12.5px">⌘ ↩</span></div>
+</div></div>
+<div style="display:flex;justify-content:flex-end"><span style="padding:4px 12px;border-radius:7px;background:rgba(0,0,0,.05)">Restore Defaults</span></div>
+</div>
+</sc-if>
+<sc-if value="{{ isEditor }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 28px 28px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Lenses</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>Open documents in</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px">Rendered lens <span style="color:#6e6e73">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Remember lens per document</span><span style="font-size:11.5px;color:#6e6e73">Reopens each file the way you left it.</span></div><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Reveal syntax on the current line</span><span style="font-size:11.5px;color:#6e6e73">Shows ** and # beside the caret in the rendered lens.</span></div><span style="width:38px;height:22px;border-radius:999px;background:rgba(0,0,0,.12);position:relative"><span style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Typography</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>Prose font</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px;font-family:ui-serif,'New York',Georgia,serif">New York <span style="color:#6e6e73;font-family:-apple-system,sans-serif">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Markdown font</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px;font-family:ui-monospace,Menlo,monospace;font-size:12px">SF Mono <span style="color:#6e6e73;font-family:-apple-system,sans-serif">⌃</span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Line width</span><div style="display:flex;align-items:center;gap:10px;width:260px"><span style="font-size:11.5px;color:#6e6e73">Narrow</span><div style="flex:1;height:4px;border-radius:2px;background:linear-gradient(90deg,#0a64d6 55%,rgba(0,0,0,.1) 55%);position:relative"><span style="position:absolute;left:55%;top:-8px;margin-left:-10px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.15),0 2px 5px rgba(0,0,0,.2)"></span></div><span style="font-size:11.5px;color:#6e6e73">Wide</span></div></div>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Window</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>Fade toolbar while typing</span><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span>Show word count</span><span style="width:38px;height:22px;border-radius:999px;background:#34c759;position:relative"><span style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)"></span></span></div>
+</div></div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+<p class="dv-next">{{ turn.next }}</p>
+</section>
+</sc-for>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;liveAppearance&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Light&quot;,&quot;Dark&quot;],&quot;default&quot;:&quot;Light&quot;,&quot;tsType&quot;:&quot;'Light'|'Dark'&quot;},&quot;proseFont&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;New York&quot;,&quot;SF Pro&quot;],&quot;default&quot;:&quot;New York&quot;,&quot;tsType&quot;:&quot;'New York'|'SF Pro'&quot;}}">
+class Component extends DCLogic {
+  state = { mode: 'rich', sidebar: false, chrome: true, settingsTab: 'General' };
+  componentDidMount() {
+    this.onKey = e => {
+      if (e.metaKey && e.key === '/') { e.preventDefault(); this.toggleMode(); return; }
+      if (e.metaKey && e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); this.toggleSidebar(); return; }
+      if (!e.metaKey && !e.ctrlKey && e.key.length === 1 && this.state.chrome) this.setState({ chrome: false });
+    };
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+  toggleMode = () => this.setState(s => ({ mode: s.mode === 'rich' ? 'source' : 'rich', chrome: true }));
+  toggleSidebar = () => this.setState(s => ({ sidebar: !s.sidebar, chrome: true }));
+  onMove = () => { if (!this.state.chrome) this.setState({ chrome: true }); };
+  theme(dark) {
+    return dark ? {
+      desk: 'radial-gradient(circle at 20% 25%,#3b2c4f 0,transparent 50%),radial-gradient(circle at 80% 70%,#1f3550 0,transparent 55%),#15141a',
+      page: '#1e1e20', ink: '#f2f2f7', ink2: '#a1a1a6', ink3: '#5c5c61', rule: 'rgba(255,255,255,.12)', field: 'rgba(255,255,255,.08)', rowSel: 'rgba(255,255,255,.14)',
+      glass: 'rgba(62,62,70,.55)', glassStrong: 'rgba(50,50,56,.78)',
+      edge: '0 0 0 .5px rgba(255,255,255,.14),0 6px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1)',
+      popShadow: '0 0 0 .5px rgba(255,255,255,.16),0 18px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1)',
+      winShadow: '0 30px 80px rgba(0,0,0,.55),0 0 0 .5px rgba(255,255,255,.14)',
+      code: '#2a2a2d', callout: 'rgba(61,139,255,.14)', accent: '#3d8bff', accentSoft: 'rgba(61,139,255,.22)', sel: 'rgba(61,139,255,.38)',
+      hl: 'rgba(255,214,10,.3)', hlCur: 'rgba(255,159,10,.65)', kw: '#ff7ab2', typ: '#78c2b3', str: '#d9c97c', com: '#7f8c98', ai: 'linear-gradient(90deg,#ff9f0a,#ff375f,#bf5af2,#0a84ff)', aiGlow: 'rgba(191,90,242,.22)'
+    } : {
+      desk: 'radial-gradient(circle at 18% 22%,#f2d8c6 0,transparent 48%),radial-gradient(circle at 82% 28%,#c8d7f2 0,transparent 52%),radial-gradient(circle at 55% 95%,#d4e7d6 0,transparent 55%),#e8e5ee',
+      page: '#fcfbf9', ink: '#1d1d1f', ink2: '#6e6e73', ink3: '#b3b3b8', rule: 'rgba(0,0,0,.09)', field: 'rgba(0,0,0,.05)', rowSel: 'rgba(0,0,0,.07)',
+      glass: 'rgba(255,255,255,.62)', glassStrong: 'rgba(255,255,255,.78)',
+      edge: '0 0 0 .5px rgba(0,0,0,.09),0 6px 20px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.95)',
+      popShadow: '0 0 0 .5px rgba(0,0,0,.1),0 18px 50px rgba(0,0,0,.16),inset 0 1px 0 #fff',
+      winShadow: '0 30px 80px rgba(40,30,60,.28),0 0 0 .5px rgba(0,0,0,.18)',
+      code: '#f3f1ed', callout: 'rgba(10,100,214,.07)', accent: '#0a64d6', accentSoft: 'rgba(10,100,214,.13)', sel: 'rgba(10,100,214,.2)',
+      hl: 'rgba(255,214,10,.4)', hlCur: 'rgba(255,159,10,.7)', kw: '#ad3da4', typ: '#3f6e74', str: '#c41a16', com: '#8a8f96', ai: 'linear-gradient(90deg,#ff9f0a,#ff375f,#bf5af2,#0a84ff)', aiGlow: 'rgba(191,90,242,.13)'
+    };
+  }
+  renderVals() {
+    const liveDark = (this.props.liveAppearance ?? 'Light') === 'Dark';
+    const font = (this.props.proseFont ?? 'New York') === 'SF Pro'
+      ? "-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif" : "ui-serif,'New York',Georgia,serif";
+    const cfgs = [
+      { id: '1a', live: true, dark: liveDark, label: 'Live — click MD or press ⌘/ to crossfade lenses · sidebar button or ⌃⌘S slides the library over · type any key and the chrome fades, move the mouse to bring it back.' },
+      { id: '1b', mode: 'source', label: 'Markdown lens — same column, same scroll, caret held. Syntax is dimmed, not hidden; the MD button is filled while active.' },
+      { id: '1c', formatBar: true, label: 'Selection — floating glass format bar above the selection; gone on the next keystroke.' },
+      { id: '1o', formatBar: true, blockMenu: true, label: 'Format bar → block style menu. Each style previews in its own typeface and shows its Markdown prefix; the current style is checked. Applies to every block in the selection.' },
+      { id: '1d', slash: true, label: 'Slash menu — insert any block; each row teaches its Markdown shortcut.' },
+      { id: '1e', dark: true, find: true, label: 'Find & replace (⌘F) — glass bar docks under the toolbar; matches tinted in place.' },
+      { id: '1f', dark: true, sidebar: true, label: 'Library — glass sidebar slides over the page (not pushing it). Open files and library notes in one list.' },
+      { id: '1g', dark: true, typing: true, label: 'Typing — toolbar, title and word count fade out; only the page is left.' },
+      { id: '1h', empty: true, title: 'Untitled', titleSub: '', label: 'New document — one line of guidance, then it gets out of the way.' },
+      { id: '1i', scrollY: '-600px', label: 'Further down — code with syntax colors, display math, image and footnote.' },
+      { id: '1j', small: true, mode: 'rich', label: 'Toggle 0 ms' },
+      { id: '1k', small: true, mode: 'mix', label: '120 ms — both lenses at 50%, text anchored' },
+      { id: '1l', small: true, mode: 'source', label: '240 ms — Markdown lens settled' }
+    ];
+    const cfgs2 = [
+      { id: '2a', aiBtn: true, formatBar: true, aiMenu: true, label: 'Selection → Writing Tools. The format bar gains a Writing Tools entry; its glass popover offers Proofread, Rewrite, tones and transforms for the selected text.' },
+      { id: '2b', aiBtn: true, proof: true, label: 'Proofread — suggestions underlined in place; step through them from a bottom capsule, accept one or all.' },
+      { id: '2c', dark: true, aiBtn: true, rewrite: true, label: 'Rewrite result — new text replaces the selection inside the Apple Intelligence edge; accept, retry, compare or revert.' },
+      { id: '2d', aiBtn: true, gen: true, label: 'Generate at the caret — ⌘↩ on an empty line (or /write) opens an inline prompt; text streams in dimmed until kept.' },
+      { id: '2e', dark: true, aiBtn: true, docAI: true, label: 'Whole document — ✦ in the toolbar opens document-wide actions, including title & tag suggestions written to frontmatter.' }
+    ];
+    const noop = () => {};
+    const build = c => {
+      const t = this.theme(!!c.dark);
+      const live = !!c.live;
+      const mode = live ? this.state.mode : (c.mode || 'rich');
+      const sidebar = live ? this.state.sidebar : !!c.sidebar;
+      const chrome = live ? this.state.chrome : !c.typing;
+      const src = mode === 'source', mix = mode === 'mix';
+      return {
+        id: c.id, label: c.label, t,
+        zoom: c.small ? 0.34 : 1, cardW: c.small ? '360px' : '1052px',
+        richOp: src ? 0 : mix ? 0.5 : 1, srcOp: src ? 1 : mix ? 0.5 : 0,
+        richPE: src ? 'none' : 'auto', srcPE: src ? 'auto' : 'none',
+        overflow: live ? 'auto' : 'hidden', scrollY: c.scrollY || '0px',
+        empty: !!c.empty, showDoc: !c.empty,
+        formatBar: !!c.formatBar, slash: !!c.slash, find: !!c.find,
+        selBg: c.formatBar ? t.sel : 'transparent',
+        hl: c.find ? t.hl : 'transparent', hlCur: c.find ? t.hlCur : 'transparent',
+        sidebarX: sidebar ? '0px' : '-290px', titleX: sidebar ? '282px' : '134px',
+        sbBtnBg: sidebar ? t.accentSoft : t.glass,
+        chromeOp: chrome ? 1 : 0,
+        mdBg: src ? t.accent : 'transparent', mdColor: src ? '#fff' : t.ink,
+        title: c.title || 'One Page, Two Lenses', titleSub: c.titleSub ?? (live ? '' : '— Edited'),
+        status: c.empty ? '0 words' : `1,284 words · ${src ? 'Markdown' : 'Rendered'}`,
+        toggleMode: live ? this.toggleMode : noop, toggleSidebar: live ? this.toggleSidebar : noop,
+        onMove: live ? this.onMove : noop,
+        aiBtn: !!c.aiBtn, aiMenu: !!c.aiMenu, proof: !!c.proof, rewrite: !!c.rewrite, gen: !!c.gen, docAI: !!c.docAI,
+        plainP: !c.proof && !c.rewrite, blockMenu: !!c.blockMenu, bodyBg: c.blockMenu ? t.field : 'transparent',
+        aiChipBg: c.aiMenu ? t.field : 'transparent', aiBtnBg: c.docAI ? t.accentSoft : 'transparent'
+      };
+    };
+    const turns = [
+      { sid: 't2', num: '2', name: 'Apple Intelligence — on this Mac only', hasSettings: false, windows: cfgs2.map(build),
+        intro: 'Two entry points, one on-device engine. Selected text → Writing Tools in the floating format bar. Whole document or new content → the ✦ button in the toolbar, or ⌘↩ at the caret. Proofread and rewrite use system Writing Tools; generation uses the on-device Foundation Models framework. No cloud, no account. The multicolor edge appears only on text that AI is changing or has just changed.',
+        next: 'Try next: "show the unavailable / model-downloading state" · "AI edits in the Markdown lens as a diff" · "a chat-style side panel instead"' },
+      { sid: 't1', num: '1', name: 'Markify — one page, two lenses', hasSettings: true, windows: cfgs.map(build),
+        intro: 'One document surface. The MD toggle (top-right, ⌘/) crossfades the rendered page into its Markdown source in the same column, keeping caret and scroll. Liquid Glass lives only on the floating control layer — toolbar capsules, format bar, slash menu, find bar, library sidebar — never on the page. Chrome fades while you type. 1a is live; the rest are key states. 1n Settings is clickable.',
+        next: 'Try next: "make the live-reveal setting a real state" · "push 1f into a full library browser" · "an iOS/iPad companion"' }
+    ];
+    const cur = this.state.settingsTab;
+    const tabs = [['General', '◎'], ['Editor', '¶'], ['Appearance', '◐'], ['Intelligence', '✦'], ['Shortcuts', '⌘']].map(([name, icon]) => ({
+      name, icon, active: cur === name,
+      bg: cur === name ? 'rgba(10,100,214,.12)' : 'transparent', color: cur === name ? '#0a64d6' : '#6e6e73', weight: cur === name ? 600 : 400,
+      onClick: () => this.setState({ settingsTab: name })
+    }));
+    return { turns, font, tabs, settingsTitle: cur, isGeneral: cur === 'General', isEditor: cur === 'Editor', isAppearance: cur === 'Appearance', isIntelligence: cur === 'Intelligence', isShortcuts: cur === 'Shortcuts' };
+  }
+}
+</script>
+</body>
+</html>
