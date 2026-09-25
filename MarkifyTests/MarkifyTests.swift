@@ -100,6 +100,23 @@ struct MarkifyTests {
         #expect((editor.string as NSString).substring(with: cell) == "Alpha")
     }
 
+    @Test @MainActor func returnContinuesAndEndsLists() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "1. First"
+        editor.setSelectedRange(NSRange(location: 8, length: 0))
+        #expect(editor.continueList())
+        #expect(editor.string == "1. First\n2. ")
+        #expect(editor.continueList())
+        #expect(editor.string == "1. First\n")
+        editor.string = "- [x] Done"
+        editor.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(editor.continueList())
+        #expect(editor.string == "- [x] Done\n- [ ] ")
+        editor.string = "Plain"
+        editor.setSelectedRange(NSRange(location: 5, length: 0))
+        #expect(!editor.continueList())
+    }
+
     @Test @MainActor func displayMathRendersLocally() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         let image = editor.renderMath(#"\frac{1}{2}"#, dark: false)

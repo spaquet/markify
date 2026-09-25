@@ -139,7 +139,11 @@ struct NativeEditor: NSViewRepresentable {
             storage.addAttribute(.font, value: font, range: match.range(at: 2))
             marker(NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
         }
-        matches("(?m)^(?:[ \\t]*)([-*+] |[0-9]+\\. |>[ \\t]?|[-*+] \\[ ?[xX]?\\] )") { match in marker(match.range(at: 1)) }
+        matches("(?m)^(?:[ \\t]*)([-*+] |>[ \\t]?|[-*+] \\[ ?[xX]?\\] )") { match in marker(match.range(at: 1)) }
+        matches("(?m)^[ \\t]*([0-9]+\\.) ") { match in
+            if markdownLens { marker(match.range(at: 1)) }
+            else { storage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: match.range(at: 1)) }
+        }
         matches("(\\*\\*|__)([^\\n]+?)\\1") { match in
             storage.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: markdownLens ? 14 : 18), range: match.range(at: 2))
             marker(match.range(at: 1))
@@ -394,7 +398,34 @@ final class MarkdownTextView: NSTextView {
         if event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
            let key, let slash = SlashContext.detect(in: string, selection: selectedRange()),
            onSlashKey?(key, slash) == true { return }
+        if key == .insert, event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+           continueList() { return }
         super.keyDown(with: event)
+    }
+
+    /// Return inside a list item starts the next item; Return on an empty item ends the list.
+    func continueList() -> Bool {
+        let selection = selectedRange()
+        guard selection.length == 0 else { return false }
+        let source = string as NSString
+        let line = source.lineRange(for: NSRange(location: selection.location, length: 0))
+        let text = source.substring(with: NSRange(location: line.location, length: selection.location - line.location))
+        guard let regex = try? NSRegularExpression(pattern: #"^([ \t]*)(?:([-*+])( \[[ xX]\])?|([0-9]+)([.)])) "#),
+              let match = regex.firstMatch(in: text, range: NSRange(location: 0, length: (text as NSString).length)) else { return false }
+        let prefix = text as NSString
+        if match.range.length == prefix.length, NSMaxRange(line) - selection.location <= 1 {
+            insertText("", replacementRange: NSRange(location: line.location, length: match.range.length))
+            return true
+        }
+        let indent = prefix.substring(with: match.range(at: 1))
+        let next: String
+        if match.range(at: 4).location != NSNotFound {
+            next = "\((Int(prefix.substring(with: match.range(at: 4))) ?? 0) + 1)\(prefix.substring(with: match.range(at: 5))) "
+        } else {
+            next = prefix.substring(with: match.range(at: 2)) + (match.range(at: 3).location != NSNotFound ? " [ ]" : "") + " "
+        }
+        insertText("\n" + indent + next, replacementRange: selection)
+        return true
     }
 
     func navigateTable(backward: Bool) -> Bool {
