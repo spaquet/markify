@@ -73,6 +73,7 @@ struct NativeEditor: NSViewRepresentable {
         DispatchQueue.main.async {
             textView = editor
             editor.window?.makeFirstResponder(editor)
+            editor.renumberLists()
         }
         style(editor)
         return scroll
@@ -90,7 +91,10 @@ struct NativeEditor: NSViewRepresentable {
             let topOffset = editor.characterIndexForInsertion(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
             let anchor = SourceAnchor(source: editor.string, selection: editor.selectedRange(), topOffset: topOffset)
             let before = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
-            if sourceChanged { editor.string = text }
+            if sourceChanged {
+                editor.string = text
+                DispatchQueue.main.async { [weak editor] in (editor as? MarkdownTextView)?.renumberLists() }
+            }
             style(editor)
             editor.setSelectedRange(anchor.selection(in: editor.string))
             editor.layoutSubtreeIfNeeded()
@@ -186,6 +190,12 @@ struct NativeEditor: NSViewRepresentable {
             let style = paragraph.mutableCopy() as! NSMutableParagraphStyle
             style.headIndent = storage.attributedSubstring(from: match.range).size().width
             storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: match.range))
+        }
+        for lazy in MarkdownList.scan(editor.string).lazyLines {
+            guard let owner = storage.attribute(.paragraphStyle, at: lazy.item, effectiveRange: nil) as? NSParagraphStyle,
+                  let style = owner.mutableCopy() as? NSMutableParagraphStyle else { continue }
+            style.firstLineHeadIndent = owner.headIndent
+            storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: lazy.line))
         }
         if !markdownLens {
             for table in MarkdownTable.blocks(in: editor.string) {
@@ -309,7 +319,7 @@ struct NativeEditor: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let editor else { return }
             parent.text = editor.string
-            parent.onType()
+            if (editor as? MarkdownTextView)?.isRenumbering != true { parent.onType() }
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             if slash?.range.location != dismissedSlashLocation { dismissedSlashLocation = nil }
             parent.onSlash(dismissedSlashLocation == nil ? slash?.query : nil)
@@ -413,17 +423,37 @@ final class MarkdownTextView: NSTextView {
         super.keyDown(with: event)
     }
 
-    private var isRenumbering = false
+    private(set) var isRenumbering = false
+    private var pendingEdit: (before: MarkdownList.Scan, range: NSRange, length: Int)?
+
+    override func shouldChangeText(inRanges affectedRanges: [NSValue], replacementStrings: [String]?) -> Bool {
+        guard super.shouldChangeText(inRanges: affectedRanges, replacementStrings: replacementStrings) else { return false }
+        if !isRenumbering {
+            // Remember list structure so a list that loses its first item keeps its start number.
+            if affectedRanges.count == 1, let replacement = replacementStrings?.first {
+                pendingEdit = (MarkdownList.scan(string), affectedRanges[0].rangeValue, (replacement as NSString).length)
+            } else { pendingEdit = nil }
+        }
+        return true
+    }
 
     /// Keeps ordered lists counting up after any edit, in the same undo group as the edit.
     override func didChangeText() {
         super.didChangeText()
         guard !isRenumbering, !(undoManager?.isUndoing ?? false), !(undoManager?.isRedoing ?? false) else { return }
-        let fixes = MarkdownList.renumbering(string)
-        guard !fixes.isEmpty, let storage = textStorage,
-              shouldChangeText(inRanges: fixes.map { NSValue(range: $0.range) }, replacementStrings: fixes.map(\.value)) else { return }
-        var selection = selectedRange()
+        let edit = pendingEdit
+        pendingEdit = nil
+        renumberLists(MarkdownList.renumbering(string, previous: edit?.before, edit: edit?.range ?? NSRange(location: 0, length: 0), length: edit?.length ?? 0))
+    }
+
+    /// Applies list number fixes as one undoable edit, keeping the caret on its text.
+    func renumberLists(_ fixes: [(range: NSRange, value: String)]? = nil) {
+        let fixes = fixes ?? MarkdownList.renumbering(string)
+        guard !isRenumbering, !fixes.isEmpty, let storage = textStorage else { return }
         isRenumbering = true
+        defer { isRenumbering = false }
+        guard shouldChangeText(inRanges: fixes.map { NSValue(range: $0.range) }, replacementStrings: fixes.map(\.value)) else { return }
+        var selection = selectedRange()
         storage.beginEditing()
         for fix in fixes.reversed() {
             storage.replaceCharacters(in: fix.range, with: fix.value)
@@ -432,7 +462,6 @@ final class MarkdownTextView: NSTextView {
         storage.endEditing()
         didChangeText()
         setSelectedRange(selection)
-        isRenumbering = false
     }
 
     /// Return inside a list item starts the next item; Return on an empty item ends the list.
@@ -695,39 +724,82 @@ private final class TableCellField: NSTextField, NSTextFieldDelegate {
 }
 
 enum MarkdownList {
-    /// Number fixes that make each ordered list count up from its first item.
-    static func renumbering(_ text: String) -> [(range: NSRange, value: String)] {
+    struct Scan {
+        /// Number replacements that make each ordered list count up from its start.
+        var fixes: [(range: NSRange, value: String)] = []
+        /// Unindented lines that continue the item above them (CommonMark lazy continuation).
+        var lazyLines: [(line: NSRange, item: Int)] = []
+        /// Line start of every ordered item, mapped to whether it heads its list and that list's start.
+        var ordered: [Int: (head: Bool, start: Int)] = [:]
+    }
+
+    /// Walks the list structure. `start` picks a list's start number from its head's line location and written number.
+    static func scan(_ text: String, start: @escaping (Int, Int) -> Int = { $1 }) -> Scan {
         let source = text as NSString
         let item = try! NSRegularExpression(pattern: #"^([ \t]*)(?:([0-9]{1,9})([.)])|[-*+])[ \t]"#)
-        var lists: [(indent: Int, delimiter: String, next: Int)] = []
-        var fixes: [(range: NSRange, value: String)] = []
+        let rule = try! NSRegularExpression(pattern: #"^(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$"#)
+        var lists: [(indent: Int, delimiter: String, start: Int, next: Int)] = []
+        var result = Scan()
         var fenced = false
+        var lastItem: Int?
         source.enumerateSubstrings(in: NSRange(location: 0, length: source.length), options: .byLines) { line, range, _, _ in
             guard let line else { return }
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") { fenced.toggle(); lists.removeAll(); return }
-            guard !fenced, !trimmed.isEmpty else { return }
+            let length = (line as NSString).length
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") { fenced.toggle(); lists.removeAll(); lastItem = nil; return }
+            guard !fenced else { return }
+            guard !trimmed.isEmpty else { lastItem = nil; return }
             let indent = line.prefix { $0 == " " || $0 == "\t" }.utf16.count
-            guard let match = item.firstMatch(in: line, range: NSRange(location: 0, length: (line as NSString).length)),
-                  match.range(at: 2).location != NSNotFound else {
-                // A bullet or paragraph at this depth ends the ordered lists it does not nest inside.
+            guard let match = item.firstMatch(in: line, range: NSRange(location: 0, length: length)) else {
+                let interrupts = ["#", ">", "|", "$$", "<"].contains { trimmed.hasPrefix($0) }
+                    || rule.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)) != nil
+                if let owner = lastItem, !interrupts {
+                    if indent == 0 { result.lazyLines.append((range, owner)) }
+                    return
+                }
+                lastItem = nil
+                while let last = lists.last, last.indent >= indent { lists.removeLast() }
+                return
+            }
+            lastItem = range.location
+            guard match.range(at: 2).location != NSNotFound else {
+                // A bullet at this depth ends the ordered lists it does not nest inside.
                 while let last = lists.last, last.indent >= indent { lists.removeLast() }
                 return
             }
             while let last = lists.last, last.indent > indent { lists.removeLast() }
-            let number = Int((line as NSString).substring(with: match.range(at: 2))) ?? 1
+            let written = Int((line as NSString).substring(with: match.range(at: 2))) ?? 1
             let delimiter = (line as NSString).substring(with: match.range(at: 3))
+            let expected: Int
             if let last = lists.last, last.indent == indent, last.delimiter == delimiter {
-                if number != last.next {
-                    fixes.append((NSRange(location: range.location + match.range(at: 2).location, length: match.range(at: 2).length), "\(last.next)"))
-                }
+                expected = last.next
                 lists[lists.count - 1].next += 1
+                result.ordered[range.location] = (false, last.start)
             } else {
                 if lists.last?.indent == indent { lists.removeLast() }
-                lists.append((indent, delimiter, number + 1))
+                expected = start(range.location, written)
+                lists.append((indent, delimiter, expected, expected + 1))
+                result.ordered[range.location] = (true, expected)
+            }
+            if written != expected {
+                result.fixes.append((NSRange(location: range.location + match.range(at: 2).location, length: match.range(at: 2).length), "\(expected)"))
             }
         }
-        return fixes
+        return result
+    }
+
+    /// Fixes for `text` after replacing `edit` in `previous` with `length` characters.
+    /// A list whose head was removed keeps the start it had; a head that already led its list keeps its own number.
+    static func renumbering(_ text: String, previous: Scan? = nil, edit: NSRange = NSRange(location: 0, length: 0), length: Int = 0) -> [(range: NSRange, value: String)] {
+        scan(text) { location, written in
+            guard let previous else { return written }
+            let old: Int
+            if location < edit.location { old = location }
+            else if location >= edit.location + length { old = location - length + edit.length }
+            else { return written }
+            guard let before = previous.ordered[old], !before.head else { return written }
+            return before.start
+        }.fixes
     }
 }
 

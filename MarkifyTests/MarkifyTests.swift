@@ -107,6 +107,46 @@ struct MarkifyTests {
         #expect(fixed as String == "1. a\n2. b\n   1. nested\n   2. nested\n3. c\n\nText\n\n4. new\n5. list\n- bullet\n1. after\n```\n1. code\n1. code\n```")
     }
 
+    @Test func lazyContinuationLinesStayInTheirList() {
+        let scan = MarkdownList.scan("1. a\nwrapped text\n5. b\n\n# Heading\n9. new")
+        #expect(scan.fixes.map(\.value) == ["2"])
+        #expect(scan.lazyLines.map(\.item) == [0])
+        #expect(MarkdownList.scan("1. a\n---\n5. b").fixes.isEmpty)
+    }
+
+    @Test @MainActor func removingTheFirstItemKeepsTheListStart() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "1. a\n2. b\n3. c"
+        editor.insertText("", replacementRange: NSRange(location: 0, length: 5))
+        #expect(editor.string == "1. b\n2. c")
+        editor.string = "Intro\n\n4. a\n5. b"
+        editor.insertText("!", replacementRange: NSRange(location: 11, length: 0))
+        #expect(editor.string == "Intro\n\n4. a!\n5. b")
+    }
+
+    @Test @MainActor func undoRestoresTheEditAndItsRenumbering() throws {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: true)
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.allowsUndo = true
+        window.contentView = editor
+        let undo = try #require(editor.undoManager)
+        undo.groupsByEvent = false
+        editor.string = "1. a\n2. b\n3. c"
+        undo.beginUndoGrouping()
+        editor.insertText("", replacementRange: NSRange(location: 0, length: 5))
+        undo.endUndoGrouping()
+        #expect(editor.string == "1. b\n2. c")
+        undo.undo()
+        #expect(editor.string == "1. a\n2. b\n3. c")
+    }
+
+    @Test @MainActor func openingRenumbersExistingLists() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "1. a\n1. b\n1. c"
+        editor.renumberLists()
+        #expect(editor.string == "1. a\n2. b\n3. c")
+    }
+
     @Test @MainActor func editingAListKeepsItNumbered() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.string = "1. a\n2. b\n3. c"
