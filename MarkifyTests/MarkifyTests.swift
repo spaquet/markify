@@ -6,11 +6,11 @@ import Testing
 
 struct MarkifyTests {
     @Test @MainActor func lensStylingPreservesMarkdownSource() {
-        let source = "---\ntags: [essay]\n---\n# Title\n\n**Bold** and [link](https://example.com)\n"
+        let source = "---\ntags: [essay]\n---\n# Title\n\n**Bold** and [link](https://example.com)\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n$$\n\\frac{1}{2}\n$$\n"
         let editor = NSTextView(usingTextLayoutManager: true)
         editor.string = source
         for lens in [false, true] {
-            NativeEditor(text: .constant(source), fileURL: nil, markdownLens: lens, findQuery: "", matchCase: false,
+            NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: lens, findQuery: "", matchCase: false,
                          selectedRange: .constant(NSRange(location: 0, length: 0)),
                          textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
                 .style(editor)
@@ -45,7 +45,7 @@ struct MarkifyTests {
 
     @Test @MainActor func slashCanStartAnEmptyDocument() {
         let source = ""
-        let view = NativeEditor(text: .constant(source), fileURL: nil, markdownLens: false, findQuery: "", matchCase: false,
+        let view = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
                                 selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil),
                                 onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
         let editor = NSTextView(usingTextLayoutManager: true)
@@ -75,5 +75,46 @@ struct MarkifyTests {
         SlashEntry.matching("tab")[0].apply(to: editor, context: context)
         #expect(editor.string == "Hello\n| Column | Column |\n| --- | --- |\n|  |  |")
         #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "Column")
+    }
+
+    @Test @MainActor func tableTabMovesCellsAndAddsRow() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "| A | B |\n| --- | --- |\n| C | D |"
+        editor.setSelectedRange(NSRange(location: 2, length: 0))
+        #expect(editor.navigateTable(backward: false))
+        #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "B")
+        #expect(editor.navigateTable(backward: false))
+        #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "C")
+        #expect(editor.navigateTable(backward: false))
+        #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "D")
+        #expect(editor.navigateTable(backward: false))
+        #expect(editor.string.hasSuffix("\n|  |  |"))
+    }
+
+    @Test @MainActor func tableCellEditsTrackTheirSourceRange() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "| A | B |\n| --- | --- |\n| C | D |"
+        var cell = NSRange(location: 2, length: 1)
+        for value in ["Al", "Alp", "Alpha"] { cell = editor.replaceTableCell(cell, with: value) }
+        #expect(editor.string == "| Alpha | B |\n| --- | --- |\n| C | D |")
+        #expect((editor.string as NSString).substring(with: cell) == "Alpha")
+    }
+
+    @Test @MainActor func displayMathRendersLocally() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        let image = editor.renderMath(#"\frac{1}{2}"#, dark: false)
+        #expect(image?.size.width ?? 0 > 0)
+        #expect(image?.size.height ?? 0 > 0)
+        #expect(image?.size.width ?? 0 < 100)
+    }
+
+    @Test func aiAcceptanceKeepsOneFrontmatterBlock() {
+        let source = "---\ntags: [old]\n---\n# Title\n"
+        let replacement = "---\ntitle: New\ntags: [new]\n---\n"
+        let edit = AIPlacement.frontmatter.edit(source: source, output: replacement, caret: 0)
+        let result = (source as NSString).replacingCharacters(in: edit.range, with: edit.text)
+        #expect(result == replacement + "# Title\n")
+        let summary = AIPlacement.atTop.edit(source: source, output: "Summary", caret: 0)
+        #expect(summary.range.location == edit.range.length)
     }
 }

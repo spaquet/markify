@@ -1,5 +1,7 @@
 import AppKit
 import Markdown
+import SwaTex
+import SwaTexRender
 import SwiftUI
 
 enum SlashKey { case up, down, insert, dismiss }
@@ -26,6 +28,7 @@ struct SlashContext {
 struct NativeEditor: NSViewRepresentable {
     @Binding var text: String
     let fileURL: URL?
+    let columnWidth: CGFloat
     let markdownLens: Bool
     let findQuery: String
     let matchCase: Bool
@@ -45,6 +48,7 @@ struct NativeEditor: NSViewRepresentable {
         scroll.borderType = .noBorder
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.documentURL = fileURL
+        editor.columnWidth = columnWidth
         editor.rendered = !markdownLens
         editor.registerForDraggedTypes([.fileURL])
         editor.isRichText = false
@@ -77,6 +81,7 @@ struct NativeEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let editor = scroll.documentView as? NSTextView else { return }
         (editor as? MarkdownTextView)?.documentURL = fileURL
+        (editor as? MarkdownTextView)?.columnWidth = columnWidth
         (editor as? MarkdownTextView)?.rendered = !markdownLens
         context.coordinator.parent = self
         let sourceChanged = editor.string != text
@@ -168,9 +173,18 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttributes([.foregroundColor: dim, .strikethroughStyle: NSUnderlineStyle.single.rawValue], range: match.range(at: 2))
             }
         }
-        matches("(?m)^\\|[^\\n]+\\|$") { match in
-            guard !markdownLens else { return }
-            storage.addAttributes([.font: NSFont.systemFont(ofSize: 14), .backgroundColor: NSColor.quaternaryLabelColor.withAlphaComponent(0.06)], range: match.range)
+        if !markdownLens {
+            for table in MarkdownTable.blocks(in: editor.string) {
+                for row in table.rows {
+                    let rowStyle = NSMutableParagraphStyle()
+                    rowStyle.minimumLineHeight = row.separator ? 2 : 40
+                    rowStyle.maximumLineHeight = row.separator ? 2 : 40
+                    storage.addAttributes([.font: NSFont.systemFont(ofSize: 1),
+                                           .foregroundColor: NSColor.clear,
+                                           .paragraphStyle: rowStyle],
+                                          range: NSRange(location: row.start, length: row.end - row.start))
+                }
+            }
         }
         matches("(?m)^\\[\\^[^]\\n]+\\]:.*$") { match in
             storage.addAttributes([.font: NSFont.systemFont(ofSize: 13), .foregroundColor: dim], range: match.range)
@@ -199,13 +213,11 @@ struct NativeEditor: NSViewRepresentable {
         }
         matches("(?ms)^\\$\\$[ \\t]*\\n?(.*?)\\n?\\$\\$[ \\t]*$") { match in
             guard !markdownLens else { return }
-            let body = match.range(at: 1)
             let style = NSMutableParagraphStyle()
             style.alignment = .center
-            storage.addAttributes([.font: NSFont(name: "NewYork-Italic", size: 22) ?? NSFont.systemFont(ofSize: 22),
-                                   .paragraphStyle: style], range: body)
-            marker(NSRange(location: match.range.location, length: body.location - match.range.location))
-            marker(NSRange(location: NSMaxRange(body), length: NSMaxRange(match.range) - NSMaxRange(body)))
+            style.minimumLineHeight = 80
+            storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear], range: match.range)
+            storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: match.range.location, length: min(2, match.range.length)))
         }
         matches("(?<!\\$)\\$([^$\\n]+)\\$(?!\\$)") { match in
             guard !markdownLens else { return }
@@ -245,6 +257,9 @@ struct NativeEditor: NSViewRepresentable {
             }
         }
         storage.endEditing()
+        if let editor = editor as? MarkdownTextView {
+            DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
+        }
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -303,11 +318,71 @@ struct NativeEditor: NSViewRepresentable {
 
 final class MarkdownTextView: NSTextView {
     var documentURL: URL?
+    var columnWidth: CGFloat = 640
     var rendered = true
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     private var imageCache: [URL: NSImage] = [:]
+    private var mathCache: [String: NSImage] = [:]
+    private var tableOverlays: [Int: TableRowView] = [:]
+
+    func refreshTables() {
+        guard let window else { return }
+        let rows: [(MarkdownTable.Row, Bool)] = rendered ? MarkdownTable.blocks(in: string).flatMap { table in
+            table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0) }
+        } : []
+        for (index, (row, header)) in rows.enumerated() {
+            let screen = firstRect(forCharacterRange: NSRange(location: row.start, length: 1), actualRange: nil)
+            let line = convert(window.convertFromScreen(screen), from: nil)
+            let overlay = tableOverlays[index] ?? TableRowView()
+            if overlay.superview == nil { addSubview(overlay) }
+            tableOverlays[index] = overlay
+            overlay.frame = NSRect(x: 0, y: line.minY, width: columnWidth, height: 40)
+            overlay.update(cells: row.cells, source: string, header: header,
+                           onEdit: { [weak self] range, value in
+                               self?.replaceTableCell(range, with: value) ?? range
+                           },
+                           onFocus: { [weak self] range in
+                               self?.setSelectedRange(NSRange(location: range.location, length: 0))
+                           },
+                           onTab: { [weak self] range, backward in
+                               guard let self else { return }
+                               self.setSelectedRange(range)
+                               if self.navigateTable(backward: backward) {
+                                   DispatchQueue.main.async { [weak self] in
+                                       self?.refreshTables()
+                                       self?.focusTableCell()
+                                   }
+                               }
+                           })
+        }
+        for index in tableOverlays.keys.filter({ $0 >= rows.count }) {
+            tableOverlays[index]?.removeFromSuperview()
+            tableOverlays[index] = nil
+        }
+    }
+
+    /// Writes a cell edit into the Markdown source and returns the cell's new range,
+    /// so the next keystroke lands correctly before the overlays re-layout.
+    func replaceTableCell(_ range: NSRange, with value: String) -> NSRange {
+        insertText(value, replacementRange: range)
+        return NSRange(location: range.location, length: (value as NSString).length)
+    }
+
+    private func focusTableCell() {
+        let selection = selectedRange()
+        for overlay in tableOverlays.values {
+            if let field = overlay.fields.first(where: { $0.sourceRange == selection || $0.sourceRange.location == selection.location }) {
+                window?.makeFirstResponder(field)
+                field.selectText(nil)
+                return
+            }
+        }
+    }
 
     override func keyDown(with event: NSEvent) {
+        if rendered, event.keyCode == 48,
+           event.modifierFlags.intersection([.command, .option, .control]).isEmpty,
+           navigateTable(backward: event.modifierFlags.contains(.shift)) { return }
         let key: SlashKey?
         switch event.keyCode {
         case 125: key = .down
@@ -320,6 +395,19 @@ final class MarkdownTextView: NSTextView {
            let key, let slash = SlashContext.detect(in: string, selection: selectedRange()),
            onSlashKey?(key, slash) == true { return }
         super.keyDown(with: event)
+    }
+
+    func navigateTable(backward: Bool) -> Bool {
+        guard let table = MarkdownTable.containing(string, location: selectedRange().location),
+              let move = table.move(from: selectedRange().location, backward: backward) else { return false }
+        switch move {
+        case .select(let range): setSelectedRange(range)
+        case .addRow(let replacement, let at, let caret):
+            insertText(replacement, replacementRange: NSRange(location: at, length: 0))
+            setSelectedRange(NSRange(location: at + caret, length: 0))
+        }
+        scrollRangeToVisible(selectedRange())
+        return true
     }
 
     private func taskMatches() -> [NSTextCheckingResult] {
@@ -338,6 +426,7 @@ final class MarkdownTextView: NSTextView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         if rendered { drawImages(in: dirtyRect) }
+        if rendered { drawMath(in: dirtyRect) }
         for match in taskMatches() {
             guard let rect = checkboxRect(for: match), rect.intersects(dirtyRect) else { continue }
             let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
@@ -362,7 +451,7 @@ final class MarkdownTextView: NSTextView {
         for match in regex.matches(in: string, range: NSRange(location: 0, length: source.length)) {
             let screen = firstRect(forCharacterRange: match.range(at: 1), actualRange: nil)
             let caption = convert(window.convertFromScreen(screen), from: nil)
-            let rect = NSRect(x: 0, y: caption.minY - 268, width: bounds.width, height: 260)
+            let rect = NSRect(x: 0, y: caption.minY - 268, width: columnWidth, height: 260)
             guard rect.intersects(dirtyRect) else { continue }
             NSGraphicsContext.saveGraphicsState()
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
@@ -383,6 +472,38 @@ final class MarkdownTextView: NSTextView {
             }
             NSGraphicsContext.restoreGraphicsState()
         }
+    }
+
+    private func drawMath(in dirtyRect: NSRect) {
+        guard let window,
+              let regex = try? NSRegularExpression(pattern: #"(?ms)^\$\$[ \t]*\n?(.*?)\n?\$\$[ \t]*$"#) else { return }
+        let source = string as NSString
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        for match in regex.matches(in: string, range: NSRange(location: 0, length: source.length)) {
+            let screen = firstRect(forCharacterRange: NSRange(location: match.range.location, length: 1), actualRange: nil)
+            let line = convert(window.convertFromScreen(screen), from: nil)
+            let rect = NSRect(x: 0, y: line.midY - 40, width: columnWidth, height: 80)
+            guard rect.intersects(dirtyRect) else { continue }
+            let latex = source.substring(with: match.range(at: 1)).trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = "\(dark):\(latex)"
+            if let image = mathCache[key] ?? renderMath(latex, dark: dark) {
+                mathCache[key] = image
+                let frame = NSRect(x: rect.midX - image.size.width / 2, y: rect.midY - image.size.height / 2,
+                                   width: image.size.width, height: image.size.height)
+                image.draw(in: frame)
+            } else {
+                (latex as NSString).draw(at: NSPoint(x: rect.minX, y: rect.midY - 11),
+                                         withAttributes: [.font: NSFont.systemFont(ofSize: 18), .foregroundColor: NSColor.secondaryLabelColor])
+            }
+        }
+    }
+
+    func renderMath(_ latex: String, dark: Bool) -> NSImage? {
+        guard let list = try? SwaTexEngine.displayList(for: latex, style: .display, color: dark ? .white : .black),
+              let data = ImageRenderer.png(for: list, options: RenderOptions(fontSize: 22, padding: 2)),
+              let image = NSImage(data: data) else { return nil }
+        image.size = NSSize(width: image.size.width / 2, height: image.size.height / 2)
+        return image
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -422,6 +543,175 @@ final class MarkdownTextView: NSTextView {
             NSAlert(error: error).runModal()
             return false
         }
+    }
+}
+
+private final class TableRowView: NSView {
+    override var isFlipped: Bool { true }
+    var fields: [TableCellField] = []
+    private var header = false
+
+    func update(cells: [NSRange], source: String, header: Bool,
+                onEdit: @escaping (NSRange, String) -> NSRange,
+                onFocus: @escaping (NSRange) -> Void,
+                onTab: @escaping (NSRange, Bool) -> Void) {
+        self.header = header
+        while fields.count < cells.count {
+            let field = TableCellField(frame: .zero)
+            addSubview(field)
+            fields.append(field)
+        }
+        while fields.count > cells.count { fields.removeLast().removeFromSuperview() }
+        let width = bounds.width / CGFloat(max(cells.count, 1))
+        for (index, range) in cells.enumerated() {
+            let field = fields[index]
+            field.frame = NSRect(x: width * CGFloat(index) + 14, y: (bounds.height - 20) / 2, width: width - 28, height: 20)
+            field.sourceRange = range
+            if field.currentEditor() == nil { field.stringValue = (source as NSString).substring(with: range) }
+            field.font = .systemFont(ofSize: header ? 12.5 : 14, weight: header ? .semibold : .regular)
+            field.textColor = header ? .secondaryLabelColor : .labelColor
+            field.onEdit = onEdit
+            field.onFocus = onFocus
+            field.onTab = onTab
+        }
+        needsDisplay = true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        if header {
+            NSColor.labelColor.withAlphaComponent(0.04).setFill()
+            NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 8, yRadius: 8).fill()
+        }
+        NSColor.separatorColor.setStroke()
+        let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 8, yRadius: 8)
+        outline.lineWidth = 1
+        outline.stroke()
+        if fields.count > 1 {
+            let width = bounds.width / CGFloat(fields.count)
+            for index in 1..<fields.count {
+                let x = width * CGFloat(index)
+                NSBezierPath.strokeLine(from: NSPoint(x: x, y: 0), to: NSPoint(x: x, y: bounds.height))
+            }
+        }
+    }
+}
+
+private final class TableCellField: NSTextField, NSTextFieldDelegate {
+    var sourceRange = NSRange(location: 0, length: 0)
+    var onEdit: ((NSRange, String) -> NSRange)?
+    var onFocus: ((NSRange) -> Void)?
+    var onTab: ((NSRange, Bool) -> Void)?
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        isBordered = false
+        drawsBackground = false
+        focusRingType = .none
+        delegate = self
+    }
+    required init?(coder: NSCoder) { fatalError("Table cells are created in code") }
+
+    func controlTextDidChange(_ obj: Notification) {
+        if let range = onEdit?(sourceRange, stringValue) { sourceRange = range }
+    }
+    func controlTextDidBeginEditing(_ obj: Notification) { onFocus?(sourceRange) }
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+        if selector == #selector(NSResponder.insertTab(_:)) { onTab?(sourceRange, false); return true }
+        if selector == #selector(NSResponder.insertBacktab(_:)) { onTab?(sourceRange, true); return true }
+        return false
+    }
+}
+
+struct MarkdownTable {
+    struct Row {
+        let start: Int
+        let end: Int
+        let cells: [NSRange]
+        let separator: Bool
+    }
+
+    enum Move {
+        case select(NSRange)
+        case addRow(String, at: Int, caret: Int)
+    }
+
+    let rows: [Row]
+    let current: Int
+
+    static func containing(_ text: String, location: Int) -> Self? {
+        let source = text as NSString
+        guard location <= source.length else { return nil }
+        let separator = try! NSRegularExpression(pattern: #"^\s*\|(?:\s*:?-+:?\s*\|)+\s*$"#)
+        var parsed: [Row?] = []
+        var starts: [Int] = []
+        var offset = 0
+        while offset < source.length {
+            var start = 0, end = 0, contentsEnd = 0
+            source.getLineStart(&start, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: offset, length: 0))
+            let line = source.substring(with: NSRange(location: start, length: contentsEnd - start)) as NSString
+            var pipes: [Int] = []
+            // ponytail: Escaped pipes are skipped; code spans with pipes need Markdown AST cell ranges.
+            for index in 0..<line.length where line.character(at: index) == 124 {
+                if index == 0 || line.character(at: index - 1) != 92 { pipes.append(index) }
+            }
+            let trimmed = (line as String).trimmingCharacters(in: .whitespaces)
+            if pipes.count >= 3, trimmed.hasPrefix("|"), trimmed.hasSuffix("|") {
+                let cells = zip(pipes, pipes.dropFirst()).map { left, right -> NSRange in
+                    var first = left + 1, last = right
+                    while first < last, UnicodeScalar(line.character(at: first)).map(CharacterSet.whitespaces.contains) ?? false { first += 1 }
+                    while last > first, UnicodeScalar(line.character(at: last - 1)).map(CharacterSet.whitespaces.contains) ?? false { last -= 1 }
+                    return NSRange(location: start + first, length: last - first)
+                }
+                parsed.append(Row(start: start, end: contentsEnd, cells: cells,
+                                  separator: separator.firstMatch(in: line as String, range: NSRange(location: 0, length: line.length)) != nil))
+            } else { parsed.append(nil) }
+            starts.append(start)
+            offset = end
+        }
+        guard let index = starts.indices.first(where: { starts[$0] <= location && (parsed[$0]?.end ?? starts[$0]) >= location }),
+              parsed[index] != nil else { return nil }
+        var first = index, last = index
+        while first > 0, parsed[first - 1] != nil { first -= 1 }
+        while last + 1 < parsed.count, parsed[last + 1] != nil { last += 1 }
+        let rows = parsed[first...last].compactMap { $0 }
+        guard rows.contains(where: \.separator) else { return nil }
+        return Self(rows: rows, current: index - first)
+    }
+
+    static func blocks(in text: String) -> [Self] {
+        // ponytail: Reparse on style changes; keep an indexed table AST if large notes make this slow.
+        let source = text as NSString
+        var result: [Self] = []
+        var offset = 0
+        while offset < source.length {
+            if let table = containing(text, location: offset), table.rows.first?.start == offset {
+                result.append(table)
+                var end = 0
+                source.getLineStart(nil, end: &end, contentsEnd: nil,
+                                    for: NSRange(location: table.rows.last!.start, length: 0))
+                offset = end
+            } else {
+                var end = 0
+                source.getLineStart(nil, end: &end, contentsEnd: nil, for: NSRange(location: offset, length: 0))
+                offset = end
+            }
+        }
+        return result
+    }
+
+    func move(from location: Int, backward: Bool) -> Move? {
+        let row = rows[current]
+        let cell = row.cells.firstIndex(where: { location <= NSMaxRange($0) }) ?? row.cells.count - 1
+        if backward {
+            if !row.separator, cell > 0 { return .select(row.cells[cell - 1]) }
+            guard let previous = rows[..<current].last(where: { !$0.separator }) else { return .select(row.cells[0]) }
+            return .select(previous.cells.last!)
+        }
+        if !row.separator, cell + 1 < row.cells.count { return .select(row.cells[cell + 1]) }
+        if current + 1 < rows.count, let next = rows[(current + 1)...].first(where: { !$0.separator }) {
+            return .select(next.cells[0])
+        }
+        return .addRow("\n|" + String(repeating: "  |", count: row.cells.count), at: row.end, caret: 3)
     }
 }
 

@@ -31,12 +31,16 @@ struct ContentView: View {
     @State private var slashQuery: String?
     @State private var slashSelection = 0
     @State private var showAI = false
+    @State private var showWritingMenu = false
+    @State private var selectionPrompt = ""
     @State private var aiPrompt = ""
     @State private var aiOutput = ""
     @State private var aiBusy = false
     @State private var aiError: String?
     @State private var aiTask: Task<Void, Never>?
     @State private var aiInsertion = 0
+    @State private var aiPlacement: AIPlacement = .atCaret
+    @State private var aiSelectionSource = ""
     @State private var hasTyped = false
     @State private var librarySearch = ""
     @State private var libraryFolder: URL?
@@ -51,16 +55,17 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let columnWidth = min(markdownLens ? lineWidth + 20 : lineWidth, max(geometry.size.width - 48, 280))
             ZStack(alignment: .topLeading) {
                 page.ignoresSafeArea()
-                NativeEditor(text: $document.text, fileURL: fileURL, markdownLens: markdownLens, findQuery: query, matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
+                NativeEditor(text: $document.text, fileURL: fileURL, columnWidth: columnWidth, markdownLens: markdownLens, findQuery: query, matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
                     hasTyped = true
                     if fadeToolbar { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = false } }
                 }, onSlash: { query in
                     if slashQuery != query { slashSelection = 0 }
                     slashQuery = query
                 }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 })
-                .frame(width: min(markdownLens ? lineWidth + 20 : lineWidth, max(geometry.size.width - 48, 280)))
+                .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56)
 
@@ -120,7 +125,7 @@ struct ContentView: View {
                         Spacer()
                         HStack(spacing: 3) {
                             if aiAvailability != .unavailable(.deviceNotEligible) {
-                                Button { showAI.toggle() } label: { Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).frame(width: 30, height: 30) }
+                                Button { showAI.toggle(); showWritingMenu = false } label: { Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).frame(width: 30, height: 30) }
                                     .buttonStyle(.plain)
                                     .accessibilityLabel("Apple Intelligence")
                             }
@@ -176,6 +181,12 @@ struct ContentView: View {
                                   y: max(62, selectionRect.minY - 26))
                         .zIndex(5)
                 }
+                if showWritingMenu && formatBarVisible {
+                    writingMenu
+                        .position(x: min(max(selectionRect.midX, 180), geometry.size.width - 180),
+                                  y: selectionRect.maxY + 380 < geometry.size.height ? selectionRect.maxY + 190 : max(190, selectionRect.minY - 190))
+                        .zIndex(6)
+                }
                 if let slashQuery {
                     slashMenu(query: slashQuery)
                         .position(x: min(max(selectionRect.midX + 155, 160), geometry.size.width - 160),
@@ -186,10 +197,12 @@ struct ContentView: View {
             .onContinuousHover { phase in
                 if case .active = phase { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = true } }
             }
+            .onExitCommand { showWritingMenu = false; showAI = false; showFind = false; sidebarOpen = false }
         }
         .frame(minWidth: 520, minHeight: 400)
         .ignoresSafeArea(.container, edges: .top)
         .navigationTitle("")
+        .toolbar(removing: .title)
         .toolbarBackground(.hidden, for: .windowToolbar)
         .background(WindowConfiguration())
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
@@ -204,7 +217,7 @@ struct ContentView: View {
                     try? await Task.sleep(for: .milliseconds(150))
                     if !Task.isCancelled { formatBarVisible = true }
                 }
-            }
+            } else { showWritingMenu = false }
         }
         .background {
             Button("Toggle Markdown") { toggleLens() }.keyboardShortcut("/", modifiers: .command).hidden()
@@ -308,7 +321,13 @@ struct ContentView: View {
     private var formatBar: some View {
         HStack(spacing: 4) {
             if aiAvailability != .unavailable(.deviceNotEligible) {
-                Button { textView?.showWritingTools(nil) } label: { Label("Writing Tools", systemImage: "apple.intelligence") }
+                Button {
+                    showWritingMenu.toggle()
+                    showAI = false
+                    if showWritingMenu { aiTask?.cancel(); aiBusy = false; aiOutput = ""; aiError = nil }
+                } label: { Label("Writing Tools", systemImage: "apple.intelligence") }
+                    .padding(.horizontal, 8)
+                    .background(showWritingMenu ? Color.secondary.opacity(0.1) : .clear, in: .capsule)
             }
             Divider().frame(height: 18)
             Menu {
@@ -335,6 +354,74 @@ struct ContentView: View {
             .help(help).accessibilityLabel(help)
     }
 
+    private var writingMenu: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if aiAvailability == .available {
+            HStack {
+                Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor)
+                TextField("Describe your change", text: $selectionPrompt)
+                    .onSubmit { generateSelection("Revise the selection as follows: \(selectionPrompt). Return only the revised Markdown text.") }
+                Text("↩").foregroundStyle(.secondary)
+            }
+            .padding(8).frame(height: 36)
+            .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 12))
+            HStack(spacing: 6) {
+                Button { openSystemWritingTools() } label: { Label("Proofread", systemImage: "text.badge.checkmark").frame(maxWidth: .infinity) }
+                Button { openSystemWritingTools() } label: { Label("Rewrite", systemImage: "arrow.triangle.2.circlepath").frame(maxWidth: .infinity) }
+            }
+            HStack(spacing: 6) {
+                ForEach(["Friendly", "Professional", "Concise"], id: \.self) { tone in
+                    Button(tone) { generateSelection("Rewrite this selection in a \(tone.lowercased()) tone. Return only the revised Markdown text.") }
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            Divider()
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                Button("Summary") { generateSelection("Summarize this selection in one paragraph. Return only Markdown text.") }
+                Button("Key Points") { generateSelection("Extract the key points as a Markdown list. Return only the list.") }
+                Button("List") { generateSelection("Turn this selection into a Markdown list. Return only the list.") }
+                Button("Table") { generateSelection("Turn this selection into a Markdown table. Return only the table.") }
+            }
+            } else if aiAvailability == .unavailable(.appleIntelligenceNotEnabled) {
+                Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary)
+            } else if aiAvailability == .unavailable(.modelNotReady) {
+                HStack { ProgressView(); Text("Preparing on-device model…") }
+            }
+            if aiBusy { HStack { ProgressView(); Text("Writing on this Mac…"); Button("Stop") { aiTask?.cancel(); aiBusy = false } } }
+            if !aiOutput.isEmpty {
+                ScrollView { Text(aiOutput).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled) }.frame(maxHeight: 150)
+                HStack {
+                    Button("Keep") { keepAIOutput() }.disabled(aiBusy)
+                    Button("Discard") { aiOutput = ""; aiTask?.cancel(); aiBusy = false }
+                }
+            }
+            if let aiError { Text(aiError).font(.caption).foregroundStyle(.red) }
+            HStack {
+                Text("On this Mac")
+                Spacer()
+                Text("Selection · \(selectionWordCount) words")
+            }.font(.system(size: 11)).foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .padding(8).frame(width: 340)
+        .glassEffect(in: .rect(cornerRadius: 20))
+    }
+
+    private var selectionWordCount: Int {
+        guard selectedRange.length > 0, NSMaxRange(selectedRange) <= (document.text as NSString).length else { return 0 }
+        return (document.text as NSString).substring(with: selectedRange).split(whereSeparator: \.isWhitespace).count
+    }
+
+    private func openSystemWritingTools() {
+        showWritingMenu = false
+        textView?.showWritingTools(nil)
+    }
+
+    private func generateSelection(_ action: String) {
+        guard selectedRange.length > 0 else { return }
+        generate(action: action, placement: .replaceSelection(selectedRange))
+    }
+
     private var aiPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -350,10 +437,18 @@ struct ContentView: View {
                     Button("Proofread") { textView?.showWritingTools(nil) }
                     Button("Rewrite…") { textView?.showWritingTools(nil) }
                 }
-                Button("Summarize") { generate(action: "Summarize this document in one concise paragraph. Return only Markdown text.") }
-                Button("Key points") { generate(action: "Extract the key points as a concise Markdown bullet list. Return only Markdown text.") }
-                Button("Suggest title & tags") { generate(action: "Suggest a title and up to five tags as YAML frontmatter. Return only the YAML frontmatter.") }
-                Button("Continue writing") { generate(action: "Continue this document in the same tone. Return only the continuation as Markdown.") }
+                aiRow("Summarize", detail: "Insert at top") {
+                    generate(action: "Summarize this document in one concise paragraph. Return only Markdown text.", placement: .atTop)
+                }
+                aiRow("Key points", detail: "New section") {
+                    generate(action: "Extract the key points as a concise Markdown bullet list. Return only Markdown text.", placement: .newSection)
+                }
+                aiRow("Suggest title & tags", detail: "Frontmatter") {
+                    generate(action: "Suggest a clear title and up to five short tags for this document.", placement: .frontmatter)
+                }
+                aiRow("Continue writing", detail: "At caret · ⌘↩") {
+                    generate(action: "Continue this document in the same tone. Return only the continuation as Markdown.")
+                }
             case .unavailable(.appleIntelligenceNotEnabled):
                 Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary)
             case .unavailable(.modelNotReady):
@@ -382,20 +477,37 @@ struct ContentView: View {
         .glassEffect(in: .rect(cornerRadius: 20))
     }
 
-    private func generate(action: String) {
+    private func aiRow(_ title: String, detail: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack { Text(title); Spacer(); Text(detail).font(.system(size: 11.5)).foregroundStyle(.secondary) }
+                .frame(height: 32)
+        }
+    }
+
+    private func generate(action: String, placement: AIPlacement = .atCaret) {
         guard aiAvailability == .available, !action.isEmpty else { return }
         aiTask?.cancel()
         aiOutput = ""
         aiError = nil
         aiBusy = true
         aiInsertion = selectedRange.location
-        let source = document.text
+        aiPlacement = placement
+        let source: String
+        if case .replaceSelection(let range) = placement, NSMaxRange(range) <= (document.text as NSString).length {
+            source = (document.text as NSString).substring(with: range)
+        } else { source = document.text }
+        aiSelectionSource = source
         aiTask = Task {
             do {
                 let session = LanguageModelSession(instructions: "You edit Markdown. Keep the response grounded in the supplied document. Return only the requested Markdown content.")
-                for try await snapshot in session.streamResponse(to: "\(action)\n\nDocument:\n\(source)") {
-                    if Task.isCancelled { break }
-                    aiOutput = snapshot.content
+                if placement == .frontmatter {
+                    let response = try await session.respond(to: "\(action)\n\nDocument:\n\(source)", generating: SuggestedFrontmatter.self)
+                    if !Task.isCancelled { aiOutput = response.content.markdown }
+                } else {
+                    for try await snapshot in session.streamResponse(to: "\(action)\n\nDocument:\n\(source)") {
+                        if Task.isCancelled { break }
+                        aiOutput = snapshot.content
+                    }
                 }
             } catch {
                 if !Task.isCancelled { aiError = error.localizedDescription }
@@ -406,10 +518,18 @@ struct ContentView: View {
 
     private func keepAIOutput() {
         guard !aiOutput.isEmpty, let textView else { return }
-        let location = min(aiInsertion, (textView.string as NSString).length)
-        textView.insertText("\n" + aiOutput + "\n", replacementRange: NSRange(location: location, length: 0))
+        let source = textView.string as NSString
+        if case .replaceSelection(let range) = aiPlacement {
+            guard NSMaxRange(range) <= source.length, source.substring(with: range) == aiSelectionSource else {
+                aiError = "The selection changed while writing. Generate again to avoid replacing newer edits."
+                return
+            }
+        }
+        let edit = aiPlacement.edit(source: source as String, output: aiOutput, caret: aiInsertion)
+        textView.insertText(edit.text, replacementRange: edit.range)
         aiOutput = ""
         showAI = false
+        showWritingMenu = false
     }
 
     private func exportHTML() {
@@ -639,6 +759,52 @@ struct SlashEntry {
                 return true
             }
         }
+    }
+}
+
+enum AIPlacement: Equatable {
+    case atCaret, atTop, newSection, frontmatter, replaceSelection(NSRange)
+
+    func edit(source: String, output: String, caret: Int) -> (range: NSRange, text: String) {
+        let length = (source as NSString).length
+        let frontmatter = Self.frontmatterRange(in: source)
+        switch self {
+        case .replaceSelection(let range):
+            return (range, output)
+        case .atCaret:
+            return (NSRange(location: min(caret, length), length: 0), "\n" + output + "\n")
+        case .atTop:
+            let location = frontmatter.map(NSMaxRange) ?? 0
+            return (NSRange(location: location, length: 0), output + "\n\n")
+        case .newSection:
+            let separator = source.isEmpty || source.hasSuffix("\n\n") ? "" : source.hasSuffix("\n") ? "\n" : "\n\n"
+            return (NSRange(location: length, length: 0), separator + "## Key points\n\n" + output + "\n")
+        case .frontmatter:
+            return (frontmatter ?? NSRange(location: 0, length: 0), output)
+        }
+    }
+
+    private static func frontmatterRange(in source: String) -> NSRange? {
+        let ns = source as NSString
+        guard source.hasPrefix("---\n"),
+              let regex = try? NSRegularExpression(pattern: #"(?m)^---[ \t]*$"#) else { return nil }
+        let matches = regex.matches(in: source, range: NSRange(location: 0, length: ns.length))
+        guard matches.count > 1, matches[0].range.location == 0 else { return nil }
+        var end = NSMaxRange(matches[1].range)
+        if end < ns.length, ns.character(at: end) == 10 { end += 1 }
+        return NSRange(location: 0, length: end)
+    }
+}
+
+@Generable
+struct SuggestedFrontmatter {
+    @Guide(description: "A concise title for the document") var title: String
+    @Guide(description: "At most five short topic tags") var tags: [String]
+
+    var markdown: String {
+        let titleJSON = String(data: try! JSONEncoder().encode(title), encoding: .utf8)!
+        let tagsJSON = String(data: try! JSONEncoder().encode(Array(tags.prefix(5))), encoding: .utf8)!
+        return "---\ntitle: \(titleJSON)\ntags: \(tagsJSON)\n---\n"
     }
 }
 
