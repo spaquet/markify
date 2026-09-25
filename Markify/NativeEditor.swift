@@ -2,6 +2,27 @@ import AppKit
 import Markdown
 import SwiftUI
 
+enum SlashKey { case up, down, insert, dismiss }
+
+struct SlashContext {
+    let range: NSRange
+    let query: String
+
+    static func detect(in text: String, selection: NSRange) -> Self? {
+        guard selection.length == 0 else { return nil }
+        let source = text as NSString
+        guard selection.location <= source.length else { return nil }
+        let line = source.lineRange(for: NSRange(location: selection.location, length: 0))
+        let prefix = source.substring(with: NSRange(location: line.location, length: selection.location - line.location)) as NSString
+        guard let slash = (0..<prefix.length).reversed().first(where: { prefix.character(at: $0) == 47 }) else { return nil }
+        if slash > 0, !(UnicodeScalar(prefix.character(at: slash - 1)).map(CharacterSet.whitespaces.contains) ?? false) { return nil }
+        let query = prefix.substring(from: slash + 1)
+        guard !query.isEmpty || slash + 1 == prefix.length,
+              !query.unicodeScalars.contains(where: { CharacterSet.whitespacesAndNewlines.contains($0) }) else { return nil }
+        return Self(range: NSRange(location: line.location + slash, length: prefix.length - slash), query: query)
+    }
+}
+
 struct NativeEditor: NSViewRepresentable {
     @Binding var text: String
     let fileURL: URL?
@@ -12,6 +33,7 @@ struct NativeEditor: NSViewRepresentable {
     @Binding var textView: NSTextView?
     let onType: () -> Void
     let onSlash: (String?) -> Void
+    let onSlashKey: (SlashKey, SlashContext) -> Bool
     let onSelectionRect: (CGRect) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -36,6 +58,9 @@ struct NativeEditor: NSViewRepresentable {
         editor.isHorizontallyResizable = false
         editor.autoresizingMask = [.width]
         editor.delegate = context.coordinator
+        editor.onSlashKey = { [weak coordinator = context.coordinator] key, slash in
+            coordinator?.handleSlashKey(key, slash) ?? false
+        }
         editor.string = text
         editor.writingToolsBehavior = .complete
         editor.allowedWritingToolsResultOptions = [.plainText, .richText, .table, .list]
@@ -229,10 +254,21 @@ struct NativeEditor: NSViewRepresentable {
         var lastQuery = ""
         var lastMatchCase = false
         var isCreatingTitle = false
+        var dismissedSlashLocation: Int?
         init(_ parent: NativeEditor) { self.parent = parent }
+        @MainActor func handleSlashKey(_ key: SlashKey, _ slash: SlashContext) -> Bool {
+            guard dismissedSlashLocation != slash.range.location else { return false }
+            if key == .dismiss {
+                dismissedSlashLocation = slash.range.location
+                parent.onSlash(nil)
+                return true
+            }
+            return parent.onSlashKey(key, slash)
+        }
         func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
             if !isCreatingTitle, textView.string.isEmpty,
                let replacementString, !replacementString.isEmpty,
+               !replacementString.hasPrefix("/"),
                !replacementString.contains("\n") {
                 isCreatingTitle = true
                 textView.insertText("# " + replacementString, replacementRange: affectedCharRange)
@@ -245,17 +281,16 @@ struct NativeEditor: NSViewRepresentable {
             guard let editor else { return }
             parent.text = editor.string
             parent.onType()
-            let source = editor.string as NSString
-            let caret = editor.selectedRange().location
-            let line = source.lineRange(for: NSRange(location: min(caret, source.length), length: 0))
-            let before = source.substring(with: NSRange(location: line.location, length: max(0, caret - line.location)))
-            if before.hasPrefix("/") && !before.contains(" ") { parent.onSlash(String(before.dropFirst())) }
-            else { parent.onSlash(nil) }
+            let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
+            if slash?.range.location != dismissedSlashLocation { dismissedSlashLocation = nil }
+            parent.onSlash(dismissedSlashLocation == nil ? slash?.query : nil)
             parent.style(editor)
         }
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let editor else { return }
             parent.selectedRange = editor.selectedRange()
+            let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
+            parent.onSlash(slash?.range.location == dismissedSlashLocation ? nil : slash?.query)
             if let window = editor.window {
                 let selection = editor.selectedRange()
                 let position = editor.firstRect(forCharacterRange: NSRange(location: selection.location, length: max(1, selection.length)), actualRange: nil)
@@ -269,7 +304,23 @@ struct NativeEditor: NSViewRepresentable {
 final class MarkdownTextView: NSTextView {
     var documentURL: URL?
     var rendered = true
+    var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     private var imageCache: [URL: NSImage] = [:]
+
+    override func keyDown(with event: NSEvent) {
+        let key: SlashKey?
+        switch event.keyCode {
+        case 125: key = .down
+        case 126: key = .up
+        case 36, 76: key = .insert
+        case 53: key = .dismiss
+        default: key = nil
+        }
+        if event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+           let key, let slash = SlashContext.detect(in: string, selection: selectedRange()),
+           onSlashKey?(key, slash) == true { return }
+        super.keyDown(with: event)
+    }
 
     private func taskMatches() -> [NSTextCheckingResult] {
         // ponytail: Scan on paint; cache task ranges if large documents make redraw slow.

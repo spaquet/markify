@@ -29,6 +29,7 @@ struct ContentView: View {
     @State private var replacement = ""
     @State private var matchCase = false
     @State private var slashQuery: String?
+    @State private var slashSelection = 0
     @State private var showAI = false
     @State private var aiPrompt = ""
     @State private var aiOutput = ""
@@ -55,7 +56,10 @@ struct ContentView: View {
                 NativeEditor(text: $document.text, fileURL: fileURL, markdownLens: markdownLens, findQuery: query, matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
                     hasTyped = true
                     if fadeToolbar { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = false } }
-                }, onSlash: { slashQuery = $0 }, onSelectionRect: { selectionRect = $0 })
+                }, onSlash: { query in
+                    if slashQuery != query { slashSelection = 0 }
+                    slashQuery = query
+                }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 })
                 .frame(width: min(markdownLens ? lineWidth + 20 : lineWidth, max(geometry.size.width - 48, 280)))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56)
@@ -175,7 +179,7 @@ struct ContentView: View {
                 if let slashQuery {
                     slashMenu(query: slashQuery)
                         .position(x: min(max(selectionRect.midX + 155, 160), geometry.size.width - 160),
-                                  y: min(selectionRect.maxY + 125, geometry.size.height - 130))
+                                  y: selectionRect.maxY + 438 < geometry.size.height ? selectionRect.maxY + 218 : max(218, selectionRect.minY - 218))
                         .zIndex(5)
                 }
             }
@@ -433,42 +437,67 @@ struct ContentView: View {
     }
 
     private func slashMenu(query: String) -> some View {
-        let entries: [(String, String, String)] = [
-            ("Table", "tablecells", "| Column | Column |\n| --- | --- |\n|  |  |"),
-            ("Task list", "checklist", "- [ ] "),
-            ("Code block", "curlybraces", "```\n\n```"),
-            ("Callout", "info.circle", "> [!NOTE]\n> "),
-            ("Math", "sum", "$$\n\n$$"),
-            ("Image", "photo", "![]()"),
-            ("Heading 1", "textformat", "# "),
-            ("Heading 2", "textformat", "## "),
-            ("Heading 3", "textformat", "### "),
-            ("Bullet", "list.bullet", "- "),
-            ("Numbered", "list.number", "1. "),
-            ("Quote", "text.quote", "> "),
-            ("Divider", "minus", "---"),
-            ("Footnote", "textformat.superscript", "[^1]: "),
-            ("Frontmatter", "tag", "---\ntags: []\ndate: \n---")
-        ]
+        let entries = SlashEntry.matching(query)
         return VStack(alignment: .leading, spacing: 2) {
             Text("Insert").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.horizontal, 8)
-            ForEach(entries.filter { query.isEmpty || $0.0.localizedCaseInsensitiveContains(query) }, id: \.0) { entry in
-                Button { insertSlash(entry.2, query: query) } label: {
-                    Label(entry.0, systemImage: entry.1).frame(maxWidth: .infinity, alignment: .leading).frame(height: 32)
-                }.buttonStyle(.plain).padding(.horizontal, 8)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 1) {
+                        ForEach(Array(entries.enumerated()), id: \.element.title) { index, entry in
+                            Button {
+                                if let editor = textView, let context = SlashContext.detect(in: editor.string, selection: editor.selectedRange()) {
+                                    insertSlash(entry, context: context)
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: entry.symbol)
+                                        .frame(width: 24, height: 24)
+                                        .background(index == slashSelection ? Color.white.opacity(0.16) : Color.secondary.opacity(0.09), in: .rect(cornerRadius: 7))
+                                    Text(entry.title).font(.system(size: 13))
+                                    Spacer()
+                                    Text(entry.shortcut).font(.system(size: 12, design: .monospaced)).opacity(0.7)
+                                }
+                                .padding(.horizontal, 6).frame(height: 36)
+                                .foregroundStyle(index == slashSelection ? .white : .primary)
+                                .background(index == slashSelection ? Color.accentColor : .clear, in: .rect(cornerRadius: 11))
+                            }
+                            .buttonStyle(.plain)
+                            .id(entry.title)
+                        }
+                    }
+                }
+                .frame(maxHeight: 340)
+                .onChange(of: slashSelection) { _, index in
+                    if entries.indices.contains(index) { proxy.scrollTo(entries[index].title, anchor: .center) }
+                }
             }
             Divider()
-            Text("↑↓ navigate                 ↩ insert · esc dismiss").font(.system(size: 11)).foregroundStyle(.secondary)
+            HStack { Text("↑↓ navigate"); Spacer(); Text("↩ insert · esc dismiss") }
+                .font(.system(size: 11)).foregroundStyle(.secondary).padding(.horizontal, 8)
         }
-        .padding(8).frame(width: 310)
+        .padding(6).frame(width: 310)
         .glassEffect(in: .rect(cornerRadius: 18))
     }
 
-    private func insertSlash(_ value: String, query: String) {
+    private func handleSlashKey(_ key: SlashKey, _ context: SlashContext) -> Bool {
+        let entries = SlashEntry.matching(context.query)
+        switch key {
+        case .up:
+            slashSelection = max(0, slashSelection - 1)
+        case .down:
+            slashSelection = min(entries.count - 1, slashSelection + 1)
+        case .insert:
+            guard entries.indices.contains(slashSelection) else { return false }
+            insertSlash(entries[slashSelection], context: context)
+        case .dismiss:
+            slashQuery = nil
+        }
+        return true
+    }
+
+    private func insertSlash(_ entry: SlashEntry, context: SlashContext) {
         guard let textView else { return }
-        let length = ("/" + query as NSString).length
-        let range = NSRange(location: max(0, textView.selectedRange().location - length), length: length)
-        textView.insertText(value, replacementRange: range)
+        textView.insertText(entry.insertion, replacementRange: context.range)
         slashQuery = nil
     }
 
@@ -545,6 +574,44 @@ struct ContentView: View {
             if markdownLens || isVisible(match.range, in: textView) { result.replaceCharacters(in: match.range, with: replacement) }
         }
         textView.insertText(result as String, replacementRange: NSRange(location: 0, length: (source as NSString).length))
+    }
+}
+
+struct SlashEntry {
+    let title: String
+    let symbol: String
+    let shortcut: String
+    let insertion: String
+
+    static let all: [Self] = [
+        .init(title: "Table", symbol: "tablecells", shortcut: "| — |", insertion: "| Column | Column |\n| --- | --- |\n|  |  |"),
+        .init(title: "Task list", symbol: "checklist", shortcut: "- [ ]", insertion: "- [ ] "),
+        .init(title: "Code block", symbol: "curlybraces", shortcut: "```", insertion: "```\n\n```"),
+        .init(title: "Callout", symbol: "info.circle", shortcut: "> [!NOTE]", insertion: "> [!NOTE]\n> "),
+        .init(title: "Math", symbol: "sum", shortcut: "$$", insertion: "$$\n\n$$"),
+        .init(title: "Image", symbol: "photo", shortcut: "![]()", insertion: "![]()"),
+        .init(title: "Heading 1", symbol: "textformat", shortcut: "#", insertion: "# "),
+        .init(title: "Heading 2", symbol: "textformat", shortcut: "##", insertion: "## "),
+        .init(title: "Heading 3", symbol: "textformat", shortcut: "###", insertion: "### "),
+        .init(title: "Bullet", symbol: "list.bullet", shortcut: "-", insertion: "- "),
+        .init(title: "Numbered", symbol: "list.number", shortcut: "1.", insertion: "1. "),
+        .init(title: "Quote", symbol: "text.quote", shortcut: ">", insertion: "> "),
+        .init(title: "Divider", symbol: "minus", shortcut: "---", insertion: "---"),
+        .init(title: "Footnote", symbol: "textformat.superscript", shortcut: "[^1]", insertion: "[^1]: "),
+        .init(title: "Frontmatter", symbol: "tag", shortcut: "---", insertion: "---\ntags: []\ndate: \n---")
+    ]
+
+    static func matching(_ query: String) -> [Self] {
+        let letters = Array(query.lowercased())
+        guard !letters.isEmpty else { return all }
+        return all.filter { entry in
+            var remaining = entry.title.lowercased()[...]
+            return letters.allSatisfy { letter in
+                guard let index = remaining.firstIndex(of: letter) else { return false }
+                remaining = remaining[remaining.index(after: index)...]
+                return true
+            }
+        }
     }
 }
 
