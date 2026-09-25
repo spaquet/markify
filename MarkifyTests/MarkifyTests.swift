@@ -67,4 +67,13 @@ struct MarkifyTests {
         editor.keyDown(with: event)
         #expect(handled?.query == "tab")
     }
+
+    @Test @MainActor func slashInsertionStartsABlockAndPlacesCaret() {
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = "Hello /tab"
+        let context = SlashContext.detect(in: editor.string, selection: NSRange(location: 10, length: 0))!
+        SlashEntry.matching("tab")[0].apply(to: editor, context: context)
+        #expect(editor.string == "Hello\n| Column | Column |\n| --- | --- |\n|  |  |")
+        #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "Column")
+    }
 }

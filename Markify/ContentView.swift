@@ -497,7 +497,7 @@ struct ContentView: View {
 
     private func insertSlash(_ entry: SlashEntry, context: SlashContext) {
         guard let textView else { return }
-        textView.insertText(entry.insertion, replacementRange: context.range)
+        entry.apply(to: textView, context: context)
         slashQuery = nil
     }
 
@@ -582,6 +582,33 @@ struct SlashEntry {
     let symbol: String
     let shortcut: String
     let insertion: String
+
+    @MainActor func apply(to editor: NSTextView, context: SlashContext) {
+        let source = editor.string as NSString
+        let line = source.lineRange(for: context.range)
+        let prefix = source.substring(with: NSRange(location: line.location, length: context.range.location - line.location))
+        var range = context.range
+        var inserted = insertion
+        if let lastContent = prefix.lastIndex(where: { !$0.isWhitespace }) {
+            let trailing = prefix[prefix.index(after: lastContent)...].utf16.count
+            range.location -= trailing
+            range.length += trailing
+            inserted = "\n" + insertion
+        }
+        editor.insertText(inserted, replacementRange: range)
+        let leading = inserted.hasPrefix("\n") ? 1 : 0
+        let caret: (Int, Int)? = switch title {
+        case "Table": (2, 6)
+        case "Code block": (4, 0)
+        case "Math": (3, 0)
+        case "Image": (2, 0)
+        case "Frontmatter": (11, 0)
+        default: nil
+        }
+        if let caret {
+            editor.setSelectedRange(NSRange(location: range.location + leading + caret.0, length: caret.1))
+        }
+    }
 
     static let all: [Self] = [
         .init(title: "Table", symbol: "tablecells", shortcut: "| — |", insertion: "| Column | Column |\n| --- | --- |\n|  |  |"),
