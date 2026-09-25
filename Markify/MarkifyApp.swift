@@ -1,52 +1,28 @@
-//
-//  MarkifyApp.swift
-//  Markify
-//
-//  Created by Stéphane PAQUET on 5/5/25.
-//
-
 import SwiftUI
+import AppKit
+
+@MainActor
+final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        DispatchQueue.main.async {
+            if NSDocumentController.shared.documents.isEmpty {
+                NSDocumentController.shared.newDocument(nil)
+            }
+        }
+    }
+}
 
 @main
-@MainActor
 struct MarkifyApp: App {
-    @Environment(\.openWindow) private var openWindow
-    @StateObject private var settings = AppSettings.shared
+    @NSApplicationDelegateAdaptor(MarkifyAppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        DocumentGroup(newDocument: { MarkifyDocument() }) { file in
-            ContentView(document: file.document)
-                .environmentObject(settings)
+        DocumentGroup(newDocument: MarkifyDocument()) { file in
+            ContentView(document: file.$document, fileURL: file.fileURL)
         }
-        .commands {
-            CommandGroup(replacing: CommandGroupPlacement.appInfo) {
-                Button("About Markify") {
-                    openWindow(id: "about")
-                }
-            }
-            CommandGroup(replacing: CommandGroupPlacement.help) {
-                Button("Markify Help") {
-                    openWindow(id: "help")
-                }
-                .keyboardShortcut("?", modifiers: [.command])
-            }
-        }
-
+        .defaultLaunchBehavior(.suppressed)
         Settings {
             SettingsView()
-                .environmentObject(settings)
         }
-
-        Window("About Markify", id: "about") {
-            AboutView()
-                .frame(maxWidth: 380)
-        }
-        .windowResizability(.contentSize)
-
-        Window("Markify Help", id: "help") {
-            HelpView()
-                .frame(minWidth: 500)
-        }
-        .windowResizability(.contentSize)
     }
 }
