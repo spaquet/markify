@@ -103,7 +103,7 @@ struct MarkifyTests {
     @Test func orderedListsRenumberFromTheirStart() {
         let text = "1. a\n3. b\n   1. nested\n   5. nested\n7. c\n\nText\n\n4. new\n9. list\n- bullet\n1. after\n```\n1. code\n1. code\n```"
         var fixed = text as NSString
-        for fix in MarkdownList.renumbering(text).reversed() { fixed = fixed.replacingCharacters(in: fix.range, with: fix.value) as NSString }
+        for fix in MarkdownList.scan(text).fixes.reversed() { fixed = fixed.replacingCharacters(in: fix.range, with: fix.value) as NSString }
         #expect(fixed as String == "1. a\n2. b\n   1. nested\n   2. nested\n3. c\n\nText\n\n4. new\n5. list\n- bullet\n1. after\n```\n1. code\n1. code\n```")
     }
 
@@ -140,11 +140,28 @@ struct MarkifyTests {
         #expect(editor.string == "1. a\n2. b\n3. c")
     }
 
-    @Test @MainActor func openingRenumbersExistingLists() {
+    @Test @MainActor func editsRenumberOnlyTheListTheyTouch() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
-        editor.string = "1. a\n1. b\n1. c"
-        editor.renumberLists()
-        #expect(editor.string == "1. a\n2. b\n3. c")
+        editor.string = "1. a\n1. b\n\nText\n\n1. x\n1. y"
+        editor.insertText("!", replacementRange: NSRange(location: 4, length: 0))
+        #expect(editor.string == "1. a!\n2. b\n\nText\n\n1. x\n1. y")
+    }
+
+    @Test @MainActor func renderedLensDrawsCountedNumbersOverTheSource() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        let source = Array(repeating: "1. item", count: 10).joined(separator: "\n")
+        editor.string = source
+        NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                     selectedRange: .constant(NSRange(location: 0, length: 0)),
+                     textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+            .style(editor)
+        let storage = try! #require(editor.textStorage)
+        #expect(editor.string == source)
+        #expect(MarkdownList.scan(source).numbers.map(\.value) == (1...10).map(String.init))
+        #expect(storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor == .clear)
+        #expect(storage.attribute(.foregroundColor, at: 1, effectiveRange: nil) as? NSColor == .clear)
+        // One digit is written but "10" is drawn, so every marker reserves room for two digits.
+        #expect((storage.attribute(.kern, at: 2, effectiveRange: nil) as? CGFloat ?? 0) > 0)
     }
 
     @Test @MainActor func editingAListKeepsItNumbered() {

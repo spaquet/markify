@@ -73,7 +73,6 @@ struct NativeEditor: NSViewRepresentable {
         DispatchQueue.main.async {
             textView = editor
             editor.window?.makeFirstResponder(editor)
-            editor.renumberLists()
         }
         style(editor)
         return scroll
@@ -91,10 +90,7 @@ struct NativeEditor: NSViewRepresentable {
             let topOffset = editor.characterIndexForInsertion(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
             let anchor = SourceAnchor(source: editor.string, selection: editor.selectedRange(), topOffset: topOffset)
             let before = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
-            if sourceChanged {
-                editor.string = text
-                DispatchQueue.main.async { [weak editor] in (editor as? MarkdownTextView)?.renumberLists() }
-            }
+            if sourceChanged { editor.string = text }
             style(editor)
             editor.setSelectedRange(anchor.selection(in: editor.string))
             editor.layoutSubtreeIfNeeded()
@@ -148,9 +144,25 @@ struct NativeEditor: NSViewRepresentable {
             if markdownLens { marker(match.range(at: 1)) }
             else { storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.monospacedSystemFont(ofSize: 18, weight: .regular)], range: match.range(at: 1)) }
         }
-        matches("(?m)^[ \\t]*([0-9]+\\.) ") { match in
+        matches("(?m)^[ \\t]*([0-9]+[.)]) ") { match in
             if markdownLens { marker(match.range(at: 1)) }
             else { storage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: match.range(at: 1)) }
+        }
+        if !markdownLens {
+            // The file keeps its written numbers; MarkdownTextView draws each item's counted number over them.
+            // Tabular digits padded to the list's widest number keep item text in one column.
+            let font = NSFont(descriptor: base.fontDescriptor.addingAttributes([.featureSettings: [[
+                NSFontDescriptor.FeatureKey.typeIdentifier: kNumberSpacingType,
+                NSFontDescriptor.FeatureKey.selectorIdentifier: kMonospacedNumbersSelector]]]), size: base.pointSize) ?? base
+            let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
+            let numbers = MarkdownList.scan(editor.string).numbers
+            let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
+            for number in numbers {
+                // Hide digits and delimiter; pad the space after them so the text starts past the widest number.
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: font], range: NSRange(location: number.range.location, length: number.range.length + 1))
+                let pad = CGFloat((widest[number.list] ?? 1) - number.range.length) * digit
+                if pad != 0 { storage.addAttribute(.kern, value: pad, range: NSRange(location: NSMaxRange(number.range) + 1, length: 1)) }
+            }
         }
         matches("(\\*\\*|__)([^\\n]+?)\\1") { match in
             storage.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: markdownLens ? 14 : 18), range: match.range(at: 2))
@@ -447,8 +459,7 @@ final class MarkdownTextView: NSTextView {
     }
 
     /// Applies list number fixes as one undoable edit, keeping the caret on its text.
-    func renumberLists(_ fixes: [(range: NSRange, value: String)]? = nil) {
-        let fixes = fixes ?? MarkdownList.renumbering(string)
+    private func renumberLists(_ fixes: [(range: NSRange, value: String)]) {
         guard !isRenumbering, !fixes.isEmpty, let storage = textStorage else { return }
         isRenumbering = true
         defer { isRenumbering = false }
@@ -519,6 +530,22 @@ final class MarkdownTextView: NSTextView {
         super.draw(dirtyRect)
         if rendered { drawImages(in: dirtyRect) }
         if rendered { drawMath(in: dirtyRect) }
+        if rendered, let window {
+            let source = string as NSString
+            let numbers = MarkdownList.scan(string).numbers
+            let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
+            for item in numbers {
+                // Glyphs before the padded space keep reliable positions, so measure from the first digit.
+                let screen = firstRect(forCharacterRange: item.range, actualRange: nil)
+                let rect = convert(window.convertFromScreen(screen), from: nil)
+                guard rect.intersects(dirtyRect) else { continue }
+                let font = textStorage?.attribute(.font, at: item.range.location, effectiveRange: nil) as? NSFont ?? .systemFont(ofSize: 18)
+                let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
+                let label = item.value + source.substring(with: NSRange(location: NSMaxRange(item.range), length: 1))
+                let number = NSAttributedString(string: label, attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor])
+                number.draw(at: NSPoint(x: rect.minX + CGFloat((widest[item.list] ?? 1) - item.value.count) * digit, y: rect.minY))
+            }
+        }
         if rendered, let window, let bullets = try? NSRegularExpression(pattern: #"(?m)^[ \t]*([-*+]) (?!\[[ xX]\] )"#) {
             let dot = NSAttributedString(string: "•", attributes: [.font: NSFont.systemFont(ofSize: 18), .foregroundColor: NSColor.secondaryLabelColor])
             for match in bullets.matches(in: string, range: NSRange(location: 0, length: (string as NSString).length)) {
@@ -725,8 +752,12 @@ private final class TableCellField: NSTextField, NSTextFieldDelegate {
 
 enum MarkdownList {
     struct Scan {
-        /// Number replacements that make each ordered list count up from its start.
-        var fixes: [(range: NSRange, value: String)] = []
+        /// Number replacements that make each ordered list count up from its start, tagged with their list.
+        var fixes: [(range: NSRange, value: String, list: Int)] = []
+        /// Digits of every ordered item with the number it displays, tagged with its list.
+        var numbers: [(range: NSRange, value: String, list: Int)] = []
+        /// Source span of each ordered list, from its first item to its last line.
+        var spans: [NSRange] = []
         /// Unindented lines that continue the item above them (CommonMark lazy continuation).
         var lazyLines: [(line: NSRange, item: Int)] = []
         /// Line start of every ordered item, mapped to whether it heads its list and that list's start.
@@ -738,7 +769,7 @@ enum MarkdownList {
         let source = text as NSString
         let item = try! NSRegularExpression(pattern: #"^([ \t]*)(?:([0-9]{1,9})([.)])|[-*+])[ \t]"#)
         let rule = try! NSRegularExpression(pattern: #"^(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$"#)
-        var lists: [(indent: Int, delimiter: String, start: Int, next: Int)] = []
+        var lists: [(indent: Int, delimiter: String, start: Int, next: Int, id: Int)] = []
         var result = Scan()
         var fenced = false
         var lastItem: Int?
@@ -755,6 +786,7 @@ enum MarkdownList {
                     || rule.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)) != nil
                 if let owner = lastItem, !interrupts {
                     if indent == 0 { result.lazyLines.append((range, owner)) }
+                    if let id = lists.last?.id { result.spans[id] = result.spans[id].union(range) }
                     return
                 }
                 lastItem = nil
@@ -770,28 +802,33 @@ enum MarkdownList {
             while let last = lists.last, last.indent > indent { lists.removeLast() }
             let written = Int((line as NSString).substring(with: match.range(at: 2))) ?? 1
             let delimiter = (line as NSString).substring(with: match.range(at: 3))
-            let expected: Int
+            let expected: Int, id: Int
             if let last = lists.last, last.indent == indent, last.delimiter == delimiter {
                 expected = last.next
+                id = last.id
                 lists[lists.count - 1].next += 1
+                result.spans[id] = result.spans[id].union(range)
                 result.ordered[range.location] = (false, last.start)
             } else {
                 if lists.last?.indent == indent { lists.removeLast() }
                 expected = start(range.location, written)
-                lists.append((indent, delimiter, expected, expected + 1))
+                id = result.spans.count
+                result.spans.append(range)
+                lists.append((indent, delimiter, expected, expected + 1, id))
                 result.ordered[range.location] = (true, expected)
             }
-            if written != expected {
-                result.fixes.append((NSRange(location: range.location + match.range(at: 2).location, length: match.range(at: 2).length), "\(expected)"))
-            }
+            let digits = NSRange(location: range.location + match.range(at: 2).location, length: match.range(at: 2).length)
+            result.numbers.append((digits, "\(expected)", id))
+            if written != expected { result.fixes.append((digits, "\(expected)", id)) }
         }
         return result
     }
 
-    /// Fixes for `text` after replacing `edit` in `previous` with `length` characters.
+    /// Fixes for the lists an edit touched, after replacing `edit` in `previous` with `length` characters.
+    /// Lists elsewhere keep their written numbers; the rendered lens shows them counted instead.
     /// A list whose head was removed keeps the start it had; a head that already led its list keeps its own number.
-    static func renumbering(_ text: String, previous: Scan? = nil, edit: NSRange = NSRange(location: 0, length: 0), length: Int = 0) -> [(range: NSRange, value: String)] {
-        scan(text) { location, written in
+    static func renumbering(_ text: String, previous: Scan?, edit: NSRange, length: Int) -> [(range: NSRange, value: String)] {
+        let result = scan(text) { location, written in
             guard let previous else { return written }
             let old: Int
             if location < edit.location { old = location }
@@ -799,7 +836,12 @@ enum MarkdownList {
             else { return written }
             guard let before = previous.ordered[old], !before.head else { return written }
             return before.start
-        }.fixes
+        }
+        let end = edit.location + length
+        return result.fixes.filter { fix in
+            let span = result.spans[fix.list]
+            return span.location <= end && edit.location <= NSMaxRange(span)
+        }.map { ($0.range, $0.value) }
     }
 }
 
