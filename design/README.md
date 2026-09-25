@@ -75,8 +75,9 @@ The default writing state. Document content, in order:
 ### 1c — Selection → floating format bar
 - Appears ~150ms after a non-empty selection settles, centered horizontally above the selection's first line with a 6–10px gap. If there is no room above, it flips below.
 - Glass capsule, 38px tall, 3px padding, `glassStrong` background plus `popShadow`.
+- The toolbar ✦ (Apple Intelligence) button is visible whenever the format bar is.
 - Items, left to right:
-  - **Writing Tools** (✦ + "Writing Tools", 13/600): opens the Writing Tools popover (2a). Hidden when Apple Intelligence is unavailable.
+  - **Writing Tools** (✦ + "Writing Tools", 13/600, padding 0 12 0 10, radius 999): **always the first item** of the format bar. It appears in every selection state, including 1c, 1o and 2a, and in both lenses. It opens the Writing Tools popover (2a) and gets a `field` background while that popover is open. It is hidden only when the device can't run Apple Intelligence (`.deviceNotEligible`).
   - Divider
   - **Block style** menu ("Body ▾", see 1o)
   - Divider (1×18, `rule`)
@@ -92,6 +93,7 @@ The default writing state. Document content, in order:
 - The same bar appears in the Markdown lens and wraps the selection with the matching syntax.
 
 ### 1o — Format bar → block style menu
+- The format bar is the same as in 1c: ✦ Writing Tools, divider, then Body ▾ …
 - Clicking "Body ▾" opens a glass menu anchored 30px below the format bar, left-aligned with the chip.
   - Width 250, radius 18, padding 6, `glassStrong` + `popShadow`.
   - It must be a **sibling** of the format bar, not a child. A backdrop blur nested inside another backdrop-blur layer doesn't blur the page, so the text behind would show through.
