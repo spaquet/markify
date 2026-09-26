@@ -132,6 +132,13 @@ struct EdgeModelTests {
         #expect(probe.contents(isReference) == ["a"])
     }
 
+    @Test func footnoteDefinitionsKeepLabelAndText() {
+        let probe = Probe("Body[^1]\n\n[^1]: The note.\n[^two]: Second\n")
+        #expect(probe.spans(isDefinition).map(\.kind) == [.footnoteDefinition(label: "1", labelRange: NSRange(location: 12, length: 1)),
+                                                          .footnoteDefinition(label: "two", labelRange: NSRange(location: 28, length: 3))])
+        #expect(probe.contents(isDefinition) == ["The note.", "Second"])
+    }
+
     @Test func mathFollowsPandocDollarRules() {
         #expect(Probe("Costs $5 and $10 today.").spans { $0 == .inlineMath }.isEmpty)
         #expect(Probe("Area $\\pi r^2$ here.").contents { $0 == .inlineMath } == ["\\pi r^2"])

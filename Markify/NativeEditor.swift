@@ -661,15 +661,17 @@ final class MarkdownTextView: NSTextView {
         return true
     }
 
-    private func taskMatches() -> [NSTextCheckingResult] {
-        // ponytail: Scan on paint; cache task ranges if large documents make redraw slow.
-        guard rendered, let regex = try? NSRegularExpression(pattern: #"(?m)^[-*+] \[([xX ])\] "#) else { return [] }
-        return regex.matches(in: string, range: NSRange(location: 0, length: (string as NSString).length))
+    /// Task items in the Rendered lens, at any depth.
+    private func tasks() -> [MarkdownModel.ListItem] {
+        guard rendered else { return [] }
+        return model.spans.compactMap { span in
+            if case .listItem(let item) = span.kind, item.checkbox != nil { item } else { nil }
+        }
     }
 
-    private func checkboxRect(for match: NSTextCheckingResult) -> NSRect? {
+    private func checkboxRect(for item: MarkdownModel.ListItem) -> NSRect? {
         guard let window else { return nil }
-        let screen = firstRect(forCharacterRange: NSRange(location: match.range.location, length: 1), actualRange: nil)
+        let screen = firstRect(forCharacterRange: NSRange(location: item.marker.location, length: 1), actualRange: nil)
         let local = convert(window.convertFromScreen(screen), from: nil)
         return NSRect(x: local.minX + 2, y: local.midY - 9, width: 18, height: 18)
     }
@@ -724,20 +726,19 @@ final class MarkdownTextView: NSTextView {
                 number.draw(at: NSPoint(x: rect.minX + CGFloat((widest[item.list] ?? 1) - item.value.count) * digit, y: rect.minY))
             }
         }
-        if rendered, let window, let bullets = try? NSRegularExpression(pattern: #"(?m)^[ \t]*([-*+]) (?!\[[ xX]\] )"#) {
+        if rendered, let window {
             let dot = NSAttributedString(string: "•", attributes: [.font: theme.ui(18), .foregroundColor: NSColor.secondaryLabelColor])
-            let frontmatter = Frontmatter.parse(string)?.range
-            for match in bullets.matches(in: string, range: NSRange(location: 0, length: (string as NSString).length)) {
-                if let frontmatter, NSLocationInRange(match.range.location, frontmatter) { continue }
-                let screen = firstRect(forCharacterRange: match.range(at: 1), actualRange: nil)
+            for span in model.spans {
+                guard case .listItem(let item) = span.kind, !item.ordered, item.checkbox == nil else { continue }
+                let screen = firstRect(forCharacterRange: item.marker, actualRange: nil)
                 let rect = convert(window.convertFromScreen(screen), from: nil)
                 guard rect.intersects(dirtyRect) else { continue }
                 dot.draw(at: NSPoint(x: rect.midX - dot.size().width / 2, y: rect.midY - dot.size().height / 2))
             }
         }
-        for match in taskMatches() {
-            guard let rect = checkboxRect(for: match), rect.intersects(dirtyRect) else { continue }
-            let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
+        for item in tasks() {
+            guard let rect = checkboxRect(for: item), rect.intersects(dirtyRect) else { continue }
+            let checked = item.checked
             let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
             if checked {
                 theme.accent.setFill()
@@ -753,11 +754,10 @@ final class MarkdownTextView: NSTextView {
     }
 
     private func drawImages(in dirtyRect: NSRect) {
-        guard let window,
-              let regex = try? NSRegularExpression(pattern: #"(?m)^!\[([^]\n]*)\]\(([^)\n]+)\)[ \t]*$"#) else { return }
-        let source = string as NSString
-        for match in regex.matches(in: string, range: NSRange(location: 0, length: source.length)) {
-            let screen = firstRect(forCharacterRange: match.range(at: 1), actualRange: nil)
+        guard let window else { return }
+        for span in model.spans {
+            guard case .image(let path, true) = span.kind else { continue }
+            let screen = firstRect(forCharacterRange: span.content, actualRange: nil)
             let caption = convert(window.convertFromScreen(screen), from: nil)
             let rect = NSRect(x: 0, y: caption.minY - 268, width: columnWidth, height: 260)
             guard rect.intersects(dirtyRect) else { continue }
@@ -765,7 +765,7 @@ final class MarkdownTextView: NSTextView {
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
             NSColor.quaternaryLabelColor.withAlphaComponent(0.08).setFill()
             rect.fill()
-            let url = Self.imageURL(source.substring(with: match.range(at: 2)), document: documentURL)
+            let url = Self.imageURL(path, document: documentURL)
             if let image = imageCache[url] ?? NSImage(contentsOf: url) {
                 imageCache[url] = image
                 let ratio = min(rect.width / image.size.width, rect.height / image.size.height)
@@ -787,16 +787,15 @@ final class MarkdownTextView: NSTextView {
     }
 
     private func drawMath(in dirtyRect: NSRect) {
-        guard let window,
-              let regex = try? NSRegularExpression(pattern: #"(?ms)^\$\$[ \t]*\n?(.*?)\n?\$\$[ \t]*$"#) else { return }
+        guard let window else { return }
         let source = string as NSString
         let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        for match in regex.matches(in: string, range: NSRange(location: 0, length: source.length)) {
-            let screen = firstRect(forCharacterRange: NSRange(location: match.range.location, length: 1), actualRange: nil)
+        for span in model.spans where span.kind == .mathBlock {
+            let screen = firstRect(forCharacterRange: NSRange(location: span.range.location, length: 1), actualRange: nil)
             let line = convert(window.convertFromScreen(screen), from: nil)
             let rect = NSRect(x: 0, y: line.midY - 40, width: columnWidth, height: 80)
             guard rect.intersects(dirtyRect) else { continue }
-            let latex = source.substring(with: match.range(at: 1)).trimmingCharacters(in: .whitespacesAndNewlines)
+            let latex = source.substring(with: span.content).trimmingCharacters(in: .whitespacesAndNewlines)
             let key = "\(dark):\(latex)"
             if let image = mathCache[key] ?? renderMath(latex, dark: dark) {
                 mathCache[key] = image
@@ -821,30 +820,27 @@ final class MarkdownTextView: NSTextView {
     /// Callout titles, code language labels, the footnotes rule and the frontmatter chip row.
     private func drawDecorations(in dirtyRect: NSRect) {
         guard let window else { return }
-        let source = string as NSString
-        let whole = NSRange(location: 0, length: source.length)
         func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
 
-        if let regex = try? NSRegularExpression(pattern: #"(?m)^> (\[!(NOTE|TIP|WARNING|IMPORTANT)\])"#) {
-            for match in regex.matches(in: string, range: whole) {
-                let token = rect(match.range(at: 1))
+        for span in model.spans {
+            switch span.kind {
+            case .callout(let type, let range):
+                let token = rect(range)
                 guard token.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
-                let type = source.substring(with: match.range(at: 2))
                 let title = NSAttributedString(string: type.capitalized, attributes: [
                     .font: theme.ui(13, weight: .semibold), .foregroundColor: Callout.color(type, accent: theme.accent)])
                 title.draw(at: NSPoint(x: token.minX, y: token.maxY - title.size().height))
-            }
-        }
-        if let regex = try? NSRegularExpression(pattern: #"(?ms)^```([a-zA-Z0-9_+-]+)[^\n]*\n(.*?)\n```[ \t]*$"#) {
-            for match in regex.matches(in: string, range: whole) where match.range(at: 2).length > 0 {
-                let line = rect(NSRange(location: match.range(at: 2).location, length: 1))
+            case .codeBlock(let language?, true) where span.content.length > 0:
+                let line = rect(NSRange(location: span.content.location, length: 1))
                 guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
-                let label = NSAttributedString(string: source.substring(with: match.range(at: 1)), attributes: [
+                let label = NSAttributedString(string: language, attributes: [
                     .font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
                 label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: line.minY + 2))
+            default:
+                break
             }
         }
-        if let first = Footnote.definitions(in: string).first {
+        if let first = model.spans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } }) {
             let line = rect(NSRange(location: first.range.location, length: 1))
             let y = line.minY - 12 * theme.scale
             if dirtyRect.minY <= y, y <= dirtyRect.maxY {
@@ -980,10 +976,9 @@ final class MarkdownTextView: NSTextView {
         if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
             return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot)
         }
-        for match in taskMatches() {
-            guard let rect = checkboxRect(for: match), rect.contains(point) else { continue }
-            let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
-            insertText(checked ? " " : "x", replacementRange: match.range(at: 1))
+        for item in tasks() {
+            guard let rect = checkboxRect(for: item), rect.contains(point), let box = item.checkbox else { continue }
+            insertText(item.checked ? " " : "x", replacementRange: NSRange(location: box.location + 1, length: 1))
             return
         }
         super.mouseDown(with: event)
@@ -1396,20 +1391,6 @@ enum Callout {
         case "WARNING": .systemOrange
         case "IMPORTANT": .systemPurple
         default: accent
-        }
-    }
-}
-
-struct Footnote {
-    let range: NSRange
-    let label: String
-    let text: String
-
-    static func definitions(in source: String) -> [Self] {
-        guard let regex = try? NSRegularExpression(pattern: #"(?m)^\[\^([^]\n]+)\]:[ \t]*(.*)$"#) else { return [] }
-        let ns = source as NSString
-        return regex.matches(in: source, range: NSRange(location: 0, length: ns.length)).map {
-            Self(range: $0.range, label: ns.substring(with: $0.range(at: 1)), text: ns.substring(with: $0.range(at: 2)))
         }
     }
 }

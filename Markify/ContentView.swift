@@ -1667,6 +1667,12 @@ struct SlashEntry {
             range.length += trailing
             inserted = "\n" + insertion
         }
+        // `---` right under a line of text would make that line a setext heading, so a divider gets a blank line first.
+        if title == "Divider" {
+            let above = inserted.hasPrefix("\n") ? prefix
+                : line.location > 0 ? source.substring(with: source.lineRange(for: NSRange(location: line.location - 1, length: 0))) : ""
+            if !above.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { inserted = "\n" + inserted }
+        }
         editor.insertText(inserted, replacementRange: range)
         let leading = inserted.hasPrefix("\n") ? 1 : 0
         let caret: (Int, Int)? = switch title {

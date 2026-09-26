@@ -1,4 +1,5 @@
 import AppKit
+import MarkifyMarkdown
 import Testing
 @testable import Markify
 
@@ -160,9 +161,11 @@ private final class FixtureBundle {}
     }
 
     @Test func footnotesAndFrontmatterOverFixture() {
-        let notes = Footnote.definitions(in: Self.source)
-        #expect(notes.map(\.label) == ["1"])
-        #expect(notes.first?.text == "The footnote text.")
+        let notes = MarkdownModel(Self.source).spans.compactMap { span -> (String, String)? in
+            if case .footnoteDefinition(let label, _) = span.kind { (label, (Self.source as NSString).substring(with: span.content)) } else { nil }
+        }
+        #expect(notes.map(\.0) == ["1"])
+        #expect(notes.first?.1 == "The footnote text.")
         let frontmatter = Frontmatter.parse(Self.source)
         #expect(frontmatter?.title == "Editor fixture")
         #expect(frontmatter?.tags == ["fixture", "editor"])

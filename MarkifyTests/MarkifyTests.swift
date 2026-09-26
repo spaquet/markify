@@ -70,6 +70,17 @@ struct MarkifyTests {
         #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "Column")
     }
 
+    @Test @MainActor func dividerNeverMakesASetextHeading() {
+        let divider = SlashEntry.all.first { $0.title == "Divider" }!
+        for (source, expected) in [("Para /div", "Para\n\n---"), ("Para\n/div", "Para\n\n---"), ("Para\n\n/div", "Para\n\n---"), ("/div", "---")] {
+            let editor = NSTextView(usingTextLayoutManager: true)
+            editor.string = source
+            let context = SlashContext.detect(in: source, selection: NSRange(location: (source as NSString).length, length: 0))!
+            divider.apply(to: editor, context: context)
+            #expect(editor.string == expected, "\(source)")
+        }
+    }
+
     @Test @MainActor func tableTabMovesCellsAndAddsRow() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.string = "| A | B |\n| --- | --- |\n| C | D |"
@@ -254,12 +265,6 @@ struct MarkifyTests {
         #expect(Shortcuts.keyboardShortcut("bold", stored: stored) == KeyboardShortcut("b", modifiers: [.control, .command]))
         #expect(Shortcuts.keyboardShortcut("italic", stored: stored) == nil)
         #expect(Set(Shortcuts.actions.map(\.key)).count == Shortcuts.actions.count)
-    }
-
-    @Test func footnoteDefinitionsKeepLabelAndText() {
-        let notes = Footnote.definitions(in: "Body[^1]\n\n[^1]: The note.\n[^two]: Second\n")
-        #expect(notes.map(\.label) == ["1", "two"])
-        #expect(notes.first?.text == "The note.")
     }
 
     @Test func frontmatterReadsTitle() {
