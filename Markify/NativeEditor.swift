@@ -715,9 +715,7 @@ final class MarkdownTextView: NSTextView {
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
             NSColor.quaternaryLabelColor.withAlphaComponent(0.08).setFill()
             rect.fill()
-            let path = source.substring(with: match.range(at: 2))
-            let base = documentURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")
-            let url = URL(fileURLWithPath: path, relativeTo: base).standardizedFileURL
+            let url = Self.imageURL(source.substring(with: match.range(at: 2)), document: documentURL)
             if let image = imageCache[url] ?? NSImage(contentsOf: url) {
                 imageCache[url] = image
                 let ratio = min(rect.width / image.size.width, rect.height / image.size.height)
@@ -725,11 +723,17 @@ final class MarkdownTextView: NSTextView {
                 let frame = NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height)
                 image.draw(in: frame)
             } else {
-                let label = "image — \(URL(fileURLWithPath: path).lastPathComponent)" as NSString
+                let label = "image — \(url.lastPathComponent)" as NSString
                 label.draw(at: NSPoint(x: rect.midX - 90, y: rect.midY - 8), withAttributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor])
             }
             NSGraphicsContext.restoreGraphicsState()
         }
+    }
+
+    /// Resolves an image destination against the document's folder; inserted paths are percent-encoded.
+    static func imageURL(_ path: String, document: URL?) -> URL {
+        let base = document?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")
+        return URL(fileURLWithPath: path.removingPercentEncoding ?? path, relativeTo: base).standardizedFileURL
     }
 
     private func drawMath(in dirtyRect: NSRect) {
@@ -1241,8 +1245,21 @@ struct MarkdownTable {
     let current: Int
 
     static func containing(_ text: String, location: Int) -> Self? {
+        guard location <= (text as NSString).length else { return nil }
+        let (parsed, starts) = lines(text)
+        guard let index = starts.indices.first(where: { starts[$0] <= location && (parsed[$0]?.end ?? starts[$0]) >= location }),
+              parsed[index] != nil else { return nil }
+        var first = index, last = index
+        while first > 0, parsed[first - 1] != nil { first -= 1 }
+        while last + 1 < parsed.count, parsed[last + 1] != nil { last += 1 }
+        let rows = parsed[first...last].compactMap { $0 }
+        guard rows.contains(where: \.separator) else { return nil }
+        return Self(rows: rows, current: index - first)
+    }
+
+    /// Every line of the text as a table row, or nil when it is not one, with each line's start.
+    private static func lines(_ text: String) -> (rows: [Row?], starts: [Int]) {
         let source = text as NSString
-        guard location <= source.length else { return nil }
         let separator = try! NSRegularExpression(pattern: #"^\s*\|(?:\s*:?-+:?\s*\|)+\s*$"#)
         var parsed: [Row?] = []
         var starts: [Int] = []
@@ -1270,33 +1287,21 @@ struct MarkdownTable {
             starts.append(start)
             offset = end
         }
-        guard let index = starts.indices.first(where: { starts[$0] <= location && (parsed[$0]?.end ?? starts[$0]) >= location }),
-              parsed[index] != nil else { return nil }
-        var first = index, last = index
-        while first > 0, parsed[first - 1] != nil { first -= 1 }
-        while last + 1 < parsed.count, parsed[last + 1] != nil { last += 1 }
-        let rows = parsed[first...last].compactMap { $0 }
-        guard rows.contains(where: \.separator) else { return nil }
-        return Self(rows: rows, current: index - first)
+        return (parsed, starts)
     }
 
+    /// Every table in the text: each run of row lines that includes a separator row, found in one pass.
     static func blocks(in text: String) -> [Self] {
-        // ponytail: Reparse on style changes; keep an indexed table AST if large notes make this slow.
-        let source = text as NSString
+        let parsed = lines(text).rows
         var result: [Self] = []
-        var offset = 0
-        while offset < source.length {
-            if let table = containing(text, location: offset), table.rows.first?.start == offset {
-                result.append(table)
-                var end = 0
-                source.getLineStart(nil, end: &end, contentsEnd: nil,
-                                    for: NSRange(location: table.rows.last!.start, length: 0))
-                offset = end
-            } else {
-                var end = 0
-                source.getLineStart(nil, end: &end, contentsEnd: nil, for: NSRange(location: offset, length: 0))
-                offset = end
-            }
+        var index = 0
+        while index < parsed.count {
+            guard parsed[index] != nil else { index += 1; continue }
+            var last = index
+            while last + 1 < parsed.count, parsed[last + 1] != nil { last += 1 }
+            let rows = parsed[index...last].compactMap { $0 }
+            if rows.contains(where: \.separator) { result.append(Self(rows: rows, current: 0)) }
+            index = last + 1
         }
         return result
     }
