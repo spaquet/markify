@@ -155,8 +155,8 @@ private final class FixtureBundle {}
         let rows = tables.first?.rows.map { $0.cells.map(ns.substring(with:)) } ?? []
         #expect(rows.count == 4)
         #expect(rows.first == ["Name", "Code"])
-        // Expected to change (EDITOR_PLAN.md): the pipe inside the code span splits the cell.
-        #expect(rows.dropFirst(2).first == ["pipe", "`a", "b`"])
+        // GFM splits on the pipe inside the code span and drops cells past the header's count.
+        #expect(rows.dropFirst(2).first == ["pipe", "`a"])
         #expect(rows.last == ["plain", "text"])
     }
 

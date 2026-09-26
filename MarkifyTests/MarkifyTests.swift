@@ -194,6 +194,19 @@ struct MarkifyTests {
         editor.string = "Plain"
         editor.setSelectedRange(NSRange(location: 5, length: 0))
         #expect(!editor.continueList())
+        // List syntax inside a code block is code, not a list.
+        editor.string = "```\n- item\n```"
+        editor.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(!editor.continueList())
+        // Nested and quoted items continue at their own depth.
+        editor.string = "- a\n  1) b"
+        editor.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(editor.continueList())
+        #expect(editor.string == "- a\n  1) b\n  2) ")
+        editor.string = "> - quoted"
+        editor.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(editor.continueList())
+        #expect(editor.string == "> - quoted\n> - ")
     }
 
     @Test @MainActor func displayMathRendersLocally() {

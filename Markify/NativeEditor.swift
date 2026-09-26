@@ -334,7 +334,8 @@ struct NativeEditor: NSViewRepresentable {
             style.headIndent = storage.attributedSubstring(from: NSRange(location: line.location, length: end - line.location)).size().width
             storage.addAttribute(.paragraphStyle, value: style, range: line)
         }
-        for lazy in MarkdownList.scan(editor.string).lazyLines {
+        let lists = MarkdownList.scan(model)
+        for lazy in lists.lazyLines {
             guard let owner = storage.attribute(.paragraphStyle, at: lazy.item, effectiveRange: nil) as? NSParagraphStyle,
                   let style = owner.mutableCopy() as? NSMutableParagraphStyle else { continue }
             style.firstLineHeadIndent = owner.headIndent
@@ -347,7 +348,7 @@ struct NativeEditor: NSViewRepresentable {
                 NSFontDescriptor.FeatureKey.typeIdentifier: kNumberSpacingType,
                 NSFontDescriptor.FeatureKey.selectorIdentifier: kMonospacedNumbersSelector]]]), size: base.pointSize) ?? base
             let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
-            let numbers = MarkdownList.scan(editor.string).numbers
+            let numbers = lists.numbers
             let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
             for number in numbers {
                 // Hide digits and delimiter; pad the space after them so the text starts past the widest number.
@@ -355,7 +356,7 @@ struct NativeEditor: NSViewRepresentable {
                 let pad = CGFloat((widest[number.list] ?? 1) - number.range.length) * digit
                 if pad != 0 { storage.addAttribute(.kern, value: pad, range: NSRange(location: NSMaxRange(number.range) + 1, length: 1)) }
             }
-            for table in MarkdownTable.blocks(in: editor.string) {
+            for table in model.tables {
                 for row in table.rows {
                     let rowStyle = NSMutableParagraphStyle()
                     rowStyle.minimumLineHeight = row.separator ? 2 : 40
@@ -505,7 +506,7 @@ final class MarkdownTextView: NSTextView {
 
     func refreshTables() {
         guard let window else { return }
-        let rows: [(MarkdownTable.Row, Bool)] = rendered ? MarkdownTable.blocks(in: string).flatMap { table in
+        let rows: [(MarkdownTable.Row, Bool)] = rendered ? MarkdownTable.blocks(in: model).flatMap { table in
             table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0) }
         } : []
         for (index, (row, header)) in rows.enumerated() {
@@ -585,7 +586,7 @@ final class MarkdownTextView: NSTextView {
         if !isRenumbering {
             // Remember list structure so a list that loses its first item keeps its start number.
             if affectedRanges.count == 1, let replacement = replacementStrings?.first {
-                pendingEdit = (MarkdownList.scan(string), affectedRanges[0].rangeValue, (replacement as NSString).length)
+                pendingEdit = (MarkdownList.scan(model), affectedRanges[0].rangeValue, (replacement as NSString).length)
             } else { pendingEdit = nil }
         }
         return true
@@ -603,7 +604,7 @@ final class MarkdownTextView: NSTextView {
         }
         let edit = pendingEdit
         pendingEdit = nil
-        renumberLists(MarkdownList.renumbering(string, previous: edit?.before, edit: edit?.range ?? NSRange(location: 0, length: 0), length: edit?.length ?? 0))
+        renumberLists(MarkdownList.renumbering(model, previous: edit?.before, edit: edit?.range ?? NSRange(location: 0, length: 0), length: edit?.length ?? 0))
     }
 
     /// Applies list number fixes as one undoable edit, keeping the caret on its text.
@@ -629,27 +630,41 @@ final class MarkdownTextView: NSTextView {
         guard selection.length == 0 else { return false }
         let source = string as NSString
         let line = source.lineRange(for: NSRange(location: selection.location, length: 0))
-        let text = source.substring(with: NSRange(location: line.location, length: selection.location - line.location))
-        guard let regex = try? NSRegularExpression(pattern: #"^([ \t]*)(?:([-*+])( \[[ xX]\])?|([0-9]+)([.)])) "#),
-              let match = regex.firstMatch(in: text, range: NSRange(location: 0, length: (text as NSString).length)) else { return false }
-        let prefix = text as NSString
-        if match.range.length == prefix.length, NSMaxRange(line) - selection.location <= 1 {
-            insertText("", replacementRange: NSRange(location: line.location, length: match.range.length))
+        // The innermost item whose marker is on this line, with the caret past its marker.
+        let items = model.spans.compactMap { span -> MarkdownModel.ListItem? in
+            guard case .listItem(let item) = span.kind, NSLocationInRange(item.marker.location, line) else { return nil }
+            return item
+        }
+        guard let item = items.last else { return false }
+        var end = NSMaxRange(item.checkbox ?? item.marker)
+        var checkbox = item.checkbox != nil
+        // An empty task item has no content for GFM to hang its checkbox on, so read the box from the text.
+        if !checkbox, let box = try? NSRegularExpression(pattern: #"[ \t]\[[ xX]\](?=[ \t]|$)"#).firstMatch(in: string, options: .anchored, range: NSRange(location: end, length: NSMaxRange(line) - end)) {
+            end = NSMaxRange(box.range)
+            checkbox = true
+        }
+        guard end < NSMaxRange(line), [32, 9].contains(source.character(at: end)) else { return false }
+        end += 1
+        guard selection.location >= end else { return false }
+        let rest = source.substring(with: NSRange(location: end, length: NSMaxRange(line) - end)).trimmingCharacters(in: .whitespacesAndNewlines)
+        if rest.isEmpty {
+            insertText("", replacementRange: NSRange(location: line.location, length: end - line.location))
             return true
         }
-        let indent = prefix.substring(with: match.range(at: 1))
+        let indent = source.substring(with: NSRange(location: line.location, length: item.marker.location - line.location))
+        let marker = source.substring(with: item.marker)
         let next: String
-        if match.range(at: 4).location != NSNotFound {
-            next = "\((Int(prefix.substring(with: match.range(at: 4))) ?? 0) + 1)\(prefix.substring(with: match.range(at: 5))) "
+        if let digits = item.digits {
+            next = "\((Int(source.substring(with: digits)) ?? 0) + 1)\(marker.suffix(1)) "
         } else {
-            next = prefix.substring(with: match.range(at: 2)) + (match.range(at: 3).location != NSNotFound ? " [ ]" : "") + " "
+            next = marker + (checkbox ? " [ ]" : "") + " "
         }
         insertText("\n" + indent + next, replacementRange: selection)
         return true
     }
 
     func navigateTable(backward: Bool) -> Bool {
-        guard let table = MarkdownTable.containing(string, location: selectedRange().location),
+        guard let table = MarkdownTable.containing(model, location: selectedRange().location),
               let move = table.move(from: selectedRange().location, backward: backward) else { return false }
         switch move {
         case .select(let range): setSelectedRange(range)
@@ -712,7 +727,7 @@ final class MarkdownTextView: NSTextView {
         if rendered { drawDecorations(in: dirtyRect) }
         if rendered, let window {
             let source = string as NSString
-            let numbers = MarkdownList.scan(string).numbers
+            let numbers = MarkdownList.scan(model).numbers
             let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
             for item in numbers {
                 // Glyphs before the padded space keep reliable positions, so measure from the first digit.
@@ -1192,63 +1207,45 @@ enum MarkdownList {
         var ordered: [Int: (head: Bool, start: Int)] = [:]
     }
 
-    /// Walks the list structure. `start` picks a list's start number from its head's line location and written number.
+    /// Reads the list structure from the parsed model. `start` picks a list's start number from its head's line location and written number.
     static func scan(_ text: String, start: @escaping (Int, Int) -> Int = { $1 }) -> Scan {
-        let source = text as NSString
-        let item = try! NSRegularExpression(pattern: #"^([ \t]*)(?:([0-9]{1,9})([.)])|[-*+])[ \t]"#)
-        let rule = try! NSRegularExpression(pattern: #"^(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$"#)
-        var lists: [(indent: Int, delimiter: String, start: Int, next: Int, id: Int)] = []
+        scan(MarkdownModel(text), start: start)
+    }
+
+    static func scan(_ model: MarkdownModel, start: @escaping (Int, Int) -> Int = { $1 }) -> Scan {
+        let source = model.source as NSString
+        func lineStart(_ location: Int) -> Int { source.lineRange(for: NSRange(location: location, length: 0)).location }
         var result = Scan()
-        var fenced = false
-        var lastItem: Int?
-        source.enumerateSubstrings(in: NSRange(location: 0, length: source.length), options: .byLines) { line, range, _, _ in
-            guard let line else { return }
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            let length = (line as NSString).length
-            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") { fenced.toggle(); lists.removeAll(); lastItem = nil; return }
-            guard !fenced else { return }
-            guard !trimmed.isEmpty else { lastItem = nil; return }
-            let indent = line.prefix { $0 == " " || $0 == "\t" }.utf16.count
-            guard let match = item.firstMatch(in: line, range: NSRange(location: 0, length: length)) else {
-                let interrupts = ["#", ">", "|", "$$", "<"].contains { trimmed.hasPrefix($0) }
-                    || rule.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)) != nil
-                if let owner = lastItem, !interrupts {
-                    if indent == 0 { result.lazyLines.append((range, owner)) }
-                    if let id = lists.last?.id { result.spans[id] = result.spans[id].union(range) }
-                    return
-                }
-                lastItem = nil
-                while let last = lists.last, last.indent >= indent { lists.removeLast() }
-                return
+        for list in model.lists where list.ordered {
+            guard let head = list.items.first else { continue }
+            let id = result.spans.count
+            let headLine = lineStart(head.marker.location)
+            let first = start(headLine, list.start)
+            result.spans.append(NSRange(location: headLine, length: NSMaxRange(list.range) - headLine))
+            for (index, item) in list.items.enumerated() {
+                guard let digits = item.digits else { continue }
+                let expected = first + index
+                result.ordered[lineStart(item.marker.location)] = (index == 0, first)
+                result.numbers.append((digits, "\(expected)", id))
+                if Int(source.substring(with: digits)) != expected { result.fixes.append((digits, "\(expected)", id)) }
             }
-            lastItem = range.location
-            guard match.range(at: 2).location != NSNotFound else {
-                // A bullet at this depth ends the ordered lists it does not nest inside.
-                while let last = lists.last, last.indent >= indent { lists.removeLast() }
-                return
-            }
-            while let last = lists.last, last.indent > indent { lists.removeLast() }
-            let written = Int((line as NSString).substring(with: match.range(at: 2))) ?? 1
-            let delimiter = (line as NSString).substring(with: match.range(at: 3))
-            let expected: Int, id: Int
-            if let last = lists.last, last.indent == indent, last.delimiter == delimiter {
-                expected = last.next
-                id = last.id
-                lists[lists.count - 1].next += 1
-                result.spans[id] = result.spans[id].union(range)
-                result.ordered[range.location] = (false, last.start)
-            } else {
-                if lists.last?.indent == indent { lists.removeLast() }
-                expected = start(range.location, written)
-                id = result.spans.count
-                result.spans.append(range)
-                lists.append((indent, delimiter, expected, expected + 1, id))
-                result.ordered[range.location] = (true, expected)
-            }
-            let digits = NSRange(location: range.location + match.range(at: 2).location, length: match.range(at: 2).length)
-            result.numbers.append((digits, "\(expected)", id))
-            if written != expected { result.fixes.append((digits, "\(expected)", id)) }
         }
+        result.numbers.sort { $0.range.location < $1.range.location }
+        result.fixes.sort { $0.range.location < $1.range.location }
+        // An unindented line inside an item's range continues it lazily; nested items come later and claim their own lines.
+        var lazy: [Int: (line: NSRange, item: Int)] = [:]
+        for span in model.spans {
+            guard case .listItem(let item) = span.kind else { continue }
+            let owner = lineStart(item.marker.location)
+            var line = source.lineRange(for: NSRange(location: owner, length: 0))
+            while NSMaxRange(line) < NSMaxRange(span.range) {
+                line = source.lineRange(for: NSRange(location: NSMaxRange(line), length: 0))
+                guard line.length > 0 else { break }
+                let first = source.character(at: line.location)
+                if ![32, 9, 10, 13].contains(first) { lazy[line.location] = (line, owner) }
+            }
+        }
+        result.lazyLines = lazy.values.sorted { $0.line.location < $1.line.location }
         return result
     }
 
@@ -1256,7 +1253,11 @@ enum MarkdownList {
     /// Lists elsewhere keep their written numbers; the rendered lens shows them counted instead.
     /// A list whose head was removed keeps the start it had; a head that already led its list keeps its own number.
     static func renumbering(_ text: String, previous: Scan?, edit: NSRange, length: Int) -> [(range: NSRange, value: String)] {
-        let result = scan(text) { location, written in
+        renumbering(MarkdownModel(text), previous: previous, edit: edit, length: length)
+    }
+
+    static func renumbering(_ model: MarkdownModel, previous: Scan?, edit: NSRange, length: Int) -> [(range: NSRange, value: String)] {
+        let result = scan(model) { location, written in
             guard let previous else { return written }
             let old: Int
             if location < edit.location { old = location }
@@ -1274,12 +1275,7 @@ enum MarkdownList {
 }
 
 struct MarkdownTable {
-    struct Row {
-        let start: Int
-        let end: Int
-        let cells: [NSRange]
-        let separator: Bool
-    }
+    typealias Row = MarkdownModel.Table.Row
 
     enum Move {
         case select(NSRange)
@@ -1290,65 +1286,21 @@ struct MarkdownTable {
     let current: Int
 
     static func containing(_ text: String, location: Int) -> Self? {
-        guard location <= (text as NSString).length else { return nil }
-        let (parsed, starts) = lines(text)
-        guard let index = starts.indices.first(where: { starts[$0] <= location && (parsed[$0]?.end ?? starts[$0]) >= location }),
-              parsed[index] != nil else { return nil }
-        var first = index, last = index
-        while first > 0, parsed[first - 1] != nil { first -= 1 }
-        while last + 1 < parsed.count, parsed[last + 1] != nil { last += 1 }
-        let rows = parsed[first...last].compactMap { $0 }
-        guard rows.contains(where: \.separator) else { return nil }
-        return Self(rows: rows, current: index - first)
+        containing(MarkdownModel(text), location: location)
     }
 
-    /// Every line of the text as a table row, or nil when it is not one, with each line's start.
-    private static func lines(_ text: String) -> (rows: [Row?], starts: [Int]) {
-        let source = text as NSString
-        let separator = try! NSRegularExpression(pattern: #"^\s*\|(?:\s*:?-+:?\s*\|)+\s*$"#)
-        var parsed: [Row?] = []
-        var starts: [Int] = []
-        var offset = 0
-        while offset < source.length {
-            var start = 0, end = 0, contentsEnd = 0
-            source.getLineStart(&start, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: offset, length: 0))
-            let line = source.substring(with: NSRange(location: start, length: contentsEnd - start)) as NSString
-            var pipes: [Int] = []
-            // ponytail: Escaped pipes are skipped; code spans with pipes need Markdown AST cell ranges.
-            for index in 0..<line.length where line.character(at: index) == 124 {
-                if index == 0 || line.character(at: index - 1) != 92 { pipes.append(index) }
-            }
-            let trimmed = (line as String).trimmingCharacters(in: .whitespaces)
-            if pipes.count >= 3, trimmed.hasPrefix("|"), trimmed.hasSuffix("|") {
-                let cells = zip(pipes, pipes.dropFirst()).map { left, right -> NSRange in
-                    var first = left + 1, last = right
-                    while first < last, UnicodeScalar(line.character(at: first)).map(CharacterSet.whitespaces.contains) ?? false { first += 1 }
-                    while last > first, UnicodeScalar(line.character(at: last - 1)).map(CharacterSet.whitespaces.contains) ?? false { last -= 1 }
-                    return NSRange(location: start + first, length: last - first)
-                }
-                parsed.append(Row(start: start, end: contentsEnd, cells: cells,
-                                  separator: separator.firstMatch(in: line as String, range: NSRange(location: 0, length: line.length)) != nil))
-            } else { parsed.append(nil) }
-            starts.append(start)
-            offset = end
+    /// The GFM table whose rows cover `location`, with the row it is on.
+    static func containing(_ model: MarkdownModel, location: Int) -> Self? {
+        for table in model.tables {
+            if let index = table.rows.firstIndex(where: { $0.start <= location && location <= $0.end }) { return Self(rows: table.rows, current: index) }
         }
-        return (parsed, starts)
+        return nil
     }
 
-    /// Every table in the text: each run of row lines that includes a separator row, found in one pass.
-    static func blocks(in text: String) -> [Self] {
-        let parsed = lines(text).rows
-        var result: [Self] = []
-        var index = 0
-        while index < parsed.count {
-            guard parsed[index] != nil else { index += 1; continue }
-            var last = index
-            while last + 1 < parsed.count, parsed[last + 1] != nil { last += 1 }
-            let rows = parsed[index...last].compactMap { $0 }
-            if rows.contains(where: \.separator) { result.append(Self(rows: rows, current: 0)) }
-            index = last + 1
-        }
-        return result
+    static func blocks(in text: String) -> [Self] { blocks(in: MarkdownModel(text)) }
+
+    static func blocks(in model: MarkdownModel) -> [Self] {
+        model.tables.map { Self(rows: $0.rows, current: 0) }
     }
 
     func move(from location: Int, backward: Bool) -> Move? {
