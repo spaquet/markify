@@ -24,6 +24,9 @@ open Markify.xcodeproj
 ### Testing
 
 ```bash
+# OKF library tests (fast, no Xcode app needed)
+swift test --package-path OKFKit
+
 # Run all tests
 xcodebuild -project Markify.xcodeproj -scheme Markify test
 
@@ -68,6 +71,10 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 - **swift-markdown-ui**: Package dependency for MarkdownUI
 - **NetworkImage** (6.0.1): Image loading support
 - **cmark-gfm** (0.7.1): CommonMark parsing with GitHub Flavored Markdown extensions
+
+## OKF (Open Knowledge Format)
+
+See `OKF.md` for the requirement and design. `OKFKit/` is a UI-free local package (model, bundle scan, validator, text-splice editing); `Markify/Knowledge.swift` is the app layer (link following, log/index writes, sidebar section).
 
 ## Key Implementation Details
 

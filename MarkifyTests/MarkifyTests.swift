@@ -1,5 +1,6 @@
 import AppKit
 import Markdown
+import OKFKit
 import SwiftUI
 import Testing
 @testable import Markify
@@ -280,5 +281,27 @@ struct MarkifyTests {
         #expect(FinderTags.merge(finder: ["Red", "old"], previous: ["old"], current: ["new"]) == ["Red", "new"])
         #expect(FinderTags.merge(finder: ["Bug"], previous: [], current: ["bug", "ui"]) == ["Bug", "ui"])
         #expect(FinderTags.merge(finder: [], previous: ["a"], current: []) == [])
+    }
+
+    @Test func conceptCacheOnlyReadsTypedFrontmatter() {
+        let cache = ConceptCache()
+        #expect(cache.concept(in: "---\ntags: [a]\n---\nNote") == nil)
+        #expect(cache.concept(in: "---\ntype: Metric\nstatus: draft\n---\nBody")?.status == .draft)
+        #expect(cache.concept(in: "---\ntype: Metric\nstatus: draft\n---\nEdited body")?.type == "Metric")
+        #expect(cache.concept(in: "Plain") == nil)
+    }
+
+    @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try "---\nokf_version: \"0.2\"\n---\n".write(to: root.appendingPathComponent("index.md"), atomically: true, encoding: .utf8)
+        try "---\ntype: Metric\n---\n".write(to: root.appendingPathComponent("orders.md"), atomically: true, encoding: .utf8)
+        let file = root.appendingPathComponent("revenue.md")
+        #expect(Knowledge.root(for: file, text: "Plain note", boundary: nil).map(OKFBundle.key) == OKFBundle.key(root))
+        #expect(Knowledge.root(for: file, text: "---\ntype: Metric\n---\n", boundary: nil) != nil)
+        let issues = Knowledge.issues(text: "---\ntype: Metric\n---\nSee [orders](/orders.md) and [later](/later.md).", fileURL: file, root: root)
+        #expect(issues.map(\.message) == ["Links to /later.md, which does not exist yet."])
+        #expect(Knowledge.issues(text: "No frontmatter", fileURL: file, root: root).first?.severity == .error)
     }
 }

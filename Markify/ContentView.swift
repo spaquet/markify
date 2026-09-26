@@ -1,6 +1,7 @@
 import AppKit
 import FoundationModels
 import Markdown
+import OKFKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -83,6 +84,10 @@ struct ContentView: View {
     @State private var librarySearch = ""
     @State private var libraryFolder: URL?
     @State private var libraryNotes: [LibraryNote] = []
+    @State private var knowledge: KnowledgeState?
+    @State private var bundleRoot: URL?
+    @State private var knowledgeTask: Task<Void, Never>?
+    @State private var conceptCache = ConceptCache()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
@@ -117,6 +122,8 @@ struct ContentView: View {
     private func shortcut(_ id: String) -> KeyboardShortcut? { Shortcuts.keyboardShortcut(id, stored: shortcutOverrides) }
     private func shortcutLabel(_ id: String) -> String { Shortcuts.display(Shortcuts.key(id, stored: shortcutOverrides)) }
     private var wordCount: Int { document.text.split(whereSeparator: \.isWhitespace).count }
+    /// The document's OKF reading, when its frontmatter has a `type`.
+    private var concept: OKFConcept? { conceptCache.concept(in: document.text) }
     private var aiAvailability: SystemLanguageModel.Availability { SystemLanguageModel.default.availability }
 
     var body: some View {
@@ -133,7 +140,7 @@ struct ContentView: View {
                     if slashQuery != query { slashSelection = 0 }
                     slashQuery = query
                 }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 },
-                theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil)
+                theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil, bundleRoot: bundleRoot)
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56)
@@ -224,6 +231,7 @@ struct ContentView: View {
                                     Button("HTML") { exportHTML() }
                                     Button("PDF") { exportPDF() }
                                 }
+                                Menu("Knowledge") { knowledgeMenu }
                                 Button("Find") { showFind = true }
                                 Toggle("Show Word Count", isOn: $showWordCount)
                                 SettingsLink { Text("Settings") }
@@ -347,7 +355,10 @@ struct ContentView: View {
         .onChange(of: fileURL, initial: true) { _, _ in
             rememberDocumentLens()
             mirrorTags()
+            refreshKnowledge()
         }
+        .onChange(of: concept != nil) { _, _ in refreshKnowledge() }
+        .onChange(of: sidebarOpen) { _, open in if open { refreshKnowledge() } }
         .onChange(of: Frontmatter.parse(document.text)?.tags ?? []) { _, _ in mirrorTags() }
         .onChange(of: document.text) { _, _ in offerTitleTagsIfNeeded() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willBeginSheetNotification)) { notification in
@@ -407,6 +418,10 @@ struct ContentView: View {
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }.buttonStyle(.plain).padding(7)
             }
+            if concept != nil || knowledge != nil {
+                KnowledgeSection(state: knowledge, fileURL: fileURL,
+                                 issues: Knowledge.issues(text: document.text, fileURL: fileURL, root: bundleRoot), open: open)
+            }
             Text("Library").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.top, 12)
             if libraryFolder != nil {
                 ForEach(libraryNotes.filter {
@@ -447,6 +462,19 @@ struct ContentView: View {
             if let folder, FileManager.default.fileExists(atPath: folder.path) { libraryFolder = folder }
         }
         refreshLibrary()
+        refreshKnowledge()
+    }
+
+    /// Rescans the OKF bundle around the document; plain notes outside a declared bundle skip the scan.
+    private func refreshKnowledge() {
+        let root = Knowledge.root(for: fileURL, text: document.text, boundary: libraryFolder)
+        bundleRoot = root
+        knowledgeTask?.cancel()
+        guard let root else { knowledge = nil; return }
+        knowledgeTask = Task {
+            let state = await Knowledge.load(root: root)
+            if !Task.isCancelled { knowledge = state }
+        }
     }
 
     private func refreshLibrary() {
@@ -454,9 +482,11 @@ struct ContentView: View {
               let urls = try? FileManager.default.contentsOfDirectory(at: libraryFolder, includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles]) else { return }
         libraryNotes = urls.filter { $0.pathExtension == "md" }.compactMap { url in
             guard let source = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-            let lines = source.split(separator: "\n", omittingEmptySubsequences: true)
-            let heading = lines.first { $0.hasPrefix("# ") }.map { String($0.dropFirst(2)) }
-            let preview = lines.first { !$0.hasPrefix("#") && !$0.hasPrefix("---") }.map(String.init) ?? ""
+            let frontmatter = Frontmatter.parse(source)
+            let lines = FrontmatterBlock.body(of: source).split(separator: "\n", omittingEmptySubsequences: true)
+            let heading = frontmatter?.title ?? lines.first { $0.hasPrefix("# ") }.map { String($0.dropFirst(2)) }
+            let description = FrontmatterBlock.locate(in: source).flatMap { try? OKFConcept(yaml: $0.yaml) }?.description
+            let preview = description ?? lines.first { !$0.hasPrefix("#") && !$0.hasPrefix("---") }.map(String.init) ?? ""
             return LibraryNote(url: url, title: heading ?? url.deletingPathExtension().lastPathComponent, preview: preview)
         }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
@@ -1334,6 +1364,89 @@ struct ContentView: View {
         mirroredTags = tags
     }
 
+    // MARK: Knowledge (OKF)
+
+    @ViewBuilder private var knowledgeMenu: some View {
+        if let concept {
+            Button("Mark Verified") { markVerified() }
+            Picker("Status", selection: Binding(get: { concept.status.name }, set: { setStatus(OKFStatus($0)) })) {
+                Text("Draft").tag("draft")
+                Text("Stable").tag("stable")
+                Text("Deprecated").tag("deprecated")
+            }
+        } else {
+            Button("Make Concept…") { makeConcept() }
+        }
+        Divider()
+        Button("Add Log Entry…") {
+            guard let fileURL else { return }
+            Knowledge.addLogEntry(for: fileURL, title: concept?.title ?? title, bundleRoot: bundleRoot)
+            refreshKnowledge()
+        }.disabled(fileURL == nil)
+        Button("Rebuild Index") {
+            guard let fileURL else { return }
+            Task {
+                await Knowledge.rebuildIndex(for: fileURL, bundleRoot: bundleRoot ?? fileURL.deletingLastPathComponent())
+                refreshKnowledge()
+            }
+        }.disabled(fileURL == nil)
+        Button("Show Links & Issues") { if !sidebarOpen { toggleSidebar() } }
+    }
+
+    /// Appends a `human:` verification stamp for Settings › Knowledge's ID.
+    private func markVerified() {
+        editFrontmatter { yaml in try OKFEditing.addingVerification(OKFStamp(by: Knowledge.actor, at: Date()), to: yaml) }
+    }
+
+    private func setStatus(_ status: OKFStatus) {
+        editFrontmatter { OKFEditing.settingStatus(status, in: $0) }
+    }
+
+    /// Adds a `type`, offering the types already used in the bundle.
+    private func makeConcept() {
+        let used = Dictionary(grouping: knowledge?.bundle.concepts.compactMap(\.concept?.type) ?? [], by: { $0 })
+            .sorted { $0.value.count > $1.value.count }.map(\.key)
+        let alert = NSAlert()
+        alert.messageText = "Make Concept"
+        alert.informativeText = "An OKF concept needs a type, such as Metric, Playbook or Reference."
+        let field = NSComboBox(frame: NSRect(x: 0, y: 0, width: 260, height: 26))
+        field.addItems(withObjectValues: used.isEmpty ? ["Reference", "Playbook", "Metric"] : used)
+        field.stringValue = used.first ?? "Reference"
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Make Concept")
+        alert.addButton(withTitle: "Cancel")
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let type = field.stringValue.trimmingCharacters(in: .whitespaces)
+        guard !type.isEmpty else { return }
+        let entry = "type: \(OKFEditing.scalar(type))"
+        // `type` leads the block, as in the spec's examples.
+        editFrontmatter { yaml in OKFEditing.hasKey("type", in: yaml) ? OKFEditing.setting("type", to: entry, in: yaml) : entry + "\n" + yaml }
+    }
+
+    /// Rewrites the frontmatter YAML as one undoable edit, creating the block when missing, and keeps the caret in place.
+    private func editFrontmatter(_ transform: (String) throws -> String) {
+        guard let textView else { return }
+        let block = FrontmatterBlock.locate(in: textView.string)
+        let range = block.map { NSRange(location: $0.yamlRange.lowerBound, length: $0.yamlRange.count) } ?? NSRange(location: 0, length: 0)
+        let replacement: String
+        do {
+            let yaml = try transform(block?.yaml ?? "")
+            guard yaml != block?.yaml else { return }
+            replacement = block == nil ? "---\n" + yaml + "---\n" : yaml
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "The frontmatter couldn’t be updated."
+            alert.informativeText = String(describing: error)
+            alert.runModal()
+            return
+        }
+        let selection = textView.selectedRange()
+        textView.insertText(replacement, replacementRange: range)
+        let delta = (replacement as NSString).length - range.length
+        textView.setSelectedRange(selection.location >= NSMaxRange(range) ? NSRange(location: selection.location + delta, length: selection.length) : selection)
+    }
+
     /// Names an untitled document's first save panel and fills its tags from the frontmatter, and starts it in the library when Settings asks.
     private func prepareSavePanel(_ window: NSWindow?) {
         guard fileURL == nil, let window, window === textView?.window else { return }
@@ -1427,6 +1540,7 @@ struct SlashEntry {
         case "Math": (3, 0)
         case "Image": (2, 0)
         case "Frontmatter": (11, 0)
+        case "Concept": (10, 0)
         default: nil
         }
         if let caret {
@@ -1450,7 +1564,8 @@ struct SlashEntry {
         .init(title: "Quote", symbol: "text.quote", shortcut: ">", insertion: "> "),
         .init(title: "Divider", symbol: "minus", shortcut: "---", insertion: "---"),
         .init(title: "Footnote", symbol: "textformat.superscript", shortcut: "[^1]", insertion: "[^1]: "),
-        .init(title: "Frontmatter", symbol: "tag", shortcut: "---", insertion: "---\ntags: []\ndate: \n---")
+        .init(title: "Frontmatter", symbol: "tag", shortcut: "---", insertion: "---\ntags: []\ndate: \n---"),
+        .init(title: "Concept", symbol: "books.vertical", shortcut: "OKF", insertion: "---\ntype: \ntitle: \ndescription: \ntags: []\nstatus: draft\n---")
     ]
 
     static func matching(_ query: String) -> [Self] {

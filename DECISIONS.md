@@ -18,3 +18,7 @@
 - Settings choices where the spec gave no option list: prose font New York / SF Pro, Markdown font SF Mono / Menlo, page color Paper / White / System, code theme Match appearance / Monochrome, pasted images to ./assets / ./images / the document's folder.
 - Shortcuts are stored as overrides of the defaults. Recording a key another action uses moves it and leaves that action unassigned. ⌘+ also zooms in alongside the configurable ⌘=.
 - The Welcome document is copied into the library as "Welcome to Markify.md" on first launch and can be reopened from Help.
+- OKF (Open Knowledge Format) support lives in the local `OKFKit` package (Yams for reading YAML, never for writing). Frontmatter edits splice only the touched key, so comments, key order and unknown keys survive. See OKF.md.
+- OKF badges (type, status, stale, trust, resource) join the existing frontmatter chip row only when the frontmatter has a `type`; plain notes are unchanged.
+- ⌘-click follows links in both lenses; `/…` links resolve against the OKF bundle root (nearest `index.md` with `okf_version`, else the library, else the file's folder). A missing `.md` target offers to create it as a concept.
+- `index.md` and `log.md` are written only through Knowledge menu commands, never automatically.

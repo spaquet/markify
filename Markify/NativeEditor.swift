@@ -1,5 +1,6 @@
 import AppKit
 import Markdown
+import OKFKit
 import SwaTex
 import SwaTexRender
 import SwiftUI
@@ -41,6 +42,8 @@ struct NativeEditor: NSViewRepresentable {
     var theme = EditorTheme()
     /// The find match the selection sits on, drawn with the stronger highlight.
     var currentMatch: NSRange? = nil
+    /// The OKF bundle root that `/…` links resolve against.
+    var bundleRoot: URL? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -51,6 +54,7 @@ struct NativeEditor: NSViewRepresentable {
         scroll.borderType = .noBorder
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.documentURL = fileURL
+        editor.bundleRoot = bundleRoot
         editor.columnWidth = columnWidth
         editor.rendered = !markdownLens
         editor.theme = theme
@@ -85,6 +89,7 @@ struct NativeEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let editor = scroll.documentView as? NSTextView else { return }
         (editor as? MarkdownTextView)?.documentURL = fileURL
+        (editor as? MarkdownTextView)?.bundleRoot = bundleRoot
         (editor as? MarkdownTextView)?.columnWidth = columnWidth
         (editor as? MarkdownTextView)?.rendered = !markdownLens
         (editor as? MarkdownTextView)?.theme = theme
@@ -427,6 +432,7 @@ struct NativeEditor: NSViewRepresentable {
 
 final class MarkdownTextView: NSTextView {
     var documentURL: URL?
+    var bundleRoot: URL?
     var columnWidth: CGFloat = 640
     var rendered = true
     var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:]; refreshDecorations() } } }
@@ -776,31 +782,80 @@ final class MarkdownTextView: NSTextView {
         }
         if let frontmatter = Frontmatter.parse(string) {
             for (chip, frame) in frontmatterChips(frontmatter) where frame.intersects(dirtyRect) {
-                if chip.isTag {
-                    NSColor.labelColor.withAlphaComponent(0.06).setFill()
+                if let fill = chip.fill {
+                    fill.setFill()
                     NSBezierPath(roundedRect: frame, xRadius: frame.height / 2, yRadius: frame.height / 2).fill()
                 }
-                chip.text.draw(at: NSPoint(x: frame.minX + (chip.isTag ? 9 : 0), y: frame.midY - chip.text.size().height / 2))
+                chip.text.draw(at: NSPoint(x: frame.minX + (chip.fill != nil ? 9 : 0), y: frame.midY - chip.text.size().height / 2))
             }
         }
     }
 
-    /// Chip layout for the frontmatter row: tags as capsules, then the date as plain text.
-    private func frontmatterChips(_ frontmatter: Frontmatter) -> [(chip: (text: NSAttributedString, isTag: Bool), frame: NSRect)] {
+    /// One item in the frontmatter row: a capsule when it has a fill, plain text otherwise; `link` makes it follow a destination.
+    struct FrontmatterChip {
+        let text: NSAttributedString
+        let fill: NSColor?
+        var link: String? = nil
+    }
+
+    /// The OKF reading of the frontmatter, reparsed only when the YAML changes.
+    private func okfConcept(_ frontmatter: Frontmatter) -> OKFConcept? {
+        let yaml = (string as NSString).substring(with: frontmatter.body)
+        if let cached = conceptCache, cached.yaml == yaml { return cached.concept }
+        let concept = (try? OKFConcept(yaml: yaml)).flatMap { $0.isConcept ? $0 : nil }
+        conceptCache = (yaml, concept)
+        return concept
+    }
+    private var conceptCache: (yaml: String, concept: OKFConcept?)?
+
+    /// Type, status, staleness and trust badges for an OKF concept, ahead of the tags.
+    private func okfChips(_ concept: OKFConcept) -> [FrontmatterChip] {
+        let font = theme.ui(11.5, weight: .medium)
+        func chip(_ text: String, _ color: NSColor, filled: Bool = true) -> FrontmatterChip {
+            FrontmatterChip(text: NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: color]),
+                            fill: filled ? color.withAlphaComponent(0.13) : nil)
+        }
+        var chips = [chip(concept.type ?? "", theme.accent)]
+        switch concept.status {
+        case .stable: break
+        case .draft: chips.append(chip("Draft", .systemOrange))
+        case .deprecated: chips.append(chip("Deprecated", .systemRed))
+        case .other(let raw): chips.append(chip(raw, .secondaryLabelColor))
+        }
+        if concept.isStale() { chips.append(chip("Stale", .systemOrange)) }
+        switch concept.trustTier {
+        case .humanReviewed: chips.append(chip("✓ Reviewed", .systemGreen))
+        case .machineConfirmed: chips.append(chip("Machine-confirmed", .secondaryLabelColor))
+        case .unverified: chips.append(chip("Unverified", .tertiaryLabelColor, filled: false))
+        }
+        return chips
+    }
+
+    /// Chip layout for the frontmatter row: OKF badges, tags as capsules, the date as plain text, then the OKF resource link.
+    private func frontmatterChips(_ frontmatter: Frontmatter) -> [(chip: FrontmatterChip, frame: NSRect)] {
         guard let window else { return [] }
         let screen = firstRect(forCharacterRange: NSRange(location: frontmatter.range.location, length: 1), actualRange: nil)
         let line = convert(window.convertFromScreen(screen), from: nil)
         let font = theme.ui(11.5, weight: .medium)
-        var items = frontmatter.tags.map { (text: NSAttributedString(string: $0, attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]), isTag: true) }
+        let tagFill = NSColor.labelColor.withAlphaComponent(0.06)
+        let concept = okfConcept(frontmatter)
+        var items = concept.map(okfChips) ?? []
+        items += frontmatter.tags.map { FrontmatterChip(text: NSAttributedString(string: $0, attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]), fill: tagFill) }
         if let date = frontmatter.displayDate {
-            items.append((NSAttributedString(string: date, attributes: [.font: theme.ui(11.5), .foregroundColor: NSColor.secondaryLabelColor]), false))
+            items.append(FrontmatterChip(text: NSAttributedString(string: date, attributes: [.font: theme.ui(11.5), .foregroundColor: NSColor.secondaryLabelColor]), fill: nil))
+        }
+        if let resource = concept?.resource {
+            let label = URL(string: resource)?.host() ?? (resource as NSString).lastPathComponent
+            items.append(FrontmatterChip(text: NSAttributedString(string: "↗ " + label, attributes: [.font: theme.ui(11.5), .foregroundColor: theme.accent]), fill: nil, link: resource))
         }
         if items.isEmpty {
-            items.append((NSAttributedString(string: "Frontmatter", attributes: [.font: font, .foregroundColor: NSColor.tertiaryLabelColor]), true))
+            items.append(FrontmatterChip(text: NSAttributedString(string: "Frontmatter", attributes: [.font: font, .foregroundColor: NSColor.tertiaryLabelColor]), fill: tagFill))
         }
         var x: CGFloat = 0
-        return items.map { item in
-            let width = item.text.size().width + (item.isTag ? 18 : 0)
+        return items.compactMap { item in
+            let width = item.text.size().width + (item.fill != nil ? 18 : 0)
+            // Chips past the column edge are dropped rather than drawn outside it.
+            guard x + width <= columnWidth || x == 0 else { return nil }
             let height = item.text.size().height + 6
             let frame = NSRect(x: x, y: line.midY - height / 2, width: width, height: height)
             x += width + 6
@@ -846,7 +901,12 @@ final class MarkdownTextView: NSTextView {
         let point = convert(event.locationInWindow, from: nil)
         if rendered, let frontmatter = Frontmatter.parse(string),
            let hit = frontmatterChips(frontmatter).first(where: { $0.frame.contains(point) }) {
+            if let link = hit.chip.link { return Knowledge.follow(link, title: nil, from: documentURL, bundleRoot: bundleRoot) }
             return editFrontmatter(frontmatter, at: hit.frame)
+        }
+        // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
+        if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
+            return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot)
         }
         for match in taskMatches() {
             guard let rect = checkboxRect(for: match), rect.contains(point) else { continue }

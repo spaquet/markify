@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage("libraryBookmark") private var libraryBookmark = Data()
     @AppStorage("imageFolder") private var imageFolder = "./assets"
     @AppStorage("startup") private var startup = "Reopen last documents"
+    @AppStorage("okfActorID") private var okfActorID = ""
     @AppStorage("defaultLens") private var defaultLens = "Rendered"
     @AppStorage("rememberLens") private var rememberLens = true
     @AppStorage("proseFont") private var proseFont = "New York"
@@ -83,6 +84,14 @@ struct SettingsView: View {
                     Text("Default Markdown app")
                     Text(isDefaultApp ? "Markify opens .md files." : "Another app opens .md files.")
                 }
+            }
+            Section {
+                TextField(text: $okfActorID, prompt: Text(NSUserName())) {
+                    Text("Verifier ID")
+                    Text("Recorded as human:\(okfActorID.isEmpty ? NSUserName() : okfActorID) when you mark an OKF concept verified.")
+                }
+            } header: {
+                Text("Knowledge")
             }
         }.formStyle(.grouped)
     }
