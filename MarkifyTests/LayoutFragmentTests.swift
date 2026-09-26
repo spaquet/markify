@@ -166,3 +166,56 @@ import Testing
         #expect(editor.model.tables.isEmpty, "editing the storage directly")
     }
 }
+
+/// Inline `$…$` math is typeset in the Rendered lens and shows its LaTeX while the caret is in it.
+@MainActor struct InlineMathTests {
+    static let source = "Energy $E = mc^2$ today.\n\n$x^2$\n\nPlain line.\n"
+
+    @Test func formulasAreTypesetInTheRoomTheirSourceLeaves() throws {
+        let (window, editor) = LayoutFragmentTests.makeEditor(Self.source)
+        _ = window
+        let ns = Self.source as NSString
+        let span = ns.range(of: "$E = mc^2$")
+        let formula = try #require(editor.inlineFormulas[span.location], "The formula is typeset")
+        // The LaTeX is hidden and the text after it starts where the formula ends.
+        let storage = editor.textStorage!
+        #expect(storage.attribute(.foregroundColor, at: ns.range(of: "^2").location, effectiveRange: nil) as? NSColor == .clear)
+        let start = editor.textRect(NSRange(location: span.location, length: 1)).minX
+        let after = editor.textRect(NSRange(location: NSMaxRange(span), length: 1)).minX
+        #expect(abs(after - start - formula.width) < 2, "Room for the formula: \(after - start) vs \(formula.width)")
+
+        // It sits on the line's baseline and draws ink in its room.
+        let baseline = try #require(editor.baselineY(at: span.location))
+        let text = editor.textRect(NSRange(location: 0, length: 6))
+        #expect(baseline > text.minY && baseline < text.maxY)
+        let fragment = try #require(LayoutFragmentTests.fragment(editor, at: span.location))
+        let (rep, point) = LayoutFragmentTests.render(fragment)
+        let shift = CGPoint(x: point.x - fragment.layoutFragmentFrame.minX - editor.textContainerOrigin.x,
+                            y: point.y - fragment.layoutFragmentFrame.minY - editor.textContainerOrigin.y)
+        let room = CGRect(x: start + shift.x + 1, y: baseline - formula.metrics.baseline + shift.y, width: formula.width - 2, height: formula.metrics.height)
+        #expect(LayoutFragmentTests.inked(rep, in: room) > 40, "The formula is drawn")
+
+        // A line holding only a formula keeps the text's height.
+        let alone = ns.range(of: "$x^2$")
+        let plain = ns.range(of: "Plain line.")
+        #expect(abs(editor.textRect(NSRange(location: alone.location, length: 1)).height - editor.textRect(NSRange(location: plain.location, length: 1)).height) < 2)
+    }
+
+    @Test func theCaretInAFormulaShowsItsSource() {
+        let (window, editor) = LayoutFragmentTests.makeEditor(Self.source)
+        _ = window
+        let span = (Self.source as NSString).range(of: "$E = mc^2$")
+        editor.setSelectedRange(NSRange(location: span.location + 3, length: 0))
+        #expect(editor.editedFormula == span.location)
+        NativeEditor(text: .constant(Self.source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                     selectedRange: .constant(NSRange(location: 0, length: 0)),
+                     textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+            .style(editor)
+        #expect(editor.inlineFormulas[span.location] == nil, "Not typeset while edited")
+        let color = editor.textStorage!.attribute(.foregroundColor, at: (Self.source as NSString).range(of: "^2").location, effectiveRange: nil) as? NSColor
+        #expect(color != .clear, "The LaTeX shows")
+        let dollar = editor.textStorage!.attribute(.foregroundColor, at: span.location, effectiveRange: nil) as? NSColor
+        #expect(dollar == .tertiaryLabelColor, "Its dollars show, dimmed")
+        #expect(editor.inlineFormulas[(Self.source as NSString).range(of: "$x^2$").location] != nil, "Other formulas stay typeset")
+    }
+}

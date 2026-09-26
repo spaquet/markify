@@ -171,6 +171,8 @@ struct NativeEditor: NSViewRepresentable {
         /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
         var destinations: [NSRange] = []
         var chips: [MarkdownModel.Span] = []
+        /// Inline math typeset in the Rendered lens: the span, the font around it and the formula's width.
+        var formulas: [(span: MarkdownModel.Span, font: NSFont, width: CGFloat)] = []
         /// Mermaid blocks shown as diagrams in the Rendered lens, with the height their image needs.
         var diagrams: [(span: MarkdownModel.Span, height: CGFloat)] = []
         /// Mermaid blocks that failed to render: shown as code with room below for mermaid's message.
@@ -178,6 +180,8 @@ struct NativeEditor: NSViewRepresentable {
         /// Code blocks and callouts in the Rendered lens: the lines they cover and the rounded box drawn behind them.
         var boxes: [(range: NSRange, fill: MarkdownBlockFill)] = []
         let textView = editor as? MarkdownTextView
+        textView?.inlineFormulas = [:]
+        textView?.styledEditedFormula = textView?.editedFormula
         let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         /// Markers are styled after every font, since the hidden ones measure their own width.
         func hide(_ ranges: [NSRange]) { hidden += ranges }
@@ -307,8 +311,22 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.font, value: theme.mono(markdownLens ? 14 : 15), range: span.content)
                 hide(span.markers)
             case .inlineMath:
-                if !markdownLens { storage.addAttribute(.font, value: theme.prose(18, italic: true), range: span.content) }
-                hide(span.markers)
+                let font = storage.attribute(.font, at: span.content.location, effectiveRange: nil) as? NSFont ?? theme.prose(18)
+                // Typeset unless the caret is in it: then the LaTeX shows, to be edited in place.
+                if !markdownLens, let textView, !textView.isEditing(span),
+                   let formula = InlineFormula(latex: source.substring(with: span.content), size: font.pointSize, dark: dark) {
+                    textView.inlineFormulas[span.range.location] = formula
+                    formulas.append((span, font, formula.width))
+                    hide([span.range])
+                } else if !markdownLens, let textView, textView.isEditing(span) {
+                    // Being edited: the LaTeX and its dimmed dollars, so it's clear where the formula ends.
+                    storage.addAttribute(.font, value: theme.prose(18, italic: true), range: span.content)
+                    storage.addAttribute(.foregroundColor, value: dim, range: span.range)
+                    storage.addAttribute(.foregroundColor, value: primary, range: span.content)
+                } else {
+                    if !markdownLens { storage.addAttribute(.font, value: theme.prose(18, italic: true), range: span.content) }
+                    hide(span.markers)
+                }
             case .escape:
                 hide(span.markers)
             case .image(_, false) where !markdownLens:
@@ -360,6 +378,13 @@ struct NativeEditor: NSViewRepresentable {
                 let kern = storage.attribute(.kern, at: first.location, effectiveRange: nil) as? CGFloat ?? 0
                 storage.addAttribute(.kern, value: kern + room * theme.scale, range: first)
             }
+        }
+        // A typeset formula's hidden source leaves room for it on its opening `$`, which keeps the text's font so a line
+        // holding only a formula keeps its height and baseline.
+        for formula in formulas {
+            let first = source.rangeOfComposedCharacterSequence(at: formula.span.range.location)
+            let advance = (source.substring(with: first) as NSString).size(withAttributes: [.font: formula.font]).width
+            storage.addAttributes([.font: formula.font, .foregroundColor: NSColor.clear, .kern: formula.width - advance], range: first)
         }
         for range in destinations { storage.addAttribute(.foregroundColor, value: accent, range: range) }
         if !markdownLens {
@@ -564,6 +589,10 @@ struct NativeEditor: NSViewRepresentable {
             parent.selectedRange = editor.selectedRange()
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             parent.onSlash(slash?.range.location == dismissedSlashLocation ? nil : slash?.query)
+            // Moving into a typeset formula shows its LaTeX; moving out typesets it again.
+            if let markdown = editor as? MarkdownTextView, markdown.rendered, markdown.editedFormula != markdown.styledEditedFormula {
+                parent.style(editor)
+            }
             if let window = editor.window {
                 let selection = editor.selectedRange()
                 let position = editor.firstRect(forCharacterRange: NSRange(location: selection.location, length: max(1, selection.length)), actualRange: nil)
@@ -904,7 +933,7 @@ final class MarkdownTextView: NSTextView {
         for span in model.spans {
             switch span.kind {
             case .image(_, true): anchors.append((span.content.location, span))
-            case .image(_, false), .mathBlock, .frontmatter: anchors.append((span.range.location, span))
+            case .image(_, false), .mathBlock, .inlineMath, .frontmatter: anchors.append((span.range.location, span))
             case .callout(_, let token): anchors.append((token.location, span))
             case .codeBlock(let language?, true):
                 anchors.append((span.range.location, span))
@@ -949,6 +978,7 @@ final class MarkdownTextView: NSTextView {
         defer { drawingSpans = [] }
         drawImages(in: .infinite)
         drawMath(in: .infinite)
+        drawInlineMath()
         drawDiagrams(in: .infinite)
         drawDecorations(in: .infinite)
     }
@@ -1089,6 +1119,43 @@ final class MarkdownTextView: NSTextView {
                                          withAttributes: [.font: NSFont.systemFont(ofSize: 18), .foregroundColor: NSColor.secondaryLabelColor])
             }
         }
+    }
+
+    /// Inline formulas typeset by the last style pass, by their span's location; a formula being edited has none.
+    var inlineFormulas: [Int: InlineFormula] = [:]
+    /// The formula the last style pass showed as source, so a selection change restyles only when it changes.
+    var styledEditedFormula: Int?
+
+    /// True while the caret or selection touches `span`, so its source shows for editing.
+    func isEditing(_ span: MarkdownModel.Span) -> Bool {
+        let selection = selectedRange()
+        return selection.location <= NSMaxRange(span.range) && NSMaxRange(selection) >= span.range.location
+    }
+
+    /// The inline math span the caret is in, if any; entering or leaving one restyles it.
+    var editedFormula: Int? {
+        model.spans.first { $0.kind == .inlineMath && isEditing($0) }?.range.location
+    }
+
+    /// Inline formulas sit on the text's baseline, in the room their hidden source leaves.
+    private func drawInlineMath() {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        for span in drawingSpans where span.kind == .inlineMath && NSLocationInRange(span.range.location, anchorRange) {
+            guard let formula = inlineFormulas[span.range.location], let baseline = baselineY(at: span.range.location) else { continue }
+            let x = textRect(NSRange(location: span.range.location, length: 1)).minX
+            formula.draw(in: context, x: x, baseline: baseline)
+        }
+    }
+
+    /// The baseline of the line holding `location`, in view coordinates.
+    func baselineY(at location: Int) -> CGFloat? {
+        guard let manager = textLayoutManager, let content = manager.textContentManager,
+              let target = content.location(content.documentRange.location, offsetBy: location),
+              let fragment = manager.textLayoutFragment(for: target) else { return nil }
+        let offset = content.offset(from: fragment.rangeInElement.location, to: target)
+        let line = fragment.textLineFragments.first { NSLocationInRange(offset, $0.characterRange) } ?? fragment.textLineFragments.last
+        guard let line else { return nil }
+        return fragment.layoutFragmentFrame.minY + line.typographicBounds.minY + line.glyphOrigin.y + textContainerOrigin.y
     }
 
     func renderMath(_ latex: String, dark: Bool) -> NSImage? {
@@ -1871,5 +1938,32 @@ struct Frontmatter {
 
     private static func clean(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+    }
+}
+
+/// An inline `$…$` formula typeset with SwaTex at the size of the text around it, drawn as vectors so it stays sharp
+/// at any zoom and in PDF.
+struct InlineFormula {
+    let list: DisplayList
+    let options: RenderOptions
+    let metrics: RenderMetrics
+
+    var width: CGFloat { metrics.width }
+
+    init?(latex: String, size: CGFloat, dark: Bool) {
+        let latex = latex.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !latex.isEmpty, let list = try? SwaTexEngine.displayList(for: latex, style: .text, color: dark ? .white : .black) else { return nil }
+        self.list = list
+        options = RenderOptions(fontSize: size, padding: 1)
+        metrics = DisplayListRenderer.metrics(for: list, options: options)
+    }
+
+    /// Draws with the formula's baseline at `baseline` in a flipped context.
+    func draw(in context: CGContext, x: CGFloat, baseline: CGFloat) {
+        context.saveGState()
+        context.translateBy(x: x, y: baseline - metrics.baseline + metrics.height)
+        context.scaleBy(x: 1, y: -1)
+        DisplayListRenderer.draw(list, in: context, options: options)
+        context.restoreGState()
     }
 }

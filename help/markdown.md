@@ -51,7 +51,7 @@ $$
 $$
 ```
 
-A dollar amount such as “$5 and $10” stays text: inline math needs no space inside the dollars and no digit right after the closing one. Math is typeset on your Mac, without a network connection.
+In the Rendered lens, math is typeset in place: `$E = mc^2$` shows as a formula with a real superscript. Click a formula or move the caret into it to edit its LaTeX; it's typeset again when you leave it. A dollar amount such as “$5 and $10” stays text: inline math needs no space inside the dollars and no digit right after the closing one. Math is typeset on your Mac, without a network connection.
 
 ## Footnotes
 
