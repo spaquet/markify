@@ -143,3 +143,64 @@ import Testing
         #expect(editor.tableOverlays.count == 3)
     }
 }
+
+/// Issue #8: ticking a task must not move the page.
+@MainActor struct TaskToggleScrollTests {
+    /// A document window supplies the undo manager in the app; a bare test window has none.
+    @MainActor final class Undo: NSObject, NSTextViewDelegate {
+        let manager = UndoManager()
+        func undoManager(for view: NSTextView) -> UndoManager? { manager }
+    }
+
+    static let source = (1...80).map { "Paragraph \($0) with enough words to fill a line of the page." }.joined(separator: "\n\n")
+        + "\n\n- [ ] Far down task\n- [x] Done task\n"
+
+    @Test func tickingATaskKeepsThePagePosition() throws {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 660), styleMask: [.titled], backing: .buffered, defer: false)
+        let scroll = NSScrollView(frame: window.contentView!.bounds)
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.frame = scroll.bounds
+        editor.isVerticallyResizable = true
+        editor.textContainer?.widthTracksTextView = true
+        editor.textContainerInset = NSSize(width: 0, height: 40)
+        editor.autoresizingMask = [.width]
+        scroll.documentView = editor
+        window.contentView = scroll
+        editor.string = Self.source
+        let undoDelegate = Undo()
+        editor.delegate = undoDelegate
+        editor.allowsUndo = true
+        NativeEditor(text: .constant(Self.source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                     selectedRange: .constant(NSRange(location: 0, length: 0)),
+                     textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+            .style(editor)
+        editor.setSelectedRange(NSRange(location: 0, length: 0))
+        if let manager = editor.textLayoutManager { manager.ensureLayout(for: manager.documentRange) }
+        editor.layoutSubtreeIfNeeded()
+
+        let task = (Self.source as NSString).range(of: "- [ ] Far down task")
+        editor.scrollRangeToVisible(task)
+        let before = scroll.contentView.bounds.origin.y
+        #expect(before > 500, "The task sits far below the top")
+
+        let marker = editor.textRect(NSRange(location: task.location, length: 1))
+        let box = MarkdownLayoutFragment.checkboxRect(marker: marker)
+        let point = editor.convert(NSPoint(x: box.midX, y: box.midY), to: nil)
+        let click = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: point, modifierFlags: [], timestamp: 0,
+                                                    windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        editor.mouseDown(with: click)
+        editor.layoutSubtreeIfNeeded()
+
+        #expect(editor.string.contains("- [x] Far down task"), "The click ticks the task")
+        #expect(abs(scroll.contentView.bounds.origin.y - before) < 1, "The page stays where it was")
+        #expect(editor.selectedRange() == NSRange(location: 0, length: 0), "The caret stays where it was")
+
+        // Undo groups close at the end of the event; undoing inside it would undo nothing.
+        let undo = try #require(editor.undoManager)
+        if undo.groupingLevel > 0 { undo.endUndoGrouping() }
+        #expect(undo.canUndo, "Ticking is undoable")
+        undo.undo()
+        #expect(editor.string.contains("- [ ] Far down task"), "Undo unticks the task")
+        withExtendedLifetime(undoDelegate) {}
+    }
+}

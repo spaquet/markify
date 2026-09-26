@@ -1370,10 +1370,28 @@ final class MarkdownTextView: NSTextView {
         }
         for item in tasks() {
             guard let rect = checkboxRect(for: item), rect.contains(point), let box = item.checkbox else { continue }
-            insertText(item.checked ? " " : "x", replacementRange: NSRange(location: box.location + 1, length: 1))
+            toggleTask(box: box, checked: item.checked)
             return
         }
         super.mouseDown(with: event)
+    }
+
+    /// Flips a task's `[ ]`/`[x]` as one undoable edit. The caret and the page stay put: `insertText` would move the
+    /// caret to the box and scroll to wherever the caret was before the click (issue #8).
+    private func toggleTask(box: NSRange, checked: Bool) {
+        let range = NSRange(location: box.location + 1, length: 1)
+        let mark = checked ? " " : "x"
+        let selection = selectedRange()
+        let clip = enclosingScrollView?.contentView
+        let origin = clip?.bounds.origin
+        guard shouldChangeText(in: range, replacementString: mark) else { return }
+        textStorage?.replaceCharacters(in: range, with: mark)
+        didChangeText()
+        setSelectedRange(selection)
+        if let clip, let origin {
+            clip.scroll(to: origin)
+            enclosingScrollView?.reflectScrolledClipView(clip)
+        }
     }
 
     /// The reference a footnote jump left from, so ⌘-clicking the definition returns to it.
