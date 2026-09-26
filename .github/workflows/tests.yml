@@ -1,0 +1,57 @@
+name: Tests
+
+# Runs on every pull request and push to main. The "Packages" and "App" jobs
+# are required checks in the main branch ruleset, so keep their names.
+# UI tests are left out: they need a logged-in window server and are flaky
+# on hosted runners.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packages:
+    name: Packages
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Test MarkifyMarkdown
+        run: swift test --package-path MarkifyMarkdown
+
+      - name: Test OKFKit
+        run: swift test --package-path OKFKit
+
+  app:
+    name: App
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Test Markify
+        run: |
+          xcodebuild \
+            -project Markify.xcodeproj \
+            -scheme Markify \
+            -destination 'platform=macOS' \
+            -only-testing MarkifyTests \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            test
