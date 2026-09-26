@@ -33,6 +33,7 @@ struct ContentView: View {
     @State private var showAI = false
     @State private var showWritingMenu = false
     @State private var selectionPrompt = ""
+    @State private var writingMenuHeight: CGFloat = 320
     @State private var aiPrompt = ""
     @State private var aiOutput = ""
     @State private var aiBusy = false
@@ -49,6 +50,10 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var page: Color { colorScheme == .dark ? Color(red: 30/255, green: 30/255, blue: 32/255) : Color(red: 252/255, green: 251/255, blue: 249/255) }
+    private var glassStrong: Color { colorScheme == .dark ? Color(red: 50/255, green: 50/255, blue: 56/255).opacity(0.78) : Color.white.opacity(0.78) }
+    private var field: Color { colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.05) }
+    private var rule: Color { colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.09) }
+    private var accentSoft: Color { Color.accentColor.opacity(colorScheme == .dark ? 0.22 : 0.13) }
     private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? "Untitled" }
     private var wordCount: Int { document.text.split(whereSeparator: \.isWhitespace).count }
     private var aiAvailability: SystemLanguageModel.Availability { SystemLanguageModel.default.availability }
@@ -182,9 +187,12 @@ struct ContentView: View {
                         .zIndex(5)
                 }
                 if showWritingMenu && formatBarVisible {
+                    let below = selectionRect.maxY + 30
+                    let top = below + writingMenuHeight + 12 < geometry.size.height ? below : max(56, selectionRect.minY - 52 - writingMenuHeight)
                     writingMenu
-                        .position(x: min(max(selectionRect.midX, 180), geometry.size.width - 180),
-                                  y: selectionRect.maxY + 380 < geometry.size.height ? selectionRect.maxY + 190 : max(190, selectionRect.minY - 190))
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { writingMenuHeight = $0 }
+                        .position(x: min(max(selectionRect.midX, 182), geometry.size.width - 182),
+                                  y: top + writingMenuHeight / 2)
                         .zIndex(6)
                 }
                 if let slashQuery {
@@ -319,68 +327,134 @@ struct ContentView: View {
     }
 
     private var formatBar: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 1) {
             if aiAvailability != .unavailable(.deviceNotEligible) {
                 Button {
                     showWritingMenu.toggle()
                     showAI = false
                     if showWritingMenu { aiTask?.cancel(); aiBusy = false; aiOutput = ""; aiError = nil }
-                } label: { Label("Writing Tools", systemImage: "apple.intelligence") }
-                    .padding(.horizontal, 8)
-                    .background(showWritingMenu ? Color.secondary.opacity(0.1) : .clear, in: .capsule)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).font(.system(size: 14))
+                        Text("Writing Tools").font(.system(size: 13, weight: .semibold))
+                    }
+                    .padding(.leading, 10).padding(.trailing, 12).frame(height: 32)
+                    .background(showWritingMenu ? field : .clear, in: .capsule)
+                    .contentShape(.capsule)
+                }
+                .help("Writing Tools ⇧⌘W")
+                .accessibilityLabel("Writing Tools")
+                formatDivider
             }
-            Divider().frame(height: 18)
             Menu {
                 ForEach(["Body", "Title", "Heading", "Subheading", "Quote", "Code block", "Callout", "Bulleted", "Numbered", "Task"], id: \.self) { style in
                     Button(style) { applyBlockStyle(style) }
                 }
-            } label: { Text("Body ⌄") }
-            Divider().frame(height: 18)
+            } label: {
+                HStack(spacing: 4) {
+                    Text(currentBlockStyle)
+                    Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+                }
+                .foregroundStyle(.secondary)
+                .padding(.leading, 12).padding(.trailing, 10).frame(height: 32)
+                .contentShape(.capsule)
+            }
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .accessibilityLabel("Block style, \(currentBlockStyle)")
+            formatDivider
             tool("bold", help: "Bold", marker: "**")
             tool("italic", help: "Italic", marker: "*")
             tool("strikethrough", help: "Strikethrough", marker: "~~")
             tool("chevron.left.forwardslash.chevron.right", help: "Inline Code", marker: "`")
-            Divider().frame(height: 18)
-            Button { wrap("[", suffix: "](url)") } label: { Image(systemName: "link").frame(width: 32, height: 32) }.help("Link")
+            formatDivider
+            Button { wrap("[", suffix: "](url)") } label: { Image(systemName: "link").frame(width: 32, height: 32).contentShape(.circle) }
+                .help("Link ⌘K").accessibilityLabel("Link")
         }
+        .font(.system(size: 13))
         .buttonStyle(.plain)
         .padding(3)
         .frame(height: 38)
+        .background(glassStrong, in: .capsule)
         .glassEffect(in: .capsule)
     }
 
+    private var formatDivider: some View {
+        Rectangle().fill(rule).frame(width: 1, height: 18).padding(.horizontal, 2)
+    }
+
     private func tool(_ symbol: String, help: String, marker: String) -> some View {
-        Button { wrap(marker) } label: { Image(systemName: symbol).frame(width: 32, height: 32) }
-            .help(help).accessibilityLabel(help)
+        let active = isWrapped(marker)
+        return Button { wrap(marker) } label: {
+            Image(systemName: symbol)
+                .frame(width: 32, height: 32)
+                .foregroundStyle(active ? Color.accentColor : .primary)
+                .background(active ? accentSoft : .clear, in: .circle)
+                .contentShape(.circle)
+        }
+        .help(help).accessibilityLabel(help).accessibilityAddTraits(active ? .isSelected : [])
+    }
+
+    private var currentBlockStyle: String {
+        let source = document.text as NSString
+        guard selectedRange.location <= source.length else { return "Body" }
+        let line = source.substring(with: source.lineRange(for: NSRange(location: selectedRange.location, length: 0)))
+        for (pattern, style) in [("^# ", "Title"), ("^## ", "Heading"), ("^#{3,6} ", "Subheading"), ("^> \\[!", "Callout"), ("^> ", "Quote"),
+                                 ("^```", "Code block"), ("^\\s*[-*+] \\[[ xX]\\] ", "Task"), ("^\\s*[-*+] ", "Bulleted"), ("^\\s*[0-9]+[.)] ", "Numbered")]
+        where line.range(of: pattern, options: .regularExpression) != nil { return style }
+        return "Body"
+    }
+
+    private func isWrapped(_ marker: String) -> Bool {
+        let source = document.text as NSString
+        let length = (marker as NSString).length
+        guard selectedRange.length > 0, selectedRange.location >= length, NSMaxRange(selectedRange) + length <= source.length,
+              source.substring(with: NSRange(location: selectedRange.location - length, length: length)) == marker,
+              source.substring(with: NSRange(location: NSMaxRange(selectedRange), length: length)) == marker else { return false }
+        guard marker == "*" else { return true }
+        // A lone `*` is italic only when it is not half of a `**` bold marker, unless it's `***`.
+        let before = selectedRange.location >= 2 ? source.substring(with: NSRange(location: selectedRange.location - 2, length: 1)) : ""
+        let after = NSMaxRange(selectedRange) + 2 <= source.length ? source.substring(with: NSRange(location: NSMaxRange(selectedRange) + 1, length: 1)) : ""
+        let triple = selectedRange.location >= 3 && source.substring(with: NSRange(location: selectedRange.location - 3, length: 3)) == "***"
+        return triple || (before != "*" && after != "*")
     }
 
     private var writingMenu: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             if aiAvailability == .available {
-            HStack {
-                Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor)
+            HStack(spacing: 8) {
+                Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).font(.system(size: 14))
                 TextField("Describe your change", text: $selectionPrompt)
+                    .textFieldStyle(.plain)
                     .onSubmit { generateSelection("Revise the selection as follows: \(selectionPrompt). Return only the revised Markdown text.") }
-                Text("↩").foregroundStyle(.secondary)
+                Image(systemName: "return").font(.system(size: 12)).foregroundStyle(.tertiary)
             }
-            .padding(8).frame(height: 36)
-            .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 12))
+            .padding(.horizontal, 12).frame(height: 36)
+            .background(field, in: .rect(cornerRadius: 12))
             HStack(spacing: 6) {
-                Button { openSystemWritingTools() } label: { Label("Proofread", systemImage: "text.badge.checkmark").frame(maxWidth: .infinity) }
-                Button { openSystemWritingTools() } label: { Label("Rewrite", systemImage: "arrow.triangle.2.circlepath").frame(maxWidth: .infinity) }
+                writingTile("Proofread", symbol: "checkmark") { openSystemWritingTools() }
+                writingTile("Rewrite", symbol: "arrow.clockwise") { openSystemWritingTools() }
             }
             HStack(spacing: 6) {
                 ForEach(["Friendly", "Professional", "Concise"], id: \.self) { tone in
-                    Button(tone) { generateSelection("Rewrite this selection in a \(tone.lowercased()) tone. Return only the revised Markdown text.") }
-                        .frame(maxWidth: .infinity)
+                    Button {
+                        generateSelection("Rewrite this selection in a \(tone.lowercased()) tone. Return only the revised Markdown text.")
+                    } label: {
+                        Text(tone).frame(maxWidth: .infinity).frame(height: 32).contentShape(.rect(cornerRadius: 10))
+                    }
+                    .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 10))
                 }
             }
-            Divider()
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
-                Button("Summary") { generateSelection("Summarize this selection in one paragraph. Return only Markdown text.") }
-                Button("Key Points") { generateSelection("Extract the key points as a Markdown list. Return only the list.") }
-                Button("List") { generateSelection("Turn this selection into a Markdown list. Return only the list.") }
-                Button("Table") { generateSelection("Turn this selection into a Markdown table. Return only the table.") }
+            Rectangle().fill(rule).frame(height: 1).padding(.horizontal, 6).padding(.vertical, 2)
+            Grid(horizontalSpacing: 2, verticalSpacing: 2) {
+                GridRow {
+                    writingRow("Summary", symbol: "text.alignleft") { generateSelection("Summarize this selection in one paragraph. Return only Markdown text.") }
+                    writingRow("Key Points", symbol: "list.bullet") { generateSelection("Extract the key points as a Markdown list. Return only the list.") }
+                }
+                GridRow {
+                    writingRow("List", symbol: "list.dash") { generateSelection("Turn this selection into a Markdown list. Return only the list.") }
+                    writingRow("Table", symbol: "tablecells") { generateSelection("Turn this selection into a Markdown table. Return only the table.") }
+                }
             }
             } else if aiAvailability == .unavailable(.appleIntelligenceNotEnabled) {
                 Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary)
@@ -399,12 +473,42 @@ struct ContentView: View {
             HStack {
                 Text("On this Mac")
                 Spacer()
-                Text("Selection · \(selectionWordCount) words")
-            }.font(.system(size: 11)).foregroundStyle(.secondary)
+                Text("Selection · \(selectionWordCount) \(selectionWordCount == 1 ? "word" : "words")")
+            }
+            .font(.system(size: 11)).foregroundStyle(.secondary)
+            .padding(.horizontal, 10).padding(.top, 2).padding(.bottom, 4)
         }
+        .font(.system(size: 13))
         .buttonStyle(.plain)
         .padding(8).frame(width: 340)
+        .background(glassStrong, in: .rect(cornerRadius: 20))
         .glassEffect(in: .rect(cornerRadius: 20))
+    }
+
+    private func writingTile(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 3) {
+                Image(systemName: symbol).font(.system(size: 15, weight: .medium)).foregroundStyle(Color.accentColor).frame(height: 18)
+                Text(title).fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .contentShape(.rect(cornerRadius: 12))
+        }
+        .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 12))
+    }
+
+    private func writingRow(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 16)
+                Text(title)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10).frame(height: 30)
+            .contentShape(.rect(cornerRadius: 9))
+        }
+        .buttonStyle(MenuRowStyle(fill: .clear, hover: field, radius: 9))
     }
 
     private var selectionWordCount: Int {
@@ -626,6 +730,13 @@ struct ContentView: View {
         let range = textView.selectedRange()
         let selected = (textView.string as NSString).substring(with: range)
         let closing = suffix ?? prefix
+        let length = (prefix as NSString).length
+        if suffix == nil, isWrapped(prefix) {
+            let outer = NSRange(location: range.location - length, length: range.length + 2 * length)
+            textView.insertText(selected, replacementRange: outer)
+            textView.setSelectedRange(NSRange(location: outer.location, length: range.length))
+            return
+        }
         textView.insertText(prefix + selected + closing, replacementRange: range)
         textView.setSelectedRange(NSRange(location: range.location + (prefix as NSString).length, length: (selected as NSString).length))
     }
@@ -805,6 +916,22 @@ struct SuggestedFrontmatter {
         let titleJSON = String(data: try! JSONEncoder().encode(title), encoding: .utf8)!
         let tagsJSON = String(data: try! JSONEncoder().encode(Array(tags.prefix(5))), encoding: .utf8)!
         return "---\ntitle: \(titleJSON)\ntags: \(tagsJSON)\n---\n"
+    }
+}
+
+/// Filled row/tile that brightens on hover and dims while pressed, used inside glass popovers.
+private struct MenuRowStyle: ButtonStyle {
+    let fill: Color
+    let hover: Color
+    let radius: CGFloat
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(fill, in: .rect(cornerRadius: radius))
+            .background(hovering ? hover : .clear, in: .rect(cornerRadius: radius))
+            .opacity(configuration.isPressed ? 0.6 : 1)
+            .onHover { hovering = $0 }
     }
 }
 

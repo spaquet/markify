@@ -18,9 +18,12 @@ struct SettingsView: View {
     @AppStorage("suggestTitleTags") private var suggestTitleTags = false
     @AppStorage("generationTone") private var generationTone = "Match document"
     @AppStorage("useSectionContext") private var useSectionContext = true
+    @State private var selectedTab = Tab.general
+
+    private enum Tab { case general, editor, appearance, intelligence, shortcuts }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             Form {
                 Section("Documents") {
                     Picker("New documents are saved to", selection: $newDocumentLocation) {
@@ -42,7 +45,7 @@ struct SettingsView: View {
                         Text("Library").tag("Library")
                     }
                 }
-            }.formStyle(.grouped).tabItem { Label("General", systemImage: "gearshape") }
+            }.formStyle(.grouped).tabItem { Label("General", systemImage: "gearshape") }.tag(Tab.general)
 
             Form {
                 Section("Lenses") {
@@ -60,7 +63,7 @@ struct SettingsView: View {
                     Toggle("Fade toolbar while typing", isOn: $fadeToolbar)
                     Toggle("Show word count", isOn: $showWordCount)
                 }
-            }.formStyle(.grouped).tabItem { Label("Editor", systemImage: "character.cursor.ibeam") }
+            }.formStyle(.grouped).tabItem { Label("Editor", systemImage: "character.cursor.ibeam") }.tag(Tab.editor)
 
             Form {
                 Section("Appearance") {
@@ -71,7 +74,7 @@ struct SettingsView: View {
                     }.pickerStyle(.segmented)
                 }
                 Section("Controls") { Toggle("Show status capsule", isOn: $showStatusCapsule) }
-            }.formStyle(.grouped).tabItem { Label("Appearance", systemImage: "circle.lefthalf.filled") }
+            }.formStyle(.grouped).tabItem { Label("Appearance", systemImage: "circle.lefthalf.filled") }.tag(Tab.appearance)
 
             Form {
                 Section("Apple Intelligence") {
@@ -86,7 +89,7 @@ struct SettingsView: View {
                     }
                     Toggle("Use surrounding section as context", isOn: $useSectionContext)
                 }
-            }.formStyle(.grouped).tabItem { Label("Intelligence", systemImage: "apple.intelligence") }
+            }.formStyle(.grouped).tabItem { Label("Intelligence", systemImage: "apple.intelligence") }.tag(Tab.intelligence)
 
             Form {
                 Section("Editor") {
@@ -100,9 +103,11 @@ struct SettingsView: View {
                     LabeledContent("Italic", value: "⌘I")
                     LabeledContent("Link", value: "⌘K")
                 }
-            }.formStyle(.grouped).tabItem { Label("Shortcuts", systemImage: "keyboard") }
+            }.formStyle(.grouped).tabItem { Label("Shortcuts", systemImage: "keyboard") }.tag(Tab.shortcuts)
         }
         .frame(width: 780, height: 480)
+        .onAppear { selectedTab = .general }
+        .onDisappear { selectedTab = .general }
     }
 
     private var libraryPath: String {
