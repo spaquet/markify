@@ -28,7 +28,9 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      # MarkifyMarkdown arrives with the editor-fragments branch.
       - name: Test MarkifyMarkdown
+        if: hashFiles('MarkifyMarkdown/Package.swift') != ''
         run: swift test --package-path MarkifyMarkdown
 
       - name: Test OKFKit
