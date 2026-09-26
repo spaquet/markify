@@ -172,6 +172,22 @@ private final class FixtureBundle {}
         #expect(frontmatter?.date == "2026-09-26")
     }
 
+    @Test func mdxBlocksAreDimmedInMDXFilesOnly() {
+        let source = "import Chart from './chart'\n\n<Chart>\n  **x**\n</Chart>\n"
+        for (url, dimmed) in [(URL(fileURLWithPath: "/tmp/a.mdx"), true), (URL(fileURLWithPath: "/tmp/a.md"), false)] {
+            let editor = NSTextView(usingTextLayoutManager: true)
+            editor.string = source
+            NativeEditor(text: .constant(source), fileURL: url, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                         selectedRange: .constant(NSRange(location: 0, length: 0)),
+                         textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+                .style(editor)
+            #expect(editor.string == source)
+            #expect((Self.describe(editor.textStorage!, at: 0) == "18 dim") == dimmed, "\(url.lastPathComponent)")
+            // In a .md file `<Chart>` starts a CommonMark HTML block, dimmed as HTML.
+            #expect(Self.describe(editor.textStorage!, at: (source as NSString).range(of: "**x**").location + 2) == "18 dim")
+        }
+    }
+
     @Test func imagePathsDecodeBeforeLoading() {
         let document = URL(fileURLWithPath: "/tmp/notes/note.md")
         #expect(MarkdownTextView.imageURL("assets/My%20pic.png", document: document).path == "/tmp/notes/assets/My pic.png")

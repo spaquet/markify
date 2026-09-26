@@ -8,21 +8,28 @@ import Markdown
 /// same-length whitespace, so cmark never misreads them and every offset still points into the original source.
 public struct MarkdownModel: Sendable {
     public let source: String
+    public let mdx: Bool
     /// Every span, ordered by location. Containers come before what they contain.
     public let spans: [Span]
     public let tables: [Table]
     public let lists: [List]
 
-    public init(_ source: String) {
+    /// `mdx` also recognizes MDX's `import`/`export` lines and JSX blocks, which are kept as written.
+    public init(_ source: String, mdx: Bool = false) {
         self.source = source
+        self.mdx = mdx
         let ns = source as NSString
         let frontmatter = Extensions.frontmatter(in: ns)
         var masked = Masker(ns)
         if let frontmatter { masked.blank(frontmatter.range) }
         var document = Document(parsing: masked.text)
-        var literals = Literals.collect(document, map: MarkdownSourceMap(masked.text))
+        let map = MarkdownSourceMap(masked.text)
+        var literals = Literals.collect(document, map: map)
         if let frontmatter { literals.append(frontmatter.range) }
-        let found = Extensions.find(in: ns, outside: literals)
+        // JSX parses as HTML, so MDX blocks are only kept out of code.
+        let mdxBlocks = mdx ? Extensions.mdx(in: ns, outside: Literals.collect(document, map: map, html: false)) : []
+        literals += mdxBlocks.map(\.range)
+        let found = Extensions.find(in: ns, outside: literals) + mdxBlocks
         if !found.isEmpty {
             for span in found { masked.mask(span) }
             document = Document(parsing: masked.text)
@@ -76,6 +83,8 @@ public struct MarkdownModel: Sendable {
         case mathBlock, inlineMath
         case footnoteReference(label: String)
         case footnoteDefinition(label: String, labelRange: NSRange)
+        /// An MDX `import`/`export` block or JSX block.
+        case mdxBlock
     }
 
     public struct ListItem: Hashable, Sendable {
@@ -129,7 +138,7 @@ private struct Masker {
 
     mutating func mask(_ span: MarkdownModel.Span) {
         switch span.kind {
-        case .mathBlock: blank(span.range)
+        case .mathBlock, .mdxBlock: blank(span.range)
         case .inlineMath: inline(span.range)
         // Only the `[^label]:` prefix, so the definition text is still parsed as inline Markdown.
         case .footnoteDefinition: inline(NSRange(location: span.range.location, length: span.content.location - span.range.location))
@@ -197,14 +206,43 @@ enum Extensions {
     }
 }
 
+extension Extensions {
+    /// MDX blocks at the start of a line: ESM (`import`, `export`) and JSX (`<Component`, `</Component`, `<>`), each up to the next blank line.
+    static func mdx(in source: NSString, outside code: [NSRange]) -> [MarkdownModel.Span] {
+        let start = try! NSRegularExpression(pattern: #"^(?:import\s|export\s|<[A-Z>]|</[A-Z>])"#)
+        var spans: [MarkdownModel.Span] = []
+        var location = 0
+        while location < source.length {
+            let line = source.lineRange(for: NSRange(location: location, length: 0))
+            defer { location = max(NSMaxRange(line), location + 1) }
+            guard start.firstMatch(in: source as String, options: .anchored, range: line) != nil,
+                  !code.contains(where: { NSLocationInRange(line.location, $0) }) else { continue }
+            var end = line
+            while NSMaxRange(end) < source.length {
+                let next = source.lineRange(for: NSRange(location: NSMaxRange(end), length: 0))
+                guard !source.substring(with: next).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { break }
+                end = next
+            }
+            var stop = NSMaxRange(end)
+            while stop > line.location, [10, 13].contains(source.character(at: stop - 1)) { stop -= 1 }
+            let range = NSRange(location: line.location, length: stop - line.location)
+            spans.append(.init(kind: .mdxBlock, range: range, content: range, markers: []))
+            location = NSMaxRange(end)
+        }
+        return spans
+    }
+}
+
 /// Source ranges whose text is literal: code and HTML never contain extensions.
 enum Literals {
-    static func collect(_ document: Document, map: MarkdownSourceMap) -> [NSRange] {
+    static func collect(_ document: Document, map: MarkdownSourceMap, html: Bool = true) -> [NSRange] {
         var ranges: [NSRange] = []
         func visit(_ node: Markup) {
             switch node {
-            case is CodeBlock, is InlineCode, is HTMLBlock, is InlineHTML:
+            case is CodeBlock, is InlineCode, is HTMLBlock where html, is InlineHTML where html:
                 if let range = node.range.flatMap(map.range) { ranges.append(range) }
+            case is HTMLBlock, is InlineHTML:
+                break
             default:
                 for child in node.children { visit(child) }
             }

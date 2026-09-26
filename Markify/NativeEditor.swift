@@ -161,7 +161,7 @@ struct NativeEditor: NSViewRepresentable {
                                    .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
             if !markdownLens { collapse(range) }
         }
-        let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string)
+        let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
         let secondary = NSColor.secondaryLabelColor
         var hidden: [NSRange] = []
         /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
@@ -235,7 +235,7 @@ struct NativeEditor: NSViewRepresentable {
                         storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.range.location, length: token.range.length))
                     }
                 }
-            case .htmlBlock:
+            case .htmlBlock, .mdxBlock:
                 storage.addAttribute(.foregroundColor, value: dim, range: span.range)
             case .footnoteDefinition(_, let label):
                 storage.addAttributes([.font: markdownLens ? base : theme.ui(13), .foregroundColor: markdownLens ? dim : secondary], range: span.range)
@@ -522,8 +522,9 @@ final class MarkdownTextView: NSTextView {
 
     /// The parsed source, shared by styling, drawing and clicks until the text changes.
     var model: MarkdownModel {
-        if let modelCache, modelCache.source == string { return modelCache }
-        let model = MarkdownModel(string)
+        let mdx = Self.isMDX(documentURL)
+        if let modelCache, modelCache.source == string, modelCache.mdx == mdx { return modelCache }
+        let model = MarkdownModel(string, mdx: mdx)
         modelCache = model
         return model
     }
@@ -939,6 +940,8 @@ final class MarkdownTextView: NSTextView {
             }
         }
     }
+
+    static func isMDX(_ url: URL?) -> Bool { url?.pathExtension.lowercased() == "mdx" }
 
     static let chipLead: CGFloat = 26
     static let chipTrail: CGFloat = 9

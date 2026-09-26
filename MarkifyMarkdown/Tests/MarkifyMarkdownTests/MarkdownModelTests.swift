@@ -13,7 +13,7 @@ private let fixture: String = {
 struct Probe {
     let model: MarkdownModel
     let ns: NSString
-    init(_ source: String) { model = MarkdownModel(source); ns = source as NSString }
+    init(_ source: String, mdx: Bool = false) { model = MarkdownModel(source, mdx: mdx); ns = source as NSString }
     func text(_ range: NSRange) -> String { ns.substring(with: range) }
     func spans(_ include: (MarkdownModel.Kind) -> Bool) -> [MarkdownModel.Span] { model.spans(where: include) }
     func contents(_ include: (MarkdownModel.Kind) -> Bool) -> [String] { spans(include).map { text($0.content) } }
@@ -180,6 +180,17 @@ struct EdgeModelTests {
 
     @Test func autolinkMarkers() {
         #expect(Probe("<https://a.b>").markers(isLink) == [["<", ">"]])
+    }
+
+    @Test func mdxBlocksAreKeptAsWritten() {
+        let source = "import Chart from './chart'\nexport const meta = { title: 'x' }\n\n# Title\n\n<Chart data={[1, 2]}>\n  **not markdown**\n</Chart>\n\n```js\nimport x from 'y'\n```\n\nText with <Inline/> JSX.\n"
+        let mdx = Probe(source, mdx: true)
+        #expect(mdx.contents { $0 == .mdxBlock } == ["import Chart from './chart'\nexport const meta = { title: 'x' }", "<Chart data={[1, 2]}>\n  **not markdown**\n</Chart>"])
+        #expect(mdx.spans { $0 == .strong }.isEmpty)
+        #expect(mdx.contents(isHeading) == ["Title"])
+        #expect(mdx.spans(isCode).count == 1)
+        // A plain Markdown file reads the same text as Markdown and HTML.
+        #expect(Probe(source).spans { $0 == .mdxBlock }.isEmpty)
     }
 
     @Test func largeDocumentParsesQuickly() {
