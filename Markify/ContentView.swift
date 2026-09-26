@@ -43,6 +43,8 @@ struct ContentView: View {
     @State private var formatBarTask: Task<Void, Never>?
     @State private var textView: NSTextView?
     @State private var showFind = false
+    private enum FindField { case find, replace }
+    @FocusState private var findFocus: FindField?
     @State private var query = ""
     @State private var replacement = ""
     @State private var matchCase = false
@@ -250,7 +252,7 @@ struct ContentView: View {
                                     Button("PDF") { exportPDF() }
                                 }
                                 Menu("Knowledge") { knowledgeMenu }
-                                Button("Find") { showFind = true }
+                                Button("Find") { openFind(.find) }
                                 Toggle("Show Word Count", isOn: $showWordCount)
                                 SettingsLink { Text("Settings") }
                             } label: { Image(systemName: "ellipsis").frame(width: 30, height: 30).contentShape(.circle) }
@@ -337,6 +339,8 @@ struct ContentView: View {
             .onExitCommand {
                 if review != nil { return revertReview() }
                 if showComposer { return closeComposer() }
+                // Closing find from one of its fields hands the keyboard back to the page.
+                if findFocus != nil, let textView { textView.window?.makeFirstResponder(textView) }
                 showWritingMenu = false; showAI = false; showFind = false; sidebarOpen = false; closeBlockMenu()
             }
         }
@@ -401,8 +405,8 @@ struct ContentView: View {
         .background {
             Button("Toggle Markdown") { toggleLens() }.keyboardShortcut(shortcut("toggleMarkdown")).hidden()
             Button("Toggle Library") { toggleSidebar() }.keyboardShortcut(shortcut("library")).hidden()
-            Button("Find") { showFind = true }.keyboardShortcut(shortcut("find")).hidden()
-            Button("Replace") { showFind = true }.keyboardShortcut(shortcut("replace")).hidden()
+            Button("Find") { openFind(.find) }.keyboardShortcut(shortcut("find")).hidden()
+            Button("Replace") { openFind(.replace) }.keyboardShortcut(shortcut("replace")).hidden()
             Button("Find Next") { showFind = true; findNext() }.keyboardShortcut(shortcut("findNext")).hidden()
             Button("Find Previous") { showFind = true; findPrevious() }.keyboardShortcut(shortcut("findPrevious")).hidden()
             Button("Zoom In") { zoom(by: 1) }.keyboardShortcut(shortcut("zoomIn")).hidden()
@@ -420,7 +424,8 @@ struct ContentView: View {
             if writingTools && aiAvailability != .unavailable(.deviceNotEligible) {
                 Button("Writing Tools") { toggleWritingMenu() }.keyboardShortcut(shortcut("writingTools")).hidden()
             }
-            if generateAtCaret && aiAvailability == .available {
+            // Accepting a review or keeping output works even with Generate at caret off.
+            if (generateAtCaret && aiAvailability == .available) || review != nil || (!aiOutput.isEmpty && !aiBusy) {
                 Button("Continue Writing") { generateAtCaretOrKeep() }.keyboardShortcut(shortcut("generate")).hidden()
             }
         }
@@ -530,7 +535,7 @@ struct ContentView: View {
         return VStack(spacing: 6) {
             HStack(spacing: 4) {
                 HStack {
-                    TextField("Find", text: $query).textFieldStyle(.plain).onSubmit(findNext)
+                    TextField("Find", text: $query).textFieldStyle(.plain).focused($findFocus, equals: .find).onSubmit(findNext)
                     if !query.isEmpty {
                         Text(matches.isEmpty ? "No results" : current.map { "\($0 + 1) of \(matches.count)" } ?? "\(matches.count) found")
                             .font(.system(size: 11.5)).foregroundStyle(.secondary).monospacedDigit()
@@ -550,7 +555,7 @@ struct ContentView: View {
                 .accessibilityLabel("Match case").accessibilityAddTraits(matchCase ? .isSelected : [])
             }
             HStack(spacing: 4) {
-                TextField("Replace", text: $replacement).textFieldStyle(.plain)
+                TextField("Replace", text: $replacement).textFieldStyle(.plain).focused($findFocus, equals: .replace)
                     .padding(.horizontal, 10).frame(height: 30)
                     .background(field, in: .rect(cornerRadius: 9))
                 Button(action: replaceOne) { Text("Replace").padding(.horizontal, 10).frame(height: 28).background(field, in: .rect(cornerRadius: 8)) }
@@ -954,7 +959,7 @@ struct ContentView: View {
     private func generateAtCaretOrKeep() {
         if review != nil { return acceptReview() }
         if !aiOutput.isEmpty && !aiBusy { return keepAIOutput() }
-        openComposer()
+        if generateAtCaret { openComposer() }
     }
 
     private func openComposer() {
@@ -1589,6 +1594,11 @@ struct ContentView: View {
     private func toggleSidebar() {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { sidebarOpen.toggle() }
         chromeVisible = true
+    }
+    private func openFind(_ field: FindField) {
+        showFind = true
+        // The panel is inserted by this update, so focus its field on the next turn.
+        DispatchQueue.main.async { findFocus = field }
     }
     private func findNext() { find(backward: false) }
     private func findPrevious() { find(backward: true) }
