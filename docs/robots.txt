@@ -1,0 +1,5 @@
+# Markify's website. Everyone, including AI crawlers, is welcome to read it.
+User-agent: *
+Allow: /
+
+Sitemap: https://spaquet.github.io/markify/sitemap.xml

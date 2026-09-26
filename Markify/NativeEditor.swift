@@ -209,7 +209,7 @@ struct NativeEditor: NSViewRepresentable {
                 let name = NSRange(location: token.location + 2, length: token.length - 3)
                 guard !markdownLens else { storage.addAttribute(.foregroundColor, value: color, range: name); continue }
                 storage.addAttribute(.font, value: theme.ui(15), range: span.range)
-                boxes.append((span.range, MarkdownBlockFill(color: NSColor.calloutFill(color), radius: 14, padding: NSSize(width: 18, height: 14))))
+                boxes.append((span.range, MarkdownBlockFill(color: NSColor.calloutFill(color), radius: 14 * theme.scale, padding: NSSize(width: 18, height: 14))))
                 // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
                 storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: token)
             case .listItem(let item):
@@ -220,7 +220,7 @@ struct NativeEditor: NSViewRepresentable {
                 } else if let box = item.checkbox {
                     // MarkdownLayoutFragment draws the checkbox over the hidden `- [ ] `; the item's first line takes the task style.
                     storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)], range: prefix)
-                    storage.addAttribute(.markifyTaskBox, value: item.checked, range: NSRange(location: item.marker.location, length: 1))
+                    storage.addAttributes([.markifyTaskBox: item.checked, .markifyTaskAccent: theme.accent], range: NSRange(location: item.marker.location, length: 1))
                     let line = source.lineRange(for: NSRange(location: box.location, length: 0))
                     var end = NSMaxRange(line)
                     while end > NSMaxRange(prefix), [10, 13].contains(source.character(at: end - 1)) { end -= 1 }
@@ -232,7 +232,7 @@ struct NativeEditor: NSViewRepresentable {
                 } else {
                     // MarkdownLayoutFragment draws a bullet over the hidden marker, which keeps its width.
                     storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: prefix)
-                    storage.addAttribute(.markifyBullet, value: true, range: item.marker)
+                    storage.addAttribute(.markifyBullet, value: theme.ui(18), range: item.marker)
                 }
             case .codeBlock(let language?, true) where !markdownLens && textView != nil && language.lowercased() == "mermaid":
                 if let height = diagramHeight(span, source: source, dark: dark, textView: textView) {
@@ -246,21 +246,13 @@ struct NativeEditor: NSViewRepresentable {
                     storage.addAttributes([.font: theme.mono(14), .backgroundColor: NSColor.codeFill], range: span.content)
                 } else {
                     storage.addAttribute(.font, value: theme.mono(13.5), range: span.content)
-                    if span.content.length > 0 { boxes.append((span.content, MarkdownBlockFill(color: .codeFill, radius: 12, padding: NSSize(width: 18, height: 16)))) }
+                    if span.content.length > 0 { boxes.append((span.content, MarkdownBlockFill(color: .codeFill, radius: 12 * theme.scale, padding: NSSize(width: 18, height: 16)))) }
                 }
                 hide(span.markers)
                 let code = source.substring(with: span.content)
-                let colors: [(String, CodeToken)] = [
-                    (#"\b(func|let|var|if|else|return|class|struct|import|guard|private|def|const|function|for|while|in|true|false|nil|null)\b"#, .keyword),
-                    (#"\b[A-Z][A-Za-z0-9_]*\b"#, .type),
-                    (#""[^"\n]*"|\b[0-9]+(\.[0-9]+)?\b"#, .literal),
-                    (#"(//|#)[^\n]*"#, .comment)
-                ]
-                for (pattern, kind) in colors {
-                    guard let color = theme.code(kind), let regex = try? NSRegularExpression(pattern: pattern) else { continue }
-                    for token in regex.matches(in: code, range: NSRange(location: 0, length: (code as NSString).length)) {
-                        storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.range.location, length: token.range.length))
-                    }
+                for (token, kind) in CodeToken.tokens(in: code) {
+                    guard let color = theme.code(kind) else { continue }
+                    storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.location, length: token.length))
                 }
             case .htmlBlock, .mdxBlock:
                 storage.addAttribute(.foregroundColor, value: dim, range: span.range)

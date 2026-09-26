@@ -1,0 +1,119 @@
+import AppKit
+import CryptoKit
+import PDFKit
+import Testing
+@testable import Markify
+
+@MainActor struct ExportTests {
+    let folder: URL = {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("MarkifyExport-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: url.appendingPathComponent("assets"), withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: url.appendingPathComponent("out"), withIntermediateDirectories: true)
+        return url
+    }()
+
+    func context(_ source: String, to name: String = "out/doc.html") -> DocumentExport.Context {
+        .init(source: source, documentURL: folder.appendingPathComponent("doc.md"), bundleRoot: nil,
+              destination: folder.appendingPathComponent(name), fallbackTitle: "Doc")
+    }
+
+    @Test func pageIsCompleteAndTitled() async {
+        let page = await DocumentExport.page(context("---\ntitle: Frontmatter Title\ntags: [a, b]\n---\n# Heading\n\nText.\n"), for: .html)
+        #expect(page.hasPrefix("<!doctype html>"))
+        #expect(page.contains("<html lang=\"en\">"))
+        #expect(page.contains("<title>Frontmatter Title</title>"))
+        #expect(page.contains("<span class=\"chip\">a</span><span class=\"chip\">b</span>"))
+        #expect(page.contains("<main>") && page.contains("prefers-color-scheme:dark") && page.contains("@media print"))
+        #expect(!page.contains("Content-Security-Policy"))
+    }
+
+    @Test func mathIsVectorSVGInTextColor() {
+        let svg = MathSVG.render("\\frac{a}{b}", display: true) ?? ""
+        #expect(svg.hasPrefix("<svg"))
+        #expect(svg.contains("<path d=\"M"))
+        #expect(svg.contains("currentColor"))
+        #expect(!svg.contains("<text"))
+        #expect(svg.contains("aria-label=\"\\frac{a}{b}\""))
+    }
+
+    @Test func localImagesAreEmbedded() throws {
+        let image = NSImage(size: NSSize(width: 4, height: 4), flipped: false) { rect in NSColor.red.setFill(); rect.fill(); return true }
+        let png = NSBitmapImageRep(data: image.tiffRepresentation!)!.representation(using: .png, properties: [:])!
+        try png.write(to: folder.appendingPathComponent("assets/my pic.png"))
+        #expect(DocumentExport.imageSource("assets/my%20pic.png", context: context("")).hasPrefix("data:image/png;base64,"))
+        #expect(DocumentExport.imageSource("https://example.com/a.png", context: context("")) == "https://example.com/a.png")
+        // A missing file keeps a path that works from the export's folder.
+        #expect(DocumentExport.imageSource("assets/missing.png", context: context("")) == "../assets/missing.png")
+    }
+
+    @Test func relativeLinksFollowTheExport() {
+        let c = context("")
+        #expect(DocumentExport.linkTarget("notes/other.md#part", context: c) == "../notes/other.md#part")
+        #expect(DocumentExport.linkTarget("#section", context: c) == "#section")
+        #expect(DocumentExport.linkTarget("https://example.com", context: c) == "https://example.com")
+        #expect(DocumentExport.linkTarget("mailto:a@b.c", context: c) == "mailto:a@b.c")
+    }
+
+    @Test func codeIsEscapedAndColored() {
+        let html = DocumentExport.highlighted("let a = \"<b>\" // note")
+        #expect(html.contains("<span class=\"tok-keyword\">let</span>"))
+        #expect(html.contains("<span class=\"tok-literal\">&quot;&lt;b&gt;&quot;</span>"))
+        #expect(html.contains("<span class=\"tok-comment\">// note</span>"))
+    }
+
+    @Test func diagramsExportAsSVG() async {
+        let page = await DocumentExport.page(context("```mermaid\ngraph TD\n  A --> B\n```\n"), for: .html)
+        #expect(page.contains("<figure class=\"diagram\"><svg"))
+    }
+
+    @Test func pdfIsPaginated() async throws {
+        let long = (1...80).map { "## Section \($0)\n\nParagraph \($0) with $x^\($0)$ math and **bold** text.\n" }.joined(separator: "\n")
+        let c = context("# Long\n\n" + long, to: "out/doc.pdf")
+        let page = await DocumentExport.page(c, for: .pdf)
+        #expect(page.contains("Content-Security-Policy"))
+        try await DocumentExport.writePDF(c)
+        let pdf = try #require(PDFDocument(url: c.destination))
+        #expect(pdf.pageCount > 2)
+        #expect(pdf.string?.contains("Section 80") == true)
+        let size = pdf.page(at: 0)?.bounds(for: .mediaBox).size ?? .zero
+        #expect(size == NSPrintInfo.shared.paperSize)
+    }
+
+    @Test func fixtureExportsCleanly() async throws {
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/editor-fixture.md")
+        let page = await DocumentExport.page(context(try String(contentsOf: url, encoding: .utf8)), for: .html)
+        #expect(!page.contains("\u{E000}") && !page.contains("\u{E002}"))
+        #expect(!page.contains("$$"))
+    }
+}
+
+@MainActor struct WelcomeTourTests {
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("MarkifyWelcome-\(UUID().uuidString)")
+
+    @Test func installsTheTourWithItsImage() throws {
+        let target = try MarkifyAppDelegate.installWelcome(in: folder)
+        #expect(try String(contentsOf: target, encoding: .utf8).contains("# Welcome to Markify"))
+        #expect(FileManager.default.fileExists(atPath: folder.appendingPathComponent("assets/welcome-lenses.webp").path))
+    }
+
+    @Test func replacesAnUntouchedOldTourButNotAnEditedOne() throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let target = folder.appendingPathComponent("Welcome to Markify.md")
+        let old = "---\ntags: [essay, editor]\n"
+        try old.write(to: target, atomically: true, encoding: .utf8)
+        _ = try MarkifyAppDelegate.installWelcome(in: folder)
+        #expect(try String(contentsOf: target, encoding: .utf8) == old, "An edited tour is kept")
+
+        // A tour shipped with an earlier version, byte for byte, is replaced.
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/welcome-1.60.md")
+        try FileManager.default.removeItem(at: target)
+        try FileManager.default.copyItem(at: fixture, to: target)
+        _ = try MarkifyAppDelegate.installWelcome(in: folder)
+        #expect(try String(contentsOf: target, encoding: .utf8).contains("# Welcome to Markify"))
+
+        let shipped = try #require(Bundle.main.url(forResource: "Welcome", withExtension: "md"))
+        let current = try Data(contentsOf: shipped)
+        #expect(!MarkifyAppDelegate.previousWelcomes.contains(SHA256.hash(data: current).map { String(format: "%02x", $0) }.joined()),
+                "The current tour's hash must not be listed as a previous one")
+    }
+}

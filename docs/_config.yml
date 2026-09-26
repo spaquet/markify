@@ -1,6 +1,6 @@
 # Jekyll configuration for Markify GitHub Pages
 title: Markify
-description: A beautiful, minimal markdown editor for macOS with live preview
+description: A free Markdown editor for macOS 26 with one page and two lenses, rendered and Markdown.
 url: https://spaquet.github.io/markify
 repository: spaquet/markify
 theme: null

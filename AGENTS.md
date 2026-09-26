@@ -46,7 +46,7 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 
 ### Packages
 
-- **MarkifyMarkdown** (local): `MarkdownModel` parses the source once with swift-markdown (cmark-gfm) and exposes typed spans — content and marker ranges in UTF-16 source offsets — plus tables and lists. Markify's extensions that cmark does not know (frontmatter, `$$`/`$…$` math, footnotes, GitHub callouts, MDX blocks) are found first and masked with same-length whitespace, so cmark never misreads them and every offset still points into the original text. `MarkdownSourceMap` converts cmark locations to offsets. UI-free.
+- **MarkifyMarkdown** (local): `MarkdownModel` parses the source once with swift-markdown (cmark-gfm) and exposes typed spans — content and marker ranges in UTF-16 source offsets — plus tables and lists. Markify's extensions that cmark does not know (frontmatter, `$$`/`$…$` math, footnotes, GitHub callouts, MDX blocks) are found first and masked with same-length whitespace, so cmark never misreads them and every offset still points into the original text. `MarkdownSourceMap` converts cmark locations to offsets. `MarkdownHTML` renders the same reading to HTML (extensions become tokens cmark reads as text), with hooks for math, diagrams, images, links and code colors; export and the help builder use it. UI-free.
 - **OKFKit** (local): Open Knowledge Format model, bundle scan, validator and text-splice editing. See `OKF.md`.
 - **swift-markdown**, **SwaTex** (math rendering, no WebView), **Sparkle** (updates).
 
@@ -60,11 +60,17 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
   - `MarkdownTextView` handles clicks, ⌘-click links and footnotes, drops, paste, list continuation and table editing, supplies images, math and diagram renders to its fragments, and keeps table cell fields as subviews.
   - `MarkdownList` and `MarkdownTable` keep list renumbering and table navigation, built from the model.
 - **MarkdownLayoutFragment.swift**: `MarkdownLayoutFragment`, the `NSTextLayoutFragment` every paragraph lays out as, and the rendering attribute keys. It draws what text attributes cannot — bullets, list numbers, checkboxes, rounded code and callout boxes, and (through `MarkdownTextView.drawDecorations(anchoredIn:)`) images, math, diagrams, callout titles, code labels, the footnotes rule and chips — so decorations move with the text through layout, scrolling and resizing.
-- **Mermaid.swift**: `MermaidRenderer`, one offscreen `WKWebView` running the bundled Mermaid (`Resources/Mermaid`) with no network access.
+- **Mermaid.swift**: `MermaidRenderer`, one offscreen `WKWebView` running the bundled Mermaid (`Resources/Mermaid`) with no network access. It renders editor images and, for export, SVG (`svg(for:)`).
+- **Export.swift**: `DocumentExport` builds a self-contained HTML page from `MarkdownHTML` (math as outline SVG via `MathSVG`, Mermaid SVG, images as data URIs, relative links rewritten for the destination); `PDFPrinter` prints that page to a paginated PDF with WebKit.
+- **AboutView.swift**: the About window (a `Window` scene replacing the standard panel) with links and credits; the full credits are the Legal help page.
 - **Knowledge.swift**: the OKF app layer — link following, log/index writes, the knowledge sidebar section.
 - **Updates.swift**: Sparkle's `SPUStandardUpdaterController` (not started under tests) and the Check for Updates… button. Feed and key are in Info.plist; see RELEASE.md.
 - **Theme.swift**: `EditorTheme` fonts and colors. New York is a system design (`withDesign(.serif)`), not a font name.
-- **Shortcuts.swift**, **Settings/Views/SettingsView.swift**, **Help/**, **Resources/**.
+- **Shortcuts.swift**, **Settings/Views/SettingsView.swift**, **Resources/** (`Welcome.md` is the first-launch tour; `Markify.help` is the generated Help Book — don't edit it by hand).
+
+### Help and website
+
+`help/*.md` is the single source of the user guide. `scripts/build-help.sh` runs `Tools/HelpBuilder` (which renders with `MarkdownHTML`) to write the app's Apple Help Book (`Markify/Resources/Markify.help`, indexed with `hiutil`; it opens in Tips) and the website's `docs/help/`, `docs/faq.html` and `docs/legal.html` (frontmatter `web:`), plus `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`. Page links are written as `other.md`, screenshots as `screens/<file>` from `docs/images/screens`, and `markify://welcome` opens the tour. The Help menu opens pages by anchor (the file name): `HelpBook.open("shortcuts")`. `docs/index.html` and `docs/okf.html` are hand-written.
 
 ### Key Design Patterns
 
@@ -89,6 +95,7 @@ Tests use Swift Testing, not XCTest.
 - `MarkifyTests/LayoutFragmentTests.swift`: fragments are installed, `style()` sets rendering attributes, and pixel tests render fragments into a bitmap to check what they draw.
 - `MarkifyTests/EditorFixtureTests.swift`: golden styling probes for both lenses over `MarkifyTests/Fixtures/editor-fixture.md`, layout checks that hidden markers take no room, and a performance guard. When styling changes on purpose, update the golden entry and say why in the commit.
 - `MarkifyTests/MarkifyTests.swift`, `MermaidTests.swift`: editing behavior, lists, tables, slash menu, links, footnotes, OKF and Mermaid rendering.
+- `MarkifyMarkdown/Tests/MarkdownHTMLTests.swift` and `MarkifyTests/ExportTests.swift`: HTML rendering, export (math SVG, embedded images, link rewriting, Mermaid SVG, PDF pagination) and the Welcome tour install.
 
 ## Common Workflows
 
@@ -97,3 +104,7 @@ Tests use Swift Testing, not XCTest.
 **Adding slash menu entries**: add to `SlashEntry.all` in ContentView.swift and, if the caret should land inside the insertion, to the caret table in `SlashEntry.apply`.
 
 **Modifying Document I/O**: changes to reading and writing belong in `MarkifyDocument`.
+
+**Changing user-visible behavior**: update the matching page in `help/` (shortcuts.md mirrors `Shortcuts.actions`, formatting.md mirrors `SlashEntry.all`, settings.md mirrors SettingsView; a new dependency needs a row in `help/legal.md` and the About window's credits), run `scripts/build-help.sh` and commit `help/` with `Markify/Resources/Markify.help`. CI fails when the Help Book is stale. The website's copy is published with the next release (see RELEASE.md).
+
+**Export**: HTML and PDF come from one page (`DocumentExport.page`); new syntax needs a case in `MarkdownHTML` with a test in `MarkdownHTMLTests`, and styling in `DocumentExport.stylesheet`.

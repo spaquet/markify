@@ -19,17 +19,10 @@ public struct MarkdownModel: Sendable {
         self.source = source
         self.mdx = mdx
         let ns = source as NSString
-        let frontmatter = Extensions.frontmatter(in: ns)
+        let (frontmatter, found, firstParse) = Extensions.all(in: ns, mdx: mdx)
         var masked = Masker(ns)
         if let frontmatter { masked.blank(frontmatter.range) }
-        var document = Document(parsing: masked.text)
-        let map = MarkdownSourceMap(masked.text)
-        var literals = Literals.collect(document, map: map)
-        if let frontmatter { literals.append(frontmatter.range) }
-        // JSX parses as HTML, so MDX blocks are only kept out of code.
-        let mdxBlocks = mdx ? Extensions.mdx(in: ns, outside: Literals.collect(document, map: map, html: false)) : []
-        literals += mdxBlocks.map(\.range)
-        let found = Extensions.find(in: ns, outside: literals) + mdxBlocks
+        var document = firstParse
         if !found.isEmpty {
             for span in found { masked.mask(span) }
             document = Document(parsing: masked.text)
@@ -156,6 +149,21 @@ private struct Masker {
 // MARK: - Extensions
 
 enum Extensions {
+    /// Frontmatter and every extension span, plus the parse of the source with only the frontmatter masked.
+    static func all(in source: NSString, mdx: Bool) -> (frontmatter: MarkdownModel.Span?, found: [MarkdownModel.Span], document: Document) {
+        let frontmatter = frontmatter(in: source)
+        var masked = Masker(source)
+        if let frontmatter { masked.blank(frontmatter.range) }
+        let document = Document(parsing: masked.text)
+        let map = MarkdownSourceMap(masked.text)
+        var literals = Literals.collect(document, map: map)
+        if let frontmatter { literals.append(frontmatter.range) }
+        // JSX parses as HTML, so MDX blocks are only kept out of code.
+        let mdxBlocks = mdx ? Extensions.mdx(in: source, outside: Literals.collect(document, map: map, html: false)) : []
+        literals += mdxBlocks.map(\.range)
+        return (frontmatter, find(in: source, outside: literals) + mdxBlocks, document)
+    }
+
     static func frontmatter(in source: NSString) -> MarkdownModel.Span? {
         guard source.hasPrefix("---\n"), let regex = try? NSRegularExpression(pattern: #"(?m)^---[ \t]*$"#),
               let close = regex.firstMatch(in: source as String, range: NSRange(location: 4, length: source.length - 4))?.range else { return nil }
@@ -239,10 +247,10 @@ enum Literals {
         var ranges: [NSRange] = []
         func visit(_ node: Markup) {
             switch node {
-            case is CodeBlock, is InlineCode, is HTMLBlock where html, is InlineHTML where html:
+            case is CodeBlock, is InlineCode:
                 if let range = node.range.flatMap(map.range) { ranges.append(range) }
             case is HTMLBlock, is InlineHTML:
-                break
+                if html, let range = node.range.flatMap(map.range) { ranges.append(range) }
             default:
                 for child in node.children { visit(child) }
             }
@@ -473,7 +481,7 @@ private struct Walker {
         let head = contentsRange(at: whole.location)
         rows.append(row(at: head.location, separator: false))
         rows.append(row(at: NSMaxRange(lineRange(at: head.location)), separator: true))
-        for case let body as Markup in table.body.children {
+        for body in table.body.children {
             guard let range = range(body) else { continue }
             rows.append(row(at: range.location, separator: false))
         }

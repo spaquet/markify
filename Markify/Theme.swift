@@ -56,8 +56,21 @@ struct EditorTheme: Equatable {
     }
 }
 
-enum CodeToken {
+enum CodeToken: String {
     case keyword, type, literal, comment
+
+    private static let patterns: [(NSRegularExpression, CodeToken)] = ([
+        (#"\b(func|let|var|if|else|return|class|struct|import|guard|private|def|const|function|for|while|in|true|false|nil|null)\b"#, .keyword),
+        (#"\b[A-Z][A-Za-z0-9_]*\b"#, .type),
+        (#""[^"\n]*"|\b[0-9]+(\.[0-9]+)?\b"#, .literal),
+        (#"(//|#)[^\n]*"#, .comment)
+    ] as [(String, CodeToken)]).map { (try! NSRegularExpression(pattern: $0.0), $0.1) }
+
+    /// Token ranges in `code`, in order of kind; a later range wins where they overlap (a comment over a keyword).
+    static func tokens(in code: String) -> [(NSRange, CodeToken)] {
+        let whole = NSRange(location: 0, length: (code as NSString).length)
+        return patterns.flatMap { regex, kind in regex.matches(in: code, range: whole).map { ($0.range, kind) } }
+    }
 
     var color: NSColor {
         switch self {

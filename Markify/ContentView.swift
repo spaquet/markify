@@ -256,6 +256,7 @@ struct ContentView: View {
                                 Toggle("Show Word Count", isOn: $showWordCount)
                                 SettingsLink { Text("Settings") }
                             } label: { Image(systemName: "ellipsis").frame(width: 30, height: 30).contentShape(.circle) }
+                            .accessibilityLabel("More")
                             .buttonStyle(.plain)
                             .menuIndicator(.hidden)
                             .frame(width: 30, height: 30)
@@ -1262,30 +1263,25 @@ struct ContentView: View {
         showWritingMenu = false
     }
 
-    private func exportHTML() {
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.html]
-        panel.nameFieldStringValue = title + ".html"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        do {
-            let safeTitle = title.replacingOccurrences(of: "&", with: "&amp;")
-                .replacingOccurrences(of: "<", with: "&lt;")
-                .replacingOccurrences(of: ">", with: "&gt;")
-            // Bundle-absolute links mean nothing outside the bundle; point them at the files from where the HTML lands.
-            let source = bundleRoot.map { OKFEditing.relativizingLinks(in: document.text, document: url, root: $0) } ?? document.text
-            let html = "<!doctype html><meta charset=\"utf-8\"><title>\(safeTitle)</title>" + HTMLFormatter.format(source)
-            try html.write(to: url, atomically: true, encoding: .utf8)
-        } catch { NSAlert(error: error).runModal() }
-    }
+    private func exportHTML() { export(.html) }
 
-    private func exportPDF() {
-        guard let textView else { return }
+    private func exportPDF() { export(.pdf) }
+
+    /// Writes the document as a self-contained HTML page or a paginated PDF of that page.
+    private func export(_ format: DocumentExport.Format) {
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [.pdf]
-        panel.nameFieldStringValue = title + ".pdf"
+        panel.allowedContentTypes = [format == .html ? .html : .pdf]
+        panel.nameFieldStringValue = title + (format == .html ? ".html" : ".pdf")
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do { try textView.dataWithPDF(inside: textView.bounds).write(to: url, options: .atomic) }
-        catch { NSAlert(error: error).runModal() }
+        let context = DocumentExport.Context(source: document.text, documentURL: fileURL, bundleRoot: bundleRoot, destination: url, fallbackTitle: title)
+        Task {
+            do {
+                switch format {
+                case .html: try await DocumentExport.writeHTML(context)
+                case .pdf: try await DocumentExport.writePDF(context)
+                }
+            } catch { NSAlert(error: error).runModal() }
+        }
     }
 
     private func slashMenu(query: String) -> some View {

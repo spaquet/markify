@@ -25,12 +25,13 @@
 <link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
 <link rel="icon" type="image/svg+xml" href="images/logo.svg?v=2">
 <link rel="apple-touch-icon" href="images/app-icon.png?v=2">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Open Knowledge Format in Markify","description":"How Markify reads, browses and edits Open Knowledge Format (OKF) bundles of Markdown concepts.","url":"https://spaquet.github.io/markify/okf.html","inLanguage":"en","about":[{"@type":"SoftwareApplication","name":"Markify","url":"https://spaquet.github.io/markify/"},{"@type":"CreativeWork","name":"Open Knowledge Format","url":"https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md","publisher":{"@type":"Organization","name":"Google Cloud"}}],"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Markify","item":"https://spaquet.github.io/markify/"},{"@type":"ListItem","position":2,"name":"Open Knowledge Format","item":"https://spaquet.github.io/markify/okf.html"}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --page:#FCFBF9; --page2:#F4F2EE; --ink:#1D1D1F; --ink2:#6E6E73; --ink3:#B3B3B8;
+  --page:#FCFBF9; --page2:#F4F2EE; --ink:#1D1D1F; --ink2:#5E5E63; --ink3:#B3B3B8;
   --rule:rgba(0,0,0,.09); --field:rgba(0,0,0,.05);
   --accent:#0A64D6; --accentSoft:rgba(10,100,214,.13); --callout:rgba(10,100,214,.07);
   --green:#248A3D; --greenSoft:rgba(36,138,61,.13); --orange:#C75300; --orangeSoft:rgba(255,149,0,.15); --red:#D70015; --redSoft:rgba(255,59,48,.13);
@@ -201,15 +202,28 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 footer nav{display:flex;gap:20px;flex-wrap:wrap}
 footer a{color:var(--ink2)}
 
-.rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
-.rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.rv{opacity:1;transform:none;transition:none}}
+.js .rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.js .rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.js .rv{opacity:1;transform:none;transition:none}}
 @media (max-width:560px){.wrap{padding:0 16px}section{padding:76px 0}.hero{padding-top:56px}.nav{padding:0 8px}.cap a.link{padding:0 10px}.win .body{padding:20px}}
+
+/* Accessibility */
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn:focus-visible,.cap a:focus-visible,.toggle button:focus-visible,.ai-tabs button:focus-visible{outline-offset:3px}
+main p a:not(.btn),main li a:not(.btn),footer a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 16px;border-radius:10px;background:#0A64D6;color:#fff;font-weight:600}
+.skip:focus{top:12px}
+main:focus{outline:none}
+/* White text needs the deeper blue in both appearances. */
+.btn-accent,.toggle button[aria-pressed="true"]{background:#0A64D6}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
+<a class="skip" href="#top">Skip to content</a>
 
-<header class="nav">
+<nav class="nav" aria-label="Main">
   <div class="cap glass">
     <a class="brand" href="./" aria-label="Markify home"><img src="images/app-icon.png?v=2" alt="">Markify</a>
     <a class="link hide-s" href="#reading">Reading</a>
@@ -218,11 +232,12 @@ footer a{color:var(--ink2)}
   </div>
   <div class="cap glass">
     <a class="link hide-s" href="#coverage">Spec coverage</a>
+    <a class="link hide-s" href="help/knowledge.html">Help</a>
     <a class="btn btn-accent" href="./#download">Download</a>
   </div>
-</header>
+</nav>
 
-<main id="top">
+<main id="top" tabindex="-1">
   <div class="hero wrap">
     <div class="chips rv"><span>Open Knowledge Format 0.2</span><span>macOS 26</span><span>Plain Markdown</span></div>
     <h1 class="rv">Knowledge for agents,<br>edited by people.</h1>
@@ -288,7 +303,7 @@ footer a{color:var(--ink2)}
           </ul>
         </div>
         <div class="frame rv">
-<pre class="src"><span class="d">---</span>
+<pre class="src" tabindex="0" aria-label="Example concept source"><span class="d">---</span>
 <span class="k">type</span>: Metric
 <span class="k">title</span>: Revenue
 <span class="k">description</span>: Recognized revenue for a fiscal year.
@@ -470,10 +485,13 @@ footer a{color:var(--ink2)}
     <span>© 2026 Markify · by <a href="https://github.com/spaquet">Stéphane Paquet</a> · OKF is an open specification by Google Cloud.</span>
     <nav aria-label="Footer">
       <a href="./">Home</a>
+      <a href="help/">Help</a>
+      <a href="faq.html">FAQ</a>
       <a href="https://github.com/spaquet/markify">Source</a>
       <a href="https://github.com/spaquet/markify/releases">Releases</a>
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
+      <a href="legal.html">Legal &amp; privacy</a>
     </nav>
   </div>
 </footer>
