@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.">
+<meta name="keywords" content="image, picture, paste, drag, assets, remote images, link, note link, command click">
+<title>Images and links</title>
+<link rel="stylesheet" href="help.css">
+</head>
+<body>
+<a name="images-and-links"></a>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Markify Help</a></nav>
+<main>
+<article>
+<h1 id="images-and-links">Images and links</h1>
+<h2 id="adding-images">Adding images</h2>
+<p>Drag an image file onto the page or paste an image. Markify copies it into a folder next to your document and inserts a relative link such as <code>![photo](assets/photo.png)</code>, so the document and its images move together.</p>
+<ul>
+<li>Choose the folder in <strong>Settings › General › Save pasted images to</strong>: <code>./assets</code> (the default), <code>./images</code>, or the document's own folder.
+</li>
+<li>Save a new document before adding images, so Markify knows where to put them.
+</li>
+<li>An image alone on its line is drawn at full width. An image inside a sentence appears as a small chip; hover over it to preview the image.
+</li>
+</ul>
+<h3 id="remote-images">Remote images</h3>
+<p>Images from the web (<code>https://…</code>) load only when <strong>Settings › General › Load remote images</strong> is on. Turn it off to keep documents from contacting other servers.</p>
+<h2 id="links">Links</h2>
+<ul>
+<li>Type <code>[text](address)</code>, or select text and press ⌘K.
+</li>
+<li><strong>⌘-click</strong> a link to open it, in either lens. Links to other Markdown files open in Markify; web links open in your browser.
+</li>
+<li>Drag a note from the library sidebar or the Finder into the page to insert a link to it. The link uses a path relative to your document, so it keeps working in other editors and on GitHub.
+</li>
+</ul>
+</article>
+</main>
+<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="markdown.html">← Markdown support</a><a rel="next" href="library.html">Library and find →</a></nav>
+</body>
+</html>

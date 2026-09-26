@@ -2,11 +2,12 @@ import AppKit
 
 // Rendered-lens decorations are drawn by the layout fragment of the paragraph they belong to, so they move with the
 // text through layout, scrolling and resizing. `NativeEditor.style` marks what to draw with these attributes;
-// `MarkdownLayoutFragment` reads them in its own range. The pattern follows nodes-app/swift-markdown-engine
+// `MarkdownLayoutFragment` reads them in its own range. The attributes carry everything the fragment needs (fonts,
+// colors, zoomed sizes): TextKit calls `draw(at:in:)` outside the main actor, so it never reads the view's state. The pattern follows nodes-app/swift-markdown-engine
 // (Apache-2.0); this is Markify's own implementation.
 
 extension NSAttributedString.Key {
-    /// `true` on a bullet marker whose glyph is hidden; the fragment draws a `•` in its place.
+    /// `NSFont` on a bullet marker whose glyph is hidden; the fragment draws a `•` in that font in its place.
     static let markifyBullet = NSAttributedString.Key("MarkifyBullet")
     /// `String` on the digits of an ordered item: the counted number to draw with its delimiter.
     static let markifyListNumber = NSAttributedString.Key("MarkifyListNumber")
@@ -14,6 +15,8 @@ extension NSAttributedString.Key {
     static let markifyListNumberOffset = NSAttributedString.Key("MarkifyListNumberOffset")
     /// `Bool` (checked) on a task's hidden marker; the fragment draws the checkbox.
     static let markifyTaskBox = NSAttributedString.Key("MarkifyTaskBox")
+    /// `NSColor` beside `markifyTaskBox`: the fill of a checked box.
+    static let markifyTaskAccent = NSAttributedString.Key("MarkifyTaskAccent")
     /// `MarkdownBlockFill` on each line of a code block or callout; the fragment paints its slice of the rounded box.
     static let markifyBlockFill = NSAttributedString.Key("MarkifyBlockFill")
 }
@@ -22,6 +25,7 @@ extension NSAttributedString.Key {
 /// the last the bottom ones, and the paragraph spacing they add is the box's vertical padding.
 final class MarkdownBlockFill: NSObject {
     let color: NSColor
+    /// Corner radius, zoom included.
     let radius: CGFloat
     /// Horizontal and vertical space between the box and its text, before zoom.
     let padding: NSSize
@@ -86,8 +90,8 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
         }
         super.draw(at: point, in: context)
         storage.enumerateAttributes(in: range) { attributes, run, _ in
-            if attributes[.markifyBullet] != nil, let rect = self.rect(for: run, at: point) {
-                let dot = NSAttributedString(string: "•", attributes: [.font: view.theme.ui(18), .foregroundColor: NSColor.secondaryLabelColor])
+            if let font = attributes[.markifyBullet] as? NSFont, let rect = self.rect(for: run, at: point) {
+                let dot = NSAttributedString(string: "•", attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor])
                 let size = dot.size()
                 dot.draw(at: NSPoint(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2))
             }
@@ -98,13 +102,16 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
                     .draw(at: NSPoint(x: rect.minX + offset, y: rect.minY))
             }
             if let checked = attributes[.markifyTaskBox] as? Bool, let marker = self.rect(for: run, at: point) {
-                Self.drawCheckbox(in: Self.checkboxRect(marker: marker), checked: checked, accent: view.theme.accent)
+                Self.drawCheckbox(in: Self.checkboxRect(marker: marker), checked: checked,
+                                  accent: attributes[.markifyTaskAccent] as? NSColor ?? .controlAccentColor)
             }
         }
-        // Block and inline decorations are drawn by the view in its own coordinates.
-        context.translateBy(x: point.x - layoutFragmentFrame.minX - view.textContainerOrigin.x,
-                            y: point.y - layoutFragmentFrame.minY - view.textContainerOrigin.y)
-        view.drawDecorations(anchoredIn: range)
+        // Block and inline decorations are drawn by the view in its own coordinates, from its caches of images and
+        // renders. NSTextView draws its fragments on the main thread inside its own draw(_:); off it, skip them.
+        guard Thread.isMainThread else { return }
+        let origin = MainActor.assumeIsolated { view.textContainerOrigin }
+        context.translateBy(x: point.x - layoutFragmentFrame.minX - origin.x, y: point.y - layoutFragmentFrame.minY - origin.y)
+        MainActor.assumeIsolated { view.drawDecorations(anchoredIn: range) }
     }
 
     /// The first line segment of `run`, in the coordinates `draw(at:in:)` draws in.
@@ -129,7 +136,7 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
     private func drawFill(_ fill: MarkdownBlockFill, at point: CGPoint) {
         let width = textLayoutManager?.textContainer?.size.width ?? layoutFragmentFrame.width
         let box = CGRect(x: point.x - layoutFragmentFrame.minX, y: point.y, width: width, height: layoutFragmentFrame.height)
-        let radius = min(fill.radius * (textView?.theme.scale ?? 1), box.height / 2, box.width / 2)
+        let radius = min(fill.radius, box.height / 2, box.width / 2)
         let path = NSBezierPath()
         path.move(to: NSPoint(x: box.minX, y: box.midY))
         path.appendArc(from: NSPoint(x: box.minX, y: box.minY), to: NSPoint(x: box.midX, y: box.minY), radius: fill.first ? radius : 0)

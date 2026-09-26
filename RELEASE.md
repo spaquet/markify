@@ -26,7 +26,11 @@ CI builds aren't signed with a Developer ID. The workflow signs each app ad hoc 
 
 ## How to Create a Release
 
-In Claude Code, `/deploy` runs these steps: it asks for the version and build, checks the Sparkle key, bumps and tags, watches the workflow, checks the published release, and then updates the website. The skill is in `.claude/skills/deploy/SKILL.md`. By hand:
+In Claude Code, `/deploy` runs these steps: it asks for the version and build, checks the Sparkle key, updates and rebuilds the help, bumps and tags, watches the workflow, checks the published release, and then updates the website. The skill is in `.claude/skills/deploy/SKILL.md`. By hand:
+
+### Step 0: Update the help
+
+Update `help/*.md` for anything user-visible in this release, then run `scripts/build-help.sh`. Commit `help/` and `Markify/Resources/Markify.help` (the Help Book ships in the app); leave the regenerated `docs/` files for Step 5, since any push under `docs/` redeploys the website. If `Markify/Resources/Welcome.md` changed, add the previous version's SHA-256 to `MarkifyAppDelegate.previousWelcomes`.
 
 ### Step 1: Update the version
 
@@ -70,10 +74,11 @@ Pushing the tag starts **Build and Release DMG**:
 
 ```bash
 scripts/check-release.sh v1.27 285      # assets, live appcast, update signature
-scripts/set-website-version.sh 1.27     # hero line and download section of docs/index.html
+scripts/build-help.sh                   # website help, FAQ, legal, sitemap, llms.txt
+scripts/set-website-version.sh 1.27     # hero line, download section and structured data of docs/index.html
 ```
 
-Commit and push the website change to `main`; the Pages workflow deploys it. The download buttons use `releases/latest/download/…`, so they already point to the new DMGs.
+Commit and push the `docs/` changes to `main`; the Pages workflow deploys it. The download buttons use `releases/latest/download/…`, so they already point to the new DMGs.
 
 ### Release assets
 

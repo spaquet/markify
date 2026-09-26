@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Answers to common questions about Markify — price, privacy, file formats, Apple Intelligence, installing, exporting and more.">
+<meta name="keywords" content="faq, questions, answers, free, price, privacy, open source, windows, ios, sync, icloud, obsidian">
+<title>Frequently asked questions</title>
+<link rel="stylesheet" href="help.css">
+</head>
+<body>
+<a name="faq"></a>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Markify Help</a></nav>
+<main>
+<article>
+<h1 id="frequently-asked-questions">Frequently asked questions</h1>
+<h2 id="about-markify">About Markify</h2>
+<h3 id="is-markify-free">Is Markify free?</h3>
+<p>Yes. Markify is free to download and use for personal, educational and other non-commercial purposes. Its source code is on <a rel="noopener" href="https://github.com/spaquet/markify">GitHub</a>. Commercial use needs written permission; see <a href="legal.html">Legal</a>. You can support its development with a <a rel="noopener" href="https://github.com/sponsors/spaquet">GitHub sponsorship</a>.</p>
+<h3 id="which-macs-does-markify-run-on">Which Macs does Markify run on?</h3>
+<p>Any Mac with macOS 26 Tahoe or later, with Apple silicon or an Intel processor. Download the build that matches your Mac.</p>
+<h3 id="is-there-a-version-for-iphone-ipad-windows-or-linux">Is there a version for iPhone, iPad, Windows or Linux?</h3>
+<p>No. Markify is a native Mac app built with SwiftUI and TextKit 2.</p>
+<h3 id="how-is-markify-different-from-other-markdown-editors">How is Markify different from other Markdown editors?</h3>
+<p>Most Markdown editors split the window into source and preview. Markify shows one page and lets you switch its lens with ⌘/: the rendered page and the plain Markdown are the same text, so nothing is converted or rewritten. See <a href="lenses.html">Two lenses</a>.</p>
+<h2 id="files-and-formats">Files and formats</h2>
+<h3 id="where-are-my-documents-stored">Where are my documents stored?</h3>
+<p>Wherever you save them. Every document is an ordinary <code>.md</code> file. By default new documents go to your library folder, <code>Documents/Markify</code>, which you can change in Settings.</p>
+<h3 id="can-i-use-markify-with-icloud-drive-dropbox-or-git">Can I use Markify with iCloud Drive, Dropbox or Git?</h3>
+<p>Yes. Because documents are plain files, anything that syncs or versions files works with them. Markify reloads a document when another app changes it.</p>
+<h3 id="does-markify-change-my-markdown">Does Markify change my Markdown?</h3>
+<p>No. Markify only styles the text it shows. The file is saved exactly as you typed it, in UTF-8.</p>
+<h3 id="which-markdown-features-are-supported">Which Markdown features are supported?</h3>
+<p>CommonMark and GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks), plus callouts, math, footnotes, Mermaid diagrams, YAML frontmatter and MDX files. See <a href="markdown.html">Markdown support</a>.</p>
+<h3 id="can-i-open-obsidian-or-other-notes-folders">Can I open Obsidian or other notes folders?</h3>
+<p>Yes. Open any file with ⌘O, or set your notes folder as the library location in Settings. Links written as <code>[text](file.md)</code> work; wiki links such as <code>[[note]]</code> show as plain text.</p>
+<h3 id="how-do-i-export-to-pdf-or-html">How do I export to PDF or HTML?</h3>
+<p>Choose <strong>More (…) › Export › HTML</strong> or <strong>PDF</strong>. The HTML page is self-contained, with images embedded, and the PDF is paginated. See <a href="export.html">Export to HTML and PDF</a>.</p>
+<h2 id="privacy-and-apple-intelligence">Privacy and Apple Intelligence</h2>
+<h3 id="does-markify-collect-any-data">Does Markify collect any data?</h3>
+<p>No. Markify has no accounts, analytics or tracking. See the privacy section on the <a href="legal.html">Legal</a> page for the few times it connects to the internet.</p>
+<h3 id="is-my-text-sent-to-an-ai-service">Is my text sent to an AI service?</h3>
+<p>No. Apple Intelligence features run on your Mac with Apple's on-device model and system Writing Tools. Markify doesn't use cloud AI services.</p>
+<h3 id="why-dont-i-see-the-apple-intelligence-features">Why don't I see the Apple Intelligence features?</h3>
+<p>They need a Mac with Apple silicon and Apple Intelligence turned on in System Settings › Apple Intelligence &amp; Siri. Check that Writing Tools and the other options are on in Markify's <strong>Settings › Intelligence</strong>. See <a href="intelligence.html">Apple Intelligence</a>.</p>
+<h2 id="installing-and-updating">Installing and updating</h2>
+<h3 id="macos-says-it-cant-verify-markify-what-do-i-do">macOS says it can't verify Markify. What do I do?</h3>
+<p>Markify isn't notarized yet. Open it once, click <strong>Done</strong>, then go to <strong>System Settings › Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> next to the message about Markify. See <a href="updates.html">Install and update</a>.</p>
+<h3 id="how-do-i-update-markify">How do I update Markify?</h3>
+<p>Markify checks for updates automatically. Choose <strong>Markify › Check for Updates…</strong> to check now.</p>
+<h3 id="i-found-a-bug-or-have-an-idea-where-do-i-report-it">I found a bug or have an idea. Where do I report it?</h3>
+<p>Open an issue on <a rel="noopener" href="https://github.com/spaquet/markify/issues">GitHub</a>. Include your macOS version, Markify version (Markify › About Markify) and the steps to reproduce the problem.</p>
+<h2 id="accessibility">Accessibility</h2>
+<h3 id="does-markify-work-with-voiceover">Does Markify work with VoiceOver?</h3>
+<p>Yes. Markify uses the standard Mac text view, so VoiceOver reads and edits the document, and its buttons have spoken labels. The Markdown lens shows every character, which some VoiceOver users prefer. If something isn't accessible, please <a rel="noopener" href="https://github.com/spaquet/markify/issues">report it</a>.</p>
+<h3 id="can-i-make-the-text-bigger">Can I make the text bigger?</h3>
+<p>Yes. Press ⌘= and ⌘- to zoom, ⌘0 to return to actual size, and change the fonts and line width in <strong>Settings › Editor</strong>.</p>
+</article>
+</main>
+<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="updates.html">← Install and update</a><a rel="next" href="legal.html">Legal →</a></nav>
+</body>
+</html>

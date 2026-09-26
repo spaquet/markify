@@ -89,14 +89,14 @@ final class PointerUITests: XCTestCase {
         page.click()
 
         page.typeKey("s", modifierFlags: [.command, .control])
-        let note = window.buttons.matching(NSPredicate(format: "label BEGINSWITH 'One Page, Two Lenses'")).firstMatch
+        let note = window.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Welcome to Markify'")).firstMatch
         XCTAssertTrue(note.waitForExistence(timeout: 5), "The library should list the Welcome note")
         drag(from: CGPoint(x: note.frame.midX, y: note.frame.midY),
              to: CGPoint(x: page.frame.minX + page.frame.width * 0.7, y: page.frame.minY + 120))
 
         // Text in an empty document starts its title, so the link lands after "# ".
         let value = page.value as? String ?? ""
-        XCTAssertTrue(value.contains("[One Page, Two Lenses]("), "Dropping a note should insert a link titled by its heading, got \(value)")
+        XCTAssertTrue(value.contains("[Welcome to Markify]("), "Dropping a note should insert a link titled by its heading, got \(value)")
         XCTAssertTrue(value.hasSuffix("/Welcome%20to%20Markify.md)"), "An unsaved document links to the note's absolute path, got \(value)")
     }
 }

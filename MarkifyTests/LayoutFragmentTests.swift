@@ -74,7 +74,7 @@ import Testing
         _ = window
         let storage = editor.textStorage!
         let ns = source as NSString
-        #expect(storage.attribute(.markifyBullet, at: 0, effectiveRange: nil) as? Bool == true)
+        #expect(storage.attribute(.markifyBullet, at: 0, effectiveRange: nil) is NSFont)
         #expect(storage.attribute(.markifyTaskBox, at: ns.range(of: "- [x]").location, effectiveRange: nil) as? Bool == true)
         #expect(storage.attribute(.markifyListNumber, at: ns.range(of: "3.").location, effectiveRange: nil) as? String == "3.")
         #expect(storage.attribute(.markifyListNumber, at: ns.range(of: "4.").location, effectiveRange: nil) as? String == "4.")

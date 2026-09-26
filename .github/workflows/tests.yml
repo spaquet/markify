@@ -36,6 +36,10 @@ jobs:
       - name: Test OKFKit
         run: swift test --package-path OKFKit
 
+      # help/*.md is built into the app's Help Book and the website; both must be regenerated with it.
+      - name: Check generated help
+        run: scripts/build-help.sh --check
+
   app:
     name: App
     runs-on: macos-latest

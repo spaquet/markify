@@ -16,6 +16,9 @@ import WebKit
     private var states: [String: State] = [:]
     private var waiting: [String: [() -> Void]] = [:]
     private var queue: [(key: String, source: String, dark: Bool)] = []
+    /// Exports waiting for a diagram's SVG; they share the web view, so one render runs at a time.
+    private var svgJobs: [(source: String, id: String, done: (String?) -> Void)] = []
+    private var svgCount = 0
     private var busy = false
     private var ready = false
     private var webView: WKWebView?
@@ -40,6 +43,15 @@ import WebKit
     /// The settled state without starting a render.
     func cached(_ source: String, dark: Bool) -> State? { states["\(dark):\(source)"] }
 
+    /// The diagram as SVG markup in the light theme, for export; nil when Mermaid cannot render it.
+    func svg(for source: String) async -> String? {
+        await withCheckedContinuation { continuation in
+            svgCount += 1
+            svgJobs.append((source, "markify-diagram-\(svgCount)", { continuation.resume(returning: $0) }))
+            start()
+        }
+    }
+
     private func start() {
         guard let page = Bundle.main.url(forResource: "mermaid", withExtension: "html") else {
             finishAll(.failed("Mermaid is missing from this build."))
@@ -59,10 +71,28 @@ import WebKit
             view.loadFileURL(page, allowingReadAccessTo: page.deletingLastPathComponent())
             return
         }
-        guard ready, !busy, !queue.isEmpty else { return }
+        guard ready, !busy else { return }
+        if !svgJobs.isEmpty {
+            busy = true
+            let job = svgJobs.removeFirst()
+            Task { await renderSVG(job) }
+            return
+        }
+        guard !queue.isEmpty else { return }
         busy = true
         let next = queue.removeFirst()
         Task { await render(next) }
+    }
+
+    private func renderSVG(_ job: (source: String, id: String, done: (String?) -> Void)) async {
+        let svg = try? await webView?.callAsyncJavaScript("""
+            mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default' });
+            const { svg } = await mermaid.render(id, source);
+            return svg;
+            """, arguments: ["source": job.source, "id": job.id], contentWorld: .page) as? String
+        job.done(svg)
+        busy = false
+        start()
     }
 
     private func render(_ job: (key: String, source: String, dark: Bool)) async {
@@ -103,6 +133,8 @@ import WebKit
     private func finishAll(_ state: State) {
         for job in queue { finish(job.key, state) }
         queue.removeAll()
+        svgJobs.forEach { $0.done(nil) }
+        svgJobs.removeAll()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Download and install Markify on your Mac, open it the first time, and keep it up to date.">
+<meta name="keywords" content="install, download, dmg, gatekeeper, open anyway, update, sparkle, apple silicon, intel, uninstall">
+<title>Install and update</title>
+<link rel="stylesheet" href="help.css">
+</head>
+<body>
+<a name="updates"></a>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Markify Help</a></nav>
+<main>
+<article>
+<h1 id="install-and-update">Install and update</h1>
+<h2 id="system-requirements">System requirements</h2>
+<p>Markify needs <strong>macOS 26 Tahoe</strong> or later. There are two downloads: one for Macs with <strong>Apple silicon</strong> (M1 and later) and one for <strong>Intel</strong> Macs. Apple Intelligence features need Apple silicon.</p>
+<h2 id="installing">Installing</h2>
+<ol>
+<li>Download the disk image for your Mac from the <a rel="noopener" href="https://spaquet.github.io/markify/#download">Markify website</a> or the <a rel="noopener" href="https://github.com/spaquet/markify/releases/latest">GitHub releases page</a>.
+</li>
+<li>Open the downloaded <code>.dmg</code> file and drag <strong>Markify</strong> to the <strong>Applications</strong> folder.
+</li>
+<li>Eject the disk image.
+</li>
+</ol>
+<h3 id="opening-markify-the-first-time">Opening Markify the first time</h3>
+<p>Markify isn't notarized by Apple yet, so the first time you open it macOS says it can't verify the app. To open it:</p>
+<ol>
+<li>Open Markify from Applications, then click <strong>Done</strong> in the message.
+</li>
+<li>Open <strong>System Settings › Privacy &amp; Security</strong>.
+</li>
+<li>Scroll to <strong>Security</strong>, find the message about Markify and click <strong>Open Anyway</strong>, then confirm with your password or Touch ID.
+</li>
+</ol>
+<p>You only need to do this once; updates open normally.</p>
+<h2 id="updating">Updating</h2>
+<p>Markify checks for updates once a day and tells you when a new version is ready. To check now, choose <strong>Markify › Check for Updates…</strong>. Updates are signed, and Markify installs only updates signed by its developer.</p>
+<p>In <strong>Settings › General › Updates</strong>, turn automatic checks off, or let Markify download updates and install them when you quit.</p>
+<h2 id="uninstalling">Uninstalling</h2>
+<p>Drag Markify from Applications to the Trash. Your documents stay where you saved them. To remove its settings too, delete <code>~/Library/Containers/com.stephanepaquet.Markify</code> and <code>~/Library/Preferences/com.stephanepaquet.Markify.plist</code> if they exist.</p>
+</article>
+</main>
+<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="shortcuts.html">← Keyboard shortcuts</a><a rel="next" href="faq.html">Frequently asked questions →</a></nav>
+</body>
+</html>
