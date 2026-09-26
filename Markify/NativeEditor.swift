@@ -565,7 +565,7 @@ final class MarkdownTextView: NSTextView {
     var restyle: (() -> Void)?
     private var imageCache: [URL: NSImage] = [:]
     private var mathCache: [String: NSImage] = [:]
-    private var tableOverlays: [Int: TableRowView] = [:]
+    private(set) var tableOverlays: [Int: TableRowView] = [:]
     private var modelCache: MarkdownModel?
 
     /// The parsed source, shared by styling, drawing and clicks until the text changes.
@@ -578,13 +578,13 @@ final class MarkdownTextView: NSTextView {
     }
 
     func refreshTables() {
-        guard let window else { return }
+        guard window != nil else { return }
         let rows: [(MarkdownTable.Row, Bool)] = rendered ? MarkdownTable.blocks(in: model).flatMap { table in
             table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0) }
         } : []
+        if let last = rows.last { settleLayout(through: last.0.end) }
         for (index, (row, header)) in rows.enumerated() {
-            let screen = firstRect(forCharacterRange: NSRange(location: row.start, length: 1), actualRange: nil)
-            let line = convert(window.convertFromScreen(screen), from: nil)
+            let line = textRect(NSRange(location: row.start, length: 1))
             let overlay = tableOverlays[index] ?? TableRowView()
             if overlay.superview == nil { addSubview(overlay) }
             tableOverlays[index] = overlay
@@ -751,27 +751,39 @@ final class MarkdownTextView: NSTextView {
     }
 
     /// Task items in the Rendered lens, at any depth.
-    private func tasks() -> [MarkdownModel.ListItem] {
+    private func tasks(in spans: [MarkdownModel.Span]? = nil) -> [MarkdownModel.ListItem] {
         guard rendered else { return [] }
-        return model.spans.compactMap { span in
+        return (spans ?? model.spans).compactMap { span in
             if case .listItem(let item) = span.kind, item.checkbox != nil { item } else { nil }
         }
     }
 
     private func checkboxRect(for item: MarkdownModel.ListItem) -> NSRect? {
-        guard let window else { return nil }
-        let screen = firstRect(forCharacterRange: NSRange(location: item.marker.location, length: 1), actualRange: nil)
-        let local = convert(window.convertFromScreen(screen), from: nil)
+        guard window != nil else { return nil }
+        let local = textRect(NSRange(location: item.marker.location, length: 1))
         return NSRect(x: local.minX + 2, y: local.midY - 9, width: 18, height: 18)
     }
 
     /// TextKit 2 repaints edited text in its own fragment views without calling draw(_:) here,
     /// so rendered decorations live in a pass-through view kept over the visible area.
     private lazy var decorations = DecorationView(host: self)
-    private var clipObserver: NSObjectProtocol?
+    private var clipObservers: [NSObjectProtocol] = []
+
+    /// Overlays placed while outside the visible area are not painted when it grows to include them.
+    private func visibleAreaChanged() {
+        refreshDecorations()
+        for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
+    }
 
     func refreshDecorations() {
         guard superview != nil else { return }
+        // Layout here, not while drawing: positions above the visible area must be real before overlays read them.
+        // Image blocks draw above their caption line, so settle a little past the bottom too.
+        if rendered, let manager = textLayoutManager {
+            let settled = manager.textViewportLayoutController.viewportRange.map { _ in true } ?? false
+            manager.ensureLayout(for: CGRect(x: 0, y: 0, width: bounds.width, height: visibleRect.maxY + 320))
+            if settled { manager.textViewportLayoutController.layoutViewport() }
+        }
         if decorations.superview !== self { addSubview(decorations) }
         if decorations.frame != visibleRect { decorations.frame = visibleRect }
         decorations.needsDisplay = true
@@ -779,23 +791,84 @@ final class MarkdownTextView: NSTextView {
 
     override func viewDidMoveToSuperview() {
         super.viewDidMoveToSuperview()
-        if let clipObserver { NotificationCenter.default.removeObserver(clipObserver) }
-        clipObserver = nil
+        clipObservers.forEach(NotificationCenter.default.removeObserver)
+        clipObservers = []
         guard let clip = superview as? NSClipView else { return }
         clip.postsBoundsChangedNotifications = true
-        clipObserver = NotificationCenter.default.addObserver(forName: NSView.boundsDidChangeNotification, object: clip, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refreshDecorations() }
+        clip.postsFrameChangedNotifications = true
+        // Scrolling moves the visible area; resizing the window grows it without a bounds change.
+        clipObservers = [NSView.boundsDidChangeNotification, NSView.frameDidChangeNotification].map { name in
+            NotificationCenter.default.addObserver(forName: name, object: clip, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.visibleAreaChanged() }
+            }
         }
         refreshDecorations()
     }
 
     override func setFrameSize(_ newSize: NSSize) {
+        let reflows = newSize.width != frame.width
         super.setFrameSize(newSize)
         refreshDecorations()
+        // A new width rewraps the text above a table, moving its rows.
+        if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTables() } }
+    }
+
+    /// The frame of the first line segment of `range`, in this view's coordinates.
+    /// `firstRect(forCharacterRange:)` answers only for text inside the viewport, and overlays also sit on text
+    /// above or below it, so this asks TextKit 2's layout manager, laying the range out first.
+    func textRect(_ range: NSRange) -> NSRect {
+        let length = (string as NSString).length
+        var range = range
+        if range.length == 0, range.location < length { range.length = 1 }
+        guard let manager = textLayoutManager, let content = manager.textContentManager,
+              let start = content.location(content.documentRange.location, offsetBy: min(range.location, length)),
+              let end = content.location(start, offsetBy: min(range.length, length - min(range.location, length))),
+              let textRange = NSTextRange(location: start, end: end) else { return .zero }
+        manager.ensureLayout(for: textRange)
+        var first: CGRect?
+        manager.enumerateTextSegments(in: textRange, type: .standard, options: []) { _, frame, _, _ in
+            first = frame
+            return false
+        }
+        guard let frame = first else { return .zero }
+        return frame.offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+    }
+
+    /// TextKit 2 places text it has not laid out yet at estimated positions, and moves it once layout catches up.
+    /// Lays out everything up to `location` so positions read for overlays are the ones the text settles at.
+    func settleLayout(through location: Int) {
+        guard let manager = textLayoutManager, let content = manager.textContentManager,
+              let end = content.location(content.documentRange.location, offsetBy: min(location, (string as NSString).length)),
+              let range = NSTextRange(location: content.documentRange.location, end: end) else { return }
+        manager.ensureLayout(for: range)
+        // The viewport keeps drawing text where it first estimated it until it lays out again.
+        manager.textViewportLayoutController.layoutViewport()
     }
 
     /// Draws bullets, list numbers, checkboxes, images, math and chips; `dirtyRect` is in this view's coordinates.
-    fileprivate func drawOverlays(_ dirtyRect: NSRect) {
+    /// Spans the current paint looks at: those near the viewport, not the whole document.
+    private var drawingSpans: [MarkdownModel.Span] = []
+
+    /// The viewport's text with a screen of margin on each side, since image blocks draw above their caption line.
+    private func nearViewport() -> NSRange {
+        let length = (string as NSString).length
+        guard let manager = textLayoutManager, let content = manager.textContentManager,
+              let viewport = manager.textViewportLayoutController.viewportRange else { return NSRange(location: 0, length: length) }
+        let start = content.offset(from: content.documentRange.location, to: viewport.location)
+        let end = content.offset(from: content.documentRange.location, to: viewport.endLocation)
+        let margin = max(end - start, 2000)
+        let lower = max(0, start - margin)
+        return NSRange(location: lower, length: min(length, end + margin) - lower)
+    }
+
+    private func spansNearViewport() -> [MarkdownModel.Span] {
+        let near = nearViewport()
+        return model.spans.filter { NSIntersectionRange($0.range, near).length > 0 || NSLocationInRange($0.range.location, near) }
+    }
+
+    func drawOverlays(_ dirtyRect: NSRect) {
+        drawingSpans = spansNearViewport()
+        defer { drawingSpans = [] }
         if rendered { drawImages(in: dirtyRect) }
         if rendered { drawMath(in: dirtyRect) }
         if rendered { drawDiagrams(in: dirtyRect) }
@@ -804,10 +877,10 @@ final class MarkdownTextView: NSTextView {
             let source = string as NSString
             let numbers = MarkdownList.scan(model).numbers
             let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
-            for item in numbers {
+            let near = nearViewport()
+            for item in numbers where NSLocationInRange(item.range.location, near) {
                 // Glyphs before the padded space keep reliable positions, so measure from the first digit.
-                let screen = firstRect(forCharacterRange: item.range, actualRange: nil)
-                let rect = convert(window.convertFromScreen(screen), from: nil)
+                let rect = textRect(item.range)
                 guard rect.intersects(dirtyRect) else { continue }
                 let font = textStorage?.attribute(.font, at: item.range.location, effectiveRange: nil) as? NSFont ?? .systemFont(ofSize: 18)
                 let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
@@ -816,17 +889,16 @@ final class MarkdownTextView: NSTextView {
                 number.draw(at: NSPoint(x: rect.minX + CGFloat((widest[item.list] ?? 1) - item.value.count) * digit, y: rect.minY))
             }
         }
-        if rendered, let window {
+        if rendered, window != nil {
             let dot = NSAttributedString(string: "•", attributes: [.font: theme.ui(18), .foregroundColor: NSColor.secondaryLabelColor])
-            for span in model.spans {
+            for span in drawingSpans {
                 guard case .listItem(let item) = span.kind, !item.ordered, item.checkbox == nil else { continue }
-                let screen = firstRect(forCharacterRange: item.marker, actualRange: nil)
-                let rect = convert(window.convertFromScreen(screen), from: nil)
+                let rect = textRect(item.marker)
                 guard rect.intersects(dirtyRect) else { continue }
                 dot.draw(at: NSPoint(x: rect.midX - dot.size().width / 2, y: rect.midY - dot.size().height / 2))
             }
         }
-        for item in tasks() {
+        for item in tasks(in: drawingSpans) {
             guard let rect = checkboxRect(for: item), rect.intersects(dirtyRect) else { continue }
             let checked = item.checked
             let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
@@ -844,11 +916,10 @@ final class MarkdownTextView: NSTextView {
     }
 
     private func drawImages(in dirtyRect: NSRect) {
-        guard let window else { return }
-        for span in model.spans {
+        guard window != nil else { return }
+        for span in drawingSpans {
             guard case .image(let path, true) = span.kind else { continue }
-            let screen = firstRect(forCharacterRange: span.content, actualRange: nil)
-            let caption = convert(window.convertFromScreen(screen), from: nil)
+            let caption = textRect(span.content)
             let rect = NSRect(x: 0, y: caption.minY - 268, width: columnWidth, height: 260)
             guard rect.intersects(dirtyRect) else { continue }
             NSGraphicsContext.saveGraphicsState()
@@ -911,11 +982,11 @@ final class MarkdownTextView: NSTextView {
     /// Mermaid blocks: the rendered diagram in the code container, a placeholder while it renders,
     /// or mermaid's message under the source when it cannot be parsed.
     private func drawDiagrams(in dirtyRect: NSRect) {
-        guard let window else { return }
+        guard window != nil else { return }
         let source = string as NSString
         let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
-        for span in model.spans {
+        func rect(_ range: NSRange) -> NSRect { textRect(range) }
+        for span in drawingSpans {
             guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid",
                   let state = MermaidRenderer.shared.cached(source.substring(with: span.content), dark: dark) else { continue }
             let label = NSAttributedString(string: "mermaid", attributes: [.font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
@@ -957,12 +1028,11 @@ final class MarkdownTextView: NSTextView {
     }
 
     private func drawMath(in dirtyRect: NSRect) {
-        guard let window else { return }
+        guard window != nil else { return }
         let source = string as NSString
         let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        for span in model.spans where span.kind == .mathBlock {
-            let screen = firstRect(forCharacterRange: NSRange(location: span.range.location, length: 1), actualRange: nil)
-            let line = convert(window.convertFromScreen(screen), from: nil)
+        for span in drawingSpans where span.kind == .mathBlock {
+            let line = textRect(NSRange(location: span.range.location, length: 1))
             let rect = NSRect(x: 0, y: line.midY - 40, width: columnWidth, height: 80)
             guard rect.intersects(dirtyRect) else { continue }
             let latex = source.substring(with: span.content).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -989,10 +1059,10 @@ final class MarkdownTextView: NSTextView {
 
     /// Callout titles, code language labels, the footnotes rule and the frontmatter chip row.
     private func drawDecorations(in dirtyRect: NSRect) {
-        guard let window else { return }
-        func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
+        guard window != nil else { return }
+        func rect(_ range: NSRange) -> NSRect { textRect(range) }
 
-        for span in model.spans {
+        for span in drawingSpans {
             switch span.kind {
             case .callout(let type, let range):
                 let token = rect(range)
@@ -1023,7 +1093,8 @@ final class MarkdownTextView: NSTextView {
                 break
             }
         }
-        if let first = model.spans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } }) {
+        if let first = model.spans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } }),
+           NSLocationInRange(first.range.location, nearViewport()) {
             let line = rect(NSRange(location: first.range.location, length: 1))
             let y = line.minY - 12 * theme.scale
             if dirtyRect.minY <= y, y <= dirtyRect.maxY {
@@ -1059,8 +1130,8 @@ final class MarkdownTextView: NSTextView {
 
     /// The capsule an inline image is drawn as, on the line where it starts.
     func inlineImageChipFrame(_ span: MarkdownModel.Span) -> NSRect? {
-        guard rendered, let window else { return nil }
-        func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
+        guard rendered, window != nil else { return nil }
+        func rect(_ range: NSRange) -> NSRect { textRect(range) }
         let whole = rect(span.range)
         let height = ("Ag" as NSString).size(withAttributes: [.font: theme.ui(11.5, weight: .medium)]).height + 6
         return NSRect(x: whole.minX, y: whole.midY - height / 2, width: whole.width, height: height)
@@ -1174,9 +1245,8 @@ final class MarkdownTextView: NSTextView {
 
     /// Chip layout for the frontmatter row: OKF badges, tags as capsules, the date as plain text, then the OKF resource link.
     private func frontmatterChips(_ frontmatter: Frontmatter) -> [(chip: FrontmatterChip, frame: NSRect)] {
-        guard let window else { return [] }
-        let screen = firstRect(forCharacterRange: NSRange(location: frontmatter.range.location, length: 1), actualRange: nil)
-        let line = convert(window.convertFromScreen(screen), from: nil)
+        guard window != nil else { return [] }
+        let line = textRect(NSRange(location: frontmatter.range.location, length: 1))
         let font = theme.ui(11.5, weight: .medium)
         let tagFill = NSColor.labelColor.withAlphaComponent(0.06)
         let concept = okfConcept(frontmatter)
@@ -1469,7 +1539,7 @@ private final class DecorationView: NSView {
     }
 }
 
-private final class TableRowView: NSView {
+final class TableRowView: NSView {
     override var isFlipped: Bool { true }
     var fields: [TableCellField] = []
     private var header = false
@@ -1519,7 +1589,7 @@ private final class TableRowView: NSView {
     }
 }
 
-private final class TableCellField: NSTextField, NSTextFieldDelegate {
+final class TableCellField: NSTextField, NSTextFieldDelegate {
     var sourceRange = NSRange(location: 0, length: 0)
     var onEdit: ((NSRange, String) -> NSRange)?
     var onFocus: ((NSRange) -> Void)?
