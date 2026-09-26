@@ -26,13 +26,14 @@ CI builds aren't signed with a Developer ID. The workflow signs each app ad hoc 
 
 ## How to Create a Release
 
+In Claude Code, `/deploy` runs these steps: it asks for the version and build, checks the Sparkle key, bumps and tags, watches the workflow, checks the published release, and then updates the website. The skill is in `.claude/skills/deploy/SKILL.md`. By hand:
+
 ### Step 1: Update the version
 
 1. Open `Markify.xcodeproj`, select the **Markify** target, then the **General** tab.
 2. Set **Version** (`MARKETING_VERSION`) to the new version, e.g. `1.27`.
-3. Bump **Build** (`CURRENT_PROJECT_VERSION`).
-4. Update the version shown on the website in `docs/index.html`. Search for the current version (e.g. `1.26.1`). It appears in the hero line and in the download section.
-5. Test the app, then commit and push to `main`.
+3. Bump **Build** (`CURRENT_PROJECT_VERSION`). It must be higher than the last release's: Sparkle compares builds, not versions.
+4. Test the app, then commit and push to `main`. Leave the website for Step 5, once the release is published.
 
 ### Step 2 (optional): Prepare the release notes as a draft
 
@@ -65,6 +66,15 @@ Pushing the tag starts **Build and Release DMG**:
 
 ⏱️ About 5–10 minutes. Follow it in the **Actions** tab.
 
+### Step 5: Check the release and update the website
+
+```bash
+scripts/check-release.sh v1.27 285      # assets, live appcast, update signature
+scripts/set-website-version.sh 1.27     # hero line and download section of docs/index.html
+```
+
+Commit and push the website change to `main`; the Pages workflow deploys it. The download buttons use `releases/latest/download/…`, so they already point to the new DMGs.
+
 ### Release assets
 
 - `markify-as.dmg` and `markify-as.dmg.sha256` for Apple silicon (M1 and later)
@@ -91,13 +101,13 @@ gh run watch
 ## Release Checklist
 
 - [ ] `MARKETING_VERSION` and build number updated
-- [ ] Version on the website (`docs/index.html`) updated
 - [ ] App tested on Apple silicon and, if possible, Intel
 - [ ] Changes committed and pushed to `main`
 - [ ] (Optional) Draft release with notes saved for the new tag
 - [ ] Annotated tag pushed: `git tag -a vX.Y -m "Markify X.Y" && git push origin vX.Y`
 - [ ] Build number (`CURRENT_PROJECT_VERSION`) is higher than the last release's; Sparkle compares it, not the version
-- [ ] Workflow succeeded and the release shows all six assets
+- [ ] Workflow succeeded and `scripts/check-release.sh` passes
+- [ ] Website updated with `scripts/set-website-version.sh` and deployed
 
 ## Verifying Downloaded Files
 
