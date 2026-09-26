@@ -27,6 +27,7 @@ struct SettingsView: View {
     @AppStorage("suggestTitleTags") private var suggestTitleTags = false
     @AppStorage("generationTone") private var generationTone = "Match document"
     @AppStorage("useSectionContext") private var useSectionContext = true
+    @AppStorage("recordAIGenerated") private var recordAIGenerated = true
     @AppStorage(Shortcuts.storageKey) private var shortcutOverrides = ""
     @State private var selectedTab = Tab.general
     @State private var isDefaultApp = false
@@ -285,6 +286,10 @@ struct SettingsView: View {
                     Toggle(isOn: $suggestTitleTags) {
                         Text("Suggest title & tags for new documents")
                         Text("Written to frontmatter only after you accept.")
+                    }
+                    Toggle(isOn: $recordAIGenerated) {
+                        Text("Record AI edits in OKF concepts")
+                        Text("Keeping AI text in a concept sets its generated field to Apple Intelligence.")
                     }
                 }
                 Section("Generation") {

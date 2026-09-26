@@ -1,6 +1,6 @@
 # Open Knowledge Format (OKF) support
 
-Status: P1–P3 implemented · Target spec: OKF v0.2 · Tracking since 2026-09-25
+Status: P1–P4 implemented · Target spec: OKF v0.2 · Tracking since 2026-09-25
 
 ## Why
 
@@ -49,9 +49,13 @@ OKF is conventions, not syntax. The source stays plain Markdown: Markify must ne
 - R3.3 The verifier ID is set in Settings › General › Knowledge (default: the macOS short user name).
 - R3.4 Every frontmatter change is a targeted splice of the affected key, applied as one undoable edit. Comments, key order and unknown keys survive.
 
+### R4 Apple Intelligence
+- R4.1 In an OKF document, "Suggest title, type & tags" also suggests a one-sentence `description`, and a `type` when none is written, preferring types the bundle already uses.
+- R4.2 Keeping any frontmatter suggestion merges it key by key; other keys (`date`, `verified`, `sources`, …) are never lost. `type` is never overwritten.
+- R4.3 Keeping AI text in a concept (Keep, Accept, or typing past a review) sets `generated: { by: apple-intelligence/macos-<version>, at: <now> }`, in the same undo step as the kept text where possible. Settings › Intelligence › "Record AI edits in OKF concepts" turns it off.
+
 ### Out of scope (for now)
 - Running Attested Computations (executors, receipts, attesters). Markify shows the contract but executes nothing.
-- AI features (suggesting `type` and `description`, stamping `generated`). Planned next, once the manual flow is settled.
 - A graph visualization.
 - Opening a bundle folder the sandbox cannot reach. Bundle-wide features work where Markify has access: the library folder, or a folder granted through an open panel.
 
@@ -88,4 +92,5 @@ Spec-version knowledge lives only in OKFKit (`OKF.specVersion`). Readers are tol
 1. **P1 Reader**: OKFKit model and validator, chip badges, link following.
 2. **P2 Bundle**: scan, backlinks, issues, Library titles.
 3. **P3 Authoring**: template, verify and status actions, log and index commands, settings.
-4. **Later**: AI assistance, computation display, graph view.
+4. **P4 AI**: type and description suggestions, merged frontmatter, `generated` stamps.
+5. **Later**: computation display, graph view.

@@ -237,3 +237,43 @@ final class ConceptCache {
         return concept
     }
 }
+
+/// Apple Intelligence's frontmatter suggestion, merged key by key so the rest of the frontmatter survives.
+struct FrontmatterSuggestion: Equatable {
+    var title: String
+    var tags: [String]
+    /// Only suggested for OKF documents that have no type yet.
+    var type: String? = nil
+    var description: String? = nil
+
+    private var entries: [(key: String, line: String)] {
+        var entries: [(String, String)] = []
+        if let type, !type.isEmpty { entries.append(("type", "type: \(OKFEditing.scalar(type))")) }
+        if !title.isEmpty { entries.append(("title", "title: \(OKFEditing.scalar(title))")) }
+        if let description, !description.isEmpty { entries.append(("description", "description: \(OKFEditing.scalar(description))")) }
+        let tags = tags.prefix(5).map { OKFEditing.scalar($0.trimmingCharacters(in: .whitespaces)) }.filter { !$0.isEmpty }
+        if !tags.isEmpty { entries.append(("tags", "tags: [\(tags.joined(separator: ", "))]")) }
+        return entries
+    }
+
+    /// The YAML shown before Keep.
+    var preview: String { entries.map(\.line).joined(separator: "\n") }
+
+    /// Sets the suggested keys; `type` never replaces one already written, since it routes the concept.
+    func merged(into yaml: String) -> String {
+        entries.reduce(yaml) { yaml, entry in
+            if entry.key == "type" && OKFEditing.hasKey("type", in: yaml) { return yaml }
+            // A new type leads the block, as in the spec's examples.
+            if entry.key == "type" { return entry.line + "\n" + yaml }
+            return OKFEditing.setting(entry.key, to: entry.line, in: yaml)
+        }
+    }
+}
+
+extension Knowledge {
+    /// The actor for text Apple Intelligence wrote; the on-device model ships with the OS, so its version names the model.
+    static var aiActor: OKFActor {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return .agent(producer: "apple-intelligence", version: "macos-\(version.majorVersion).\(version.minorVersion)")
+    }
+}

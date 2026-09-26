@@ -25,6 +25,7 @@ struct ContentView: View {
     @AppStorage("suggestTitleTags") private var suggestTitleTags = false
     @AppStorage("generationTone") private var generationTone = "Match document"
     @AppStorage("useSectionContext") private var useSectionContext = true
+    @AppStorage("recordAIGenerated") private var recordAIGenerated = true
     @AppStorage("proseFont") private var proseFont = "New York"
     @AppStorage("markdownFont") private var markdownFont = "SF Mono"
     @AppStorage("proseSize") private var proseSize = 18.0
@@ -58,6 +59,7 @@ struct ContentView: View {
     @State private var aiInsertion = 0
     @State private var aiPlacement: AIPlacement = .atCaret
     @State private var aiSelectionSource = ""
+    @State private var aiSuggestion: FrontmatterSuggestion?
     @State private var hasTyped = false
     @State private var isNewDocument = false
     @State private var offeredTitleTags = false
@@ -134,7 +136,10 @@ struct ContentView: View {
                 NativeEditor(text: $document.text, fileURL: fileURL, columnWidth: columnWidth, markdownLens: markdownLens, findQuery: showFind ? query : "", matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
                     hasTyped = true
                     // Typing after a rewrite accepts it.
-                    if review != nil && !aiEdit.active { review = nil }
+                    if review != nil && !aiEdit.active {
+                        review = nil
+                        DispatchQueue.main.async { stampAIGenerated() }
+                    }
                     if fadeToolbar { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = false } }
                 }, onSlash: { query in
                     if slashQuery != query { slashSelection = 0 }
@@ -841,7 +846,7 @@ struct ContentView: View {
                 aiRow("Key points", detail: "New section") {
                     generate(action: "Extract the key points as a concise Markdown bullet list. Return only Markdown text.", placement: .newSection)
                 }
-                aiRow("Suggest title & tags", detail: "Frontmatter") {
+                aiRow(concept != nil || knowledge != nil ? "Suggest title, type & tags" : "Suggest title & tags", detail: "Frontmatter") {
                     generate(action: "Suggest a clear title and up to five short tags for this document.", placement: .frontmatter)
                 }
                 aiRow("Continue writing", detail: generateAtCaret ? "At caret · \(shortcutLabel("generate"))" : "At caret") { continueWriting() }
@@ -1101,6 +1106,7 @@ struct ContentView: View {
         guard let current = review else { return }
         if current.comparing { compareReview() }
         review = nil
+        stampAIGenerated()
     }
 
     private func revertReview() {
@@ -1162,13 +1168,27 @@ struct ContentView: View {
             prompt = "\(action)\n\nDocument:\n\(source)"
         }
         aiSelectionSource = source
+        aiSuggestion = nil
+        // OKF documents also get a type (when missing) and a one-sentence description.
+        let okf = placement == .frontmatter && (concept != nil || knowledge != nil)
+        let knownTypes = Array(Set(knowledge?.bundle.concepts.compactMap(\.concept?.type) ?? [])).sorted()
+        let needsType = okf && concept == nil
+        let conceptPrompt = "Suggest a clear title, a one-sentence description and up to five short tags for this knowledge document."
+            + (needsType ? " Also name its type, the kind of knowledge it captures." : "")
+            + (needsType && !knownTypes.isEmpty ? " Prefer one of these types when one fits: \(knownTypes.joined(separator: ", "))." : "")
+            + "\n\nDocument:\n\(FrontmatterBlock.body(of: document.text))"
         let instructions = "You edit Markdown. Keep the response grounded in the supplied text. \(toneInstruction) Return only the requested Markdown content."
         aiTask = Task {
             do {
                 let session = LanguageModelSession(instructions: instructions)
-                if placement == .frontmatter {
-                    let response = try await session.respond(to: prompt, generating: SuggestedFrontmatter.self)
-                    if !Task.isCancelled { aiOutput = response.content.markdown }
+                if okf {
+                    let content = try await session.respond(to: conceptPrompt, generating: SuggestedConcept.self).content
+                    let suggestion = FrontmatterSuggestion(title: content.title, tags: content.tags, type: needsType ? content.type : nil, description: content.description)
+                    if !Task.isCancelled { aiSuggestion = suggestion; aiOutput = suggestion.preview }
+                } else if placement == .frontmatter {
+                    let content = try await session.respond(to: prompt, generating: SuggestedFrontmatter.self).content
+                    let suggestion = FrontmatterSuggestion(title: content.title, tags: content.tags)
+                    if !Task.isCancelled { aiSuggestion = suggestion; aiOutput = suggestion.preview }
                 } else {
                     for try await snapshot in session.streamResponse(to: prompt) {
                         if Task.isCancelled { break }
@@ -1193,10 +1213,21 @@ struct ContentView: View {
                 return
             }
         }
-        let edit = aiPlacement.edit(source: source as String, output: aiOutput, caret: aiInsertion)
-        aiEdit.active = true
-        textView.insertText(edit.text, replacementRange: edit.range)
-        aiEdit.active = false
+        if aiPlacement == .frontmatter, let aiSuggestion {
+            // Merged key by key, so dates, trust stamps and other keys survive.
+            aiEdit.active = true
+            editFrontmatter(quiet: true) { aiSuggestion.merged(into: $0) }
+            aiEdit.active = false
+        } else {
+            let edit = aiPlacement.edit(source: source as String, output: aiOutput, caret: aiInsertion)
+            textView.undoManager?.beginUndoGrouping()
+            aiEdit.active = true
+            textView.insertText(edit.text, replacementRange: edit.range)
+            aiEdit.active = false
+            stampAIGenerated()
+            textView.undoManager?.endUndoGrouping()
+        }
+        aiSuggestion = nil
         aiOutput = ""
         showAI = false
         showWritingMenu = false
@@ -1424,8 +1455,16 @@ struct ContentView: View {
         editFrontmatter { yaml in OKFEditing.hasKey("type", in: yaml) ? OKFEditing.setting("type", to: entry, in: yaml) : entry + "\n" + yaml }
     }
 
+    /// Records Apple Intelligence as the producer in an OKF concept's `generated`, once AI text is kept (§5.2).
+    private func stampAIGenerated() {
+        guard recordAIGenerated, concept != nil else { return }
+        let entry = "generated: " + OKFEditing.render(OKFStamp(by: Knowledge.aiActor, at: Date()))
+        editFrontmatter(quiet: true) { OKFEditing.setting("generated", to: entry, in: $0) }
+    }
+
     /// Rewrites the frontmatter YAML as one undoable edit, creating the block when missing, and keeps the caret in place.
-    private func editFrontmatter(_ transform: (String) throws -> String) {
+    /// Quiet edits skip YAML they can't read instead of alerting.
+    private func editFrontmatter(quiet: Bool = false, _ transform: (String) throws -> String) {
         guard let textView else { return }
         let block = FrontmatterBlock.locate(in: textView.string)
         let range = block.map { NSRange(location: $0.yamlRange.lowerBound, length: $0.yamlRange.count) } ?? NSRange(location: 0, length: 0)
@@ -1435,6 +1474,7 @@ struct ContentView: View {
             guard yaml != block?.yaml else { return }
             replacement = block == nil ? "---\n" + yaml + "---\n" : yaml
         } catch {
+            guard !quiet else { return }
             let alert = NSAlert()
             alert.messageText = "The frontmatter couldn’t be updated."
             alert.informativeText = String(describing: error)
@@ -1732,12 +1772,14 @@ enum AIPlacement: Equatable {
 struct SuggestedFrontmatter {
     @Guide(description: "A concise title for the document") var title: String
     @Guide(description: "At most five short topic tags") var tags: [String]
+}
 
-    var markdown: String {
-        let titleJSON = String(data: try! JSONEncoder().encode(title), encoding: .utf8)!
-        let tagsJSON = String(data: try! JSONEncoder().encode(Array(tags.prefix(5))), encoding: .utf8)!
-        return "---\ntitle: \(titleJSON)\ntags: \(tagsJSON)\n---\n"
-    }
+@Generable
+struct SuggestedConcept {
+    @Guide(description: "A concise title for the document") var title: String
+    @Guide(description: "The kind of knowledge the document captures, as a short noun phrase such as Metric, Playbook, Reference or API Endpoint") var type: String
+    @Guide(description: "One sentence summarizing the document") var description: String
+    @Guide(description: "At most five short topic tags") var tags: [String]
 }
 
 /// Filled row/tile that brightens on hover and dims while pressed, used inside glass popovers.

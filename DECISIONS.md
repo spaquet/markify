@@ -22,3 +22,4 @@
 - OKF badges (type, status, stale, trust, resource) join the existing frontmatter chip row only when the frontmatter has a `type`; plain notes are unchanged.
 - ⌘-click follows links in both lenses; `/…` links resolve against the OKF bundle root (nearest `index.md` with `okf_version`, else the library, else the file's folder). A missing `.md` target offers to create it as a concept.
 - `index.md` and `log.md` are written only through Knowledge menu commands, never automatically.
+- AI frontmatter suggestions merge key by key instead of replacing the block. In OKF concepts they add `description` and, only when missing, `type`. Keeping AI text in a concept stamps `generated.by` as `apple-intelligence/macos-<major>.<minor>`; the on-device model ships with the OS, so its version names the model.

@@ -291,6 +291,17 @@ struct MarkifyTests {
         #expect(cache.concept(in: "Plain") == nil)
     }
 
+    @Test @MainActor func frontmatterSuggestionMergesKeyByKey() {
+        let yaml = "# keep me\ndate: 2026-09-01\ntitle: Old\nverified: { by: human:ana, at: 2026-06-25T09:00:00Z }\n"
+        let plain = FrontmatterSuggestion(title: "Revenue: FY", tags: ["finance", "yes"])
+        #expect(plain.merged(into: yaml) == "# keep me\ndate: 2026-09-01\ntitle: \"Revenue: FY\"\nverified: { by: human:ana, at: 2026-06-25T09:00:00Z }\ntags: [finance, \"yes\"]\n")
+        let okf = FrontmatterSuggestion(title: "Revenue", tags: [], type: "Metric", description: "Recognized revenue.")
+        #expect(okf.merged(into: "tags: [a]\n") == "type: Metric\ntags: [a]\ntitle: Revenue\ndescription: Recognized revenue.\n")
+        #expect(okf.merged(into: "type: Playbook\n").hasPrefix("type: Playbook\n"))
+        #expect(okf.preview == "type: Metric\ntitle: Revenue\ndescription: Recognized revenue.")
+        #expect(Knowledge.aiActor.description.hasPrefix("apple-intelligence/macos-"))
+    }
+
     @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
