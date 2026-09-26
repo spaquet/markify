@@ -1,23 +1,53 @@
-# Markify
+<p align="center">
+  <a href="https://spaquet.github.io/markify/"><img src="docs/images/social-preview.jpg" alt="Markify — One page, two lenses" width="100%"></a>
+</p>
 
-[![GitHub Release](https://img.shields.io/github/v/release/spaquet/markify)](https://github.com/spaquet/markify/releases)
-[![License](https://img.shields.io/badge/license-Commons%20Clause%20%2B%20MIT-blue)](LICENSE)
-[![macOS](https://img.shields.io/badge/macOS-14.8%2B%2C%2026-lightgrey)](https://www.apple.com/macos/)
-[![Swift](https://img.shields.io/badge/Swift-6.2+-orange)](https://swift.org)
+<p align="center">
+  <a href="https://github.com/spaquet/markify/releases"><img src="https://img.shields.io/github/v/release/spaquet/markify" alt="GitHub Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Commons%20Clause%20%2B%20MIT-blue" alt="License"></a>
+  <a href="https://www.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-26%2B-lightgrey" alt="macOS 26+"></a>
+  <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2+-orange" alt="Swift 6.2+"></a>
+</p>
 
-A beautiful, minimal markdown editor for macOS with live preview. Write and preview Markdown (.md) and MDX (.mdx) files with a clean split-pane interface.
+# <img src="docs/images/app-icon.png" alt="" width="36" align="top"> Markify
+
+A quiet Markdown editor for macOS 26. Write on one rendered page, press <kbd>⌘/</kbd> to see the same text as plain Markdown, and let on-device Apple Intelligence proofread and rewrite. No split preview pane.
+
+**Website:** [spaquet.github.io/markify](https://spaquet.github.io/markify/)
+
+<p align="center">
+  <img src="docs/images/screens/1a.webp" alt="Rendered lens: headings, a note callout, a task list and a table rendered in place" width="49%">
+  <img src="docs/images/screens/1b.webp" alt="Markdown lens: the same document as source with dimmed syntax" width="49%">
+</p>
+<p align="center"><sub>The same document in the Rendered lens (left) and the Markdown lens (right).</sub></p>
 
 ## Features
 
-- **Live Preview**: See your markdown rendered in real-time as you type
-- **Split-Pane Interface**: View editor and preview side-by-side
-- **MDX Support**: Edit both standard Markdown and MDX files
-- **GitHub-Flavored Markdown**: Full support for GitHub's markdown extensions
-- **Recent Files**: Quick access to your recently edited documents
-- **Insert Tools**: Convenient buttons for inserting images, links, tasks, and lists
-- **Toggle Editor**: Hide/show the editor pane with a single click
-- **Native macOS Integration**: Built with SwiftUI for seamless macOS experience
-- **Auto-Save**: Documents are automatically saved as you work
+- **One page, two lenses**: Edit in place with headings, tables, code, math and images rendered. <kbd>⌘/</kbd> crossfades to the Markdown source and keeps your caret and scroll position.
+- **Format bar**: Select text to get a floating glass bar for block style, bold, italic, strikethrough, code and links.
+- **Slash menu**: Type `/` to insert tables, task lists, code blocks, callouts, math, images, footnotes or frontmatter. Each row shows its Markdown shortcut.
+- **GitHub-Flavored Markdown and more**: Tables, task lists, callouts (`> [!NOTE]`), `$…$` / `$$…$$` math, footnotes and YAML frontmatter.
+- **Library**: A glass sidebar (<kbd>⌃⌘S</kbd>) lists open files and library notes together.
+- **Focus**: The toolbar fades while you type and comes back when you move the pointer.
+- **Apple Intelligence, on-device only**: Writing Tools, proofread, rewrite, generate at the caret (<kbd>⌘↩</kbd>) and whole-document actions. Nothing leaves your Mac.
+- **Plain files**: Documents are ordinary `.md` files with system autosave, versions and Recents.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/screens/1c.webp" alt="Floating format bar above a selection"><br><sub><b>Format bar.</b> Appears on selection and goes away on the next keystroke.</sub></td>
+    <td width="50%"><img src="docs/images/screens/1d.webp" alt="Slash insert menu"><br><sub><b>Slash menu.</b> Insert any block and learn its Markdown syntax.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/screens/1f.webp" alt="Library sidebar in dark mode"><br><sub><b>Library.</b> Open files and notes in one sidebar.</sub></td>
+    <td><img src="docs/images/screens/1i.webp" alt="Code block, math and footnotes"><br><sub><b>Rendered blocks.</b> Syntax-colored code, typeset math, images and footnotes.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/screens/2a.webp" alt="Writing Tools popover"><br><sub><b>Writing Tools.</b> Proofread, rewrite or change the tone of a selection.</sub></td>
+    <td><img src="docs/images/screens/2c.webp" alt="Rewrite result with accept and revert"><br><sub><b>Rewrite.</b> Review the change, compare, revert or accept.</sub></td>
+  </tr>
+</table>
 
 ## Download
 
@@ -50,7 +80,8 @@ Not sure which one to choose? Check your Mac:
 
 ## Requirements
 
-- **macOS 14.8** or later (supports macOS 14.8+, 15.*, and macOS 26)
+- **macOS 26 Tahoe** or later
+- **Apple Intelligence** features need a Mac that supports it, with Apple Intelligence turned on
 - **Xcode 26** or later (for building from source)
 
 ## Building from Source
@@ -77,11 +108,13 @@ open build/Release/Markify.app
 
 ## Usage
 
-- **Open a File**: Use File → Open or Cmd+O to open an existing markdown file
-- **Create New File**: Use File → New or Cmd+N to create a new document
-- **Insert Elements**: Use the sidebar tools to quickly insert images, links, tasks, and lists
-- **Toggle Editor**: Click the eye icon in the toolbar to show/hide the editor pane
-- **Save**: Use File → Save or Cmd+S to save your document
+- **Open a file**: <kbd>⌘O</kbd>, or double-click any `.md` file
+- **New document**: <kbd>⌘N</kbd>
+- **Switch lens**: <kbd>⌘/</kbd> or the **MD** button in the toolbar
+- **Insert a block**: type `/` at the start of a line
+- **Format**: select text, or use <kbd>⌘B</kbd> <kbd>⌘I</kbd> <kbd>⇧⌘X</kbd> <kbd>⌘E</kbd> <kbd>⌘K</kbd>
+- **Library**: <kbd>⌃⌘S</kbd>
+- **Writing Tools**: <kbd>⇧⌘W</kbd>, or generate at the caret with <kbd>⌘↩</kbd>
 
 ## Development
 
@@ -97,24 +130,24 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -configuration Release bui
 xcodebuild -project Markify.xcodeproj -scheme Markify test
 ```
 
-See [CLAUDE.md](CLAUDE.md) for comprehensive development documentation.
+See [AGENTS.md](AGENTS.md) for development notes.
 
 ## Architecture
 
-Markify follows Apple's document-based app pattern using SwiftUI and `ReferenceFileDocument`. The architecture consists of:
+Markify is a SwiftUI document-based app. The Markdown source string is the single source of truth, and both lenses are stylings of the same text.
 
-- **MarkifyApp**: Entry point and document group configuration
-- **MarkifyDocument**: File I/O and document model for .md and .mdx files
-- **ContentView**: Main UI with split-pane layout (editor + preview)
-- **SidebarView**: Toolbar with recent files and insert tools
+- **MarkifyApp**: Entry point, `DocumentGroup` and Settings scene
+- **MarkifyDocument**: File I/O for `.md` files
+- **ContentView**: Window chrome and the floating glass control layer
+- **NativeEditor**: TextKit 2 `NSTextView` editor that renders blocks in place
+- **Settings/**, **Theme**, **Shortcuts**: Preferences, design tokens and key bindings
 
-See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
+See [AGENTS.md](AGENTS.md) for development notes.
 
 ## Dependencies
 
-- [MarkdownUI](https://github.com/gonzalezreal/swift-markdown-ui) - Markdown rendering
-- [NetworkImage](https://github.com/gonzalezreal/NetworkImage) - Image loading support
-- [swift-cmark](https://github.com/swiftlang/swift-cmark) - CommonMark parsing with GitHub Flavored Markdown
+- [swift-markdown](https://github.com/swiftlang/swift-markdown) - Markdown parsing (cmark-gfm)
+- [SwaTex](https://github.com/PhraseHQ/SwaTex) - Math rendering
 
 ## License
 
