@@ -225,19 +225,23 @@ struct ContentView: View {
                         Spacer()
                         HStack(spacing: 3) {
                             if aiAvailability != .unavailable(.deviceNotEligible) {
-                                Button { showAI.toggle(); showWritingMenu = false } label: { Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).frame(width: 30, height: 30) }
+                                Button { showAI.toggle(); showWritingMenu = false } label: { Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).frame(width: 30, height: 30).contentShape(.circle) }
                                     .buttonStyle(.plain)
                                     .accessibilityLabel("Apple Intelligence")
                             }
-                            Toggle("MD", isOn: Binding(get: { markdownLens }, set: { _ in toggleLens() }))
-                                .toggleStyle(.button)
+                            // The whole capsule is clickable, not just the letters.
+                            Button { toggleLens() } label: {
+                                Text("MD")
+                                    .font(.system(size: 11.5, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(markdownLens ? .white : .primary)
+                                    .frame(minWidth: 36, minHeight: 30)
+                                    .background(markdownLens ? accent : .clear, in: .capsule)
+                                    .contentShape(.capsule)
+                            }
                                 .buttonStyle(.plain)
-                                .font(.system(size: 11.5, weight: .bold, design: .monospaced))
-                                .foregroundStyle(markdownLens ? .white : .primary)
-                                .background(markdownLens ? accent : .clear, in: .capsule)
-                                .frame(height: 30)
                                 .help("Show Markdown \(shortcutLabel("toggleMarkdown"))")
                                 .accessibilityLabel("Show Markdown")
+                                .accessibilityAddTraits(markdownLens ? .isSelected : [])
                             Menu {
                                 if let fileURL { ShareLink(item: fileURL) { Text("Share") } }
                                 else { Button("Share") { }.disabled(true) }
@@ -249,9 +253,11 @@ struct ContentView: View {
                                 Button("Find") { showFind = true }
                                 Toggle("Show Word Count", isOn: $showWordCount)
                                 SettingsLink { Text("Settings") }
-                            } label: { Image(systemName: "ellipsis").frame(width: 30, height: 30) }
+                            } label: { Image(systemName: "ellipsis").frame(width: 30, height: 30).contentShape(.circle) }
                             .buttonStyle(.plain)
                             .menuIndicator(.hidden)
+                            .frame(width: 30, height: 30)
+                            .contentShape(.circle)
                             .accessibilityLabel("More")
                         }
                         .padding(3)
