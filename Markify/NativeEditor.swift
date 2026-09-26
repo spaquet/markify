@@ -987,6 +987,7 @@ final class MarkdownTextView: NSTextView {
             if let link = hit.chip.link { return Knowledge.follow(link, title: nil, from: documentURL, bundleRoot: bundleRoot) }
             return editFrontmatter(frontmatter, at: hit.frame)
         }
+        if event.modifierFlags.contains(.command), followFootnote(at: characterIndexForInsertion(at: point)) { return }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
         if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
             return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot)
@@ -997,6 +998,43 @@ final class MarkdownTextView: NSTextView {
             return
         }
         super.mouseDown(with: event)
+    }
+
+    /// The reference a footnote jump left from, so ⌘-clicking the definition returns to it.
+    private var footnoteOrigin: (label: String, location: Int)?
+
+    /// ⌘-click on a footnote reference selects its definition; on a definition's label, the reference it was reached from.
+    /// Returns false when `index` is on neither.
+    func followFootnote(at index: Int) -> Bool {
+        let spans = model.spans
+        func hit(_ range: NSRange) -> Bool { range.location <= index && index <= NSMaxRange(range) }
+        func reveal(_ range: NSRange) {
+            setSelectedRange(range)
+            scrollRangeToVisible(range)
+            showFindIndicator(for: range)
+        }
+        for span in spans {
+            switch span.kind {
+            case .footnoteReference(let label) where hit(span.range):
+                let definition = spans.lazy.compactMap { span -> NSRange? in
+                    if case .footnoteDefinition(label, let labelRange) = span.kind { labelRange } else { nil }
+                }.first
+                guard let definition else { NSSound.beep(); return true }
+                footnoteOrigin = (label, span.range.location)
+                reveal(definition)
+                return true
+            case .footnoteDefinition(let label, let labelRange) where hit(NSRange(location: span.range.location, length: NSMaxRange(labelRange) + 2 - span.range.location)):
+                let references = spans.filter { $0.kind == .footnoteReference(label: label) }
+                guard let first = references.first else { NSSound.beep(); return true }
+                // Edits since the jump can move the reference; fall back to the first one.
+                let origin = references.first { footnoteOrigin?.label == label && $0.range.location == footnoteOrigin?.location }
+                reveal((origin ?? first).content)
+                return true
+            default:
+                continue
+            }
+        }
+        return false
     }
 
     /// The partial destination between `](` and the caret, when the caret is inside one.

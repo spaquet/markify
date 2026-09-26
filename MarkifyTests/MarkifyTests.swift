@@ -340,6 +340,20 @@ struct MarkifyTests {
         #expect(tip == "Policy\n\nSource: Revenue policy · https://wiki/p")
     }
 
+    @Test @MainActor func footnotesJumpToTheirDefinitionAndBack() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "One[^a] and two[^a] and lost[^x].\n\n[^a]: The note.\n"
+        let ns = editor.string as NSString
+        let second = ns.range(of: "two[^a]").location + 3
+        #expect(editor.followFootnote(at: second + 2))
+        #expect(editor.selectedRange() == NSRange(location: ns.range(of: "[^a]:").location + 2, length: 1))
+        // Back from the definition to the reference the jump came from, not the first one.
+        #expect(editor.followFootnote(at: ns.range(of: "[^a]:").location + 1))
+        #expect(editor.selectedRange() == NSRange(location: second + 2, length: 1))
+        #expect(editor.followFootnote(at: ns.range(of: "[^x]").location + 2))
+        #expect(!editor.followFootnote(at: 1))
+    }
+
     @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
