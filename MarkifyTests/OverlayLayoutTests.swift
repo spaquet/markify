@@ -72,15 +72,30 @@ import Testing
                      selectedRange: .constant(NSRange(location: 0, length: 0)),
                      textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
             .style(editor)
-        let image = NSImage(size: NSSize(width: 640, height: 660))
-        image.lockFocus()
-        defer { image.unlockFocus() }
         editor.layoutSubtreeIfNeeded()
-        // The first paint lays the text out; later paints, as when scrolling, reuse that layout.
-        editor.drawOverlays(editor.visibleRect)
-        let elapsed = ContinuousClock().measure { editor.drawOverlays(editor.visibleRect) }
-        // Measured at 13 ms for 3,780 lines.
-        #expect(elapsed < .milliseconds(50), "drawOverlays took \(elapsed)")
+        let manager = editor.textLayoutManager!
+        manager.ensureLayout(for: CGRect(x: 0, y: 0, width: 640, height: 660))
+        var visible: [MarkdownLayoutFragment] = []
+        manager.enumerateTextLayoutFragments(from: manager.documentRange.location, options: [.ensuresLayout]) { fragment in
+            guard fragment.layoutFragmentFrame.minY < 660 else { return false }
+            if let fragment = fragment as? MarkdownLayoutFragment { visible.append(fragment) }
+            return true
+        }
+        #expect(!visible.isEmpty)
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 700, pixelsHigh: 700, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+                                   isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let context = NSGraphicsContext(bitmapImageRep: rep)!.cgContext
+        func paint() {
+            for fragment in visible {
+                context.saveGState()
+                fragment.draw(at: fragment.layoutFragmentFrame.origin, in: context)
+                context.restoreGState()
+            }
+        }
+        // The first paint renders math and loads images; later paints, as when scrolling, reuse them.
+        paint()
+        let elapsed = ContinuousClock().measure { paint() }
+        #expect(elapsed < .milliseconds(50), "painting the visible fragments took \(elapsed)")
     }
 
     /// Where `firstRect` can answer (text in view), the layout-manager rect agrees with it.

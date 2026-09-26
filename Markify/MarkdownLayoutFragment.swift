@@ -31,10 +31,11 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
 
     var textStorage: NSTextStorage? { (textLayoutManager?.textContentManager as? NSTextContentStorage)?.textStorage }
 
-    /// Markers sit in the text's left margin, and a checkbox is taller than a hidden 10pt marker,
-    /// so the drawing surface spans the container's width.
+    /// Markers sit in the text's left margin, a checkbox is taller than a hidden 10pt marker,
+    /// and block decorations span the column, so the drawing surface spans the container's width.
     override var renderingSurfaceBounds: CGRect {
-        var bounds = super.renderingSurfaceBounds
+        // Also the paragraph spacing around the lines: block images, the footnotes rule and a diagram's error draw there.
+        var bounds = super.renderingSurfaceBounds.union(CGRect(origin: .zero, size: layoutFragmentFrame.size))
         if let width = textLayoutManager?.textContainer?.size.width {
             bounds.origin.x = -layoutFragmentFrame.minX
             bounds.size.width = max(bounds.width, width)
@@ -65,6 +66,10 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
                 Self.drawCheckbox(in: Self.checkboxRect(marker: marker), checked: checked, accent: view.theme.accent)
             }
         }
+        // Block and inline decorations are drawn by the view in its own coordinates.
+        context.translateBy(x: point.x - layoutFragmentFrame.minX - view.textContainerOrigin.x,
+                            y: point.y - layoutFragmentFrame.minY - view.textContainerOrigin.y)
+        view.drawDecorations(anchoredIn: range)
     }
 
     /// The first line segment of `run`, in the coordinates `draw(at:in:)` draws in.

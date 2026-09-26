@@ -474,6 +474,7 @@ struct NativeEditor: NSViewRepresentable {
         }
         storage.endEditing()
         if let editor = editor as? MarkdownTextView {
+            editor.forgetImages()
             editor.refreshDecorations()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
@@ -562,17 +563,17 @@ final class MarkdownTextView: NSTextView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        textLayoutManager?.delegate = layoutDelegate
+        observeEdits()
     }
 
     override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
         super.init(frame: frameRect, textContainer: container)
-        textLayoutManager?.delegate = layoutDelegate
+        observeEdits()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        textLayoutManager?.delegate = layoutDelegate
+        observeEdits()
     }
 
     var documentURL: URL?
@@ -585,17 +586,32 @@ final class MarkdownTextView: NSTextView {
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     /// Restyles the text, for results that arrive later, such as a rendered diagram.
     var restyle: (() -> Void)?
-    private var imageCache: [URL: NSImage] = [:]
+    /// Local images by URL; `nil` for a file that could not be read.
+    private var imageCache: [URL: NSImage?] = [:]
+
+    /// Forgets local images, so files added or changed since show on the next paint.
+    func forgetImages() { imageCache.removeAll() }
     private var mathCache: [String: NSImage] = [:]
     private(set) var tableOverlays: [Int: TableRowView] = [:]
-    private var modelCache: MarkdownModel?
+    private var modelCache: (version: Int, model: MarkdownModel)?
+    /// Bumped whenever the characters change (not their attributes), so caches check validity without comparing the text.
+    private(set) var textVersion = 0
+    private var editingObserver: NSObjectProtocol?
+
+    private func observeEdits() {
+        textLayoutManager?.delegate = layoutDelegate
+        editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: textStorage, queue: nil) { [weak self] notification in
+            guard let storage = notification.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
+            MainActor.assumeIsolated { self?.textVersion += 1 }
+        }
+    }
 
     /// The parsed source, shared by styling, drawing and clicks until the text changes.
     var model: MarkdownModel {
         let mdx = Self.isMDX(documentURL)
-        if let modelCache, modelCache.source == string, modelCache.mdx == mdx { return modelCache }
+        if let modelCache, modelCache.version == textVersion, modelCache.model.mdx == mdx { return modelCache.model }
         let model = MarkdownModel(string, mdx: mdx)
-        modelCache = model
+        modelCache = (textVersion, model)
         return model
     }
 
@@ -785,9 +801,6 @@ final class MarkdownTextView: NSTextView {
         return MarkdownLayoutFragment.checkboxRect(marker: textRect(NSRange(location: item.marker.location, length: 1)))
     }
 
-    /// TextKit 2 repaints edited text in its own fragment views without calling draw(_:) here,
-    /// so rendered decorations live in a pass-through view kept over the visible area.
-    private lazy var decorations = DecorationView(host: self)
     private var clipObservers: [NSObjectProtocol] = []
 
     /// Overlays placed while outside the visible area are not painted when it grows to include them.
@@ -805,9 +818,7 @@ final class MarkdownTextView: NSTextView {
             manager.ensureLayout(for: CGRect(x: 0, y: 0, width: bounds.width, height: visibleRect.maxY + 320))
             if settled { manager.textViewportLayoutController.layoutViewport() }
         }
-        if decorations.superview !== self { addSubview(decorations) }
-        if decorations.frame != visibleRect { decorations.frame = visibleRect }
-        decorations.needsDisplay = true
+
     }
 
     override func viewDidMoveToSuperview() {
@@ -867,39 +878,70 @@ final class MarkdownTextView: NSTextView {
     }
 
     /// Draws bullets, list numbers, checkboxes, images, math and chips; `dirtyRect` is in this view's coordinates.
-    /// Spans the current paint looks at: those near the viewport, not the whole document.
+    private var anchorCache: (version: Int, mdx: Bool, anchors: [(location: Int, span: MarkdownModel.Span)])?
+
+    /// Where each decoration is drawn from, sorted: the character whose layout fragment draws it.
+    private var decorationAnchors: [(location: Int, span: MarkdownModel.Span)] {
+        let model = self.model
+        if let anchorCache, anchorCache.version == textVersion, anchorCache.mdx == model.mdx { return anchorCache.anchors }
+        var anchors: [(location: Int, span: MarkdownModel.Span)] = []
+        var firstFootnote = true
+        for span in model.spans {
+            switch span.kind {
+            case .image(_, true): anchors.append((span.content.location, span))
+            case .image(_, false), .mathBlock, .frontmatter: anchors.append((span.range.location, span))
+            case .callout(_, let token): anchors.append((token.location, span))
+            case .codeBlock(let language?, true):
+                anchors.append((span.range.location, span))
+                if span.content.length > 0 { anchors.append((span.content.location, span)) }
+                anchors.append((max(span.range.location, NSMaxRange(span.range) - 1), span))
+                _ = language
+            case .footnoteDefinition where firstFootnote:
+                firstFootnote = false
+                anchors.append((span.range.location, span))
+            default: break
+            }
+        }
+        anchors.sort { $0.location < $1.location }
+        anchorCache = (textVersion, model.mdx, anchors)
+        return anchors
+    }
+
+    /// Spans the current fragment draws for, and the text whose decorations it owns.
     private var drawingSpans: [MarkdownModel.Span] = []
+    private var anchorRange = NSRange(location: 0, length: 0)
 
-    /// The viewport's text with a screen of margin on each side, since image blocks draw above their caption line.
-    private func nearViewport() -> NSRange {
-        let length = (string as NSString).length
-        guard let manager = textLayoutManager, let content = manager.textContentManager,
-              let viewport = manager.textViewportLayoutController.viewportRange else { return NSRange(location: 0, length: length) }
-        let start = content.offset(from: content.documentRange.location, to: viewport.location)
-        let end = content.offset(from: content.documentRange.location, to: viewport.endLocation)
-        let margin = max(end - start, 2000)
-        let lower = max(0, start - margin)
-        return NSRange(location: lower, length: min(length, end + margin) - lower)
-    }
-
-    private func spansNearViewport() -> [MarkdownModel.Span] {
-        let near = nearViewport()
-        return model.spans.filter { NSIntersectionRange($0.range, near).length > 0 || NSLocationInRange($0.range.location, near) }
-    }
-
-    func drawOverlays(_ dirtyRect: NSRect) {
-        drawingSpans = spansNearViewport()
+    /// Draws the decorations anchored in `range` — images, math, diagrams, callout titles, code labels, the footnotes rule,
+    /// frontmatter and image chips — in this view's coordinates. `MarkdownLayoutFragment` calls it for the text it lays out,
+    /// with its context moved to view coordinates, so each decoration is drawn by exactly one fragment.
+    func drawDecorations(anchoredIn range: NSRange) {
+        guard rendered else { return }
+        anchorRange = range
+        let anchors = decorationAnchors
+        // Binary search for the first anchor in range; anchors are sorted by location.
+        var low = 0, high = anchors.count
+        while low < high {
+            let middle = (low + high) / 2
+            if anchors[middle].location < range.location { low = middle + 1 } else { high = middle }
+        }
+        var spans: [MarkdownModel.Span] = []
+        while low < anchors.count, anchors[low].location < NSMaxRange(range) {
+            if spans.last != anchors[low].span { spans.append(anchors[low].span) }
+            low += 1
+        }
+        guard !spans.isEmpty else { return }
+        drawingSpans = spans
         defer { drawingSpans = [] }
-        if rendered { drawImages(in: dirtyRect) }
-        if rendered { drawMath(in: dirtyRect) }
-        if rendered { drawDiagrams(in: dirtyRect) }
-        if rendered { drawDecorations(in: dirtyRect) }
+        drawImages(in: .infinite)
+        drawMath(in: .infinite)
+        drawDiagrams(in: .infinite)
+        drawDecorations(in: .infinite)
     }
 
     private func drawImages(in dirtyRect: NSRect) {
         guard window != nil else { return }
         for span in drawingSpans {
-            guard case .image(let path, true) = span.kind else { continue }
+            guard case .image(let path, true) = span.kind, NSLocationInRange(span.content.location, anchorRange) else { continue }
             let caption = textRect(span.content)
             let rect = NSRect(x: 0, y: caption.minY - 268, width: columnWidth, height: 260)
             guard rect.intersects(dirtyRect) else { continue }
@@ -938,15 +980,16 @@ final class MarkdownTextView: NSTextView {
             }
         }
         let url = Self.imageURL(path, document: documentURL)
-        if let image = imageCache[url] ?? NSImage(contentsOf: url) {
-            imageCache[url] = image
-            return .image(image)
-        }
-        return .placeholder("image — \(url.lastPathComponent)")
+        if let cached = imageCache[url] { return cached.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)") }
+        // Misses are remembered too, so painting never touches the disk; restyling forgets them.
+        let image = NSImage(contentsOf: url)
+        imageCache[url] = .some(image)
+        return image.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)")
     }
 
     private func remoteImageLoaded() {
-        refreshDecorations()
+        // Fragments draw images; restyling lays them out again with the loaded image.
+        restyle?()
         if let previewSpan { showImagePreview(for: previewSpan, force: true) }
     }
 
@@ -972,6 +1015,12 @@ final class MarkdownTextView: NSTextView {
                   let state = MermaidRenderer.shared.cached(source.substring(with: span.content), dark: dark) else { continue }
             let label = NSAttributedString(string: "mermaid", attributes: [.font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
             if case .failed(let message) = state {
+                // The message belongs to the closing fence's line, the label to the first line of code.
+                if span.content.length > 0, NSLocationInRange(span.content.location, anchorRange) {
+                    let body = rect(NSRange(location: span.content.location, length: 1))
+                    label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: body.minY + 2))
+                }
+                guard NSLocationInRange(max(span.range.location, NSMaxRange(span.range) - 1), anchorRange) else { continue }
                 let last = rect(NSRange(location: max(span.range.location, NSMaxRange(span.range) - 1), length: 1))
                 let body = span.content.length > 0 ? rect(NSRange(location: span.content.location, length: 1)).minX : last.minX
                 let text = NSAttributedString(string: message, attributes: [.font: theme.ui(12), .foregroundColor: NSColor.systemRed])
@@ -979,12 +1028,9 @@ final class MarkdownTextView: NSTextView {
                 let frame = NSRect(x: body, y: last.maxY + 4, width: columnWidth - body, height: (Self.diagramErrorHeight - 8) * theme.scale)
                 guard frame.intersects(dirtyRect) else { continue }
                 text.draw(with: frame, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
-                if span.content.length > 0 {
-                    let body = rect(NSRange(location: span.content.location, length: 1))
-                    label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: body.minY + 2))
-                }
                 continue
             }
+            guard NSLocationInRange(span.range.location, anchorRange) else { continue }
             let line = rect(NSRange(location: span.range.location, length: 1))
             let container = NSRect(x: 0, y: line.minY, width: columnWidth, height: line.height)
             guard container.intersects(dirtyRect) else { continue }
@@ -1012,7 +1058,7 @@ final class MarkdownTextView: NSTextView {
         guard window != nil else { return }
         let source = string as NSString
         let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        for span in drawingSpans where span.kind == .mathBlock {
+        for span in drawingSpans where span.kind == .mathBlock && NSLocationInRange(span.range.location, anchorRange) {
             let line = textRect(NSRange(location: span.range.location, length: 1))
             let rect = NSRect(x: 0, y: line.midY - 40, width: columnWidth, height: 80)
             guard rect.intersects(dirtyRect) else { continue }
@@ -1046,13 +1092,15 @@ final class MarkdownTextView: NSTextView {
         for span in drawingSpans {
             switch span.kind {
             case .callout(let type, let range):
+                guard NSLocationInRange(range.location, anchorRange) else { continue }
                 let token = rect(range)
                 guard token.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
                 let title = NSAttributedString(string: type.capitalized, attributes: [
                     .font: theme.ui(13, weight: .semibold), .foregroundColor: Callout.color(type, accent: theme.accent)])
                 title.draw(at: NSPoint(x: token.minX, y: token.maxY - title.size().height))
             case .image(let path, false):
-                guard let frame = inlineImageChipFrame(span), frame.intersects(dirtyRect) else { continue }
+                guard NSLocationInRange(span.range.location, anchorRange),
+                      let frame = inlineImageChipFrame(span), frame.intersects(dirtyRect) else { continue }
                 NSColor.labelColor.withAlphaComponent(0.06).setFill()
                 NSBezierPath(roundedRect: frame, xRadius: frame.height / 2, yRadius: frame.height / 2).fill()
                 let symbol = NSImage(systemSymbolName: "photo", accessibilityDescription: nil)?
@@ -1065,6 +1113,7 @@ final class MarkdownTextView: NSTextView {
                                               attributes: [.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.secondaryLabelColor])
                 if !alt.isEmpty { text.draw(at: NSPoint(x: rect(span.content).minX, y: frame.midY - text.size().height / 2)) }
             case .codeBlock(let language?, true) where span.content.length > 0 && language.lowercased() != "mermaid":
+                guard NSLocationInRange(span.content.location, anchorRange) else { continue }
                 let line = rect(NSRange(location: span.content.location, length: 1))
                 guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
                 let label = NSAttributedString(string: language, attributes: [
@@ -1074,8 +1123,9 @@ final class MarkdownTextView: NSTextView {
                 break
             }
         }
-        if let first = model.spans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } }),
-           NSLocationInRange(first.range.location, nearViewport()) {
+        if let first = drawingSpans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } }),
+           NSLocationInRange(first.range.location, anchorRange),
+           first.range.location == model.spans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } })?.range.location {
             let line = rect(NSRange(location: first.range.location, length: 1))
             let y = line.minY - 12 * theme.scale
             if dirtyRect.minY <= y, y <= dirtyRect.maxY {
@@ -1083,7 +1133,7 @@ final class MarkdownTextView: NSTextView {
                 NSRect(x: 0, y: y, width: columnWidth, height: 1).fill()
             }
         }
-        if let frontmatter = Frontmatter.parse(string) {
+        if let frontmatter = Frontmatter.parse(string), NSLocationInRange(frontmatter.range.location, anchorRange) {
             for (chip, frame) in frontmatterChips(frontmatter) where frame.intersects(dirtyRect) {
                 if let fill = chip.fill {
                     fill.setFill()
@@ -1497,26 +1547,6 @@ final class MarkdownTextView: NSTextView {
             waiting.removeValue(forKey: url)?.forEach { $0() }
         }
         return .loading
-    }
-}
-
-private final class DecorationView: NSView {
-    private weak var host: MarkdownTextView?
-
-    init(host: MarkdownTextView) {
-        self.host = host
-        super.init(frame: .zero)
-    }
-
-    required init?(coder: NSCoder) { fatalError("Decorations are created in code") }
-
-    override var isFlipped: Bool { true }
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-
-    override func draw(_ dirtyRect: NSRect) {
-        // Shift into the text view's coordinates so the host can draw as if on itself.
-        NSGraphicsContext.current?.cgContext.translateBy(x: -frame.minX, y: -frame.minY)
-        host?.drawOverlays(dirtyRect.offsetBy(dx: frame.minX, dy: frame.minY))
     }
 }
 
