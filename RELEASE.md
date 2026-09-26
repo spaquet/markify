@@ -1,176 +1,131 @@
 # Releasing Markify
 
-This document describes how to create a new release of Markify with automated DMG creation.
+Releases are built by GitHub Actions ([`release-dmg.yml`](.github/workflows/release-dmg.yml)) when you push a version tag. The workflow builds a DMG for Apple silicon and one for Intel, attaches them to a draft release, and then publishes it.
+
+> **Why tag first?** This repository has **immutable releases** turned on. Once a release is published, its assets and tag are locked, so nothing can be uploaded to it afterwards (GitHub answers `HTTP 422: Cannot upload assets to an immutable release`). The workflow therefore attaches the DMGs while the release is still a draft and publishes it last. Never publish a release by hand before the workflow has run.
 
 ## How to Create a Release
 
-### Step 1: Update the Version in Xcode
+### Step 1: Update the version
 
-1. Open `Markify.xcodeproj`
-2. Select the **Markify** target
-3. Go to the **General** tab
-4. Update **Version** to your new version (e.g., `1.1`)
-5. The **Build** number is also displayed here (incremented automatically)
-6. Test the app thoroughly to ensure everything works correctly
+1. Open `Markify.xcodeproj`, select the **Markify** target, then the **General** tab.
+2. Set **Version** (`MARKETING_VERSION`) to the new version, e.g. `1.27`.
+3. Bump **Build** (`CURRENT_PROJECT_VERSION`).
+4. Update the version shown on the website in `docs/index.html`. Search for the current version (e.g. `1.26.1`). It appears in the hero line and in the download section.
+5. Test the app, then commit and push to `main`.
 
-### Step 2: Commit and Create a Tag
+### Step 2 (optional): Prepare the release notes as a draft
 
-Push your changes and create a version tag:
+If you want hand-written notes, create a **draft** for the tag before pushing it. The workflow reuses the draft and keeps its title and notes:
 
 ```bash
-git push origin main
-git tag v1.1
-git push origin v1.1
+gh release create v1.27 --draft --target main --title "Markify 1.27" --notes-file notes.md
 ```
 
-**Tag format**: Use semantic versioning with a `v` prefix (e.g., `v1.0`, `v1.1`, `v2.0`)
+You can also create the draft on GitHub → Releases → **Draft a new release**. Type the new tag name, write the notes, and click **Save draft**, not Publish.
 
-### Step 3: Create GitHub Release
+If there is no draft, the workflow creates one with GitHub's generated notes, titled `Markify <version>`.
 
-1. Go to GitHub → [Releases](https://github.com/spaquet/markify/releases)
-2. Click **"Create new release"** (or **"Draft a new release"**)
-3. Select the tag you just created (e.g., `v1.1`) from the dropdown
-4. Add a descriptive title (e.g., "Markify 1.1")
-5. Write detailed release notes describing:
-   - New features
-   - Bug fixes
-   - Improvements
-   - Any breaking changes
-6. Click **"Publish release"**
+### Step 3: Push the tag
 
-### Step 4: Workflow Runs Automatically
+Tags use semantic versioning with a `v` prefix (`v1.27`, `v1.27.1`). Tags are annotated, so give them a message:
 
-Once you publish the release, GitHub Actions automatically:
+```bash
+git tag -a v1.27 -m "Markify 1.27"
+git push origin v1.27
+```
 
-1. **Checks out your code** at the tagged version
-2. **Builds both architectures**:
-   - Apple Silicon (arm64)
-   - Intel (x86_64)
-3. **Creates DMG installers** with professional UI
-4. **Generates SHA256 checksums** for verification
-5. **Uploads all files** to your GitHub Release as assets
+### Step 4: The workflow runs
 
-⏱️ **Estimated time**: 5-10 minutes depending on build time
+Pushing the tag starts **Build and Release DMG**:
 
-### Release Assets Created
+1. **build** (two jobs in parallel, one per architecture): checks out the tag, builds Markify in Release, creates the DMG and its SHA256 checksum, and uploads them as workflow artifacts. One architecture failing doesn't cancel the other.
+2. **release**: downloads both builds, uses the draft for the tag (or creates one), attaches the four files, and publishes the release as **Latest**.
 
-After the workflow completes, your release will have these assets:
+⏱️ About 5–10 minutes. Follow it in the **Actions** tab.
 
-- **`markify-as.dmg`** - Apple Silicon (M1/M2/M3/M4 Macs)
-- **`markify-as.dmg.sha256`** - Checksum for Apple Silicon DMG
-- **`markify-intel.dmg`** - Intel Macs
-- **`markify-intel.dmg.sha256`** - Checksum for Intel DMG
+### Release assets
 
-Users can download the appropriate DMG for their Mac architecture from the release page.
+- `markify-as.dmg` and `markify-as.dmg.sha256` for Apple silicon (M1 and later)
+- `markify-intel.dmg` and `markify-intel.dmg.sha256` for Intel Macs
 
-## Testing Before Production
+The website's download buttons use `https://github.com/spaquet/markify/releases/latest/download/<file>`, so they point to the new release as soon as it is published. Keep the asset names unchanged.
 
-Before creating a real release, you can test the workflow manually without publishing a release:
+## Testing Without Releasing
 
-### Manual Workflow Test
+Run the workflow by hand to check that both architectures build:
 
-1. Go to GitHub → **Actions** tab
-2. Click **"Build and Release DMG"** workflow in the left sidebar
-3. Click **"Run workflow"** button
-4. Select your desired branch (usually `main`)
-5. Click **"Run workflow"**
+1. GitHub → **Actions** → **Build and Release DMG** → **Run workflow**, on `main` (or any branch).
+2. Only the **build** jobs run. The **release** job is skipped because there's no tag.
+3. Download `markify-as-v<branch>` and `markify-intel-v<branch>` from the run's **Artifacts** section (kept 90 days), then mount each DMG, drag Markify to Applications and launch it.
 
-The workflow will:
-- Build both DMG files
-- Generate checksums
-- Save them as artifacts (available for 90 days)
+From the command line:
 
-### View Test Results
-
-- Check the workflow run in the **Actions** tab
-- Download test artifacts to verify they work correctly:
-  1. Click the completed workflow run
-  2. Scroll to "Artifacts" section
-  3. Download `markify-as-v{version}` and `markify-intel-v{version}` artifacts
-4. Test both DMGs on the appropriate Mac architectures:
-   - Mount the DMG
-   - Drag app to Applications folder
-   - Launch and verify functionality
+```bash
+gh workflow run release-dmg.yml --ref main
+gh run watch
+```
 
 ## Release Checklist
 
-Before publishing a release, ensure:
-
-- [ ] Version number updated in Xcode (`MARKETING_VERSION`)
-- [ ] App tested thoroughly on both Intel and Apple Silicon (if possible)
-- [ ] All new features working correctly
-- [ ] No critical bugs in the release candidate
-- [ ] Release notes written with:
-  - Summary of changes
-  - New features (if any)
-  - Bug fixes (if any)
-  - Known issues (if any)
-  - Download instructions (if first release)
-- [ ] Git tag created and pushed (`git tag vX.X && git push origin vX.X`)
-- [ ] GitHub Release published
+- [ ] `MARKETING_VERSION` and build number updated
+- [ ] Version on the website (`docs/index.html`) updated
+- [ ] App tested on Apple silicon and, if possible, Intel
+- [ ] Changes committed and pushed to `main`
+- [ ] (Optional) Draft release with notes saved for the new tag
+- [ ] Annotated tag pushed: `git tag -a vX.Y -m "Markify X.Y" && git push origin vX.Y`
+- [ ] Workflow succeeded and the release shows all four assets
 
 ## Verifying Downloaded Files
 
-Users can verify the authenticity of downloaded files using the SHA256 checksum:
-
 ```bash
-# Navigate to the Downloads folder
 cd ~/Downloads
-
-# Verify the checksum
 shasum -c markify-as.dmg.sha256
 # or
 shasum -c markify-intel.dmg.sha256
 ```
 
-Output should show: `markify-as.dmg: OK` or `markify-intel.dmg: OK`
+The output should be `markify-as.dmg: OK` or `markify-intel.dmg: OK`.
 
 ## Troubleshooting
 
-### Workflow Failed to Build
+### "Release vX.Y is already published and immutable"
 
-1. Check the **Actions** tab for error messages
-2. Common issues:
-   - **Build errors**: Review Xcode build settings and dependencies
-   - **DMG creation failed**: Ensure the app bundle is valid
-   - **Upload failed**: Check that the release exists and permissions are correct
+Someone published the release before the workflow finished. A published immutable release can't receive assets. Either delete that release, or bump the patch version and tag again (for example `v1.26` was published empty and `v1.26.1` replaced it).
 
-### Version Not Extracted Correctly
+### Build failed
 
-- Ensure the tag follows the format: `vX.X` or `vX.X.X`
-- The `v` prefix is automatically stripped
-- Example: `v1.0` → `1.0`
+Open the failed run in **Actions** and check the **Build Markify** step. The runner uses `macos-latest`, and the **Show Xcode version** step prints the Xcode it used. The project targets macOS 26, so it needs Xcode 26 or later.
 
-### DMG Not Appearing on Release
+### Version not extracted correctly
 
-- Check that the workflow completed successfully in the Actions tab
-- Verify the release is published (not just a draft)
-- Wait 5-10 minutes for the workflow to complete
-- Refresh the release page
+The version comes from the tag name with the `v` removed (`v1.27` → `1.27`). Use `vX.Y` or `vX.Y.Z`.
+
+### Assets missing from the release
+
+- Check that the **release** job ran and succeeded. It only runs for `v*` tag pushes, not for manual runs.
+- Wait for the workflow to finish, then refresh the release page.
 
 ## Release History
 
-See the [Releases page](https://github.com/spaquet/markify/releases) for all published versions and their download links.
+See the [Releases page](https://github.com/spaquet/markify/releases).
 
 ## Future Enhancements
 
-### Planned for Phase 2: Code Signing and Notarization
+### Code signing and notarization
 
-Once Markify has more users, we plan to:
-- Purchase an Apple Developer ID certificate
-- Implement code signing in the workflow
-- Add notarization for a seamless user experience
-- Eliminate the security warning on first launch
+- Buy an Apple Developer ID certificate
+- Sign and notarize in the workflow
+- Remove the security warning on first launch
 
-### Planned for Phase 3: Auto-Updates
+### Auto-updates
 
-We plan to integrate the Sparkle framework for automatic updates:
-- Users receive notifications of new versions
-- One-click update within the app
-- Automatic background updates (optional)
+Integrate the Sparkle framework:
+- Notify users about new versions
+- One-click in-app updates
+- Optional automatic background updates
 
 ## Questions?
 
-For issues with releases or the automated workflow, check:
 - [GitHub Issues](https://github.com/spaquet/markify/issues)
 - [Workflow file](.github/workflows/release-dmg.yml)
