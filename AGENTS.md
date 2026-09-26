@@ -4,7 +4,9 @@ This file provides guidance to AI coding agents working in this repository.
 
 ## Project Overview
 
-Markify is a macOS markdown editor built with SwiftUI. It supports reading and editing both `.md` and `.mdx` files, with a split-view interface showing live markdown preview using the MarkdownUI library. The app follows the macOS document-based app pattern using `ReferenceFileDocument`.
+Markify is a macOS 26 Markdown editor built with SwiftUI and TextKit 2. There is no split preview: one column shows the document through two lenses over the same text storage — a Rendered lens and a Markdown lens (⌘/). Formatting happens through a floating format bar and a `/` slash menu; a library sidebar lists open files and library notes. The binding design is in [design/README.md](design/README.md) and `design/Markdown Editor.dc.html`; decisions that fill its gaps are in [DECISIONS.md](DECISIONS.md).
+
+The app uses the document-based pattern (`DocumentGroup` with a `FileDocument`). It opens `.md` and `.markdown`, and `.mdx` as Markdown with MDX blocks kept as written.
 
 ## Build & Development Commands
 
@@ -24,6 +26,9 @@ open Markify.xcodeproj
 ### Testing
 
 ```bash
+# Markdown model tests (fast, no Xcode app needed)
+swift test --package-path MarkifyMarkdown
+
 # OKF library tests (fast, no Xcode app needed)
 swift test --package-path OKFKit
 
@@ -39,72 +44,52 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 
 ## Architecture & Key Components
 
-### File Structure
+### Packages
 
-- **MarkifyApp.swift**: Entry point using `@main` and `DocumentGroup` scene for the document-based app pattern
-- **MarkifyDocument.swift**: `ReferenceFileDocument` subclass that handles file I/O for `.md` and `.mdx` files. Manages content serialization and deserialization. Note: `fileURL` is accessed via NSDocumentController rather than stored directly.
-- **ContentView.swift**: Main UI composed of a `NavigationSplitView` with:
-  - Left sidebar: `SidebarView`
-  - Right detail: Split HStack with TextEditor (editor pane) and Markdown preview pane using MarkdownUI
-  - Toolbar button to toggle editor visibility
-- **SidebarView.swift**: Sidebar with three sections:
-  - Recent Files: Lists up to 5 recent markdown files from NSDocumentController
-  - Insert Tools: Buttons for inserting images, links, tasks, and lists
-  - Handles file dialogs and relative path calculations for images and links
+- **MarkifyMarkdown** (local): `MarkdownModel` parses the source once with swift-markdown (cmark-gfm) and exposes typed spans — content and marker ranges in UTF-16 source offsets — plus tables and lists. Markify's extensions that cmark does not know (frontmatter, `$$`/`$…$` math, footnotes, GitHub callouts, MDX blocks) are found first and masked with same-length whitespace, so cmark never misreads them and every offset still points into the original text. `MarkdownSourceMap` converts cmark locations to offsets. UI-free.
+- **OKFKit** (local): Open Knowledge Format model, bundle scan, validator and text-splice editing. See `OKF.md`.
+- **swift-markdown**, **SwaTex** (math rendering, no WebView).
+
+### App files (`Markify/`)
+
+- **MarkifyApp.swift**: `@main`, `DocumentGroup`, launch behavior (reopen documents, Welcome, library).
+- **MarkifyDocument.swift**: `FileDocument` reading and writing UTF-8 text; the source string is never converted.
+- **ContentView.swift**: the window — floating controls, format bar, block menu, slash menu (`SlashEntry`), find, library sidebar, Apple Intelligence flows, export.
+- **NativeEditor.swift**: `NativeEditor` (`NSViewRepresentable`) and `MarkdownTextView` (TextKit 2 `NSTextView`).
+  - `NativeEditor.style(_:)` styles both lenses from the cached `MarkdownModel`: fonts first, then inline traits, then markers (dimmed in the Markdown lens, hidden in the Rendered lens), then paragraph layout.
+  - `MarkdownTextView` draws what text attributes cannot (bullets, list numbers, checkboxes, images, math, diagrams, callout titles, chips) in a pass-through `DecorationView`, and handles clicks, ⌘-click links and footnotes, drops, paste, list continuation and table editing.
+  - `MarkdownList` and `MarkdownTable` keep list renumbering and table navigation, built from the model.
+- **Mermaid.swift**: `MermaidRenderer`, one offscreen `WKWebView` running the bundled Mermaid (`Resources/Mermaid`) with no network access.
+- **Knowledge.swift**: the OKF app layer — link following, log/index writes, the knowledge sidebar section.
+- **Theme.swift**: `EditorTheme` fonts and colors. New York is a system design (`withDesign(.serif)`), not a font name.
+- **Shortcuts.swift**, **Settings/Views/SettingsView.swift**, **Help/**, **Resources/**.
 
 ### Key Design Patterns
 
-1. **Document-Based App**: Uses SwiftUI's `DocumentGroup` and `ReferenceFileDocument` for native macOS file handling with auto-save capabilities
-
-2. **File URL Handling**: `MarkifyDocument.fileURL` uses NSDocumentController internally rather than storing state directly. This is important for proper integration with macOS file operations.
-
-3. **Relative Paths**: Images and file links use relative paths when the document is saved, falling back to absolute paths for unsaved documents
-
-4. **State Management**:
-   - `@ObservedObject var document` in ContentView binds to the MarkifyDocument
-   - `@Binding` in SidebarView for content editing
-   - Local @State for UI state (dialogs, visibility toggles)
-
-### External Dependencies
-
-- **MarkdownUI** (2.4.1): Provides markdown rendering with GitHub theme support
-- **swift-markdown-ui**: Package dependency for MarkdownUI
-- **NetworkImage** (6.0.1): Image loading support
-- **cmark-gfm** (0.7.1): CommonMark parsing with GitHub Flavored Markdown extensions
-
-## OKF (Open Knowledge Format)
-
-See `OKF.md` for the requirement and design. `OKFKit/` is a UI-free local package (model, bundle scan, validator, text-splice editing); `Markify/Knowledge.swift` is the app layer (link following, log/index writes, sidebar section).
+1. **Source is the authority.** Both lenses style one text storage; nothing converts the Markdown. Selection offsets and undo stay in source coordinates, and every style pass must leave `editor.string` unchanged.
+2. **One parse per text version.** `MarkdownTextView.model` caches `MarkdownModel` by string; styling, drawing, clicks and list/table editing read it instead of scanning with regular expressions. Follow CommonMark/GFM as cmark reads it.
+3. **Hidden markers take no room.** A hidden marker uses a 1pt clear font and kerns each character by its own advance; TextKit caps a negative kern near its glyph's advance, and a kern on the last character of a run is only partly applied.
+4. **Relative paths.** Images and note links use paths relative to the document (bundle-absolute `/…` inside an OKF bundle), falling back to absolute paths for unsaved documents.
 
 ## Key Implementation Details
 
-### Image Insertion (SidebarView:311)
-
-- Creates `images/` subdirectory relative to the markdown file
-- Copies selected image to this directory
-- Uses relative paths in markdown syntax
-- For unsaved documents, uses absolute paths
-
-### Link Insertion (SidebarView:348)
-
-- Supports both web links (with automatic `https://` prefix) and file links
-- File browser limited to `.md` and `.mdx` files
-- Relative path calculation for file links when document is saved
-
-### File Operations
-
-- Recent files fetched from `NSDocumentController.shared.recentDocumentURLs`
-- File info includes name, URL, and modification date
-- Loading files opens them in new windows via NSDocumentController
+- **Images**: drops and pastes copy into the Settings folder beside the document (default `./assets`) and insert a percent-encoded relative path; `MarkdownTextView.imageURL` decodes it. Remote images load through `RemoteImages` when Settings › Load remote images is on. Images alone on a line draw full width; inline images draw as a chip that previews on hover.
+- **Links**: ⌘-click follows links in both lenses (`Knowledge.follow`). Dropping a note from the sidebar or Finder inserts `[title](path)` (`MarkdownTextView.noteLink`).
+- **Footnotes**: references show their text in a tooltip; ⌘-click jumps between a reference and its definition.
+- **Mermaid**: fenced `mermaid` blocks render as diagrams in the Rendered lens; failures show the source with Mermaid's message.
 
 ## Testing Notes
 
-The test framework uses Swift Testing (not XCTest). Basic test structure is in place in `MarkifyTests.swift` but needs expansion.
+Tests use Swift Testing, not XCTest.
+
+- `MarkifyMarkdown/Tests`: model spans over the shared fixture and edge cases.
+- `MarkifyTests/EditorFixtureTests.swift`: golden styling probes for both lenses over `MarkifyTests/Fixtures/editor-fixture.md`, layout checks that hidden markers take no room, and a performance guard. When styling changes on purpose, update the golden entry and say why in the commit.
+- `MarkifyTests/MarkifyTests.swift`, `MermaidTests.swift`: editing behavior, lists, tables, slash menu, links, footnotes, OKF and Mermaid rendering.
 
 ## Common Workflows
 
-**Adding UI Elements**: New UI typically goes in ContentView (main interface) or SidebarView (sidebar tools). Remember to update @State or @Binding as needed.
+**Supporting new Markdown syntax**: add a `MarkdownModel.Kind` (from a cmark node in the walker, or as a masked extension), cover it in `MarkdownModelTests`, then style it in `NativeEditor.style(_:)` and, if it needs drawing, in `MarkdownTextView`. Add a fixture probe for both lenses.
 
-**Modifying Document I/O**: Changes to file reading/writing must be made in MarkifyDocument - specifically the `init(configuration:)` and `fileWrapper(snapshot:configuration:)` methods.
+**Adding slash menu entries**: add to `SlashEntry.all` in ContentView.swift and, if the caret should land inside the insertion, to the caret table in `SlashEntry.apply`.
 
-**Adding Sidebar Tools**: Insert new buttons in SidebarView and create corresponding helper functions to manipulate `content` binding.
+**Modifying Document I/O**: changes to reading and writing belong in `MarkifyDocument`.
