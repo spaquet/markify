@@ -34,4 +34,85 @@ import Testing
         #expect(fragments.allSatisfy { $0 is MarkdownLayoutFragment })
         #expect((fragments.first as? MarkdownLayoutFragment)?.documentRange?.location == 0)
     }
+
+    static func fragment(_ editor: MarkdownTextView, at location: Int) -> MarkdownLayoutFragment? {
+        let manager = editor.textLayoutManager!
+        guard let content = manager.textContentManager,
+              let textLocation = content.location(content.documentRange.location, offsetBy: location) else { return nil }
+        return manager.textLayoutFragment(for: textLocation) as? MarkdownLayoutFragment
+    }
+
+    /// Draws one fragment into a bitmap and returns it, with the draw origin used.
+    static func render(_ fragment: MarkdownLayoutFragment) -> (NSBitmapImageRep, CGPoint) {
+        let surface = fragment.renderingSurfaceBounds
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(ceil(surface.width)), pixelsHigh: Int(ceil(surface.height)),
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let context = NSGraphicsContext(bitmapImageRep: rep)!.cgContext
+        // Flip so y grows downward, as TextKit draws fragments.
+        context.translateBy(x: 0, y: surface.height)
+        context.scaleBy(x: 1, y: -1)
+        let point = CGPoint(x: -surface.minX, y: -surface.minY)
+        fragment.draw(at: point, in: context)
+        return (rep, point)
+    }
+
+    /// Opaque pixels inside `rect` (in draw coordinates, y down).
+    static func inked(_ rep: NSBitmapImageRep, in rect: CGRect) -> Int {
+        var count = 0
+        for x in Int(rect.minX)..<Int(rect.maxX) {
+            for y in Int(rect.minY)..<Int(rect.maxY) where x >= 0 && y >= 0 && x < rep.pixelsWide && y < rep.pixelsHigh {
+                if (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.2 { count += 1 }
+            }
+        }
+        return count
+    }
+
+    @Test func styleMarksListDecorations() {
+        let source = "- bullet\n- [x] done\n\n3. three\n4. four\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let storage = editor.textStorage!
+        let ns = source as NSString
+        #expect(storage.attribute(.markifyBullet, at: 0, effectiveRange: nil) as? Bool == true)
+        #expect(storage.attribute(.markifyTaskBox, at: ns.range(of: "- [x]").location, effectiveRange: nil) as? Bool == true)
+        #expect(storage.attribute(.markifyListNumber, at: ns.range(of: "3.").location, effectiveRange: nil) as? String == "3.")
+        #expect(storage.attribute(.markifyListNumber, at: ns.range(of: "4.").location, effectiveRange: nil) as? String == "4.")
+        // The Markdown lens shows the syntax itself.
+        let (window2, markdown) = Self.makeEditor(source, markdownLens: true)
+        _ = window2
+        #expect(markdown.textStorage!.attribute(.markifyBullet, at: 0, effectiveRange: nil) == nil)
+    }
+
+    @Test func fragmentDrawsTheCheckboxWhereClicksLand() {
+        let source = "Intro\n\n- [x] done\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let marker = (source as NSString).range(of: "- [x]").location
+        let fragment = Self.fragment(editor, at: marker)!
+        let (rep, point) = Self.render(fragment)
+        let markerRect = fragment.rect(for: NSRange(location: marker, length: 1), at: point)!
+        let box = MarkdownLayoutFragment.checkboxRect(marker: markerRect)
+        #expect(Self.inked(rep, in: box.insetBy(dx: 4, dy: 4)) > 60, "the checked box is filled")
+        // The click rect is the drawn rect, moved from fragment to view coordinates.
+        let offset = CGPoint(x: fragment.layoutFragmentFrame.minX - point.x + editor.textContainerOrigin.x,
+                             y: fragment.layoutFragmentFrame.minY - point.y + editor.textContainerOrigin.y)
+        let viewBox = MarkdownLayoutFragment.checkboxRect(marker: editor.textRect(NSRange(location: marker, length: 1)))
+        #expect(abs(viewBox.minX - (box.minX + offset.x)) < 0.5 && abs(viewBox.minY - (box.minY + offset.y)) < 0.5)
+    }
+
+    @Test func fragmentDrawsBulletsAndCountedNumbers() {
+        let source = "- bullet\n\n7. seven\n9. nine\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let ns = source as NSString
+        for needle in ["-", "9."] {
+            let location = ns.range(of: needle).location
+            let fragment = Self.fragment(editor, at: location)!
+            let (rep, point) = Self.render(fragment)
+            let rect = fragment.rect(for: NSRange(location: location, length: needle.count), at: point)!
+            // The source glyphs are clear, so any ink over them is the drawn bullet or number ("8." for the second item).
+            #expect(Self.inked(rep, in: rect.insetBy(dx: -2, dy: 0)) > 10, "\(needle) is drawn")
+        }
+    }
 }

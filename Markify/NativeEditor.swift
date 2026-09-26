@@ -215,8 +215,9 @@ struct NativeEditor: NSViewRepresentable {
                 if markdownLens {
                     hide([prefix])
                 } else if let box = item.checkbox {
-                    // The checkbox is drawn over the hidden `- [ ] `; the item's first line takes the task style.
+                    // MarkdownLayoutFragment draws the checkbox over the hidden `- [ ] `; the item's first line takes the task style.
                     storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)], range: prefix)
+                    storage.addAttribute(.markifyTaskBox, value: item.checked, range: NSRange(location: item.marker.location, length: 1))
                     let line = source.lineRange(for: NSRange(location: box.location, length: 0))
                     var end = NSMaxRange(line)
                     while end > NSMaxRange(prefix), [10, 13].contains(source.character(at: end - 1)) { end -= 1 }
@@ -226,8 +227,9 @@ struct NativeEditor: NSViewRepresentable {
                 } else if item.ordered {
                     storage.addAttribute(.foregroundColor, value: secondary, range: item.marker)
                 } else {
-                    // A bullet is drawn over the hidden marker, which keeps its width.
+                    // MarkdownLayoutFragment draws a bullet over the hidden marker, which keeps its width.
                     storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: prefix)
+                    storage.addAttribute(.markifyBullet, value: true, range: item.marker)
                 }
             case .codeBlock(let language?, true) where !markdownLens && textView != nil && language.lowercased() == "mermaid":
                 if let height = diagramHeight(span, source: source, dark: dark, textView: textView) {
@@ -383,7 +385,7 @@ struct NativeEditor: NSViewRepresentable {
             storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: lazy.line))
         }
         if !markdownLens {
-            // The file keeps its written numbers; MarkdownTextView draws each item's counted number over them.
+            // The file keeps its written numbers; MarkdownLayoutFragment draws each item's counted number over them.
             // Tabular digits padded to the list's widest number keep item text in one column.
             let font = NSFont(descriptor: base.fontDescriptor.addingAttributes([.featureSettings: [[
                 NSFontDescriptor.FeatureKey.typeIdentifier: kNumberSpacingType,
@@ -396,6 +398,8 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttributes([.foregroundColor: NSColor.clear, .font: font], range: NSRange(location: number.range.location, length: number.range.length + 1))
                 let pad = CGFloat((widest[number.list] ?? 1) - number.range.length) * digit
                 if pad != 0 { storage.addAttribute(.kern, value: pad, range: NSRange(location: NSMaxRange(number.range) + 1, length: 1)) }
+                storage.addAttributes([.markifyListNumber: number.value + source.substring(with: NSRange(location: NSMaxRange(number.range), length: 1)),
+                                       .markifyListNumberOffset: CGFloat((widest[number.list] ?? 1) - number.value.count) * digit], range: number.range)
             }
             for table in model.tables {
                 for row in table.rows {
@@ -778,8 +782,7 @@ final class MarkdownTextView: NSTextView {
 
     private func checkboxRect(for item: MarkdownModel.ListItem) -> NSRect? {
         guard window != nil else { return nil }
-        let local = textRect(NSRange(location: item.marker.location, length: 1))
-        return NSRect(x: local.minX + 2, y: local.midY - 9, width: 18, height: 18)
+        return MarkdownLayoutFragment.checkboxRect(marker: textRect(NSRange(location: item.marker.location, length: 1)))
     }
 
     /// TextKit 2 repaints edited text in its own fragment views without calling draw(_:) here,
@@ -891,46 +894,6 @@ final class MarkdownTextView: NSTextView {
         if rendered { drawMath(in: dirtyRect) }
         if rendered { drawDiagrams(in: dirtyRect) }
         if rendered { drawDecorations(in: dirtyRect) }
-        if rendered, let window {
-            let source = string as NSString
-            let numbers = MarkdownList.scan(model).numbers
-            let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
-            let near = nearViewport()
-            for item in numbers where NSLocationInRange(item.range.location, near) {
-                // Glyphs before the padded space keep reliable positions, so measure from the first digit.
-                let rect = textRect(item.range)
-                guard rect.intersects(dirtyRect) else { continue }
-                let font = textStorage?.attribute(.font, at: item.range.location, effectiveRange: nil) as? NSFont ?? .systemFont(ofSize: 18)
-                let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
-                let label = item.value + source.substring(with: NSRange(location: NSMaxRange(item.range), length: 1))
-                let number = NSAttributedString(string: label, attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor])
-                number.draw(at: NSPoint(x: rect.minX + CGFloat((widest[item.list] ?? 1) - item.value.count) * digit, y: rect.minY))
-            }
-        }
-        if rendered, window != nil {
-            let dot = NSAttributedString(string: "•", attributes: [.font: theme.ui(18), .foregroundColor: NSColor.secondaryLabelColor])
-            for span in drawingSpans {
-                guard case .listItem(let item) = span.kind, !item.ordered, item.checkbox == nil else { continue }
-                let rect = textRect(item.marker)
-                guard rect.intersects(dirtyRect) else { continue }
-                dot.draw(at: NSPoint(x: rect.midX - dot.size().width / 2, y: rect.midY - dot.size().height / 2))
-            }
-        }
-        for item in tasks(in: drawingSpans) {
-            guard let rect = checkboxRect(for: item), rect.intersects(dirtyRect) else { continue }
-            let checked = item.checked
-            let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
-            if checked {
-                theme.accent.setFill()
-                path.fill()
-                let check = NSAttributedString(string: "✓", attributes: [.font: NSFont.boldSystemFont(ofSize: 13), .foregroundColor: NSColor.white])
-                check.draw(at: NSPoint(x: rect.minX + 3, y: rect.minY + 1))
-            } else {
-                NSColor.tertiaryLabelColor.setStroke()
-                path.lineWidth = 1.5
-                path.stroke()
-            }
-        }
     }
 
     private func drawImages(in dirtyRect: NSRect) {
