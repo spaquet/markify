@@ -14,13 +14,30 @@ struct EditorTheme: Equatable {
 
     func prose(_ size: CGFloat, bold: Bool = false, italic: Bool = false) -> NSFont {
         let size = size * scale
-        if proseFont == "New York" {
-            let name = bold ? "NewYork-Bold" : italic ? "NewYork-Italic" : "NewYork-Regular"
-            if let font = NSFont(name: name, size: size) { return font }
-        }
         var font = NSFont.systemFont(ofSize: size, weight: bold ? .bold : .regular)
-        if italic { font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask) }
-        return font
+        // New York is a system design, not a font that can be looked up by name.
+        if proseFont == "New York", let serif = font.fontDescriptor.withDesign(.serif), let design = NSFont(descriptor: serif, size: size) { font = design }
+        return italic ? adding(.italic, to: font) : font
+    }
+
+    /// The same font with bold and/or italic added, keeping its family and size.
+    func adding(_ traits: NSFontDescriptor.SymbolicTraits, to font: NSFont) -> NSFont {
+        var result = font
+        if traits.contains(.bold), !font.fontDescriptor.symbolicTraits.contains(.bold) {
+            // Symbolic bold picks Semibold for system designs, so rebuild at the bold weight in the same design.
+            let design: NSFontDescriptor.SystemDesign? = font.fontName.contains("NewYork") ? .serif
+                : font.fontName.contains("Monospaced") ? .monospaced : font.fontName.hasPrefix(".SF") ? .default : nil
+            if let design, let descriptor = NSFont.systemFont(ofSize: font.pointSize, weight: .bold).fontDescriptor.withDesign(design) {
+                let italic = descriptor.symbolicTraits.union(font.fontDescriptor.symbolicTraits.intersection(.italic))
+                result = NSFont(descriptor: descriptor.withSymbolicTraits(italic), size: font.pointSize) ?? font
+            } else {
+                result = NSFontManager.shared.convert(font, toHaveTrait: .boldFontMask)
+            }
+        }
+        if traits.contains(.italic) {
+            result = NSFont(descriptor: result.fontDescriptor.withSymbolicTraits(result.fontDescriptor.symbolicTraits.union(.italic)), size: result.pointSize) ?? result
+        }
+        return result
     }
 
     func mono(_ size: CGFloat, weight: NSFont.Weight = .regular) -> NSFont {
