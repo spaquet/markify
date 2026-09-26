@@ -118,7 +118,7 @@
     <key>SUFeedURL</key>
     <string>https://github.com/spaquet/markify/releases/latest/download/appcast.xml</string>
     <key>SUPublicEDKey</key>
-    <string>SPARKLE_PUBLIC_KEY</string>
+    <string>zeWzUDh/O3Yhb+iEsZsBFeG/TtNy9bH1OVjRU1eI5fE=</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
     <key>SUEnableInstallerLauncherService</key>
