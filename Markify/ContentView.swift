@@ -52,6 +52,7 @@ struct ContentView: View {
     private var page: Color { colorScheme == .dark ? Color(red: 30/255, green: 30/255, blue: 32/255) : Color(red: 252/255, green: 251/255, blue: 249/255) }
     private var glassStrong: Color { colorScheme == .dark ? Color(red: 50/255, green: 50/255, blue: 56/255).opacity(0.78) : Color.white.opacity(0.78) }
     private var field: Color { colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.05) }
+    private var rowSel: Color { colorScheme == .dark ? Color.white.opacity(0.14) : Color.black.opacity(0.07) }
     private var rule: Color { colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.09) }
     private var accentSoft: Color { Color.accentColor.opacity(colorScheme == .dark ? 0.22 : 0.13) }
     private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? "Untitled" }
@@ -527,20 +528,32 @@ struct ContentView: View {
     }
 
     private var aiPanel: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Label("Apple Intelligence", systemImage: "apple.intelligence").fontWeight(.semibold)
+                HStack(spacing: 7) {
+                    Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).font(.system(size: 14))
+                    Text("Apple Intelligence").fontWeight(.semibold)
+                }
                 Spacer()
-                Text("Whole document").font(.caption).foregroundStyle(.secondary)
+                Text("Whole document")
+                    .font(.system(size: 11.5)).foregroundStyle(.secondary)
+                    .padding(.horizontal, 9).padding(.vertical, 3)
+                    .background(field, in: .capsule)
             }
+            .padding(.horizontal, 8).padding(.top, 6).padding(.bottom, 8)
             switch aiAvailability {
             case .available:
                 TextField("Describe a change to the document…", text: $aiPrompt)
+                    .textFieldStyle(.plain)
                     .onSubmit { generate(action: aiPrompt) }
-                HStack {
-                    Button("Proofread") { textView?.showWritingTools(nil) }
-                    Button("Rewrite…") { textView?.showWritingTools(nil) }
+                    .padding(.horizontal, 12).frame(height: 36)
+                    .background(field, in: .rect(cornerRadius: 12))
+                    .padding(.bottom, 6)
+                HStack(spacing: 6) {
+                    writingTile("Proofread", symbol: "checkmark") { textView?.showWritingTools(nil) }
+                    writingTile("Rewrite…", symbol: "arrow.clockwise") { textView?.showWritingTools(nil) }
                 }
+                .padding(.bottom, 6)
                 aiRow("Summarize", detail: "Insert at top") {
                     generate(action: "Summarize this document in one concise paragraph. Return only Markdown text.", placement: .atTop)
                 }
@@ -554,38 +567,71 @@ struct ContentView: View {
                     generate(action: "Continue this document in the same tone. Return only the continuation as Markdown.")
                 }
             case .unavailable(.appleIntelligenceNotEnabled):
-                Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary)
+                Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary).padding(.horizontal, 10)
             case .unavailable(.modelNotReady):
-                HStack { ProgressView(); Text("Preparing on-device model…") }
+                HStack { ProgressView().controlSize(.small); Text("Preparing on-device model…") }.padding(.horizontal, 10)
             case .unavailable(.deviceNotEligible):
                 EmptyView()
             @unknown default:
-                Text("Apple Intelligence is unavailable.")
+                Text("Apple Intelligence is unavailable.").padding(.horizontal, 10)
             }
-            if aiBusy { HStack { ProgressView(); Text("Writing on this Mac…"); Button("Stop") { aiTask?.cancel(); aiBusy = false } } }
+            if aiBusy {
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text("Writing on this Mac…").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Stop") { aiTask?.cancel(); aiBusy = false }
+                        .padding(.horizontal, 10).frame(height: 26)
+                        .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 8))
+                }
+                .padding(.horizontal, 10).padding(.top, 6)
+            }
             if !aiOutput.isEmpty {
                 ScrollView { Text(aiOutput).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled) }
                     .frame(maxHeight: 180)
-                HStack {
-                    Button("Keep") { keepAIOutput() }.disabled(aiBusy)
+                    .padding(10)
+                    .background(field, in: .rect(cornerRadius: 12))
+                    .padding(.top, 6)
+                HStack(spacing: 6) {
+                    Spacer()
                     Button("Discard") { aiOutput = ""; aiTask?.cancel(); aiBusy = false }
+                        .padding(.horizontal, 12).frame(height: 28)
+                        .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 999))
+                    Button { keepAIOutput() } label: {
+                        Text("Keep").fontWeight(.semibold).foregroundStyle(.white)
+                            .padding(.horizontal, 14).frame(height: 28)
+                            .background(Color.accentColor, in: .capsule)
+                    }
+                    .disabled(aiBusy)
                 }
+                .padding(.top, 6)
             }
-            if let aiError { Text(aiError).font(.caption).foregroundStyle(.red) }
-            Divider()
+            if let aiError { Text(aiError).font(.system(size: 11.5)).foregroundStyle(.red).padding(.horizontal, 10).padding(.top, 4) }
+            Rectangle().fill(rule).frame(height: 1).padding(.horizontal, 8).padding(.vertical, 6)
             Text("Runs on this Mac with Apple Intelligence. Your text never leaves it.")
                 .font(.system(size: 11)).foregroundStyle(.secondary)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 10).padding(.top, 2).padding(.bottom, 6)
         }
+        .font(.system(size: 13))
         .buttonStyle(.plain)
-        .padding(12).frame(width: 320)
+        .padding(8).frame(width: 320)
+        .background(glassStrong, in: .rect(cornerRadius: 20))
         .glassEffect(in: .rect(cornerRadius: 20))
     }
 
     private func aiRow(_ title: String, detail: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack { Text(title); Spacer(); Text(detail).font(.system(size: 11.5)).foregroundStyle(.secondary) }
-                .frame(height: 32)
+            HStack {
+                Text(title)
+                Spacer()
+                Text(detail).font(.system(size: 11.5)).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 10).frame(height: 32)
+            .contentShape(.rect(cornerRadius: 9))
         }
+        .buttonStyle(MenuRowStyle(fill: .clear, hover: rowSel, radius: 9))
     }
 
     private func generate(action: String, placement: AIPlacement = .atCaret) {

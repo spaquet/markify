@@ -125,6 +125,11 @@ struct NativeEditor: NSViewRepresentable {
             guard range.location != NSNotFound, range.length > 0 else { return }
             storage.addAttributes([.foregroundColor: markdownLens ? dim : NSColor.clear,
                                    .font: markdownLens ? NSFont.monospacedSystemFont(ofSize: 14, weight: .regular) : NSFont.systemFont(ofSize: 1)], range: range)
+            // Even at 1pt the hidden marker keeps a sliver of advance; kern it back so text starts on the column edge.
+            if !markdownLens {
+                let width = storage.attributedSubstring(from: range).size().width
+                storage.addAttribute(.kern, value: -width, range: NSRange(location: NSMaxRange(range) - 1, length: 1))
+            }
         }
         let map = MarkdownSourceMap(editor.string)
         let parsed = Markdown.Document(parsing: editor.string)
