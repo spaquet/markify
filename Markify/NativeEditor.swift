@@ -145,21 +145,28 @@ struct NativeEditor: NSViewRepresentable {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines]) else { return }
             regex.enumerateMatches(in: editor.string, range: whole) { match, _, _ in if let match { apply(match) } }
         }
+        /// Even at 1pt hidden text keeps a sliver of advance. TextKit caps a negative kern near its own glyph's advance,
+        /// so each character cancels its own width and text after a hidden marker starts where it should.
+        func collapse(_ range: NSRange) {
+            var index = range.location
+            while index < NSMaxRange(range) {
+                let character = source.rangeOfComposedCharacterSequence(at: index)
+                storage.addAttribute(.kern, value: -MarkdownTextView.hiddenAdvance(source.substring(with: character)), range: character)
+                index = NSMaxRange(character)
+            }
+        }
         func marker(_ range: NSRange) {
             guard range.location != NSNotFound, range.length > 0 else { return }
             storage.addAttributes([.foregroundColor: markdownLens ? dim : NSColor.clear,
                                    .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
-            // Even at 1pt the hidden marker keeps a sliver of advance; kern it back so text starts on the column edge.
-            if !markdownLens {
-                let width = storage.attributedSubstring(from: range).size().width
-                storage.addAttribute(.kern, value: -width, range: NSRange(location: NSMaxRange(range) - 1, length: 1))
-            }
+            if !markdownLens { collapse(range) }
         }
         let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string)
         let secondary = NSColor.secondaryLabelColor
         var hidden: [NSRange] = []
         /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
         var destinations: [NSRange] = []
+        var chips: [MarkdownModel.Span] = []
         /// Markers are styled after every font, since the hidden ones measure their own width.
         func hide(_ ranges: [NSRange]) { hidden += ranges }
         func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
@@ -285,6 +292,10 @@ struct NativeEditor: NSViewRepresentable {
                 hide(span.markers)
             case .escape:
                 hide(span.markers)
+            case .image(_, false) where !markdownLens:
+                // Drawn as a chip by MarkdownTextView; the alt text keeps its width but not its ink.
+                storage.addAttributes([.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.clear], range: span.content)
+                chips.append(span)
             case .link, .image(_, false):
                 // The design keeps link text in ink in the Markdown lens and colors only the destination.
                 if !markdownLens { storage.addAttribute(.foregroundColor, value: accent, range: span.content) }
@@ -318,6 +329,19 @@ struct NativeEditor: NSViewRepresentable {
         }
 
         for range in hidden { marker(range) }
+        // An inline image reads as a chip: its hidden `![` leaves room for the photo symbol, its hidden destination for the end padding.
+        // A kern on the first character of a run is applied in full, so the room goes there.
+        for span in chips {
+            let opening = NSRange(location: span.range.location, length: span.content.location - span.range.location)
+            let closing = NSRange(location: NSMaxRange(span.content), length: NSMaxRange(span.range) - NSMaxRange(span.content))
+            for (range, room) in [(opening, MarkdownTextView.chipLead), (closing, MarkdownTextView.chipTrail)] where range.length > 0 {
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.systemFont(ofSize: 1)], range: range)
+                collapse(range)
+                let first = source.rangeOfComposedCharacterSequence(at: range.location)
+                let kern = storage.attribute(.kern, at: first.location, effectiveRange: nil) as? CGFloat ?? 0
+                storage.addAttribute(.kern, value: kern + room * theme.scale, range: first)
+            }
+        }
         for range in destinations { storage.addAttribute(.foregroundColor, value: accent, range: range) }
         if !markdownLens {
             // A block image's caption shows its alt text under the drawn image.
@@ -595,6 +619,7 @@ final class MarkdownTextView: NSTextView {
     /// Keeps ordered lists counting up after any edit, in the same undo group as the edit.
     override func didChangeText() {
         super.didChangeText()
+        closeImagePreview()
         guard !isRenumbering, !(undoManager?.isUndoing ?? false), !(undoManager?.isRedoing ?? false) else { return }
         // Typing `](` or `](/` offers the bundle's concepts.
         if !isCompletingLink, !linkTargets.isEmpty, let range = linkTargetRange, selectedRange().location > 0,
@@ -780,19 +805,47 @@ final class MarkdownTextView: NSTextView {
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
             NSColor.quaternaryLabelColor.withAlphaComponent(0.08).setFill()
             rect.fill()
-            let url = Self.imageURL(path, document: documentURL)
-            if let image = imageCache[url] ?? NSImage(contentsOf: url) {
-                imageCache[url] = image
+            switch image(for: path) {
+            case .image(let image):
                 let ratio = min(rect.width / image.size.width, rect.height / image.size.height)
                 let size = NSSize(width: image.size.width * ratio, height: image.size.height * ratio)
-                let frame = NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height)
-                image.draw(in: frame)
-            } else {
-                let label = "image — \(url.lastPathComponent)" as NSString
-                label.draw(at: NSPoint(x: rect.midX - 90, y: rect.midY - 8), withAttributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor])
+                image.draw(in: NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height))
+            case .placeholder(let text):
+                let label = NSAttributedString(string: text, attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor])
+                label.draw(at: NSPoint(x: rect.midX - label.size().width / 2, y: rect.midY - label.size().height / 2))
             }
             NSGraphicsContext.restoreGraphicsState()
         }
+    }
+
+    enum ImageContent {
+        case image(NSImage)
+        /// What to show instead: the file name, or the host of a remote image that is off, loading or unavailable.
+        case placeholder(String)
+    }
+
+    /// The image an `![](path)` shows: a file beside the document, or a remote image when Settings allows it.
+    func image(for path: String) -> ImageContent {
+        if let remote = URL(string: path), let scheme = remote.scheme?.lowercased(), ["http", "https"].contains(scheme) {
+            let host = remote.host() ?? path
+            guard UserDefaults.standard.object(forKey: "loadRemoteImages") as? Bool ?? true else { return .placeholder("Remote image — \(host)") }
+            switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.remoteImageLoaded() }) {
+            case .loaded(let image): return .image(image)
+            case .loading: return .placeholder("Loading image — \(host)")
+            case .failed: return .placeholder("Image unavailable — \(host)")
+            }
+        }
+        let url = Self.imageURL(path, document: documentURL)
+        if let image = imageCache[url] ?? NSImage(contentsOf: url) {
+            imageCache[url] = image
+            return .image(image)
+        }
+        return .placeholder("image — \(url.lastPathComponent)")
+    }
+
+    private func remoteImageLoaded() {
+        refreshDecorations()
+        if let previewSpan { showImagePreview(for: previewSpan, force: true) }
     }
 
     /// Resolves an image destination against the document's folder; inserted paths are percent-encoded.
@@ -845,6 +898,19 @@ final class MarkdownTextView: NSTextView {
                 let title = NSAttributedString(string: type.capitalized, attributes: [
                     .font: theme.ui(13, weight: .semibold), .foregroundColor: Callout.color(type, accent: theme.accent)])
                 title.draw(at: NSPoint(x: token.minX, y: token.maxY - title.size().height))
+            case .image(let path, false):
+                guard let frame = inlineImageChipFrame(span), frame.intersects(dirtyRect) else { continue }
+                NSColor.labelColor.withAlphaComponent(0.06).setFill()
+                NSBezierPath(roundedRect: frame, xRadius: frame.height / 2, yRadius: frame.height / 2).fill()
+                let symbol = NSImage(systemSymbolName: "photo", accessibilityDescription: nil)?
+                    .withSymbolConfiguration(.init(pointSize: 11 * theme.scale, weight: .medium).applying(.init(hierarchicalColor: .secondaryLabelColor)))
+                if let symbol {
+                    symbol.draw(in: NSRect(x: frame.minX + 9 * theme.scale, y: frame.midY - symbol.size.height / 2, width: symbol.size.width, height: symbol.size.height))
+                }
+                let alt = (string as NSString).substring(with: span.content)
+                let text = NSAttributedString(string: alt.isEmpty ? (path as NSString).lastPathComponent : alt,
+                                              attributes: [.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.secondaryLabelColor])
+                if !alt.isEmpty { text.draw(at: NSPoint(x: rect(span.content).minX, y: frame.midY - text.size().height / 2)) }
             case .codeBlock(let language?, true) where span.content.length > 0:
                 let line = rect(NSRange(location: span.content.location, length: 1))
                 guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
@@ -872,6 +938,94 @@ final class MarkdownTextView: NSTextView {
                 chip.text.draw(at: NSPoint(x: frame.minX + (chip.fill != nil ? 9 : 0), y: frame.midY - chip.text.size().height / 2))
             }
         }
+    }
+
+    static let chipLead: CGFloat = 26
+    static let chipTrail: CGFloat = 9
+
+    private static var hiddenAdvances: [String: CGFloat] = [:]
+
+    /// The advance of a character in the 1pt font hidden markers use.
+    static func hiddenAdvance(_ character: String) -> CGFloat {
+        if let advance = hiddenAdvances[character] { return advance }
+        let advance = (character as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 1)]).width
+        hiddenAdvances[character] = advance
+        return advance
+    }
+
+    /// The capsule an inline image is drawn as, on the line where it starts.
+    func inlineImageChipFrame(_ span: MarkdownModel.Span) -> NSRect? {
+        guard rendered, let window else { return nil }
+        func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
+        let whole = rect(span.range)
+        let height = ("Ag" as NSString).size(withAttributes: [.font: theme.ui(11.5, weight: .medium)]).height + 6
+        return NSRect(x: whole.minX, y: whole.midY - height / 2, width: whole.width, height: height)
+    }
+
+    private var hoverArea: NSTrackingArea?
+    private var previewPopover: NSPopover?
+    private var previewSpan: MarkdownModel.Span?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        let point = convert(event.locationInWindow, from: nil)
+        let hit = model.spans.first { span in
+            guard case .image(_, false) = span.kind else { return false }
+            return inlineImageChipFrame(span)?.contains(point) == true
+        }
+        if let hit { showImagePreview(for: hit) } else { closeImagePreview() }
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        closeImagePreview()
+    }
+
+    /// Hovering an inline image chip previews the image in a popover.
+    private func showImagePreview(for span: MarkdownModel.Span, force: Bool = false) {
+        guard case .image(let path, false) = span.kind, let frame = inlineImageChipFrame(span) else { return }
+        if !force, previewPopover?.isShown == true, previewSpan?.range == span.range { return }
+        closeImagePreview()
+        let content: NSView
+        switch image(for: path) {
+        case .image(let image):
+            let scale = min(1, 320 / max(image.size.width, 1), 240 / max(image.size.height, 1))
+            let view = NSImageView(frame: NSRect(x: 0, y: 0, width: image.size.width * scale, height: image.size.height * scale))
+            view.image = image
+            view.imageScaling = .scaleProportionallyUpOrDown
+            content = view
+        case .placeholder(let text):
+            let label = NSTextField(labelWithString: text)
+            label.textColor = .secondaryLabelColor
+            label.sizeToFit()
+            content = label
+        }
+        let container = NSView(frame: content.frame.insetBy(dx: -8, dy: -8).offsetBy(dx: 8, dy: 8))
+        content.frame.origin = NSPoint(x: 8, y: 8)
+        container.addSubview(content)
+        let controller = NSViewController()
+        controller.view = container
+        let popover = NSPopover()
+        popover.contentViewController = controller
+        popover.behavior = .applicationDefined
+        popover.animates = true
+        popover.show(relativeTo: frame, of: self, preferredEdge: .maxY)
+        previewPopover = popover
+        previewSpan = span
+    }
+
+    private func closeImagePreview() {
+        previewPopover?.close()
+        previewPopover = nil
+        previewSpan = nil
     }
 
     /// One item in the frontmatter row: a capsule when it has a fill, plain text otherwise; `link` makes it follow a destination.
@@ -981,6 +1135,7 @@ final class MarkdownTextView: NSTextView {
     private var frontmatterPopoverClose: NSObjectProtocol?
 
     override func mouseDown(with event: NSEvent) {
+        closeImagePreview()
         let point = convert(event.locationInWindow, from: nil)
         if rendered, let frontmatter = Frontmatter.parse(string),
            let hit = frontmatterChips(frontmatter).first(where: { $0.frame.contains(point) }) {
@@ -1162,6 +1317,31 @@ final class MarkdownTextView: NSTextView {
             NSAlert(error: error).runModal()
             return false
         }
+    }
+}
+
+/// Remote images for the Rendered lens, fetched once per URL and shared by every window.
+@MainActor final class RemoteImages {
+    static let shared = RemoteImages()
+    enum State { case loading, loaded(NSImage), failed }
+    private var states: [URL: State] = [:]
+    private var waiting: [URL: [() -> Void]] = [:]
+
+    /// The image's state, starting a download on first request; `onChange` runs once when it settles.
+    func state(of url: URL, onChange: @escaping () -> Void) -> State {
+        if let state = states[url] {
+            if case .loading = state { waiting[url, default: []].append(onChange) }
+            return state
+        }
+        states[url] = .loading
+        waiting[url] = [onChange]
+        Task {
+            let response = try? await URLSession.shared.data(from: url)
+            let ok = (response?.1 as? HTTPURLResponse).map { (200..<300).contains($0.statusCode) } ?? true
+            states[url] = ok ? response.flatMap { NSImage(data: $0.0) }.map { .loaded($0) } ?? .failed : .failed
+            waiting.removeValue(forKey: url)?.forEach { $0() }
+        }
+        return .loading
     }
 }
 

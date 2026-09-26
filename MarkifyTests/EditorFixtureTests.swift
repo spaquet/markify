@@ -192,6 +192,31 @@ private final class FixtureBundle {}
         #expect(elapsed < .seconds(2), "style() took \(elapsed)")
     }
 
+    /// Hidden syntax must not leave gaps: text after a link, emphasis or code lands where it would without the syntax.
+    @Test func hiddenMarkersTakeNoRoom() {
+        func distance(_ source: String, from first: String, to last: String) -> CGFloat {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 300), styleMask: [.titled], backing: .buffered, defer: true)
+            let editor = NSTextView(usingTextLayoutManager: true)
+            editor.frame = window.contentView!.bounds
+            window.contentView = editor
+            editor.string = source
+            NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                         selectedRange: .constant(NSRange(location: 0, length: 0)),
+                         textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+                .style(editor)
+            editor.layoutSubtreeIfNeeded()
+            let ns = source as NSString
+            func x(_ needle: String) -> CGFloat { editor.firstRect(forCharacterRange: ns.range(of: needle), actualRange: nil).minX }
+            return x(last) - x(first)
+        }
+        let plain = distance("Start link end", from: "Start", to: "end")
+        #expect(abs(distance("Start [link](https://example.com/a/rather/long/path.md) end", from: "Start", to: "end") - plain) < 1)
+        let code = distance("Start `x` end", from: "Start", to: "end")
+        #expect(abs(distance("Start ``x`` end", from: "Start", to: "end") - code) < 1)
+        let bold = distance("Start **x** end", from: "Start", to: "end")
+        #expect(abs(distance("Start ***x*** end", from: "Start", to: "end") - bold) < 3)
+    }
+
     /// Current styling per probe. Entries marked "expected to change" are known gaps the AST refactor fixes.
     static let renderedGolden: [String: String] = [
         "atx marker": "1 hidden",
@@ -215,7 +240,7 @@ private final class FixtureBundle {}
         "link text": "18 accent",
         "link bracket": "1 hidden",
         "link url": "1 hidden",
-        "inline image": "18 accent",  // expected to change (EDITOR_PLAN.md)
+        "inline image": "12 hidden",
         "block image caption": "13",
         "remote image caption": "13",
         "bullet marker": "18 m hidden",

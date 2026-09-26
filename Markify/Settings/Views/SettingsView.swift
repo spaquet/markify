@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage("newDocumentLocation") private var newDocumentLocation = "Ask each time"
     @AppStorage("libraryBookmark") private var libraryBookmark = Data()
     @AppStorage("imageFolder") private var imageFolder = "./assets"
+    @AppStorage("loadRemoteImages") private var loadRemoteImages = true
     @AppStorage("startup") private var startup = "Reopen last documents"
     @AppStorage("okfActorID") private var okfActorID = ""
     @AppStorage("recordHumanGenerated") private var recordHumanGenerated = true
@@ -73,6 +74,7 @@ struct SettingsView: View {
                     Text("./images").tag("./images")
                     Text("Same folder as document").tag("./")
                 }
+                Toggle("Load remote images", isOn: $loadRemoteImages)
             }
             Section("Startup") {
                 Picker("On launch", selection: $startup) {
