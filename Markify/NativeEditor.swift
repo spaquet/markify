@@ -1071,13 +1071,43 @@ final class MarkdownTextView: NSTextView {
     }
 
     static let imageExtensions = ["png", "jpg", "jpeg", "gif", "heic", "webp"]
+    static let noteExtensions = ["md", "mdx", "markdown"]
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        guard let imageURL = NSURL(from: sender.draggingPasteboard) as URL?,
-              Self.imageExtensions.contains(imageURL.pathExtension.lowercased()) else {
-            return super.performDragOperation(sender)
+        guard let url = NSURL(from: sender.draggingPasteboard) as URL?, url.isFileURL else { return super.performDragOperation(sender) }
+        if Self.noteExtensions.contains(url.pathExtension.lowercased()) {
+            // A note dropped from the sidebar or Finder becomes a link to it where it lands.
+            let title = (try? String(contentsOf: url, encoding: .utf8)).map { Self.noteTitle($0, url: url) } ?? url.deletingPathExtension().lastPathComponent
+            let location = characterIndexForInsertion(at: convert(sender.draggingLocation, from: nil))
+            insertText(Self.noteLink(to: url, title: title, from: documentURL, bundleRoot: bundleRoot), replacementRange: NSRange(location: location, length: 0))
+            return true
         }
-        return insertImage(imageURL)
+        guard Self.imageExtensions.contains(url.pathExtension.lowercased()) else { return super.performDragOperation(sender) }
+        return insertImage(url)
+    }
+
+    /// A note's title: its frontmatter `title`, else its first `# ` heading, else its file name.
+    static func noteTitle(_ source: String, url: URL) -> String {
+        let lines = FrontmatterBlock.body(of: source).split(separator: "\n", omittingEmptySubsequences: true)
+        return Frontmatter.parse(source)?.title ?? lines.first { $0.hasPrefix("# ") }.map { String($0.dropFirst(2)) }
+            ?? url.deletingPathExtension().lastPathComponent
+    }
+
+    /// A portable Markdown link to another note: relative to this document, bundle-absolute when both sit in its OKF bundle,
+    /// and absolute while the document is unsaved, as dropped images are.
+    static func noteLink(to target: URL, title: String, from document: URL?, bundleRoot: URL?) -> String {
+        let path: String
+        if let document {
+            if let bundleRoot, OKFLinks.bundlePath(of: document, root: bundleRoot) != nil, let inBundle = OKFLinks.bundlePath(of: target, root: bundleRoot) {
+                path = inBundle
+            } else {
+                path = OKFLinks.relativePath(to: target, from: document.deletingLastPathComponent())
+            }
+        } else {
+            path = target.path
+        }
+        let text = title.replacingOccurrences(of: "[", with: "\\[").replacingOccurrences(of: "]", with: "\\]")
+        return "[\(text)](\(path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path))"
     }
 
     override func paste(_ sender: Any?) {

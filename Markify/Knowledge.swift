@@ -332,6 +332,7 @@ private struct DocumentRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain).padding(.horizontal, 5).padding(.vertical, 3)
+        .onDrag { NSItemProvider(object: document.url as NSURL) }
     }
 }
 

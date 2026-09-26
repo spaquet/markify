@@ -354,6 +354,21 @@ struct MarkifyTests {
         #expect(!editor.followFootnote(at: 1))
     }
 
+    @Test @MainActor func droppedNotesBecomePortableLinks() {
+        let library = URL(fileURLWithPath: "/tmp/lib")
+        let note = library.appendingPathComponent("notes/Other note.md")
+        let document = library.appendingPathComponent("drafts/today.md")
+        #expect(MarkdownTextView.noteLink(to: note, title: "Other", from: document, bundleRoot: nil) == "[Other](../notes/Other%20note.md)")
+        #expect(MarkdownTextView.noteLink(to: note, title: "Other", from: library.appendingPathComponent("notes/a.md"), bundleRoot: nil) == "[Other](Other%20note.md)")
+        #expect(MarkdownTextView.noteLink(to: note, title: "Other", from: document, bundleRoot: library) == "[Other](/notes/Other%20note.md)")
+        // A target outside the document's bundle stays relative.
+        #expect(MarkdownTextView.noteLink(to: URL(fileURLWithPath: "/tmp/elsewhere/x.md"), title: "X", from: document, bundleRoot: library) == "[X](../../elsewhere/x.md)")
+        #expect(MarkdownTextView.noteLink(to: note, title: "A [draft]", from: nil, bundleRoot: nil) == "[A \\[draft\\]](/tmp/lib/notes/Other%20note.md)")
+        #expect(MarkdownTextView.noteTitle("---\ntitle: Front\n---\n# Heading\n", url: note) == "Front")
+        #expect(MarkdownTextView.noteTitle("Intro\n# Heading\n", url: note) == "Heading")
+        #expect(MarkdownTextView.noteTitle("No heading", url: note) == "Other note")
+    }
+
     @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
