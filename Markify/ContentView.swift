@@ -1010,7 +1010,7 @@ struct ContentView: View {
                 composerChip("Format", value: $composerFormat, options: ["Paragraphs", "List", "Table"])
             }
             if !aiOutput.isEmpty {
-                (Text(aiOutput).foregroundStyle(.secondary) + Text(aiBusy ? " ▍" : "").foregroundStyle(aiGradient))
+                Text("\(Text(aiOutput).foregroundStyle(.secondary))\(Text(aiBusy ? " ▍" : "").foregroundStyle(aiGradient))")
                     .font(Font(theme.prose(16)))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
