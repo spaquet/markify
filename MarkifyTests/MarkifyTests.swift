@@ -1,5 +1,4 @@
 import AppKit
-import Markdown
 import OKFKit
 import SwiftUI
 import Testing
@@ -25,13 +24,6 @@ struct MarkifyTests {
         #expect(anchor.selection(in: source) == NSRange(location: 17, length: 4))
         #expect((source as NSString).substring(with: anchor.topLine) == "Second line\n")
         #expect(anchor.selection(in: "short") == NSRange(location: 5, length: 0))
-    }
-
-    @Test func markdownSourceRangesMapThroughUnicode() {
-        let source = "😀 intro\n# Café\n"
-        let heading = Markdown.Document(parsing: source).children.compactMap { $0 as? Markdown.Heading }.first!
-        let range = MarkdownSourceMap(source).range(heading.range!)!
-        #expect((source as NSString).substring(with: range) == "# Café")
     }
 
     @Test func slashContextAndFuzzyMenu() {

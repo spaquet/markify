@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0AF0C0012E80000000000001 /* OKFKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0032E80000000000003 /* OKFKit */; };
+		0AF0C0042E80000000000004 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
 		76A591142DC953870033A6AC /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 76A591132DC953870033A6AC /* Markdown */; };
 		A1F9C0012DC953870033A6AC /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
 /* End PBXBuildFile section */
@@ -74,6 +75,7 @@
 				76A591142DC953870033A6AC /* Markdown in Frameworks */,
 				A1F9C0012DC953870033A6AC /* SwaTexRender in Frameworks */,
 				0AF0C0012E80000000000001 /* OKFKit in Frameworks */,
+				0AF0C0042E80000000000004 /* MarkifyMarkdown in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +139,7 @@
 				76A591132DC953870033A6AC /* Markdown */,
 				A1F9C0022DC953870033A6AC /* SwaTexRender */,
 				0AF0C0032E80000000000003 /* OKFKit */,
+				0AF0C0062E80000000000006 /* MarkifyMarkdown */,
 			);
 			productName = Markify;
 			productReference = 76A590E72DC952970033A6AC /* Markify.app */;
@@ -224,6 +227,7 @@
 				76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown" */,
 				A1F9C0032DC953870033A6AC /* XCRemoteSwiftPackageReference "SwaTex" */,
 				0AF0C0022E80000000000002 /* XCLocalSwiftPackageReference "OKFKit" */,
+				0AF0C0052E80000000000005 /* XCLocalSwiftPackageReference "MarkifyMarkdown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 76A590E82DC952970033A6AC /* Products */;
@@ -609,6 +613,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = OKFKit;
 		};
+		0AF0C0052E80000000000005 /* XCLocalSwiftPackageReference "MarkifyMarkdown" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = MarkifyMarkdown;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -634,6 +642,10 @@
 		0AF0C0032E80000000000003 /* OKFKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OKFKit;
+		};
+		0AF0C0062E80000000000006 /* MarkifyMarkdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MarkifyMarkdown;
 		};
 		76A591132DC953870033A6AC /* Markdown */ = {
 			isa = XCSwiftPackageProductDependency;

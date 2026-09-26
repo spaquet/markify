@@ -1,5 +1,6 @@
 import AppKit
 import Markdown
+import MarkifyMarkdown
 import OKFKit
 import SwaTex
 import SwaTexRender
@@ -1336,30 +1337,6 @@ struct SourceAnchor {
         let count = (source as NSString).length
         let start = min(selection.location, count)
         return NSRange(location: start, length: min(selection.length, count - start))
-    }
-}
-
-struct MarkdownSourceMap {
-    let lines: [String]
-    let starts: [Int]
-
-    init(_ source: String) {
-        lines = source.components(separatedBy: "\n")
-        var starts = [0]
-        for line in lines.dropLast() { starts.append(starts.last! + (line as NSString).length + 1) }
-        self.starts = starts
-    }
-
-    func range(_ range: Markdown.SourceRange) -> NSRange? {
-        func offset(_ location: Markdown.SourceLocation) -> Int? {
-            let line = location.line - 1
-            guard lines.indices.contains(line), location.column > 0 else { return nil }
-            let bytes = Array(lines[line].utf8)
-            guard location.column - 1 <= bytes.count else { return nil }
-            return starts[line] + (String(decoding: bytes.prefix(location.column - 1), as: UTF8.self) as NSString).length
-        }
-        guard let start = offset(range.lowerBound), let end = offset(range.upperBound), end >= start else { return nil }
-        return NSRange(location: start, length: end - start)
     }
 }
 
