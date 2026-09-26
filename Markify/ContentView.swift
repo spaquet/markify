@@ -440,13 +440,11 @@ struct ContentView: View {
             ForEach(NSDocumentController.shared.documents.compactMap(\.fileURL).filter {
                 librarySearch.isEmpty || $0.lastPathComponent.localizedCaseInsensitiveContains(librarySearch)
             }.prefix(8), id: \.self) { url in
-                Button { open(url) } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(url.lastPathComponent).font(.system(size: 13, weight: url == fileURL ? .semibold : .regular))
-                        Text(url.deletingLastPathComponent().path).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
-                    }.frame(maxWidth: .infinity, alignment: .leading)
-                }.buttonStyle(.plain).padding(7)
-                .onDrag { NSItemProvider(object: url as NSURL) }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(url.lastPathComponent).font(.system(size: 13, weight: url == fileURL ? .semibold : .regular))
+                    Text(url.deletingLastPathComponent().path).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(7)
+                .sidebarRow(url) { open(url) }
             }
             if concept != nil || knowledge != nil {
                 KnowledgeSection(state: knowledge, fileURL: fileURL, concept: concept, text: document.text,
@@ -457,14 +455,11 @@ struct ContentView: View {
                 ForEach(libraryNotes.filter {
                     librarySearch.isEmpty || $0.title.localizedCaseInsensitiveContains(librarySearch) || $0.preview.localizedCaseInsensitiveContains(librarySearch)
                 }) { note in
-                    Button { open(note.url) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(note.title).font(.system(size: 13))
-                            Text(note.preview).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
-                        }.frame(maxWidth: .infinity, alignment: .leading)
-                    }.buttonStyle(.plain).padding(7)
-                    // Dropping a note into the page inserts a link to it.
-                    .onDrag { NSItemProvider(object: note.url as NSURL) }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(note.title).font(.system(size: 13))
+                        Text(note.preview).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(7)
+                    .sidebarRow(note.url) { open(note.url) }
                 }
             }
             }
@@ -1930,5 +1925,18 @@ private struct WindowConfiguration: NSViewRepresentable {
             nsView.window?.titlebarAppearsTransparent = true
             nsView.window?.title = ""
         }
+    }
+}
+
+extension View {
+    /// A sidebar row for a file: a click opens it and a drag carries its URL, so dropping it into the page inserts a link.
+    /// Not a `Button`, which tracks the mouse itself on macOS and never lets `onDrag` start.
+    func sidebarRow(_ url: URL, open: @escaping () -> Void) -> some View {
+        contentShape(.rect)
+            .onTapGesture(perform: open)
+            .onDrag { NSItemProvider(object: url as NSURL) }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(.default, open)
     }
 }

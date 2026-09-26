@@ -317,22 +317,19 @@ private struct DocumentRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: document.kind == .concept ? "doc.text" : document.kind == .index ? "list.bullet.rectangle" : "clock")
-                    .font(.system(size: 11)).foregroundStyle(.secondary).frame(width: 14)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(document.title).font(.system(size: 13, weight: current ? .semibold : .regular)).lineLimit(1)
-                    if let detail { Text(detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle) }
-                }
-                Spacer(minLength: 0)
-                if document.concept?.status == .deprecated { Image(systemName: "archivebox").font(.system(size: 10)).foregroundStyle(.secondary) }
-                if document.concept?.trustTier == .humanReviewed { Image(systemName: "checkmark.seal").font(.system(size: 10)).foregroundStyle(.green) }
+        HStack(spacing: 6) {
+            Image(systemName: document.kind == .concept ? "doc.text" : document.kind == .index ? "list.bullet.rectangle" : "clock")
+                .font(.system(size: 11)).foregroundStyle(.secondary).frame(width: 14)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(document.title).font(.system(size: 13, weight: current ? .semibold : .regular)).lineLimit(1)
+                if let detail { Text(detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle) }
             }
-            .contentShape(.rect)
+            Spacer(minLength: 0)
+            if document.concept?.status == .deprecated { Image(systemName: "archivebox").font(.system(size: 10)).foregroundStyle(.secondary) }
+            if document.concept?.trustTier == .humanReviewed { Image(systemName: "checkmark.seal").font(.system(size: 10)).foregroundStyle(.green) }
         }
-        .buttonStyle(.plain).padding(.horizontal, 5).padding(.vertical, 3)
-        .onDrag { NSItemProvider(object: document.url as NSURL) }
+        .padding(.horizontal, 5).padding(.vertical, 3)
+        .sidebarRow(document.url, open: action)
     }
 }
 
