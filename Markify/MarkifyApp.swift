@@ -7,15 +7,37 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     /// Set at launch when Settings › On launch is "Library"; the first window consumes it to open the sidebar.
     static var showsLibraryOnNextWindow = false
     private static let openDocumentsKey = "openDocumentBookmarks"
+    /// Tests launch the app as their host, next to any Markify the developer has open.
+    private static let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
+    /// Another Markify already running (another copy on disk, the DMG, `open -n`). This one hands it
+    /// the files and links it was launched with, and quits: only one Markify runs at a time.
+    private var runningInstance: NSRunningApplication?
+    private var handedOff: [URL] = []
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // markify:// links, used by the help to open the Welcome tour. A URL handler leaves document opening alone.
         NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(handleURL(_:withReply:)),
                                                      forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+        runningInstance = Self.isTesting ? nil : NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+            .first { $0 != .current && !$0.isTerminated }
+        if runningInstance != nil {
+            // Files this copy was asked to open arrive before didFinishLaunching; they go to the running instance.
+            NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(handOffDocuments(_:withReply:)),
+                                                         forEventClass: AEEventClass(kCoreEventClass), andEventID: AEEventID(kAEOpenDocuments))
+        }
+    }
+
+    @objc private func handOffDocuments(_ event: NSAppleEventDescriptor, withReply reply: NSAppleEventDescriptor) {
+        guard let list = event.paramDescriptor(forKeyword: keyDirectObject) else { return }
+        // One file comes as a single descriptor, several as a 1-based list; each is a bookmark carrying this copy's sandbox access.
+        let items = list.numberOfItems == 0 ? [list] : (1...list.numberOfItems).compactMap(list.atIndex)
+        handedOff += items.compactMap(\.fileURLValue)
     }
 
     @objc private func handleURL(_ event: NSAppleEventDescriptor, withReply reply: NSAppleEventDescriptor) {
         guard let text = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue, let url = URL(string: text), url.scheme == "markify" else { return }
+        if runningInstance != nil { return handedOff.append(url) }
         switch url.host() {
         case "welcome": Self.openWelcome()
         default: break
@@ -23,6 +45,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let running = runningInstance { return handOff(to: running) }
         BundleAccess.restore()
         _ = Updates.controller
         // Registered up front so Help menu items that open a page by anchor work on their first use.
@@ -41,7 +64,21 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Brings the running Markify forward with this launch's files and quits without touching saved state.
+    private func handOff(to running: NSRunningApplication) {
+        let quit = { DispatchQueue.main.async { NSApp.terminate(nil) } }
+        guard !handedOff.isEmpty, let app = running.bundleURL else {
+            running.activate()
+            return quit()
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.open(handedOff, withApplicationAt: app, configuration: configuration) { _, _ in quit() }
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // A copy that handed off never opened anything; the running instance's documents stay the ones to reopen.
+        if runningInstance != nil { return .terminateNow }
         let bookmarks = NSDocumentController.shared.documents.compactMap(\.fileURL).compactMap {
             try? $0.bookmarkData(options: .withSecurityScope)
         }
