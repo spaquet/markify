@@ -1,6 +1,6 @@
 # Open Knowledge Format (OKF) support
 
-Status: P1–P4 implemented · Target spec: OKF v0.2 · Tracking since 2026-09-25
+Status: Implemented (P1–P5) · Target spec: OKF v0.2 · Tracking since 2026-09-25
 
 ## Why
 
@@ -54,10 +54,24 @@ OKF is conventions, not syntax. The source stays plain Markdown: Markify must ne
 - R4.2 Keeping any frontmatter suggestion merges it key by key; other keys (`date`, `verified`, `sources`, …) are never lost. `type` is never overwritten.
 - R4.3 Keeping AI text in a concept (Keep, Accept, or typing past a review) sets `generated: { by: apple-intelligence/macos-<version>, at: <now> }`, in the same undo step as the kept text where possible. Settings › Intelligence › "Record AI edits in OKF concepts" turns it off.
 
-### Out of scope (for now)
+### R5 Complete bundle support
+- R5.1 **File › Open Bundle Folder…** (⇧⌘O) remembers the folder as a security-scoped bookmark, so every file in it is reachable across launches. A granted folder is a bundle even without `okf_version`.
+- R5.2 The sidebar browses the bundle by folder, type or tag (the tag view is built from frontmatter, §3.1). The search field filters concepts by title, description and tag.
+- R5.3 The sidebar shows the current concept's provenance: last change and author, last verification, `sources` with their credibility signals (author, usage count, last modified), and v0.1 `# Citations` when there are no `sources`.
+- R5.4 Attested Computations show their contract (runtime, parameters, computation, executor with receipt fields, attester) as links. Nothing is executed.
+- R5.5 Path-valued fields (`resource`, `sources[].resource`, `computation`, `executor.resource`, `attester.resource`) count as links: they create backlinks and are checked for missing targets. Scope descriptors and URLs are ignored.
+- R5.6 Footnotes keyed to a `sources` id show that source in their tooltip.
+- R5.7 After Rename or Move To, Markify offers to update links to the moved file across the bundle, and the moved file's own relative links. Each link keeps its style (absolute or relative).
+- R5.8 Typing `](` or `](/` suggests the bundle's concept paths.
+- R5.9 The bundle is watched for changes on disk and rescanned.
+- R5.10 Typing in a concept's body records `generated: { by: human:<id>, at: <now> }` after a pause, at most once a day. Settings › General › Knowledge › "Record my edits in OKF concepts" turns it off.
+- R5.11 HTML export rewrites bundle-absolute links as relative paths from the exported file.
+- R5.12 v0.1 bundles: `timestamp` stands in for `generated.at`, and `# Citations` for `sources`. A bundle targeting an unknown `okf_version` gets a notice and is read best effort. Index entries are checked for sections, links and descriptions.
+
+### Out of scope
 - Running Attested Computations (executors, receipts, attesters). Markify shows the contract but executes nothing.
 - A graph visualization.
-- Opening a bundle folder the sandbox cannot reach. Bundle-wide features work where Markify has access: the library folder, or a folder granted through an open panel.
+- Zip or tarball bundles (§3). Unpack them first.
 
 ## Design
 
@@ -77,7 +91,7 @@ A local Swift package with no UI, depending only on [Yams](https://github.com/jp
 Spec-version knowledge lives only in OKFKit (`OKF.specVersion`). Readers are tolerant: unknown versions are consumed on a best-effort basis.
 
 ### App layer
-- `Markify/Knowledge.swift`: bundle state loading and the sidebar Knowledge section.
+- `Markify/Knowledge.swift`: bundle loading, folder access (`BundleAccess`), file watching (`BundleWatcher`), link following, log and index writes, and the sidebar browser and concept details.
 - `NativeEditor.swift`: chip row badges, ⌘-click link following, bundle root for resolving `/` links.
 - `ContentView.swift`: Knowledge menu, sidebar wiring, Library titles.
 - `SettingsView.swift`: the verifier ID.
@@ -93,4 +107,4 @@ Spec-version knowledge lives only in OKFKit (`OKF.specVersion`). Readers are tol
 2. **P2 Bundle**: scan, backlinks, issues, Library titles.
 3. **P3 Authoring**: template, verify and status actions, log and index commands, settings.
 4. **P4 AI**: type and description suggestions, merged frontmatter, `generated` stamps.
-5. **Later**: computation display, graph view.
+5. **P5 Complete**: Open Bundle Folder, bundle browser, provenance and computation panels, link rewriting on move, link completion, file watching, human `generated` stamps, export links, v0.1 fallbacks.

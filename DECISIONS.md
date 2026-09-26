@@ -23,3 +23,5 @@
 - ⌘-click follows links in both lenses; `/…` links resolve against the OKF bundle root (nearest `index.md` with `okf_version`, else the library, else the file's folder). A missing `.md` target offers to create it as a concept.
 - `index.md` and `log.md` are written only through Knowledge menu commands, never automatically.
 - AI frontmatter suggestions merge key by key instead of replacing the block. In OKF concepts they add `description` and, only when missing, `type`. Keeping AI text in a concept stamps `generated.by` as `apple-intelligence/macos-<major>.<minor>`; the on-device model ships with the OS, so its version names the model.
+- Open Bundle Folder… keeps a security-scoped bookmark per bundle; a granted folder counts as a bundle even without `okf_version`.
+- Typing in an OKF concept's body stamps `generated.by: human:<id>` after two idle seconds, at most once a day, and never for undo, redo, frontmatter-only or AI edits. After Rename or Move To, Markify asks before rewriting links in other files.

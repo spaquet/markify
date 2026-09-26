@@ -35,7 +35,23 @@ public enum OKFValidator {
 
     /// Every document, plus broken links as information.
     public static func validate(bundle: OKFBundle, now: Date = Date()) -> [OKFDiagnostic] {
-        bundle.documents.flatMap { validate(document: $0, in: bundle, now: now) }
+        (version(bundle.okfVersion).map { [$0] } ?? []) + bundle.documents.flatMap { validate(document: $0, in: bundle, now: now) }
+    }
+
+    /// A notice when the bundle targets a version this reader does not know; it is still read best effort (§12).
+    public static func version(_ declared: String?) -> OKFDiagnostic? {
+        guard let declared else { return nil }
+        func parts(_ version: String) -> [Int]? {
+            let parts = version.split(separator: ".").map { Int($0) }
+            return parts.count == 2 && !parts.contains(nil) ? parts.compactMap { $0 } : nil
+        }
+        guard let bundle = parts(declared), let known = parts(OKF.specVersion) else {
+            return OKFDiagnostic(.warning, "`okf_version` \"\(declared)\" is not a <major>.<minor> version.", path: "/index.md")
+        }
+        if bundle.lexicographicallyPrecedes(known) || bundle == known { return nil }
+        let breaking = bundle[0] != known[0]
+        return OKFDiagnostic(breaking ? .warning : .info,
+                             "The bundle targets OKF \(declared); Markify reads OKF \(OKF.specVersion) and shows it on a best-effort basis.", path: "/index.md")
     }
 
     public static func validate(document: OKFDocument, in bundle: OKFBundle, now: Date = Date()) -> [OKFDiagnostic] {
@@ -43,6 +59,9 @@ public enum OKFValidator {
         var found = validate(source: document.source, kind: document.kind, isBundleRoot: isRoot, now: now)
         for link in bundle.brokenLinks(in: document) {
             found.append(OKFDiagnostic(.info, "Links to \(link.target), which does not exist yet."))
+        }
+        for reference in bundle.brokenReferences(in: document) {
+            found.append(OKFDiagnostic(.warning, "`\(reference.field)` points to \(reference.target), which does not exist."))
         }
         return found.map { OKFDiagnostic($0.severity, $0.message, path: document.path, url: document.url) }
     }
@@ -92,16 +111,39 @@ public enum OKFValidator {
     }
 
     static func validateIndex(source: String, isBundleRoot: Bool) -> [OKFDiagnostic] {
-        guard let block = FrontmatterBlock.locate(in: source) else { return [] }
-        guard isBundleRoot else { return [OKFDiagnostic(.error, "Only the bundle-root index.md may have frontmatter.")] }
+        var found = indexEntries(FrontmatterBlock.body(of: source))
+        guard let block = FrontmatterBlock.locate(in: source) else { return found }
+        guard isBundleRoot else { return [OKFDiagnostic(.error, "Only the bundle-root index.md may have frontmatter.")] + found }
         guard case .success(let concept)? = OKFConcept.parse(source: source) else {
-            return [OKFDiagnostic(.error, "The index frontmatter is not valid YAML.")]
+            return [OKFDiagnostic(.error, "The index frontmatter is not valid YAML.")] + found
         }
         let extra = concept.keys.filter { $0 != "okf_version" }
         if !extra.isEmpty || block.yaml.isEmpty {
-            return [OKFDiagnostic(.error, "The root index.md frontmatter may only hold `okf_version`.")]
+            found.insert(OKFDiagnostic(.error, "The root index.md frontmatter may only hold `okf_version`."), at: 0)
         }
-        return []
+        return found
+    }
+
+    /// Index bodies are headed sections of `* [Title](url) - description` entries (§8).
+    private static func indexEntries(_ body: String) -> [OKFDiagnostic] {
+        var found: [OKFDiagnostic] = []
+        var seenHeading = false
+        var missingDescriptions = 0
+        for line in body.components(separatedBy: .newlines) {
+            if line.hasPrefix("#") { seenHeading = true; continue }
+            guard line.hasPrefix("* ") || line.hasPrefix("- ") else { continue }
+            if !seenHeading { found.append(OKFDiagnostic(.warning, "Index entries should sit under a section heading.")); seenHeading = true }
+            let links = OKFLinks.extract(from: line)
+            if links.isEmpty {
+                found.append(OKFDiagnostic(.warning, "Index entry “\(line.dropFirst(2))” has no link."))
+            } else if line.range(of: #"\)\s+[-–—]\s+\S"#, options: .regularExpression) == nil {
+                missingDescriptions += 1
+            }
+        }
+        if missingDescriptions > 0 {
+            found.append(OKFDiagnostic(.info, "\(missingDescriptions) index \(missingDescriptions == 1 ? "entry has" : "entries have") no description."))
+        }
+        return found
     }
 
     static func validateLog(source: String) -> [OKFDiagnostic] {

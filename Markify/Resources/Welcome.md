@@ -34,6 +34,14 @@ $$
 \int_0^1 x^2\,dx = \frac{1}{3}
 $$
 
+## Knowledge bundles
+
+Markify reads and edits [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundles: folders of Markdown concepts that AI agents can use as curated context.
+
+- **File › Open Bundle Folder…** (⇧⌘O) opens a bundle and shows it in the sidebar by folder, type or tag.
+- A concept's type, status, staleness and trust appear above its title. ⌘-click any link to follow it.
+- Type `](/` to link another concept, and use **… › Knowledge** to verify a concept, set its status, log a change or rebuild an index.
+
 ![One window, one column.](hero.png)
 
 [^1]: Both lenses edit the same file — nothing is ever exported or synced between panes.

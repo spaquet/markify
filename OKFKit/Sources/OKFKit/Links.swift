@@ -75,6 +75,25 @@ public enum OKFLinks {
         return parts.joined(separator: "/")
     }
 
+    /// True for a bundle-absolute or relative path; false for URLs and scope descriptors such as `all queries in project X`.
+    public static func isPath(_ value: String) -> Bool {
+        let value = value.trimmingCharacters(in: .whitespaces)
+        guard !value.isEmpty, !hasScheme(value), !value.contains(" ") else { return false }
+        return value.hasPrefix("/") || value.hasPrefix("./") || value.hasPrefix("../") || value.contains("/")
+            || value.range(of: #"\.[A-Za-z0-9]{1,5}$"#, options: .regularExpression) != nil
+    }
+
+    /// Links listed under a v0.1 `# Citations` heading, superseded by `sources` (§13.1).
+    public static func legacyCitations(in body: String) -> [OKFLink] {
+        let ns = body as NSString
+        guard let heading = try! NSRegularExpression(pattern: #"(?mi)^#[ \t]+Citations[ \t]*$"#)
+            .firstMatch(in: body, range: NSRange(location: 0, length: ns.length)) else { return [] }
+        let start = NSMaxRange(heading.range)
+        let next = try! NSRegularExpression(pattern: #"(?m)^#{1,6}[ \t]"#)
+            .firstMatch(in: body, range: NSRange(location: start, length: ns.length - start))?.range.location ?? ns.length
+        return extract(from: body).filter { $0.range.lowerBound >= start && $0.range.lowerBound < next }
+    }
+
     static func hasScheme(_ target: String) -> Bool {
         target.range(of: #"^[A-Za-z][A-Za-z0-9+.-]*:"#, options: .regularExpression) != nil
     }

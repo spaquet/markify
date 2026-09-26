@@ -26,6 +26,7 @@ struct ContentView: View {
     @AppStorage("generationTone") private var generationTone = "Match document"
     @AppStorage("useSectionContext") private var useSectionContext = true
     @AppStorage("recordAIGenerated") private var recordAIGenerated = true
+    @AppStorage("recordHumanGenerated") private var recordHumanGenerated = true
     @AppStorage("proseFont") private var proseFont = "New York"
     @AppStorage("markdownFont") private var markdownFont = "SF Mono"
     @AppStorage("proseSize") private var proseSize = 18.0
@@ -90,6 +91,11 @@ struct ContentView: View {
     @State private var bundleRoot: URL?
     @State private var knowledgeTask: Task<Void, Never>?
     @State private var conceptCache = ConceptCache()
+    @State private var watcher = BundleWatcher()
+    @State private var watchedRoot: URL?
+    /// The body as of the last `generated` stamp, so only content edits count as a new change.
+    @State private var stampedBody: String?
+    @State private var humanStampTask: Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
@@ -139,13 +145,16 @@ struct ContentView: View {
                     if review != nil && !aiEdit.active {
                         review = nil
                         DispatchQueue.main.async { stampAIGenerated() }
+                    } else if !aiEdit.active && textView?.undoManager?.isUndoing != true && textView?.undoManager?.isRedoing != true {
+                        scheduleHumanStamp()
                     }
                     if fadeToolbar { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = false } }
                 }, onSlash: { query in
                     if slashQuery != query { slashSelection = 0 }
                     slashQuery = query
                 }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 },
-                theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil, bundleRoot: bundleRoot)
+                theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil, bundleRoot: bundleRoot,
+                linkTargets: knowledge?.bundle.documents.filter { $0.url != fileURL?.standardizedFileURL }.map(\.path) ?? [])
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56)
@@ -356,10 +365,12 @@ struct ContentView: View {
             if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             rememberDocumentLens()
             libraryFolder?.stopAccessingSecurityScopedResource()
+            watcher.stop()
         }
-        .onChange(of: fileURL, initial: true) { _, _ in
+        .onChange(of: fileURL, initial: true) { old, new in
             rememberDocumentLens()
             mirrorTags()
+            if let old, let new, old != new { offerToUpdateLinks(movedFrom: old, to: new) }
             refreshKnowledge()
         }
         .onChange(of: concept != nil) { _, _ in refreshKnowledge() }
@@ -412,6 +423,8 @@ struct ContentView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 8) {
             TextField("Search", text: $librarySearch)
+            ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
             Text("Open Files").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
             ForEach(NSDocumentController.shared.documents.compactMap(\.fileURL).filter {
                 librarySearch.isEmpty || $0.lastPathComponent.localizedCaseInsensitiveContains(librarySearch)
@@ -424,8 +437,8 @@ struct ContentView: View {
                 }.buttonStyle(.plain).padding(7)
             }
             if concept != nil || knowledge != nil {
-                KnowledgeSection(state: knowledge, fileURL: fileURL,
-                                 issues: Knowledge.issues(text: document.text, fileURL: fileURL, root: bundleRoot), open: open)
+                KnowledgeSection(state: knowledge, fileURL: fileURL, concept: concept, text: document.text,
+                                 issues: Knowledge.issues(text: document.text, fileURL: fileURL, root: bundleRoot), search: librarySearch, open: open)
             }
             Text("Library").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.top, 12)
             if libraryFolder != nil {
@@ -440,7 +453,10 @@ struct ContentView: View {
                     }.buttonStyle(.plain).padding(7)
                 }
             }
-            Spacer()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollIndicators(.never)
             Button("New Document ⌘N") { NSDocumentController.shared.newDocument(nil) }
         }
         .padding(.horizontal, 12).padding(.top, 54).padding(.bottom, 12)
@@ -474,6 +490,12 @@ struct ContentView: View {
     private func refreshKnowledge() {
         let root = Knowledge.root(for: fileURL, text: document.text, boundary: libraryFolder)
         bundleRoot = root
+        if stampedBody == nil { stampedBody = FrontmatterBlock.body(of: document.text) }
+        if root != watchedRoot {
+            watchedRoot = root
+            // Other windows and tools edit the bundle too; rescan when its files change.
+            watcher.watch(root) { refreshKnowledge() }
+        }
         knowledgeTask?.cancel()
         guard let root else { knowledge = nil; return }
         knowledgeTask = Task {
@@ -1242,7 +1264,9 @@ struct ContentView: View {
             let safeTitle = title.replacingOccurrences(of: "&", with: "&amp;")
                 .replacingOccurrences(of: "<", with: "&lt;")
                 .replacingOccurrences(of: ">", with: "&gt;")
-            let html = "<!doctype html><meta charset=\"utf-8\"><title>\(safeTitle)</title>" + HTMLFormatter.format(document.text)
+            // Bundle-absolute links mean nothing outside the bundle; point them at the files from where the HTML lands.
+            let source = bundleRoot.map { OKFEditing.relativizingLinks(in: document.text, document: url, root: $0) } ?? document.text
+            let html = "<!doctype html><meta charset=\"utf-8\"><title>\(safeTitle)</title>" + HTMLFormatter.format(source)
             try html.write(to: url, atomically: true, encoding: .utf8)
         } catch { NSAlert(error: error).runModal() }
     }
@@ -1421,7 +1445,8 @@ struct ContentView: View {
                 refreshKnowledge()
             }
         }.disabled(fileURL == nil)
-        Button("Show Links & Issues") { if !sidebarOpen { toggleSidebar() } }
+        Button("Show Bundle") { if !sidebarOpen { toggleSidebar() } }
+        Button("Open Bundle Folder…") { BundleAccess.chooseAndOpen() }
     }
 
     /// Appends a `human:` verification stamp for Settings › Knowledge's ID.
@@ -1458,8 +1483,62 @@ struct ContentView: View {
     /// Records Apple Intelligence as the producer in an OKF concept's `generated`, once AI text is kept (§5.2).
     private func stampAIGenerated() {
         guard recordAIGenerated, concept != nil else { return }
-        let entry = "generated: " + OKFEditing.render(OKFStamp(by: Knowledge.aiActor, at: Date()))
+        stampGenerated(by: Knowledge.aiActor)
+    }
+
+    /// After a pause in typing, records the person as the producer when the body changed (§5.2, §7).
+    private func scheduleHumanStamp() {
+        guard recordHumanGenerated, concept != nil else { return }
+        humanStampTask?.cancel()
+        humanStampTask = Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled, let concept, FrontmatterBlock.body(of: document.text) != stampedBody else { return }
+            // Once a day is enough: `at` marks the last meaningful change, not every keystroke.
+            let me = Knowledge.actor
+            if concept.generated?.by == me, let at = concept.generated?.at, Calendar.current.isDateInToday(at) {
+                stampedBody = FrontmatterBlock.body(of: document.text)
+                return
+            }
+            stampGenerated(by: me)
+        }
+    }
+
+    private func stampGenerated(by actor: OKFActor) {
+        let entry = "generated: " + OKFEditing.render(OKFStamp(by: actor, at: Date()))
         editFrontmatter(quiet: true) { OKFEditing.setting("generated", to: entry, in: $0) }
+        stampedBody = FrontmatterBlock.body(of: textView?.string ?? document.text)
+    }
+
+    /// After Rename or Move To, offers to update links in the bundle that pointed at the old location (§6).
+    private func offerToUpdateLinks(movedFrom old: URL, to new: URL) {
+        guard let state = knowledge, OKFBundle.contains(state.bundle.root, old) else { return }
+        let root = state.bundle.root
+        let others = state.bundle.backlinks(to: old).filter { OKFBundle.key($0.url) != OKFBundle.key(old) }
+        let ownText = textView?.string ?? document.text
+        let ownUpdated = OKFEditing.retargetingLinks(in: ownText, document: old, root: root, movedFrom: old, to: new)
+        guard !others.isEmpty || ownUpdated != ownText else { return }
+        let alert = NSAlert()
+        alert.messageText = "Update links to “\(new.lastPathComponent)”?"
+        let count = others.count + (ownUpdated != ownText ? 1 : 0)
+        alert.informativeText = "\(count) \(count == 1 ? "document links" : "documents link") to this file’s old location. Markify can point them at the new one."
+        alert.addButton(withTitle: "Update Links")
+        alert.addButton(withTitle: "Don’t Update")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        var failed: [String] = []
+        for other in others {
+            let updated = OKFEditing.retargetingLinks(in: other.source, document: other.url, root: root, movedFrom: old, to: new)
+            guard updated != other.source else { continue }
+            do { try updated.write(to: other.url, atomically: true, encoding: .utf8) } catch { failed.append(other.path) }
+        }
+        if ownUpdated != ownText, let textView {
+            textView.insertText(ownUpdated, replacementRange: NSRange(location: 0, length: (ownText as NSString).length))
+        }
+        if !failed.isEmpty {
+            let alert = NSAlert()
+            alert.messageText = "Some links couldn’t be updated."
+            alert.informativeText = failed.joined(separator: "\n")
+            alert.runModal()
+        }
     }
 
     /// Rewrites the frontmatter YAML as one undoable edit, creating the block when missing, and keeps the caret in place.

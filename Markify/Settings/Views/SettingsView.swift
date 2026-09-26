@@ -9,6 +9,7 @@ struct SettingsView: View {
     @AppStorage("imageFolder") private var imageFolder = "./assets"
     @AppStorage("startup") private var startup = "Reopen last documents"
     @AppStorage("okfActorID") private var okfActorID = ""
+    @AppStorage("recordHumanGenerated") private var recordHumanGenerated = true
     @AppStorage("defaultLens") private var defaultLens = "Rendered"
     @AppStorage("rememberLens") private var rememberLens = true
     @AppStorage("proseFont") private var proseFont = "New York"
@@ -90,6 +91,10 @@ struct SettingsView: View {
                 TextField(text: $okfActorID, prompt: Text(NSUserName())) {
                     Text("Verifier ID")
                     Text("Recorded as human:\(okfActorID.isEmpty ? NSUserName() : okfActorID) when you mark an OKF concept verified.")
+                }
+                Toggle(isOn: $recordHumanGenerated) {
+                    Text("Record my edits in OKF concepts")
+                    Text("Editing a concept's text sets its generated field to you, at most once a day.")
                 }
             } header: {
                 Text("Knowledge")

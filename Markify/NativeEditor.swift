@@ -44,6 +44,8 @@ struct NativeEditor: NSViewRepresentable {
     var currentMatch: NSRange? = nil
     /// The OKF bundle root that `/…` links resolve against.
     var bundleRoot: URL? = nil
+    /// Bundle-absolute paths offered while typing a link destination.
+    var linkTargets: [String] = []
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -55,6 +57,7 @@ struct NativeEditor: NSViewRepresentable {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.documentURL = fileURL
         editor.bundleRoot = bundleRoot
+        editor.linkTargets = linkTargets
         editor.columnWidth = columnWidth
         editor.rendered = !markdownLens
         editor.theme = theme
@@ -90,6 +93,7 @@ struct NativeEditor: NSViewRepresentable {
         guard let editor = scroll.documentView as? NSTextView else { return }
         (editor as? MarkdownTextView)?.documentURL = fileURL
         (editor as? MarkdownTextView)?.bundleRoot = bundleRoot
+        (editor as? MarkdownTextView)?.linkTargets = linkTargets
         (editor as? MarkdownTextView)?.columnWidth = columnWidth
         (editor as? MarkdownTextView)?.rendered = !markdownLens
         (editor as? MarkdownTextView)?.theme = theme
@@ -249,6 +253,9 @@ struct NativeEditor: NSViewRepresentable {
             }
         }
         let notes = Footnote.definitions(in: editor.string)
+        // OKF footnote labels key into `sources` (§5.1).
+        let sources = Dictionary(((try? OKFConcept.parse(source: editor.string)?.get())?.sources ?? []).compactMap { source in source.id.map { ($0, source) } },
+                                 uniquingKeysWith: { first, _ in first })
         matches("(?m)^(\\[\\^)([^]\\n]+)(\\]:)(.*)$") { match in
             storage.addAttributes([.font: markdownLens ? base : theme.ui(13), .foregroundColor: markdownLens ? dim : NSColor.secondaryLabelColor], range: match.range)
             storage.addAttributes([.foregroundColor: accent, .font: markdownLens ? base : theme.ui(13, weight: .semibold)], range: match.range(at: 2))
@@ -265,9 +272,12 @@ struct NativeEditor: NSViewRepresentable {
             storage.addAttributes([.foregroundColor: accent], range: markdownLens ? match.range : match.range(at: 2))
             guard !markdownLens else { return }
             storage.addAttributes([.font: theme.ui(11, weight: .semibold), .baselineOffset: 7 * theme.scale], range: match.range(at: 2))
-            if let note = notes.first(where: { $0.label == source.substring(with: match.range(at: 2)) }) {
-                storage.addAttribute(.toolTip, value: note.text, range: match.range(at: 2))
+            let label = source.substring(with: match.range(at: 2))
+            let cited = sources[label].map { source in
+                "Source: " + [source.title, source.resource, source.author?.displayName].compactMap { $0 }.joined(separator: " · ")
             }
+            let tip = [notes.first(where: { $0.label == label })?.text, cited].compactMap { $0 }.joined(separator: "\n\n")
+            if !tip.isEmpty { storage.addAttribute(.toolTip, value: tip, range: match.range(at: 2)) }
             marker(match.range(at: 1))
             marker(match.range(at: 3))
         }
@@ -433,6 +443,8 @@ struct NativeEditor: NSViewRepresentable {
 final class MarkdownTextView: NSTextView {
     var documentURL: URL?
     var bundleRoot: URL?
+    var linkTargets: [String] = []
+    private var isCompletingLink = false
     var columnWidth: CGFloat = 640
     var rendered = true
     var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:]; refreshDecorations() } } }
@@ -533,6 +545,12 @@ final class MarkdownTextView: NSTextView {
     override func didChangeText() {
         super.didChangeText()
         guard !isRenumbering, !(undoManager?.isUndoing ?? false), !(undoManager?.isRedoing ?? false) else { return }
+        // Typing `](` or `](/` offers the bundle's concepts.
+        if !isCompletingLink, !linkTargets.isEmpty, let range = linkTargetRange, selectedRange().location > 0,
+           ["(", "/"].contains((string as NSString).substring(with: NSRange(location: selectedRange().location - 1, length: 1))),
+           range.length <= 1 {
+            DispatchQueue.main.async { [weak self] in self?.complete(nil) }
+        }
         let edit = pendingEdit
         pendingEdit = nil
         renumberLists(MarkdownList.renumbering(string, previous: edit?.before, edit: edit?.range ?? NSRange(location: 0, length: 0), length: edit?.length ?? 0))
@@ -915,6 +933,39 @@ final class MarkdownTextView: NSTextView {
             return
         }
         super.mouseDown(with: event)
+    }
+
+    /// The partial destination between `](` and the caret, when the caret is inside one.
+    private var linkTargetRange: NSRange? {
+        let selection = selectedRange()
+        guard selection.length == 0 else { return nil }
+        let source = string as NSString
+        let line = source.lineRange(for: NSRange(location: selection.location, length: 0))
+        let prefix = source.substring(with: NSRange(location: line.location, length: selection.location - line.location))
+        guard let match = try? NSRegularExpression(pattern: #"\]\((/?[^)\s]*)$"#).firstMatch(in: prefix, range: NSRange(location: 0, length: (prefix as NSString).length)) else { return nil }
+        let partial = match.range(at: 1)
+        let value = (prefix as NSString).substring(with: partial)
+        guard value.isEmpty || value.hasPrefix("/") else { return nil }
+        return NSRange(location: line.location + partial.location, length: partial.length)
+    }
+
+    override var rangeForUserCompletion: NSRange {
+        (linkTargets.isEmpty ? nil : linkTargetRange) ?? super.rangeForUserCompletion
+    }
+
+    override func completions(forPartialWordRange charRange: NSRange, indexOfSelectedItem index: UnsafeMutablePointer<Int>) -> [String]? {
+        guard !linkTargets.isEmpty, let range = linkTargetRange, range == charRange else {
+            return super.completions(forPartialWordRange: charRange, indexOfSelectedItem: index)
+        }
+        let partial = (string as NSString).substring(with: range)
+        let matches = linkTargets.filter { partial.isEmpty || partial == "/" || $0.localizedCaseInsensitiveContains(partial) }
+        return Array(matches.prefix(40)).map { $0.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? $0 }
+    }
+
+    override func insertCompletion(_ word: String, forPartialWordRange charRange: NSRange, movement: Int, isFinal flag: Bool) {
+        isCompletingLink = true
+        super.insertCompletion(word, forPartialWordRange: charRange, movement: movement, isFinal: flag)
+        isCompletingLink = false
     }
 
     static let imageExtensions = ["png", "jpg", "jpeg", "gif", "heic", "webp"]

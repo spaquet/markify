@@ -156,3 +156,75 @@ public enum OKFEditing {
         return result.hasSuffix("\n") ? result : result + "\n"
     }
 }
+
+// MARK: Moving files
+
+extension OKFEditing {
+    /// Rewrites the links in one document after a file moves from `old` to `new` (§6).
+    ///
+    /// Links that pointed at the moved file follow it; when the document itself is the one that moved,
+    /// its relative links are recomputed from the new folder. Body links and path-valued frontmatter fields
+    /// are both updated, keeping each link's style: bundle-absolute stays absolute, relative stays relative.
+    public static func retargetingLinks(in source: String, document: URL, root: URL, movedFrom old: URL, to new: URL) -> String {
+        let documentMoved = OKFBundle.key(document) == OKFBundle.key(old)
+        let newDocument = documentMoved ? new : document
+        func retarget(_ target: String) -> String? {
+            guard let resolved = OKFLinks.resolve(target, from: document, bundleRoot: root) else { return nil }
+            let pointsAtMoved = OKFBundle.key(resolved) == OKFBundle.key(old)
+            guard pointsAtMoved || (documentMoved && !target.hasPrefix("/")) else { return nil }
+            let destination = pointsAtMoved ? new : resolved
+            let suffix = target.firstIndex(where: { $0 == "#" || $0 == "?" }).map { String(target[$0...]) } ?? ""
+            var path: String
+            if target.hasPrefix("/") {
+                guard let absolute = OKFLinks.bundlePath(of: destination, root: root) else { return nil }
+                path = absolute
+            } else {
+                path = OKFLinks.relativePath(to: destination, from: newDocument.deletingLastPathComponent())
+                if target.hasPrefix("./") && !path.hasPrefix("../") { path = "./" + path }
+            }
+            if target.contains("%") || path.contains(" ") { path = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path }
+            let updated = path + suffix
+            return updated == target ? nil : updated
+        }
+        return rewritingTargets(in: source, retarget)
+    }
+
+    /// Turns bundle-absolute links into relative ones, for exports that leave the bundle (§6.1).
+    public static func relativizingLinks(in source: String, document: URL, root: URL) -> String {
+        rewritingTargets(in: source) { target in
+            guard target.hasPrefix("/"), let resolved = OKFLinks.resolve(target, from: document, bundleRoot: root) else { return nil }
+            let suffix = target.firstIndex(where: { $0 == "#" || $0 == "?" }).map { String(target[$0...]) } ?? ""
+            let path = OKFLinks.relativePath(to: resolved, from: document.deletingLastPathComponent())
+            return (path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path) + suffix
+        }
+    }
+
+    /// Applies `retarget` to every body link destination and path-valued frontmatter value, back to front so offsets hold.
+    static func rewritingTargets(in source: String, _ retarget: (String) -> String?) -> String {
+        let text = NSMutableString(string: source)
+        let block = FrontmatterBlock.locate(in: source)
+        let bodyStart = block?.blockRange.upperBound ?? 0
+        let body = text.substring(from: bodyStart)
+        for link in OKFLinks.extract(from: body).reversed() {
+            guard let updated = retarget(link.target) else { continue }
+            let range = NSRange(location: bodyStart + link.range.lowerBound, length: link.range.count)
+            let whole = text.substring(with: range) as NSString
+            let inner = whole.range(of: link.target, options: .backwards)
+            guard inner.location != NSNotFound else { continue }
+            text.replaceCharacters(in: NSRange(location: range.location + inner.location, length: inner.length), with: updated)
+        }
+        if let block, case .success(let concept)? = OKFConcept.parse(source: source) {
+            var yaml = block.yaml
+            for reference in Set(concept.references.map(\.target)) {
+                guard let updated = retarget(reference) else { continue }
+                // Only whole scalars change, quoted or plain, so a longer path sharing a prefix is left alone.
+                let pattern = #"(?m)(?<=[\s:\[,{-])(["']?)"# + NSRegularExpression.escapedPattern(for: reference) + #"\1(?=\s*(?:[,}\]#]|$))"#
+                let regex = try! NSRegularExpression(pattern: pattern)
+                yaml = regex.stringByReplacingMatches(in: yaml, range: NSRange(location: 0, length: (yaml as NSString).length),
+                                                      withTemplate: "$1" + NSRegularExpression.escapedTemplate(for: updated) + "$1")
+            }
+            text.replaceCharacters(in: NSRange(location: block.yamlRange.lowerBound, length: block.yamlRange.count), with: yaml)
+        }
+        return text as String
+    }
+}

@@ -8,6 +8,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     private static let openDocumentsKey = "openDocumentBookmarks"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        BundleAccess.restore()
         DispatchQueue.main.async {
             let startup = UserDefaults.standard.string(forKey: "startup") ?? "Reopen last documents"
             let urls = startup == "Reopen last documents" ? Self.lastOpenDocuments() : []
@@ -76,6 +77,10 @@ struct MarkifyApp: App {
         }
         .defaultLaunchBehavior(.suppressed)
         .commands {
+            CommandGroup(after: .newItem) {
+                Button("Open Bundle Folder…") { BundleAccess.chooseAndOpen() }
+                    .keyboardShortcut("o", modifiers: [.command, .shift])
+            }
             CommandGroup(after: .help) {
                 Button("Welcome to Markify") { MarkifyAppDelegate.openWelcome() }
             }

@@ -302,6 +302,34 @@ struct MarkifyTests {
         #expect(Knowledge.aiActor.description.hasPrefix("apple-intelligence/macos-"))
     }
 
+    @Test @MainActor func linkDestinationsCompleteFromBundle() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.linkTargets = ["/tables/orders.md", "/tables/Customer List.md", "/playbooks/freshness.md"]
+        editor.string = "See [orders](/tab"
+        editor.setSelectedRange(NSRange(location: (editor.string as NSString).length, length: 0))
+        let range = editor.rangeForUserCompletion
+        #expect((editor.string as NSString).substring(with: range) == "/tab")
+        var index = 0
+        #expect(editor.completions(forPartialWordRange: range, indexOfSelectedItem: &index) == ["/tables/orders.md", "/tables/Customer%20List.md"])
+        editor.string = "See [peer](./pro"
+        editor.setSelectedRange(NSRange(location: (editor.string as NSString).length, length: 0))
+        let relative = editor.rangeForUserCompletion
+        #expect(editor.completions(forPartialWordRange: relative, indexOfSelectedItem: &index)?.contains("/tables/orders.md") != true)
+    }
+
+    @Test @MainActor func footnotesShowTheirSource() {
+        let source = "---\ntype: Metric\nsources:\n  - { id: pol, title: Revenue policy, resource: https://wiki/p }\n---\nClaim.[^pol]\n\n[^pol]: Policy\n"
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = source
+        NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                     selectedRange: .constant(NSRange(location: 0, length: 0)),
+                     textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+            .style(editor)
+        let label = (source as NSString).range(of: "pol]\n").location
+        let tip = editor.textStorage?.attribute(.toolTip, at: label, effectiveRange: nil) as? String
+        #expect(tip == "Policy\n\nSource: Revenue policy · https://wiki/p")
+    }
+
     @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

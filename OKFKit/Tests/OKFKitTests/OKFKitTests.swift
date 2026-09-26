@@ -314,3 +314,107 @@ struct BundleTests {
         #expect(OKFValidator.validate(source: top, kind: .index, isBundleRoot: true).isEmpty)
     }
 }
+
+struct CompletionTests {
+    @Test func referencesSkipURLsAndScopeDescriptors() throws {
+        let yaml = """
+        type: Metric
+        resource: https://console.cloud.google.com/bigquery
+        usage_window: { from: 2026-06-01T00:00:00Z, to: 2026-06-30T00:00:00Z }
+        sources:
+          - { resource: /tables/orders.md, id: orders }
+          - { resource: all queries in BigQuery project X }
+          - resource: https://wiki.acme/policy
+            usage_window: { from: 2026-05-01T00:00:00Z, to: 2026-05-31T00:00:00Z }
+        computation: ../computations/revenue.sql
+        executor: { resource: references/skills/run-on-bq.md }
+        attester: { resource: references/attesters/revenue.py }
+        """
+        let concept = try OKFConcept(yaml: yaml)
+        #expect(concept.references.map(\.target) == ["/tables/orders.md", "../computations/revenue.sql",
+                                                     "references/skills/run-on-bq.md", "references/attesters/revenue.py"])
+        #expect(concept.sources[0].usageWindow?.to == OKFTimestamp.parse("2026-06-30T00:00:00Z"))
+        #expect(concept.sources[2].usageWindow?.from == OKFTimestamp.parse("2026-05-01T00:00:00Z"))
+    }
+
+    @Test func legacyFallbacks() throws {
+        let concept = try OKFConcept(yaml: "type: Metric\ntimestamp: 2026-05-01T00:00:00Z")
+        #expect(concept.lastChanged == OKFTimestamp.parse("2026-05-01T00:00:00Z"))
+        #expect(concept.extensionKeys.isEmpty)
+        let body = "# Definition\n\nSee [x](/x.md).\n\n# Citations\n\n* [Policy](https://wiki/p)\n* [Orders](/tables/orders.md)\n\n# Notes\n[y](/y.md)"
+        #expect(OKFLinks.legacyCitations(in: body).map(\.target) == ["https://wiki/p", "/tables/orders.md"])
+    }
+
+    @Test func versionNotices() {
+        #expect(OKFValidator.version("0.2") == nil)
+        #expect(OKFValidator.version("0.1") == nil)
+        #expect(OKFValidator.version("0.3")?.severity == .info)
+        #expect(OKFValidator.version("1.0")?.severity == .warning)
+        #expect(OKFValidator.version("latest")?.severity == .warning)
+    }
+
+    @Test func indexEntryChecks() {
+        let index = "* [Early](a.md) - too soon\n\n# Tables\n\n* [Orders](orders.md) - One row per order.\n* [Customers](customers.md)\n* Nothing linked\n"
+        let found = OKFValidator.validate(source: index, kind: .index)
+        #expect(found.map(\.severity) == [.warning, .warning, .info])
+    }
+
+    @Test func movingAFileRetargetsLinksInOtherDocuments() {
+        let root = URL(fileURLWithPath: "/b")
+        let old = URL(fileURLWithPath: "/b/tables/orders.md")
+        let new = URL(fileURLWithPath: "/b/sales/Order Lines.md")
+        let source = """
+        ---
+        type: Metric
+        sources:
+          - { resource: /tables/orders.md, id: o }
+          - resource: "../tables/orders.md"
+        ---
+        See [orders](/tables/orders.md#schema), [rel](../tables/orders.md), [other](/tables/orders-v2.md) and `[code](/tables/orders.md)`.
+        """
+        let document = URL(fileURLWithPath: "/b/metrics/revenue.md")
+        let result = OKFEditing.retargetingLinks(in: source, document: document, root: root, movedFrom: old, to: new)
+        #expect(result == """
+        ---
+        type: Metric
+        sources:
+          - { resource: /sales/Order%20Lines.md, id: o }
+          - resource: "../sales/Order%20Lines.md"
+        ---
+        See [orders](/sales/Order%20Lines.md#schema), [rel](../sales/Order%20Lines.md), [other](/tables/orders-v2.md) and `[code](/tables/orders.md)`.
+        """)
+    }
+
+    @Test func movingADocumentRecomputesItsRelativeLinks() {
+        let root = URL(fileURLWithPath: "/b")
+        let old = URL(fileURLWithPath: "/b/metrics/revenue.md")
+        let new = URL(fileURLWithPath: "/b/finance/metrics/revenue.md")
+        let source = "Uses [orders](../tables/orders.md), [peer](./profit.md) and [abs](/tables/orders.md)."
+        let result = OKFEditing.retargetingLinks(in: source, document: old, root: root, movedFrom: old, to: new)
+        #expect(result == "Uses [orders](../../tables/orders.md), [peer](../../metrics/profit.md) and [abs](/tables/orders.md).")
+    }
+
+    @Test func exportRelativizesAbsoluteLinks() {
+        let result = OKFEditing.relativizingLinks(in: "See [o](/tables/orders.md#a) and [w](https://x.com).",
+                                                  document: URL(fileURLWithPath: "/b/metrics/revenue.md"), root: URL(fileURLWithPath: "/b"))
+        #expect(result == "See [o](../tables/orders.md#a) and [w](https://x.com).")
+    }
+
+    @Test func bundleTypesTagsAndReferenceBacklinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let files = [
+            "a.md": "---\ntype: Metric\ntags: [finance]\nsources:\n  - { resource: /b.md }\n  - { resource: /gone.md }\n---\n",
+            "b.md": "---\ntype: Metric\ntags: [sales, finance]\n---\n",
+            "c.md": "---\ntype: Playbook\n---\n"
+        ]
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for (name, text) in files { try text.write(to: root.appendingPathComponent(name), atomically: true, encoding: .utf8) }
+        let bundle = OKFBundle.load(root: root)
+        #expect(bundle.types == ["Metric", "Playbook"])
+        #expect(bundle.tags == ["finance", "sales"])
+        #expect(bundle.backlinks(to: root.appendingPathComponent("b.md")).map(\.path) == ["/a.md"])
+        let found = OKFValidator.validate(bundle: bundle)
+        #expect(found.contains { $0.severity == .warning && $0.message.contains("/gone.md") })
+    }
+}

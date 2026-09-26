@@ -63,6 +63,21 @@ public struct OKFSource: Hashable, Sendable {
     public var author: OKFActor?
     public var usageCount: Int?
     public var lastModified: Date?
+    /// The frame for `usage_count`: the entry's own `usage_window`, else the shared one (§5.1).
+    public var usageWindow: OKFWindow?
+}
+
+/// A `{ from, to }` datetime range.
+public struct OKFWindow: Hashable, Sendable {
+    public var from: Date?
+    public var to: Date?
+}
+
+/// A frontmatter field that names a path or URI (§6.2).
+public struct OKFReference: Hashable, Sendable {
+    /// The field, such as `resource`, `sources[].resource` or `executor.resource`.
+    public let field: String
+    public let target: String
 }
 
 /// A declared parameter of an Attested Computation (§10.2).
@@ -89,7 +104,7 @@ public struct OKFConcept: Hashable, Sendable {
     /// Keys this package understands; everything else is an extension key (§4.1).
     public static let knownKeys: Set<String> = [
         "type", "title", "description", "resource", "tags", "sources", "usage_window", "generated", "verified",
-        "status", "stale_after", "runtime", "parameters", "computation", "executor", "attester", "okf_version"
+        "status", "stale_after", "runtime", "parameters", "computation", "executor", "attester", "okf_version", "timestamp"
     ]
 
     public var type: String?
@@ -110,6 +125,8 @@ public struct OKFConcept: Hashable, Sendable {
     public var receipt: [String] = []
     public var attesterResource: String?
     public var okfVersion: String?
+    /// v0.1's `timestamp`, superseded by `generated.at` (§13.1).
+    public var legacyTimestamp: Date?
     /// Every top-level key, in file order.
     public var keys: [String] = []
 
@@ -128,13 +145,16 @@ public struct OKFConcept: Hashable, Sendable {
         description = mapping["description"]?.text
         resource = mapping["resource"]?.text
         tags = mapping["tags"]?.strings ?? []
+        let sharedWindow = mapping["usage_window"].flatMap(Self.window)
         sources = (mapping["sources"]?.sequence ?? []).compactMap { node in
             guard node.mapping != nil else { return nil }
             let entry = node
             return OKFSource(resource: entry["resource"]?.text, id: entry["id"]?.text, title: entry["title"]?.text,
                              author: entry["author"]?.text.map(OKFActor.init), usageCount: entry["usage_count"]?.int,
-                             lastModified: entry["last_modified"]?.text.flatMap(OKFTimestamp.parse))
+                             lastModified: entry["last_modified"]?.text.flatMap(OKFTimestamp.parse),
+                             usageWindow: entry["usage_window"].flatMap(Self.window) ?? sharedWindow)
         }
+        legacyTimestamp = mapping["timestamp"]?.text.flatMap(OKFTimestamp.parse)
         generated = mapping["generated"].flatMap(Self.stamp)
         // A bare mapping is a one-element list (§5.2).
         if let single = mapping["verified"].flatMap(Self.stamp) {
@@ -167,6 +187,22 @@ public struct OKFConcept: Hashable, Sendable {
     /// True when `type` is present and non-empty, the one requirement for a concept (§4.1).
     public var isConcept: Bool { !(type ?? "").trimmingCharacters(in: .whitespaces).isEmpty }
     public var status: OKFStatus { OKFStatus(statusRaw) }
+    /// The content's last meaningful change: `generated.at`, falling back to v0.1's `timestamp` (§13.1).
+    public var lastChanged: Date? { generated?.at ?? legacyTimestamp }
+
+    /// Path-valued fields that point at files rather than URLs or scope descriptors (§6.2).
+    public var references: [OKFReference] {
+        var found: [OKFReference] = []
+        func add(_ field: String, _ value: String?) {
+            if let value, OKFLinks.isPath(value) { found.append(OKFReference(field: field, target: value)) }
+        }
+        add("resource", resource)
+        for source in sources { add("sources[].resource", source.resource) }
+        add("computation", computation)
+        add("executor.resource", executorResource)
+        add("attester.resource", attesterResource)
+        return found
+    }
     public var isAttestedComputation: Bool { type?.caseInsensitiveCompare("Attested Computation") == .orderedSame }
     /// Keys outside the spec, which must be preserved and never rejected.
     public var extensionKeys: [String] { keys.filter { !Self.knownKeys.contains($0) } }
@@ -185,6 +221,11 @@ public struct OKFConcept: Hashable, Sendable {
     public func isStale(at now: Date = Date()) -> Bool {
         guard let staleAfter else { return false }
         return now >= staleAfter
+    }
+
+    private static func window(_ node: Node) -> OKFWindow? {
+        guard node.mapping != nil else { return nil }
+        return OKFWindow(from: node["from"]?.text.flatMap(OKFTimestamp.parse), to: node["to"]?.text.flatMap(OKFTimestamp.parse))
     }
 
     private static func stamp(_ node: Node) -> OKFStamp? {

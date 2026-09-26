@@ -16,6 +16,9 @@ public struct OKFDocument: Identifiable, Sendable {
     public let links: [OKFLink]
     /// Standardized paths of the files the links point at, parallel to `links`; nil for external links.
     public let targets: [String?]
+    /// Path-valued frontmatter fields, and the standardized paths they resolve to, in parallel.
+    public let references: [OKFReference]
+    public let referenceTargets: [String?]
 
     public var id: String { path }
     /// The concept ID: the bundle path without the leading `/` and the `.md` suffix (§2).
@@ -45,6 +48,8 @@ public struct OKFDocument: Identifiable, Sendable {
         let body = block.map { (source as NSString).substring(from: $0.blockRange.upperBound) } ?? source
         links = OKFLinks.extract(from: body)
         targets = links.map { OKFLinks.resolve($0.target, from: url, bundleRoot: root).map(OKFBundle.key) }
+        references = concept?.references ?? []
+        referenceTargets = references.map { OKFLinks.resolve($0.target, from: url, bundleRoot: root).map(OKFBundle.key) }
     }
 }
 
@@ -112,10 +117,29 @@ public struct OKFBundle: Sendable {
         return documents.first { Self.key($0.url) == target }
     }
 
-    /// Documents linking to `url`, in path order.
+    /// Documents linking to `url` from their body or a path-valued field such as `sources[].resource`, in path order.
     public func backlinks(to url: URL) -> [OKFDocument] {
         let target = Self.key(url)
-        return documents.filter { $0.targets.contains(target) && Self.key($0.url) != target }
+        return documents.filter { ($0.targets.contains(target) || $0.referenceTargets.contains(target)) && Self.key($0.url) != target }
+    }
+
+    /// Path-valued fields pointing at files that do not exist.
+    public func brokenReferences(in document: OKFDocument) -> [OKFReference] {
+        zip(document.references, document.referenceTargets).compactMap { reference, target in
+            guard let target, !FileManager.default.fileExists(atPath: target) else { return nil }
+            return reference
+        }
+    }
+
+    /// Concept types in use, most used first.
+    public var types: [String] {
+        let counts = Dictionary(grouping: concepts.compactMap { $0.concept?.type }.filter { !$0.isEmpty }, by: { $0 }).mapValues(\.count)
+        return counts.keys.sorted { counts[$0]! != counts[$1]! ? counts[$0]! > counts[$1]! : $0 < $1 }
+    }
+
+    /// Tags in use, alphabetically, for a tag view synthesized from frontmatter (§3.1).
+    public var tags: [String] {
+        Set(concepts.flatMap { $0.concept?.tags ?? [] }).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
     /// Links from a document that point at bundle files which do not exist.
