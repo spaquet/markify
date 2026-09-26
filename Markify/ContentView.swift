@@ -1680,6 +1680,7 @@ struct SlashEntry {
         case "Table": (2, 6)
         case "Code block": (4, 0)
         case "Math": (3, 0)
+        case "Mermaid": (22, 7)
         case "Image": (2, 0)
         case "Frontmatter": (11, 0)
         case "Concept": (10, 0)
@@ -1697,6 +1698,7 @@ struct SlashEntry {
         .init(title: "Code block", symbol: "curlybraces", shortcut: "```", insertion: "```\n\n```"),
         .init(title: "Callout", symbol: "info.circle", shortcut: "> [!NOTE]", insertion: "> [!NOTE]\n> "),
         .init(title: "Math", symbol: "sum", shortcut: "$$", insertion: "$$\n\n$$"),
+        .init(title: "Mermaid", symbol: "flowchart", shortcut: "```mermaid", insertion: "```mermaid\ngraph TD\n  A --> B\n```"),
         .init(title: "Image", symbol: "photo", shortcut: "![]()", insertion: "![]()"),
         .init(title: "Heading 1", symbol: "textformat", shortcut: "#", insertion: "# "),
         .init(title: "Heading 2", symbol: "textformat", shortcut: "##", insertion: "## "),

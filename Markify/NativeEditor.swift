@@ -73,6 +73,10 @@ struct NativeEditor: NSViewRepresentable {
         editor.isHorizontallyResizable = false
         editor.autoresizingMask = [.width]
         editor.delegate = context.coordinator
+        editor.restyle = { [weak coordinator = context.coordinator, weak editor] in
+            guard let coordinator, let editor else { return }
+            coordinator.parent.style(editor)
+        }
         editor.onSlashKey = { [weak coordinator = context.coordinator] key, slash in
             coordinator?.handleSlashKey(key, slash) ?? false
         }
@@ -167,6 +171,12 @@ struct NativeEditor: NSViewRepresentable {
         /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
         var destinations: [NSRange] = []
         var chips: [MarkdownModel.Span] = []
+        /// Mermaid blocks shown as diagrams in the Rendered lens, with the height their image needs.
+        var diagrams: [(span: MarkdownModel.Span, height: CGFloat)] = []
+        /// Mermaid blocks that failed to render: shown as code with room below for mermaid's message.
+        var failedDiagrams: [MarkdownModel.Span] = []
+        let textView = editor as? MarkdownTextView
+        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         /// Markers are styled after every font, since the hidden ones measure their own width.
         func hide(_ ranges: [NSRange]) { hidden += ranges }
         func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
@@ -219,6 +229,13 @@ struct NativeEditor: NSViewRepresentable {
                     // A bullet is drawn over the hidden marker, which keeps its width.
                     storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: prefix)
                 }
+            case .codeBlock(let language?, true) where !markdownLens && textView != nil && language.lowercased() == "mermaid":
+                if let height = diagramHeight(span, source: source, dark: dark, textView: textView) {
+                    diagrams.append((span, height))
+                    continue
+                }
+                failedDiagrams.append(span)
+                fallthrough
             case .codeBlock:
                 storage.addAttributes([.font: theme.mono(markdownLens ? 14 : 13.5), .backgroundColor: NSColor.codeFill], range: span.content)
                 hide(span.markers)
@@ -391,6 +408,24 @@ struct NativeEditor: NSViewRepresentable {
                                           range: NSRange(location: row.start, length: row.end - row.start))
                 }
             }
+            // A diagram's source collapses to one line as tall as the drawn diagram.
+            for diagram in diagrams {
+                let collapsed = NSMutableParagraphStyle()
+                collapsed.minimumLineHeight = 0.01
+                collapsed.maximumLineHeight = 0.01
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear, .paragraphStyle: collapsed], range: diagram.span.range)
+                let first = NSMutableParagraphStyle()
+                first.minimumLineHeight = diagram.height
+                first.maximumLineHeight = diagram.height
+                first.paragraphSpacing = 16 * theme.scale
+                storage.addAttribute(.paragraphStyle, value: first, range: source.lineRange(for: NSRange(location: diagram.span.range.location, length: 0)))
+            }
+            for span in failedDiagrams {
+                let last = source.lineRange(for: NSRange(location: max(span.range.location, NSMaxRange(span.range) - 1), length: 0))
+                let style = (storage.attribute(.paragraphStyle, at: last.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+                style.paragraphSpacing = MarkdownTextView.diagramErrorHeight * theme.scale
+                storage.addAttribute(.paragraphStyle, value: style, range: last)
+            }
             for span in model.spans where span.kind == .mathBlock {
                 let style = NSMutableParagraphStyle()
                 style.alignment = .center
@@ -437,6 +472,17 @@ struct NativeEditor: NSViewRepresentable {
         if let editor = editor as? MarkdownTextView {
             editor.refreshDecorations()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
+        }
+    }
+
+    /// The height a Mermaid block takes as a diagram, or nil when it failed and shows as code with the error below.
+    func diagramHeight(_ span: MarkdownModel.Span, source: NSString, dark: Bool, textView: MarkdownTextView?) -> CGFloat? {
+        let diagram = source.substring(with: span.content)
+        let state = MermaidRenderer.shared.state(of: diagram, dark: dark) { [weak textView] in textView?.restyle?() }
+        switch state {
+        case .rendering: return MarkdownTextView.diagramPadding * 2 + 88
+        case .rendered(let image): return MarkdownTextView.fitted(image.size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
+        case .failed: return nil
         }
     }
 
@@ -515,6 +561,8 @@ final class MarkdownTextView: NSTextView {
     var rendered = true
     var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:]; refreshDecorations() } } }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
+    /// Restyles the text, for results that arrive later, such as a rendered diagram.
+    var restyle: (() -> Void)?
     private var imageCache: [URL: NSImage] = [:]
     private var mathCache: [String: NSImage] = [:]
     private var tableOverlays: [Int: TableRowView] = [:]
@@ -750,6 +798,7 @@ final class MarkdownTextView: NSTextView {
     fileprivate func drawOverlays(_ dirtyRect: NSRect) {
         if rendered { drawImages(in: dirtyRect) }
         if rendered { drawMath(in: dirtyRect) }
+        if rendered { drawDiagrams(in: dirtyRect) }
         if rendered { drawDecorations(in: dirtyRect) }
         if rendered, let window {
             let source = string as NSString
@@ -849,6 +898,58 @@ final class MarkdownTextView: NSTextView {
         if let previewSpan { showImagePreview(for: previewSpan, force: true) }
     }
 
+    static let diagramPadding: CGFloat = 16
+    static let diagramErrorHeight: CGFloat = 48
+
+    /// A diagram's size inside the code container, scaled down to fit the column.
+    static func fitted(_ size: NSSize, width: CGFloat) -> NSSize {
+        let room = width - diagramPadding * 2
+        let scale = size.width > room ? room / size.width : 1
+        return NSSize(width: size.width * scale, height: size.height * scale)
+    }
+
+    /// Mermaid blocks: the rendered diagram in the code container, a placeholder while it renders,
+    /// or mermaid's message under the source when it cannot be parsed.
+    private func drawDiagrams(in dirtyRect: NSRect) {
+        guard let window else { return }
+        let source = string as NSString
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
+        for span in model.spans {
+            guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid",
+                  let state = MermaidRenderer.shared.cached(source.substring(with: span.content), dark: dark) else { continue }
+            let label = NSAttributedString(string: "mermaid", attributes: [.font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
+            if case .failed(let message) = state {
+                let last = rect(NSRange(location: max(span.range.location, NSMaxRange(span.range) - 1), length: 1))
+                let body = span.content.length > 0 ? rect(NSRange(location: span.content.location, length: 1)).minX : last.minX
+                let text = NSAttributedString(string: message, attributes: [.font: theme.ui(12), .foregroundColor: NSColor.systemRed])
+                // Drawn in the paragraph spacing reserved under the closing fence.
+                let frame = NSRect(x: body, y: last.maxY + 4, width: columnWidth - body, height: (Self.diagramErrorHeight - 8) * theme.scale)
+                guard frame.intersects(dirtyRect) else { continue }
+                text.draw(with: frame, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
+                if span.content.length > 0 {
+                    let body = rect(NSRange(location: span.content.location, length: 1))
+                    label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: body.minY + 2))
+                }
+                continue
+            }
+            let line = rect(NSRange(location: span.range.location, length: 1))
+            let container = NSRect(x: 0, y: line.minY, width: columnWidth, height: line.height)
+            guard container.intersects(dirtyRect) else { continue }
+            NSColor.codeFill.setFill()
+            NSBezierPath(roundedRect: container, xRadius: 12, yRadius: 12).fill()
+            label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: container.minY + 8))
+            switch state {
+            case .rendered(let image):
+                let size = Self.fitted(image.size, width: columnWidth)
+                image.draw(in: NSRect(x: container.midX - size.width / 2, y: container.midY - size.height / 2, width: size.width, height: size.height))
+            default:
+                let text = NSAttributedString(string: "Rendering diagram…", attributes: [.font: theme.ui(12), .foregroundColor: NSColor.secondaryLabelColor])
+                text.draw(at: NSPoint(x: container.midX - text.size().width / 2, y: container.midY - text.size().height / 2))
+            }
+        }
+    }
+
     /// Resolves an image destination against the document's folder; inserted paths are percent-encoded.
     static func imageURL(_ path: String, document: URL?) -> URL {
         let base = document?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")
@@ -912,7 +1013,7 @@ final class MarkdownTextView: NSTextView {
                 let text = NSAttributedString(string: alt.isEmpty ? (path as NSString).lastPathComponent : alt,
                                               attributes: [.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.secondaryLabelColor])
                 if !alt.isEmpty { text.draw(at: NSPoint(x: rect(span.content).minX, y: frame.midY - text.size().height / 2)) }
-            case .codeBlock(let language?, true) where span.content.length > 0:
+            case .codeBlock(let language?, true) where span.content.length > 0 && language.lowercased() != "mermaid":
                 let line = rect(NSRange(location: span.content.location, length: 1))
                 guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
                 let label = NSAttributedString(string: language, attributes: [

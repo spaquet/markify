@@ -70,6 +70,15 @@ struct MarkifyTests {
         #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "Column")
     }
 
+    @Test @MainActor func mermaidSlashEntryInsertsAStarterGraph() {
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = "/merm"
+        let context = SlashContext.detect(in: editor.string, selection: NSRange(location: 5, length: 0))!
+        SlashEntry.matching("merm")[0].apply(to: editor, context: context)
+        #expect(editor.string == "```mermaid\ngraph TD\n  A --> B\n```")
+        #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "A --> B")
+    }
+
     @Test @MainActor func dividerNeverMakesASetextHeading() {
         let divider = SlashEntry.all.first { $0.title == "Divider" }!
         for (source, expected) in [("Para /div", "Para\n\n---"), ("Para\n/div", "Para\n\n---"), ("Para\n\n/div", "Para\n\n---"), ("/div", "---")] {
