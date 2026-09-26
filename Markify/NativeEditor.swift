@@ -501,7 +501,6 @@ struct NativeEditor: NSViewRepresentable {
         storage.endEditing()
         if let editor = editor as? MarkdownTextView {
             editor.forgetImages()
-            editor.refreshDecorations()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
     }
@@ -608,7 +607,8 @@ final class MarkdownTextView: NSTextView {
     private var isCompletingLink = false
     var columnWidth: CGFloat = 640
     var rendered = true
-    var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:]; refreshDecorations() } } }
+    /// A theme change restyles the text, which redraws its fragments; renders made with the old one are dropped.
+    var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:] } } }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     /// Restyles the text, for results that arrive later, such as a rendered diagram.
     var restyle: (() -> Void)?
@@ -836,20 +836,7 @@ final class MarkdownTextView: NSTextView {
 
     /// Overlays placed while outside the visible area are not painted when it grows to include them.
     private func visibleAreaChanged() {
-        refreshDecorations()
         for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
-    }
-
-    func refreshDecorations() {
-        guard superview != nil else { return }
-        // Layout here, not while drawing: positions above the visible area must be real before overlays read them.
-        // Image blocks draw above their caption line, so settle a little past the bottom too.
-        if rendered, let manager = textLayoutManager {
-            let settled = manager.textViewportLayoutController.viewportRange.map { _ in true } ?? false
-            manager.ensureLayout(for: CGRect(x: 0, y: 0, width: bounds.width, height: visibleRect.maxY + 320))
-            if settled { manager.textViewportLayoutController.layoutViewport() }
-        }
-
     }
 
     /// Table overlays need a window to place themselves; the first style pass can run before the view has one.
@@ -872,13 +859,11 @@ final class MarkdownTextView: NSTextView {
                 MainActor.assumeIsolated { self?.visibleAreaChanged() }
             }
         }
-        refreshDecorations()
     }
 
     override func setFrameSize(_ newSize: NSSize) {
         let reflows = newSize.width != frame.width
         super.setFrameSize(newSize)
-        refreshDecorations()
         // A new width rewraps the text above a table, moving its rows.
         if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTables() } }
     }
