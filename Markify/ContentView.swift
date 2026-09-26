@@ -446,6 +446,7 @@ struct ContentView: View {
                         Text(url.deletingLastPathComponent().path).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }.buttonStyle(.plain).padding(7)
+                .onDrag { NSItemProvider(object: url as NSURL) }
             }
             if concept != nil || knowledge != nil {
                 KnowledgeSection(state: knowledge, fileURL: fileURL, concept: concept, text: document.text,
@@ -462,6 +463,8 @@ struct ContentView: View {
                             Text(note.preview).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.buttonStyle(.plain).padding(7)
+                    // Dropping a note into the page inserts a link to it.
+                    .onDrag { NSItemProvider(object: note.url as NSURL) }
                 }
             }
             }
@@ -520,12 +523,10 @@ struct ContentView: View {
               let urls = try? FileManager.default.contentsOfDirectory(at: libraryFolder, includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles]) else { return }
         libraryNotes = urls.filter { $0.pathExtension == "md" }.compactMap { url in
             guard let source = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-            let frontmatter = Frontmatter.parse(source)
             let lines = FrontmatterBlock.body(of: source).split(separator: "\n", omittingEmptySubsequences: true)
-            let heading = frontmatter?.title ?? lines.first { $0.hasPrefix("# ") }.map { String($0.dropFirst(2)) }
             let description = FrontmatterBlock.locate(in: source).flatMap { try? OKFConcept(yaml: $0.yaml) }?.description
             let preview = description ?? lines.first { !$0.hasPrefix("#") && !$0.hasPrefix("---") }.map(String.init) ?? ""
-            return LibraryNote(url: url, title: heading ?? url.deletingPathExtension().lastPathComponent, preview: preview)
+            return LibraryNote(url: url, title: MarkdownTextView.noteTitle(source, url: url), preview: preview)
         }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
@@ -1667,12 +1668,19 @@ struct SlashEntry {
             range.length += trailing
             inserted = "\n" + insertion
         }
+        // `---` right under a line of text would make that line a setext heading, so a divider gets a blank line first.
+        if title == "Divider" {
+            let above = inserted.hasPrefix("\n") ? prefix
+                : line.location > 0 ? source.substring(with: source.lineRange(for: NSRange(location: line.location - 1, length: 0))) : ""
+            if !above.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { inserted = "\n" + inserted }
+        }
         editor.insertText(inserted, replacementRange: range)
         let leading = inserted.hasPrefix("\n") ? 1 : 0
         let caret: (Int, Int)? = switch title {
         case "Table": (2, 6)
         case "Code block": (4, 0)
         case "Math": (3, 0)
+        case "Mermaid": (22, 7)
         case "Image": (2, 0)
         case "Frontmatter": (11, 0)
         case "Concept": (10, 0)
@@ -1690,6 +1698,7 @@ struct SlashEntry {
         .init(title: "Code block", symbol: "curlybraces", shortcut: "```", insertion: "```\n\n```"),
         .init(title: "Callout", symbol: "info.circle", shortcut: "> [!NOTE]", insertion: "> [!NOTE]\n> "),
         .init(title: "Math", symbol: "sum", shortcut: "$$", insertion: "$$\n\n$$"),
+        .init(title: "Mermaid", symbol: "flowchart", shortcut: "```mermaid", insertion: "```mermaid\ngraph TD\n  A --> B\n```"),
         .init(title: "Image", symbol: "photo", shortcut: "![]()", insertion: "![]()"),
         .init(title: "Heading 1", symbol: "textformat", shortcut: "#", insertion: "# "),
         .init(title: "Heading 2", symbol: "textformat", shortcut: "##", insertion: "## "),

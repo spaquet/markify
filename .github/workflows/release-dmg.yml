@@ -1,9 +1,11 @@
 name: Build and Release DMG
 
 # Releases are immutable in this repo, so assets can't be added after a
-# release is published. Pushing a vX.Y tag builds both DMGs, attaches them
-# to a draft release (reusing a draft you prepared for that tag, with its
-# notes), and only then publishes it.
+# release is published. Pushing a vX.Y tag builds both DMGs and a universal
+# Sparkle update archive, attaches them and the Sparkle appcast to a draft
+# release (reusing a draft you prepared for that tag, with its notes), and
+# only then publishes it. The app reads its update feed from
+# releases/latest/download/appcast.xml.
 on:
   push:
     tags: ['v*']
@@ -20,12 +22,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - arch: arm64
+          - archs: arm64
             suffix: as
             derived_data_path: build-as
-          - arch: x86_64
+          - archs: x86_64
             suffix: intel
             derived_data_path: build-intel
+          # Sparkle update archive, one for both architectures
+          - archs: arm64 x86_64
+            suffix: update
+            derived_data_path: build-update
 
     steps:
       - name: Checkout code
@@ -49,13 +55,14 @@ jobs:
             -project Markify.xcodeproj \
             -scheme Markify
 
-      - name: Build Markify for ${{ matrix.arch }}
+      - name: Build Markify for ${{ matrix.archs }}
         run: |
           xcodebuild \
             -project Markify.xcodeproj \
             -scheme Markify \
             -configuration Release \
-            -arch ${{ matrix.arch }} \
+            ARCHS="${{ matrix.archs }}" \
+            ONLY_ACTIVE_ARCH=NO \
             -derivedDataPath ${{ matrix.derived_data_path }} \
             -allowProvisioningUpdates \
             CODE_SIGN_IDENTITY="" \
@@ -63,10 +70,20 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             clean build
 
+      # The build is only linker-signed, which `codesign --verify` and Sparkle
+      # reject. Sign the bundle ad hoc, without entitlements, so Sparkle can
+      # check the update's signature; the app stays unsandboxed as before.
+      - name: Sign ad hoc
+        run: |
+          codesign --force --deep --sign - "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
+          codesign --verify --deep --strict --verbose=2 "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
+
       - name: Install create-dmg
+        if: matrix.suffix != 'update'
         run: brew install create-dmg
 
-      - name: Create DMG for ${{ matrix.arch }}
+      - name: Create DMG for ${{ matrix.archs }}
+        if: matrix.suffix != 'update'
         run: |
           create-dmg \
             --volname "Markify ${{ env.VERSION }} (${{ matrix.suffix == 'as' && 'Apple Silicon' || 'Intel' }})" \
@@ -80,18 +97,51 @@ jobs:
             "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
 
       - name: Generate SHA256 checksum
+        if: matrix.suffix != 'update'
         run: |
           shasum -a 256 "markify-${{ matrix.suffix }}.dmg" > \
             "markify-${{ matrix.suffix }}.dmg.sha256"
           cat "markify-${{ matrix.suffix }}.dmg.sha256"
 
-      - name: Upload DMG and checksum as artifacts
+      - name: Create and sign the Sparkle update archive
+        if: matrix.suffix == 'update'
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          APP="${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" markify-update.zip
+          # Build number, version and minimum macOS for the appcast item
+          PLIST="$APP/Contents/Info.plist"
+          {
+            echo "BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")"
+            echo "SHORT_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")"
+            echo "MIN_SYSTEM=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$PLIST")"
+          } > markify-update.env
+          # Only tag builds are signed; manual runs have nothing to publish.
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+              echo "::error::The SPARKLE_PRIVATE_KEY secret is missing, so the update can't be signed."
+              exit 1
+            fi
+            SIGN_UPDATE="${{ matrix.derived_data_path }}/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update"
+            SIGNATURE=$(echo "$SPARKLE_PRIVATE_KEY" | "$SIGN_UPDATE" --ed-key-file - -p markify-update.zip)
+            # Installed copies check the update against the app's public key.
+            swift scripts/verify-update-signature.swift \
+              "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$PLIST")" "$SIGNATURE" markify-update.zip
+            echo "ENCLOSURE_ATTRIBUTES='sparkle:edSignature=\"$SIGNATURE\" length=\"$(stat -f%z markify-update.zip)\"'" >> markify-update.env
+          fi
+          cat markify-update.env
+
+      - name: Upload build as artifacts
         uses: actions/upload-artifact@v7
         with:
           name: markify-${{ matrix.suffix }}-v${{ env.VERSION }}
           path: |
             markify-${{ matrix.suffix }}.dmg
             markify-${{ matrix.suffix }}.dmg.sha256
+            markify-update.zip
+            markify-update.env
+          if-no-files-found: error
           retention-days: 90
 
   release:
@@ -120,6 +170,37 @@ jobs:
           else
             gh release create "$TAG" --draft --verify-tag --title "Markify ${TAG#v}" --generate-notes
           fi
+
+      - name: Write the Sparkle appcast
+        run: |
+          source dist/markify-update.env
+          rm dist/markify-update.env
+          if [ -z "$ENCLOSURE_ATTRIBUTES" ]; then
+            echo "::error::The update archive wasn't signed."
+            exit 1
+          fi
+          # The release notes, shown by Sparkle as Markdown; CDATA can't contain "]]>".
+          NOTES=$(gh release view "$TAG" --json body -q .body | sed 's/]]>/]]]]><![CDATA[>/g')
+          cat > dist/appcast.xml <<XML
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>Markify</title>
+              <link>https://github.com/${GH_REPO}</link>
+              <item>
+                <title>Markify ${SHORT_VERSION}</title>
+                <link>https://github.com/${GH_REPO}/releases/tag/${TAG}</link>
+                <sparkle:version>${BUILD}</sparkle:version>
+                <sparkle:shortVersionString>${SHORT_VERSION}</sparkle:shortVersionString>
+                <sparkle:minimumSystemVersion>${MIN_SYSTEM}</sparkle:minimumSystemVersion>
+                <pubDate>$(date -u -R)</pubDate>
+                <description sparkle:format="markdown"><![CDATA[${NOTES}]]></description>
+                <enclosure url="https://github.com/${GH_REPO}/releases/download/${TAG}/markify-update.zip" ${ENCLOSURE_ATTRIBUTES} type="application/octet-stream" />
+              </item>
+            </channel>
+          </rss>
+          XML
+          cat dist/appcast.xml
 
       - name: Attach DMGs and publish
         run: |

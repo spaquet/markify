@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage("newDocumentLocation") private var newDocumentLocation = "Ask each time"
     @AppStorage("libraryBookmark") private var libraryBookmark = Data()
     @AppStorage("imageFolder") private var imageFolder = "./assets"
+    @AppStorage("loadRemoteImages") private var loadRemoteImages = true
     @AppStorage("startup") private var startup = "Reopen last documents"
     @AppStorage("okfActorID") private var okfActorID = ""
     @AppStorage("recordHumanGenerated") private var recordHumanGenerated = true
@@ -34,6 +35,8 @@ struct SettingsView: View {
     @State private var isDefaultApp = false
     @State private var recording: String?
     @State private var recordMonitor: Any?
+    @State private var checksForUpdates = Updates.updater.automaticallyChecksForUpdates
+    @State private var installsUpdates = Updates.updater.automaticallyDownloadsUpdates
 
     private enum Tab { case general, editor, appearance, intelligence, shortcuts }
     private var accent: Color { AccentChoice.color(accentColor) }
@@ -73,6 +76,7 @@ struct SettingsView: View {
                     Text("./images").tag("./images")
                     Text("Same folder as document").tag("./")
                 }
+                Toggle("Load remote images", isOn: $loadRemoteImages)
             }
             Section("Startup") {
                 Picker("On launch", selection: $startup) {
@@ -99,7 +103,28 @@ struct SettingsView: View {
             } header: {
                 Text("Knowledge")
             }
+            Section("Updates") {
+                Toggle("Check for updates automatically", isOn: $checksForUpdates)
+                    .onChange(of: checksForUpdates) { Updates.updater.automaticallyChecksForUpdates = checksForUpdates }
+                Toggle(isOn: $installsUpdates) {
+                    Text("Download and install updates automatically")
+                    Text("Updates install when you quit Markify.")
+                }
+                .disabled(!checksForUpdates)
+                .onChange(of: installsUpdates) { Updates.updater.automaticallyDownloadsUpdates = installsUpdates }
+                LabeledContent {
+                    CheckForUpdatesButton()
+                } label: {
+                    Text("Markify \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                    Text(lastUpdateCheck)
+                }
+            }
         }.formStyle(.grouped)
+    }
+
+    private var lastUpdateCheck: String {
+        guard let date = Updates.updater.lastUpdateCheckDate else { return "Never checked for updates." }
+        return "Last checked \(date.formatted(.relative(presentation: .named)))."
     }
 
     private var libraryURL: URL? {

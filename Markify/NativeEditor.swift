@@ -1,5 +1,5 @@
 import AppKit
-import Markdown
+import MarkifyMarkdown
 import OKFKit
 import SwaTex
 import SwaTexRender
@@ -73,6 +73,10 @@ struct NativeEditor: NSViewRepresentable {
         editor.isHorizontallyResizable = false
         editor.autoresizingMask = [.width]
         editor.delegate = context.coordinator
+        editor.restyle = { [weak coordinator = context.coordinator, weak editor] in
+            guard let coordinator, let editor else { return }
+            coordinator.parent.style(editor)
+        }
         editor.onSlashKey = { [weak coordinator = context.coordinator] key, slash in
             coordinator?.handleSlashKey(key, slash) ?? false
         }
@@ -145,102 +149,267 @@ struct NativeEditor: NSViewRepresentable {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines]) else { return }
             regex.enumerateMatches(in: editor.string, range: whole) { match, _, _ in if let match { apply(match) } }
         }
+        /// Even at 1pt hidden text keeps a sliver of advance. TextKit caps a negative kern near its own glyph's advance,
+        /// so each character cancels its own width and text after a hidden marker starts where it should.
+        func collapse(_ range: NSRange) {
+            var index = range.location
+            while index < NSMaxRange(range) {
+                let character = source.rangeOfComposedCharacterSequence(at: index)
+                storage.addAttribute(.kern, value: -MarkdownTextView.hiddenAdvance(source.substring(with: character)), range: character)
+                index = NSMaxRange(character)
+            }
+        }
         func marker(_ range: NSRange) {
             guard range.location != NSNotFound, range.length > 0 else { return }
             storage.addAttributes([.foregroundColor: markdownLens ? dim : NSColor.clear,
                                    .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
-            // Even at 1pt the hidden marker keeps a sliver of advance; kern it back so text starts on the column edge.
-            if !markdownLens {
-                let width = storage.attributedSubstring(from: range).size().width
-                storage.addAttribute(.kern, value: -width, range: NSRange(location: NSMaxRange(range) - 1, length: 1))
+            if !markdownLens { collapse(range) }
+        }
+        let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
+        let secondary = NSColor.secondaryLabelColor
+        var hidden: [NSRange] = []
+        /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
+        var destinations: [NSRange] = []
+        var chips: [MarkdownModel.Span] = []
+        /// Mermaid blocks shown as diagrams in the Rendered lens, with the height their image needs.
+        var diagrams: [(span: MarkdownModel.Span, height: CGFloat)] = []
+        /// Mermaid blocks that failed to render: shown as code with room below for mermaid's message.
+        var failedDiagrams: [MarkdownModel.Span] = []
+        /// Code blocks and callouts in the Rendered lens: the lines they cover and the rounded box drawn behind them.
+        var boxes: [(range: NSRange, fill: MarkdownBlockFill)] = []
+        let textView = editor as? MarkdownTextView
+        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        /// Markers are styled after every font, since the hidden ones measure their own width.
+        func hide(_ ranges: [NSRange]) { hidden += ranges }
+        func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
+            guard range.length > 0 else { return }
+            storage.enumerateAttribute(.font, in: range) { value, segment, _ in
+                guard var font = value as? NSFont else { return }
+                if bold { font = theme.adding(.bold, to: font) }
+                if italic { font = theme.adding(.italic, to: font) }
+                storage.addAttribute(.font, value: font, range: segment)
             }
         }
-        let map = MarkdownSourceMap(editor.string)
-        let parsed = Markdown.Document(parsing: editor.string)
-        for child in parsed.children {
-            guard let heading = child as? Markdown.Heading,
-                  let sourceRange = heading.range,
-                  let range = map.range(sourceRange),
-                  let match = try? NSRegularExpression(pattern: "^(#{1,6})[ \\t]+([^\\n]+)").firstMatch(in: editor.string, range: range) else { continue }
-            let level = heading.level
-            let size: CGFloat = markdownLens ? 16 : (level == 1 ? 36 : level == 2 ? 22 : 19)
-            let font = markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true)
-            storage.addAttribute(.font, value: font, range: match.range(at: 2))
-            marker(NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
+        let definitions = model.spans.compactMap { span -> (label: String, text: String, span: MarkdownModel.Span)? in
+            guard case .footnoteDefinition(let label, _) = span.kind else { return nil }
+            return (label, source.substring(with: span.content), span)
         }
-        matches("(?m)^(?:[ \\t]*)(>[ \\t]?)") { match in marker(match.range(at: 1)) }
-        matches("(?m)^[ \\t]*([-*+] )(?!\\[[ xX]\\] )") { match in
-            if markdownLens { marker(match.range(at: 1)) }
-            else { storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: match.range(at: 1)) }
+
+        // Blocks: fonts and fills that inline styles then build on.
+        for span in model.spans {
+            switch span.kind {
+            case .heading(let level, _):
+                let size: CGFloat = markdownLens ? 16 : (level == 1 ? 36 : level == 2 ? 22 : 19)
+                storage.addAttribute(.font, value: markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true), range: span.content)
+                hide(span.markers)
+            case .blockQuote:
+                hide(span.markers)
+            case .callout(let type, let token):
+                let color = Callout.color(type, accent: accent)
+                let name = NSRange(location: token.location + 2, length: token.length - 3)
+                guard !markdownLens else { storage.addAttribute(.foregroundColor, value: color, range: name); continue }
+                storage.addAttribute(.font, value: theme.ui(15), range: span.range)
+                boxes.append((span.range, MarkdownBlockFill(color: NSColor.calloutFill(color), radius: 14, padding: NSSize(width: 18, height: 14))))
+                // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: token)
+            case .listItem(let item):
+                let spaced = NSMaxRange(item.checkbox ?? item.marker) < source.length && [32, 9].contains(source.character(at: NSMaxRange(item.checkbox ?? item.marker)))
+                let prefix = NSRange(location: item.marker.location, length: NSMaxRange(item.checkbox ?? item.marker) - item.marker.location + (spaced ? 1 : 0))
+                if markdownLens {
+                    hide([prefix])
+                } else if let box = item.checkbox {
+                    // MarkdownLayoutFragment draws the checkbox over the hidden `- [ ] `; the item's first line takes the task style.
+                    storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)], range: prefix)
+                    storage.addAttribute(.markifyTaskBox, value: item.checked, range: NSRange(location: item.marker.location, length: 1))
+                    let line = source.lineRange(for: NSRange(location: box.location, length: 0))
+                    var end = NSMaxRange(line)
+                    while end > NSMaxRange(prefix), [10, 13].contains(source.character(at: end - 1)) { end -= 1 }
+                    let text = NSRange(location: NSMaxRange(prefix), length: max(0, end - NSMaxRange(prefix)))
+                    storage.addAttribute(.font, value: theme.ui(17), range: text)
+                    if item.checked { storage.addAttributes([.foregroundColor: dim, .strikethroughStyle: NSUnderlineStyle.single.rawValue], range: text) }
+                } else if item.ordered {
+                    storage.addAttribute(.foregroundColor, value: secondary, range: item.marker)
+                } else {
+                    // MarkdownLayoutFragment draws a bullet over the hidden marker, which keeps its width.
+                    storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: prefix)
+                    storage.addAttribute(.markifyBullet, value: true, range: item.marker)
+                }
+            case .codeBlock(let language?, true) where !markdownLens && textView != nil && language.lowercased() == "mermaid":
+                if let height = diagramHeight(span, source: source, dark: dark, textView: textView) {
+                    diagrams.append((span, height))
+                    continue
+                }
+                failedDiagrams.append(span)
+                fallthrough
+            case .codeBlock:
+                if markdownLens {
+                    storage.addAttributes([.font: theme.mono(14), .backgroundColor: NSColor.codeFill], range: span.content)
+                } else {
+                    storage.addAttribute(.font, value: theme.mono(13.5), range: span.content)
+                    if span.content.length > 0 { boxes.append((span.content, MarkdownBlockFill(color: .codeFill, radius: 12, padding: NSSize(width: 18, height: 16)))) }
+                }
+                hide(span.markers)
+                let code = source.substring(with: span.content)
+                let colors: [(String, CodeToken)] = [
+                    (#"\b(func|let|var|if|else|return|class|struct|import|guard|private|def|const|function|for|while|in|true|false|nil|null)\b"#, .keyword),
+                    (#"\b[A-Z][A-Za-z0-9_]*\b"#, .type),
+                    (#""[^"\n]*"|\b[0-9]+(\.[0-9]+)?\b"#, .literal),
+                    (#"(//|#)[^\n]*"#, .comment)
+                ]
+                for (pattern, kind) in colors {
+                    guard let color = theme.code(kind), let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+                    for token in regex.matches(in: code, range: NSRange(location: 0, length: (code as NSString).length)) {
+                        storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.range.location, length: token.range.length))
+                    }
+                }
+            case .htmlBlock, .mdxBlock:
+                storage.addAttribute(.foregroundColor, value: dim, range: span.range)
+            case .footnoteDefinition(_, let label):
+                storage.addAttributes([.font: markdownLens ? base : theme.ui(13), .foregroundColor: markdownLens ? dim : secondary], range: span.range)
+                storage.addAttributes([.foregroundColor: accent, .font: markdownLens ? base : theme.ui(13, weight: .semibold)], range: label)
+                guard !markdownLens else { continue }
+                // The `:` stays visible after the number, as in the design's footnotes section.
+                hide([span.markers[0], NSRange(location: span.markers[1].location, length: 1)])
+                if span.range.location == definitions.first?.span.range.location {
+                    let style = (storage.attribute(.paragraphStyle, at: span.range.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+                    style.paragraphSpacingBefore = 26 * theme.scale
+                    storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: span.range))
+                }
+            case .thematicBreak, .frontmatter, .mathBlock:
+                hide(span.markers)
+            default:
+                break
+            }
         }
-        matches("(?m)^[ \\t]*([0-9]+[.)]) ") { match in
-            if markdownLens { marker(match.range(at: 1)) }
-            else { storage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: match.range(at: 1)) }
+        if markdownLens {
+            // Table syntax: the separator row and the pipes around cells.
+            for table in model.tables {
+                for row in table.rows {
+                    var location = row.start
+                    for cell in row.cells + [NSRange(location: row.end, length: 0)] {
+                        let gap = NSRange(location: location, length: cell.location - location)
+                        if gap.length > 0, row.separator || source.substring(with: gap).contains("|") { storage.addAttribute(.foregroundColor, value: dim, range: gap) }
+                        if row.separator { storage.addAttribute(.foregroundColor, value: dim, range: cell) }
+                        location = NSMaxRange(cell)
+                    }
+                }
+            }
         }
+
+        // Inline styles, layered over the block fonts.
+        // OKF footnote labels key into `sources` (§5.1).
+        let sources = Dictionary(((try? OKFConcept.parse(source: editor.string)?.get())?.sources ?? []).compactMap { source in source.id.map { ($0, source) } },
+                                 uniquingKeysWith: { first, _ in first })
+        for span in model.spans {
+            switch span.kind {
+            case .strong:
+                adding(bold: true, to: span.content)
+                hide(span.markers)
+            case .emphasis:
+                adding(italic: true, to: span.content)
+                hide(span.markers)
+            case .strikethrough:
+                storage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: span.content)
+                hide(span.markers)
+            case .inlineCode:
+                storage.addAttribute(.font, value: theme.mono(markdownLens ? 14 : 15), range: span.content)
+                hide(span.markers)
+            case .inlineMath:
+                if !markdownLens { storage.addAttribute(.font, value: theme.prose(18, italic: true), range: span.content) }
+                hide(span.markers)
+            case .escape:
+                hide(span.markers)
+            case .image(_, false) where !markdownLens:
+                // Drawn as a chip by MarkdownTextView; the alt text keeps its width but not its ink.
+                storage.addAttributes([.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.clear], range: span.content)
+                chips.append(span)
+            case .link, .image(_, false):
+                // The design keeps link text in ink in the Markdown lens and colors only the destination.
+                if !markdownLens { storage.addAttribute(.foregroundColor, value: accent, range: span.content) }
+                hide(span.markers)
+                if markdownLens, let tail = span.markers.last, tail.length > 3 { destinations.append(NSRange(location: tail.location + 2, length: tail.length - 3)) }
+            case .image(_, true):
+                guard !markdownLens else {
+                    hide(span.markers)
+                    if let tail = span.markers.last, tail.length > 3 { destinations.append(NSRange(location: tail.location + 2, length: tail.length - 3)) }
+                    continue
+                }
+                hide([span.range])
+                let style = NSMutableParagraphStyle()
+                style.alignment = .center
+                style.paragraphSpacingBefore = 270
+                style.paragraphSpacing = 34
+                storage.addAttribute(.paragraphStyle, value: style, range: span.range)
+            case .footnoteReference(let label):
+                storage.addAttribute(.foregroundColor, value: accent, range: markdownLens ? span.range : span.content)
+                guard !markdownLens else { continue }
+                storage.addAttributes([.font: theme.ui(11, weight: .semibold), .baselineOffset: 7 * theme.scale], range: span.content)
+                let cited = sources[label].map { source in
+                    "Source: " + [source.title, source.resource, source.author?.displayName].compactMap { $0 }.joined(separator: " · ")
+                }
+                let tip = [definitions.first(where: { $0.label == label })?.text, cited].compactMap { $0 }.joined(separator: "\n\n")
+                if !tip.isEmpty { storage.addAttribute(.toolTip, value: tip, range: span.content) }
+                hide(span.markers)
+            default:
+                break
+            }
+        }
+
+        for range in hidden { marker(range) }
+        // An inline image reads as a chip: its hidden `![` leaves room for the photo symbol, its hidden destination for the end padding.
+        // A kern on the first character of a run is applied in full, so the room goes there.
+        for span in chips {
+            let opening = NSRange(location: span.range.location, length: span.content.location - span.range.location)
+            let closing = NSRange(location: NSMaxRange(span.content), length: NSMaxRange(span.range) - NSMaxRange(span.content))
+            for (range, room) in [(opening, MarkdownTextView.chipLead), (closing, MarkdownTextView.chipTrail)] where range.length > 0 {
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.systemFont(ofSize: 1)], range: range)
+                collapse(range)
+                let first = source.rangeOfComposedCharacterSequence(at: range.location)
+                let kern = storage.attribute(.kern, at: first.location, effectiveRange: nil) as? CGFloat ?? 0
+                storage.addAttribute(.kern, value: kern + room * theme.scale, range: first)
+            }
+        }
+        for range in destinations { storage.addAttribute(.foregroundColor, value: accent, range: range) }
         if !markdownLens {
-            // The file keeps its written numbers; MarkdownTextView draws each item's counted number over them.
-            // Tabular digits padded to the list's widest number keep item text in one column.
-            let font = NSFont(descriptor: base.fontDescriptor.addingAttributes([.featureSettings: [[
-                NSFontDescriptor.FeatureKey.typeIdentifier: kNumberSpacingType,
-                NSFontDescriptor.FeatureKey.selectorIdentifier: kMonospacedNumbersSelector]]]), size: base.pointSize) ?? base
-            let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
-            let numbers = MarkdownList.scan(editor.string).numbers
-            let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
-            for number in numbers {
-                // Hide digits and delimiter; pad the space after them so the text starts past the widest number.
-                storage.addAttributes([.foregroundColor: NSColor.clear, .font: font], range: NSRange(location: number.range.location, length: number.range.length + 1))
-                let pad = CGFloat((widest[number.list] ?? 1) - number.range.length) * digit
-                if pad != 0 { storage.addAttribute(.kern, value: pad, range: NSRange(location: NSMaxRange(number.range) + 1, length: 1)) }
-            }
+            // A block image's caption shows its alt text under the drawn image.
+            for span in model.spans { if case .image(_, true) = span.kind { storage.addAttributes([.font: theme.ui(13), .foregroundColor: secondary], range: span.content) } }
         }
-        matches("(\\*\\*|__)([^\\n]+?)\\1") { match in
-            storage.addAttribute(.font, value: markdownLens ? theme.mono(14, weight: .bold) : theme.prose(18, bold: true), range: match.range(at: 2))
-            marker(match.range(at: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - match.range(at: 1).length, length: match.range(at: 1).length))
-        }
-        matches("(?<!\\*)\\*([^*\\n]+)\\*(?!\\*)") { match in
-            storage.addAttribute(.font, value: markdownLens ? NSFontManager.shared.convert(base, toHaveTrait: .italicFontMask) : theme.prose(18, italic: true), range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
-        }
-        matches("`([^`\\n]+)`") { match in
-            storage.addAttribute(.font, value: theme.mono(markdownLens ? 14 : 15), range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
-        }
-        matches("(?m)^(```.*|\\$\\$|---)[ \\t]*$") { marker($0.range) }
-        matches("(?m)^> (\\[!(NOTE|TIP|WARNING|IMPORTANT)\\]).*(?:\\n>[^\\n]*)*") { match in
-            let color = Callout.color(source.substring(with: match.range(at: 2)), accent: accent)
-            guard !markdownLens else { return storage.addAttribute(.foregroundColor, value: color, range: match.range(at: 2)) }
-            storage.addAttributes([.backgroundColor: NSColor.calloutFill(color), .font: theme.ui(15)], range: match.range)
-            // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
-            storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 2))
-        }
-        matches("(?m)^[-*+] \\[([xX ])\\] ([^\\n]+)") { match in
-            guard !markdownLens else { return }
-            storage.addAttributes([.foregroundColor: NSColor.clear,
-                                   .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)],
-                                  range: NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
-            storage.addAttribute(.font, value: theme.ui(17), range: match.range(at: 2))
-            if (source.substring(with: match.range(at: 1))).lowercased() == "x" {
-                storage.addAttributes([.foregroundColor: dim, .strikethroughStyle: NSUnderlineStyle.single.rawValue], range: match.range(at: 2))
-            }
-        }
+
         // Hanging indent: wrapped lines of a list item align with its text, not its marker.
-        matches("(?m)^[ \\t]*(?:[-*+] \\[[ xX]\\] |[-*+] |[0-9]+[.)] )") { match in
+        for span in model.spans {
+            guard case .listItem(let item) = span.kind else { continue }
+            let line = source.lineRange(for: NSRange(location: item.marker.location, length: 0))
+            var end = NSMaxRange(item.checkbox ?? item.marker)
+            if end < source.length, [32, 9].contains(source.character(at: end)) { end += 1 }
             let style = paragraph.mutableCopy() as! NSMutableParagraphStyle
-            style.headIndent = storage.attributedSubstring(from: match.range).size().width
-            storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: match.range))
+            style.headIndent = storage.attributedSubstring(from: NSRange(location: line.location, length: end - line.location)).size().width
+            storage.addAttribute(.paragraphStyle, value: style, range: line)
         }
-        for lazy in MarkdownList.scan(editor.string).lazyLines {
+        let lists = MarkdownList.scan(model)
+        for lazy in lists.lazyLines {
             guard let owner = storage.attribute(.paragraphStyle, at: lazy.item, effectiveRange: nil) as? NSParagraphStyle,
                   let style = owner.mutableCopy() as? NSMutableParagraphStyle else { continue }
             style.firstLineHeadIndent = owner.headIndent
             storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: lazy.line))
         }
         if !markdownLens {
-            for table in MarkdownTable.blocks(in: editor.string) {
+            // The file keeps its written numbers; MarkdownLayoutFragment draws each item's counted number over them.
+            // Tabular digits padded to the list's widest number keep item text in one column.
+            let font = NSFont(descriptor: base.fontDescriptor.addingAttributes([.featureSettings: [[
+                NSFontDescriptor.FeatureKey.typeIdentifier: kNumberSpacingType,
+                NSFontDescriptor.FeatureKey.selectorIdentifier: kMonospacedNumbersSelector]]]), size: base.pointSize) ?? base
+            let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
+            let numbers = lists.numbers
+            let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
+            for number in numbers {
+                // Hide digits and delimiter; pad the space after them so the text starts past the widest number.
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: font], range: NSRange(location: number.range.location, length: number.range.length + 1))
+                let pad = CGFloat((widest[number.list] ?? 1) - number.range.length) * digit
+                if pad != 0 { storage.addAttribute(.kern, value: pad, range: NSRange(location: NSMaxRange(number.range) + 1, length: 1)) }
+                storage.addAttributes([.markifyListNumber: number.value + source.substring(with: NSRange(location: NSMaxRange(number.range), length: 1)),
+                                       .markifyListNumberOffset: CGFloat((widest[number.list] ?? 1) - number.value.count) * digit], range: number.range)
+            }
+            for table in model.tables {
                 for row in table.rows {
                     let rowStyle = NSMutableParagraphStyle()
                     rowStyle.minimumLineHeight = row.separator ? 2 : 40
@@ -251,92 +420,54 @@ struct NativeEditor: NSViewRepresentable {
                                           range: NSRange(location: row.start, length: row.end - row.start))
                 }
             }
-        }
-        let notes = Footnote.definitions(in: editor.string)
-        // OKF footnote labels key into `sources` (§5.1).
-        let sources = Dictionary(((try? OKFConcept.parse(source: editor.string)?.get())?.sources ?? []).compactMap { source in source.id.map { ($0, source) } },
-                                 uniquingKeysWith: { first, _ in first })
-        matches("(?m)^(\\[\\^)([^]\\n]+)(\\]:)(.*)$") { match in
-            storage.addAttributes([.font: markdownLens ? base : theme.ui(13), .foregroundColor: markdownLens ? dim : NSColor.secondaryLabelColor], range: match.range)
-            storage.addAttributes([.foregroundColor: accent, .font: markdownLens ? base : theme.ui(13, weight: .semibold)], range: match.range(at: 2))
-            guard !markdownLens else { return }
-            marker(match.range(at: 1))
-            storage.addAttributes([.foregroundColor: NSColor.clear], range: NSRange(location: match.range(at: 3).location, length: 1))
-            if match.range.location == notes.first?.range.location {
-                let style = (storage.attribute(.paragraphStyle, at: match.range.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
-                style.paragraphSpacingBefore = 26 * theme.scale
-                storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: match.range))
-            }
-        }
-        matches("(\\[\\^)([^]\\n]+)(\\])(?!:)") { match in
-            storage.addAttributes([.foregroundColor: accent], range: markdownLens ? match.range : match.range(at: 2))
-            guard !markdownLens else { return }
-            storage.addAttributes([.font: theme.ui(11, weight: .semibold), .baselineOffset: 7 * theme.scale], range: match.range(at: 2))
-            let label = source.substring(with: match.range(at: 2))
-            let cited = sources[label].map { source in
-                "Source: " + [source.title, source.resource, source.author?.displayName].compactMap { $0 }.joined(separator: " · ")
-            }
-            let tip = [notes.first(where: { $0.label == label })?.text, cited].compactMap { $0 }.joined(separator: "\n\n")
-            if !tip.isEmpty { storage.addAttribute(.toolTip, value: tip, range: match.range(at: 2)) }
-            marker(match.range(at: 1))
-            marker(match.range(at: 3))
-        }
-        matches("(?ms)^```([a-zA-Z0-9_+-]*)[^\\n]*\\n(.*?)\\n```[ \\t]*$") { match in
-            let body = match.range(at: 2)
-            storage.addAttributes([.font: theme.mono(markdownLens ? 14 : 13.5), .backgroundColor: NSColor.codeFill], range: body)
-            if !markdownLens {
-                marker(NSRange(location: match.range.location, length: body.location - match.range.location))
-                marker(NSRange(location: NSMaxRange(body), length: NSMaxRange(match.range) - NSMaxRange(body)))
-            }
-            let code = source.substring(with: body)
-            let colors: [(String, CodeToken)] = [
-                (#"\b(func|let|var|if|else|return|class|struct|import|guard|private|def|const|function|for|while|in|true|false|nil|null)\b"#, .keyword),
-                (#"\b[A-Z][A-Za-z0-9_]*\b"#, .type),
-                (#""[^"\n]*"|\b[0-9]+(\.[0-9]+)?\b"#, .literal),
-                (#"(//|#)[^\n]*"#, .comment)
-            ]
-            for (pattern, kind) in colors {
-                guard let color = theme.code(kind), let regex = try? NSRegularExpression(pattern: pattern) else { continue }
-                for token in regex.matches(in: code, range: NSRange(location: 0, length: (code as NSString).length)) {
-                    storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: body.location + token.range.location, length: token.range.length))
+            // A box's lines share one rounded fill with padding around the text, as the design's code blocks and callouts.
+            for box in boxes {
+                let lines = source.lineRange(for: box.range)
+                var line = source.lineRange(for: NSRange(location: lines.location, length: 0))
+                while line.length > 0 {
+                    let first = line.location == lines.location
+                    let last = NSMaxRange(line) >= NSMaxRange(lines)
+                    let style = (storage.attribute(.paragraphStyle, at: line.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+                    style.headIndent += box.fill.padding.width * theme.scale
+                    style.firstLineHeadIndent += box.fill.padding.width * theme.scale
+                    style.tailIndent = -box.fill.padding.width * theme.scale
+                    if first { style.paragraphSpacingBefore = box.fill.padding.height * theme.scale }
+                    if last { style.paragraphSpacing = box.fill.padding.height * theme.scale }
+                    storage.addAttributes([.paragraphStyle: style, .markifyBlockFill: box.fill.edge(first: first, last: last)], range: line)
+                    guard !last, NSMaxRange(line) < source.length else { break }
+                    line = source.lineRange(for: NSRange(location: NSMaxRange(line), length: 0))
                 }
             }
+            // A diagram's source collapses to one line as tall as the drawn diagram.
+            for diagram in diagrams {
+                let collapsed = NSMutableParagraphStyle()
+                collapsed.minimumLineHeight = 0.01
+                collapsed.maximumLineHeight = 0.01
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear, .paragraphStyle: collapsed], range: diagram.span.range)
+                let first = NSMutableParagraphStyle()
+                first.minimumLineHeight = diagram.height
+                first.maximumLineHeight = diagram.height
+                first.paragraphSpacing = 16 * theme.scale
+                storage.addAttribute(.paragraphStyle, value: first, range: source.lineRange(for: NSRange(location: diagram.span.range.location, length: 0)))
+            }
+            for span in failedDiagrams {
+                let last = source.lineRange(for: NSRange(location: max(span.range.location, NSMaxRange(span.range) - 1), length: 0))
+                let style = (storage.attribute(.paragraphStyle, at: last.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+                style.paragraphSpacing = MarkdownTextView.diagramErrorHeight * theme.scale
+                storage.addAttribute(.paragraphStyle, value: style, range: last)
+            }
+            for span in model.spans where span.kind == .mathBlock {
+                let style = NSMutableParagraphStyle()
+                style.alignment = .center
+                style.minimumLineHeight = 80
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear], range: span.range)
+                storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: span.range.location, length: min(2, span.range.length)))
+            }
         }
-        matches("(?ms)^\\$\\$[ \\t]*\\n?(.*?)\\n?\\$\\$[ \\t]*$") { match in
-            guard !markdownLens else { return }
-            let style = NSMutableParagraphStyle()
-            style.alignment = .center
-            style.minimumLineHeight = 80
-            storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear], range: match.range)
-            storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: match.range.location, length: min(2, match.range.length)))
-        }
-        matches("(?<!\\$)\\$([^$\\n]+)\\$(?!\\$)") { match in
-            guard !markdownLens else { return }
-            storage.addAttribute(.font, value: theme.prose(18, italic: true), range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
-        }
-        matches("\\[([^]\\n]+)\\]\\(([^)\\n]+)\\)") { match in
-            storage.addAttribute(.foregroundColor, value: accent, range: match.range(at: 1))
-            if markdownLens { storage.addAttribute(.foregroundColor, value: accent, range: match.range(at: 2)) }
-            else { marker(NSRange(location: match.range.location, length: match.range(at: 1).location - match.range.location)); marker(NSRange(location: NSMaxRange(match.range(at: 1)), length: NSMaxRange(match.range) - NSMaxRange(match.range(at: 1)))) }
-        }
-        matches("(?m)^!\\[([^]\\n]*)\\]\\(([^)\\n]+)\\)[ \\t]*$") { match in
-            guard !markdownLens else { return }
-            let caption = match.range(at: 1)
-            marker(match.range)
-            let style = NSMutableParagraphStyle()
-            style.alignment = .center
-            style.paragraphSpacingBefore = 270
-            style.paragraphSpacing = 34
-            storage.addAttribute(.paragraphStyle, value: style, range: match.range)
-            storage.addAttributes([.font: theme.ui(13),
-                                   .foregroundColor: NSColor.secondaryLabelColor], range: caption)
-        }
-        if let frontmatter = Frontmatter.parse(editor.string) {
+        if let frontmatter = model.spans.first(where: { $0.kind == .frontmatter }) {
             if markdownLens {
                 matches("(?m)^([A-Za-z_][A-Za-z0-9_-]*):") { match in
-                    if NSLocationInRange(match.range.location, frontmatter.range) {
+                    if NSLocationInRange(match.range.location, frontmatter.content) {
                         storage.addAttribute(.foregroundColor, value: CodeToken.type.color, range: match.range(at: 1))
                     }
                 }
@@ -369,8 +500,19 @@ struct NativeEditor: NSViewRepresentable {
         }
         storage.endEditing()
         if let editor = editor as? MarkdownTextView {
-            editor.refreshDecorations()
+            editor.forgetImages()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
+        }
+    }
+
+    /// The height a Mermaid block takes as a diagram, or nil when it failed and shows as code with the error below.
+    func diagramHeight(_ span: MarkdownModel.Span, source: NSString, dark: Bool, textView: MarkdownTextView?) -> CGFloat? {
+        let diagram = source.substring(with: span.content)
+        let state = MermaidRenderer.shared.state(of: diagram, dark: dark) { [weak textView] in textView?.restyle?() }
+        switch state {
+        case .rendering: return MarkdownTextView.diagramPadding * 2 + 88
+        case .rendered(let image): return MarkdownTextView.fitted(image.size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
+        case .failed: return nil
         }
     }
 
@@ -441,26 +583,77 @@ struct NativeEditor: NSViewRepresentable {
 }
 
 final class MarkdownTextView: NSTextView {
+    /// Held strongly: the layout manager keeps its delegate weakly.
+    private let layoutDelegate = MarkdownLayoutDelegate()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        observeEdits()
+    }
+
+    override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
+        super.init(frame: frameRect, textContainer: container)
+        observeEdits()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        observeEdits()
+    }
+
     var documentURL: URL?
     var bundleRoot: URL?
     var linkTargets: [String] = []
     private var isCompletingLink = false
     var columnWidth: CGFloat = 640
     var rendered = true
-    var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:]; refreshDecorations() } } }
+    /// A theme change restyles the text, which redraws its fragments; renders made with the old one are dropped.
+    var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:] } } }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
-    private var imageCache: [URL: NSImage] = [:]
+    /// Restyles the text, for results that arrive later, such as a rendered diagram.
+    var restyle: (() -> Void)?
+    /// Local images by URL; `nil` for a file that could not be read.
+    private var imageCache: [URL: NSImage?] = [:]
+
+    /// Forgets local images, so files added or changed since show on the next paint.
+    func forgetImages() { imageCache.removeAll() }
     private var mathCache: [String: NSImage] = [:]
-    private var tableOverlays: [Int: TableRowView] = [:]
+    private(set) var tableOverlays: [Int: TableRowView] = [:]
+    private var modelCache: (version: Int, model: MarkdownModel)?
+    /// Bumped whenever the characters change (not their attributes), so caches check validity without comparing the text.
+    private(set) var textVersion = 0
+    private var editingObserver: NSObjectProtocol?
+
+    private func observeEdits() {
+        textLayoutManager?.delegate = layoutDelegate
+        // Any storage: TextKit 2 may give the view a different storage than the one it has during init.
+        editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: nil, queue: nil) { [weak self] notification in
+            guard let storage = notification.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
+            let edited = ObjectIdentifier(storage)
+            MainActor.assumeIsolated {
+                guard let self, let current = self.textStorage, ObjectIdentifier(current) == edited else { return }
+                self.textVersion += 1
+            }
+        }
+    }
+
+    /// The parsed source, shared by styling, drawing and clicks until the text changes.
+    var model: MarkdownModel {
+        let mdx = Self.isMDX(documentURL)
+        if let modelCache, modelCache.version == textVersion, modelCache.model.mdx == mdx { return modelCache.model }
+        let model = MarkdownModel(string, mdx: mdx)
+        modelCache = (textVersion, model)
+        return model
+    }
 
     func refreshTables() {
-        guard let window else { return }
-        let rows: [(MarkdownTable.Row, Bool)] = rendered ? MarkdownTable.blocks(in: string).flatMap { table in
+        guard window != nil else { return }
+        let rows: [(MarkdownTable.Row, Bool)] = rendered ? MarkdownTable.blocks(in: model).flatMap { table in
             table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0) }
         } : []
+        if let last = rows.last { settleLayout(through: last.0.end) }
         for (index, (row, header)) in rows.enumerated() {
-            let screen = firstRect(forCharacterRange: NSRange(location: row.start, length: 1), actualRange: nil)
-            let line = convert(window.convertFromScreen(screen), from: nil)
+            let line = textRect(NSRange(location: row.start, length: 1))
             let overlay = tableOverlays[index] ?? TableRowView()
             if overlay.superview == nil { addSubview(overlay) }
             tableOverlays[index] = overlay
@@ -535,7 +728,7 @@ final class MarkdownTextView: NSTextView {
         if !isRenumbering {
             // Remember list structure so a list that loses its first item keeps its start number.
             if affectedRanges.count == 1, let replacement = replacementStrings?.first {
-                pendingEdit = (MarkdownList.scan(string), affectedRanges[0].rangeValue, (replacement as NSString).length)
+                pendingEdit = (MarkdownList.scan(model), affectedRanges[0].rangeValue, (replacement as NSString).length)
             } else { pendingEdit = nil }
         }
         return true
@@ -544,6 +737,7 @@ final class MarkdownTextView: NSTextView {
     /// Keeps ordered lists counting up after any edit, in the same undo group as the edit.
     override func didChangeText() {
         super.didChangeText()
+        closeImagePreview()
         guard !isRenumbering, !(undoManager?.isUndoing ?? false), !(undoManager?.isRedoing ?? false) else { return }
         // Typing `](` or `](/` offers the bundle's concepts.
         if !isCompletingLink, !linkTargets.isEmpty, let range = linkTargetRange, selectedRange().location > 0,
@@ -553,7 +747,7 @@ final class MarkdownTextView: NSTextView {
         }
         let edit = pendingEdit
         pendingEdit = nil
-        renumberLists(MarkdownList.renumbering(string, previous: edit?.before, edit: edit?.range ?? NSRange(location: 0, length: 0), length: edit?.length ?? 0))
+        renumberLists(MarkdownList.renumbering(model, previous: edit?.before, edit: edit?.range ?? NSRange(location: 0, length: 0), length: edit?.length ?? 0))
     }
 
     /// Applies list number fixes as one undoable edit, keeping the caret on its text.
@@ -579,27 +773,41 @@ final class MarkdownTextView: NSTextView {
         guard selection.length == 0 else { return false }
         let source = string as NSString
         let line = source.lineRange(for: NSRange(location: selection.location, length: 0))
-        let text = source.substring(with: NSRange(location: line.location, length: selection.location - line.location))
-        guard let regex = try? NSRegularExpression(pattern: #"^([ \t]*)(?:([-*+])( \[[ xX]\])?|([0-9]+)([.)])) "#),
-              let match = regex.firstMatch(in: text, range: NSRange(location: 0, length: (text as NSString).length)) else { return false }
-        let prefix = text as NSString
-        if match.range.length == prefix.length, NSMaxRange(line) - selection.location <= 1 {
-            insertText("", replacementRange: NSRange(location: line.location, length: match.range.length))
+        // The innermost item whose marker is on this line, with the caret past its marker.
+        let items = model.spans.compactMap { span -> MarkdownModel.ListItem? in
+            guard case .listItem(let item) = span.kind, NSLocationInRange(item.marker.location, line) else { return nil }
+            return item
+        }
+        guard let item = items.last else { return false }
+        var end = NSMaxRange(item.checkbox ?? item.marker)
+        var checkbox = item.checkbox != nil
+        // An empty task item has no content for GFM to hang its checkbox on, so read the box from the text.
+        if !checkbox, let box = try? NSRegularExpression(pattern: #"[ \t]\[[ xX]\](?=[ \t]|$)"#).firstMatch(in: string, options: .anchored, range: NSRange(location: end, length: NSMaxRange(line) - end)) {
+            end = NSMaxRange(box.range)
+            checkbox = true
+        }
+        guard end < NSMaxRange(line), [32, 9].contains(source.character(at: end)) else { return false }
+        end += 1
+        guard selection.location >= end else { return false }
+        let rest = source.substring(with: NSRange(location: end, length: NSMaxRange(line) - end)).trimmingCharacters(in: .whitespacesAndNewlines)
+        if rest.isEmpty {
+            insertText("", replacementRange: NSRange(location: line.location, length: end - line.location))
             return true
         }
-        let indent = prefix.substring(with: match.range(at: 1))
+        let indent = source.substring(with: NSRange(location: line.location, length: item.marker.location - line.location))
+        let marker = source.substring(with: item.marker)
         let next: String
-        if match.range(at: 4).location != NSNotFound {
-            next = "\((Int(prefix.substring(with: match.range(at: 4))) ?? 0) + 1)\(prefix.substring(with: match.range(at: 5))) "
+        if let digits = item.digits {
+            next = "\((Int(source.substring(with: digits)) ?? 0) + 1)\(marker.suffix(1)) "
         } else {
-            next = prefix.substring(with: match.range(at: 2)) + (match.range(at: 3).location != NSNotFound ? " [ ]" : "") + " "
+            next = marker + (checkbox ? " [ ]" : "") + " "
         }
         insertText("\n" + indent + next, replacementRange: selection)
         return true
     }
 
     func navigateTable(backward: Bool) -> Bool {
-        guard let table = MarkdownTable.containing(string, location: selectedRange().location),
+        guard let table = MarkdownTable.containing(model, location: selectedRange().location),
               let move = table.move(from: selectedRange().location, backward: backward) else { return false }
         switch move {
         case .select(let range): setSelectedRange(range)
@@ -611,138 +819,273 @@ final class MarkdownTextView: NSTextView {
         return true
     }
 
-    private func taskMatches() -> [NSTextCheckingResult] {
-        // ponytail: Scan on paint; cache task ranges if large documents make redraw slow.
-        guard rendered, let regex = try? NSRegularExpression(pattern: #"(?m)^[-*+] \[([xX ])\] "#) else { return [] }
-        return regex.matches(in: string, range: NSRange(location: 0, length: (string as NSString).length))
+    /// Task items in the Rendered lens, at any depth.
+    private func tasks(in spans: [MarkdownModel.Span]? = nil) -> [MarkdownModel.ListItem] {
+        guard rendered else { return [] }
+        return (spans ?? model.spans).compactMap { span in
+            if case .listItem(let item) = span.kind, item.checkbox != nil { item } else { nil }
+        }
     }
 
-    private func checkboxRect(for match: NSTextCheckingResult) -> NSRect? {
-        guard let window else { return nil }
-        let screen = firstRect(forCharacterRange: NSRange(location: match.range.location, length: 1), actualRange: nil)
-        let local = convert(window.convertFromScreen(screen), from: nil)
-        return NSRect(x: local.minX + 2, y: local.midY - 9, width: 18, height: 18)
+    private func checkboxRect(for item: MarkdownModel.ListItem) -> NSRect? {
+        guard window != nil else { return nil }
+        return MarkdownLayoutFragment.checkboxRect(marker: textRect(NSRange(location: item.marker.location, length: 1)))
     }
 
-    /// TextKit 2 repaints edited text in its own fragment views without calling draw(_:) here,
-    /// so rendered decorations live in a pass-through view kept over the visible area.
-    private lazy var decorations = DecorationView(host: self)
-    private var clipObserver: NSObjectProtocol?
+    private var clipObservers: [NSObjectProtocol] = []
 
-    func refreshDecorations() {
-        guard superview != nil else { return }
-        if decorations.superview !== self { addSubview(decorations) }
-        if decorations.frame != visibleRect { decorations.frame = visibleRect }
-        decorations.needsDisplay = true
+    /// Overlays placed while outside the visible area are not painted when it grows to include them.
+    private func visibleAreaChanged() {
+        for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
+    }
+
+    /// Table overlays need a window to place themselves; the first style pass can run before the view has one.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil else { return }
+        DispatchQueue.main.async { [weak self] in self?.refreshTables() }
     }
 
     override func viewDidMoveToSuperview() {
         super.viewDidMoveToSuperview()
-        if let clipObserver { NotificationCenter.default.removeObserver(clipObserver) }
-        clipObserver = nil
+        clipObservers.forEach(NotificationCenter.default.removeObserver)
+        clipObservers = []
         guard let clip = superview as? NSClipView else { return }
         clip.postsBoundsChangedNotifications = true
-        clipObserver = NotificationCenter.default.addObserver(forName: NSView.boundsDidChangeNotification, object: clip, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refreshDecorations() }
+        clip.postsFrameChangedNotifications = true
+        // Scrolling moves the visible area; resizing the window grows it without a bounds change.
+        clipObservers = [NSView.boundsDidChangeNotification, NSView.frameDidChangeNotification].map { name in
+            NotificationCenter.default.addObserver(forName: name, object: clip, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.visibleAreaChanged() }
+            }
         }
-        refreshDecorations()
     }
 
     override func setFrameSize(_ newSize: NSSize) {
+        let reflows = newSize.width != frame.width
         super.setFrameSize(newSize)
-        refreshDecorations()
+        // A new width rewraps the text above a table, moving its rows.
+        if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTables() } }
+    }
+
+    /// The frame of the first line segment of `range`, in this view's coordinates.
+    /// `firstRect(forCharacterRange:)` answers only for text inside the viewport, and overlays also sit on text
+    /// above or below it, so this asks TextKit 2's layout manager, laying the range out first.
+    func textRect(_ range: NSRange) -> NSRect {
+        let length = (string as NSString).length
+        var range = range
+        if range.length == 0, range.location < length { range.length = 1 }
+        guard let manager = textLayoutManager, let content = manager.textContentManager,
+              let start = content.location(content.documentRange.location, offsetBy: min(range.location, length)),
+              let end = content.location(start, offsetBy: min(range.length, length - min(range.location, length))),
+              let textRange = NSTextRange(location: start, end: end) else { return .zero }
+        manager.ensureLayout(for: textRange)
+        var first: CGRect?
+        manager.enumerateTextSegments(in: textRange, type: .standard, options: []) { _, frame, _, _ in
+            first = frame
+            return false
+        }
+        guard let frame = first else { return .zero }
+        return frame.offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+    }
+
+    /// TextKit 2 places text it has not laid out yet at estimated positions, and moves it once layout catches up.
+    /// Lays out everything up to `location` so positions read for overlays are the ones the text settles at.
+    func settleLayout(through location: Int) {
+        guard let manager = textLayoutManager, let content = manager.textContentManager,
+              let end = content.location(content.documentRange.location, offsetBy: min(location, (string as NSString).length)),
+              let range = NSTextRange(location: content.documentRange.location, end: end) else { return }
+        manager.ensureLayout(for: range)
+        // The viewport keeps drawing text where it first estimated it until it lays out again.
+        manager.textViewportLayoutController.layoutViewport()
     }
 
     /// Draws bullets, list numbers, checkboxes, images, math and chips; `dirtyRect` is in this view's coordinates.
-    fileprivate func drawOverlays(_ dirtyRect: NSRect) {
-        if rendered { drawImages(in: dirtyRect) }
-        if rendered { drawMath(in: dirtyRect) }
-        if rendered { drawDecorations(in: dirtyRect) }
-        if rendered, let window {
-            let source = string as NSString
-            let numbers = MarkdownList.scan(string).numbers
-            let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
-            for item in numbers {
-                // Glyphs before the padded space keep reliable positions, so measure from the first digit.
-                let screen = firstRect(forCharacterRange: item.range, actualRange: nil)
-                let rect = convert(window.convertFromScreen(screen), from: nil)
-                guard rect.intersects(dirtyRect) else { continue }
-                let font = textStorage?.attribute(.font, at: item.range.location, effectiveRange: nil) as? NSFont ?? .systemFont(ofSize: 18)
-                let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
-                let label = item.value + source.substring(with: NSRange(location: NSMaxRange(item.range), length: 1))
-                let number = NSAttributedString(string: label, attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor])
-                number.draw(at: NSPoint(x: rect.minX + CGFloat((widest[item.list] ?? 1) - item.value.count) * digit, y: rect.minY))
+    private var anchorCache: (version: Int, mdx: Bool, anchors: [(location: Int, span: MarkdownModel.Span)])?
+
+    /// Where each decoration is drawn from, sorted: the character whose layout fragment draws it.
+    private var decorationAnchors: [(location: Int, span: MarkdownModel.Span)] {
+        let model = self.model
+        if let anchorCache, anchorCache.version == textVersion, anchorCache.mdx == model.mdx { return anchorCache.anchors }
+        var anchors: [(location: Int, span: MarkdownModel.Span)] = []
+        var firstFootnote = true
+        for span in model.spans {
+            switch span.kind {
+            case .image(_, true): anchors.append((span.content.location, span))
+            case .image(_, false), .mathBlock, .frontmatter: anchors.append((span.range.location, span))
+            case .callout(_, let token): anchors.append((token.location, span))
+            case .codeBlock(let language?, true):
+                anchors.append((span.range.location, span))
+                if span.content.length > 0 { anchors.append((span.content.location, span)) }
+                anchors.append((max(span.range.location, NSMaxRange(span.range) - 1), span))
+                _ = language
+            case .footnoteDefinition where firstFootnote:
+                firstFootnote = false
+                anchors.append((span.range.location, span))
+            default: break
             }
         }
-        if rendered, let window, let bullets = try? NSRegularExpression(pattern: #"(?m)^[ \t]*([-*+]) (?!\[[ xX]\] )"#) {
-            let dot = NSAttributedString(string: "•", attributes: [.font: theme.ui(18), .foregroundColor: NSColor.secondaryLabelColor])
-            let frontmatter = Frontmatter.parse(string)?.range
-            for match in bullets.matches(in: string, range: NSRange(location: 0, length: (string as NSString).length)) {
-                if let frontmatter, NSLocationInRange(match.range.location, frontmatter) { continue }
-                let screen = firstRect(forCharacterRange: match.range(at: 1), actualRange: nil)
-                let rect = convert(window.convertFromScreen(screen), from: nil)
-                guard rect.intersects(dirtyRect) else { continue }
-                dot.draw(at: NSPoint(x: rect.midX - dot.size().width / 2, y: rect.midY - dot.size().height / 2))
-            }
+        anchors.sort { $0.location < $1.location }
+        anchorCache = (textVersion, model.mdx, anchors)
+        return anchors
+    }
+
+    /// Spans the current fragment draws for, and the text whose decorations it owns.
+    private var drawingSpans: [MarkdownModel.Span] = []
+    private var anchorRange = NSRange(location: 0, length: 0)
+
+    /// Draws the decorations anchored in `range` — images, math, diagrams, callout titles, code labels, the footnotes rule,
+    /// frontmatter and image chips — in this view's coordinates. `MarkdownLayoutFragment` calls it for the text it lays out,
+    /// with its context moved to view coordinates, so each decoration is drawn by exactly one fragment.
+    func drawDecorations(anchoredIn range: NSRange) {
+        guard rendered else { return }
+        anchorRange = range
+        let anchors = decorationAnchors
+        // Binary search for the first anchor in range; anchors are sorted by location.
+        var low = 0, high = anchors.count
+        while low < high {
+            let middle = (low + high) / 2
+            if anchors[middle].location < range.location { low = middle + 1 } else { high = middle }
         }
-        for match in taskMatches() {
-            guard let rect = checkboxRect(for: match), rect.intersects(dirtyRect) else { continue }
-            let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
-            let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
-            if checked {
-                theme.accent.setFill()
-                path.fill()
-                let check = NSAttributedString(string: "✓", attributes: [.font: NSFont.boldSystemFont(ofSize: 13), .foregroundColor: NSColor.white])
-                check.draw(at: NSPoint(x: rect.minX + 3, y: rect.minY + 1))
-            } else {
-                NSColor.tertiaryLabelColor.setStroke()
-                path.lineWidth = 1.5
-                path.stroke()
-            }
+        var spans: [MarkdownModel.Span] = []
+        while low < anchors.count, anchors[low].location < NSMaxRange(range) {
+            if spans.last != anchors[low].span { spans.append(anchors[low].span) }
+            low += 1
         }
+        guard !spans.isEmpty else { return }
+        drawingSpans = spans
+        defer { drawingSpans = [] }
+        drawImages(in: .infinite)
+        drawMath(in: .infinite)
+        drawDiagrams(in: .infinite)
+        drawDecorations(in: .infinite)
     }
 
     private func drawImages(in dirtyRect: NSRect) {
-        guard let window,
-              let regex = try? NSRegularExpression(pattern: #"(?m)^!\[([^]\n]*)\]\(([^)\n]+)\)[ \t]*$"#) else { return }
-        let source = string as NSString
-        for match in regex.matches(in: string, range: NSRange(location: 0, length: source.length)) {
-            let screen = firstRect(forCharacterRange: match.range(at: 1), actualRange: nil)
-            let caption = convert(window.convertFromScreen(screen), from: nil)
+        guard window != nil else { return }
+        for span in drawingSpans {
+            guard case .image(let path, true) = span.kind, NSLocationInRange(span.content.location, anchorRange) else { continue }
+            let caption = textRect(span.content)
             let rect = NSRect(x: 0, y: caption.minY - 268, width: columnWidth, height: 260)
             guard rect.intersects(dirtyRect) else { continue }
             NSGraphicsContext.saveGraphicsState()
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
             NSColor.quaternaryLabelColor.withAlphaComponent(0.08).setFill()
             rect.fill()
-            let path = source.substring(with: match.range(at: 2))
-            let base = documentURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")
-            let url = URL(fileURLWithPath: path, relativeTo: base).standardizedFileURL
-            if let image = imageCache[url] ?? NSImage(contentsOf: url) {
-                imageCache[url] = image
+            switch image(for: path) {
+            case .image(let image):
                 let ratio = min(rect.width / image.size.width, rect.height / image.size.height)
                 let size = NSSize(width: image.size.width * ratio, height: image.size.height * ratio)
-                let frame = NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height)
-                image.draw(in: frame)
-            } else {
-                let label = "image — \(URL(fileURLWithPath: path).lastPathComponent)" as NSString
-                label.draw(at: NSPoint(x: rect.midX - 90, y: rect.midY - 8), withAttributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor])
+                image.draw(in: NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height))
+            case .placeholder(let text):
+                let label = NSAttributedString(string: text, attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor])
+                label.draw(at: NSPoint(x: rect.midX - label.size().width / 2, y: rect.midY - label.size().height / 2))
             }
             NSGraphicsContext.restoreGraphicsState()
         }
     }
 
-    private func drawMath(in dirtyRect: NSRect) {
-        guard let window,
-              let regex = try? NSRegularExpression(pattern: #"(?ms)^\$\$[ \t]*\n?(.*?)\n?\$\$[ \t]*$"#) else { return }
+    enum ImageContent {
+        case image(NSImage)
+        /// What to show instead: the file name, or the host of a remote image that is off, loading or unavailable.
+        case placeholder(String)
+    }
+
+    /// The image an `![](path)` shows: a file beside the document, or a remote image when Settings allows it.
+    func image(for path: String) -> ImageContent {
+        if let remote = URL(string: path), let scheme = remote.scheme?.lowercased(), ["http", "https"].contains(scheme) {
+            let host = remote.host() ?? path
+            guard UserDefaults.standard.object(forKey: "loadRemoteImages") as? Bool ?? true else { return .placeholder("Remote image — \(host)") }
+            switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.remoteImageLoaded() }) {
+            case .loaded(let image): return .image(image)
+            case .loading: return .placeholder("Loading image — \(host)")
+            case .failed: return .placeholder("Image unavailable — \(host)")
+            }
+        }
+        let url = Self.imageURL(path, document: documentURL)
+        if let cached = imageCache[url] { return cached.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)") }
+        // Misses are remembered too, so painting never touches the disk; restyling forgets them.
+        let image = NSImage(contentsOf: url)
+        imageCache[url] = .some(image)
+        return image.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)")
+    }
+
+    private func remoteImageLoaded() {
+        // Fragments draw images; restyling lays them out again with the loaded image.
+        restyle?()
+        if let previewSpan { showImagePreview(for: previewSpan, force: true) }
+    }
+
+    static let diagramPadding: CGFloat = 16
+    static let diagramErrorHeight: CGFloat = 48
+
+    /// A diagram's size inside the code container, scaled down to fit the column.
+    static func fitted(_ size: NSSize, width: CGFloat) -> NSSize {
+        let room = width - diagramPadding * 2
+        let scale = size.width > room ? room / size.width : 1
+        return NSSize(width: size.width * scale, height: size.height * scale)
+    }
+
+    /// Mermaid blocks: the rendered diagram in the code container, a placeholder while it renders,
+    /// or mermaid's message under the source when it cannot be parsed.
+    private func drawDiagrams(in dirtyRect: NSRect) {
+        guard window != nil else { return }
         let source = string as NSString
         let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        for match in regex.matches(in: string, range: NSRange(location: 0, length: source.length)) {
-            let screen = firstRect(forCharacterRange: NSRange(location: match.range.location, length: 1), actualRange: nil)
-            let line = convert(window.convertFromScreen(screen), from: nil)
+        func rect(_ range: NSRange) -> NSRect { textRect(range) }
+        for span in drawingSpans {
+            guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid",
+                  let state = MermaidRenderer.shared.cached(source.substring(with: span.content), dark: dark) else { continue }
+            let label = NSAttributedString(string: "mermaid", attributes: [.font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
+            if case .failed(let message) = state {
+                // The message belongs to the closing fence's line, the label to the first line of code.
+                if span.content.length > 0, NSLocationInRange(span.content.location, anchorRange) {
+                    let body = rect(NSRange(location: span.content.location, length: 1))
+                    label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: body.minY - 12 * theme.scale))
+                }
+                guard NSLocationInRange(max(span.range.location, NSMaxRange(span.range) - 1), anchorRange) else { continue }
+                let last = rect(NSRange(location: max(span.range.location, NSMaxRange(span.range) - 1), length: 1))
+                let body = span.content.length > 0 ? rect(NSRange(location: span.content.location, length: 1)).minX : last.minX
+                let text = NSAttributedString(string: message, attributes: [.font: theme.ui(12), .foregroundColor: NSColor.systemRed])
+                // Drawn in the paragraph spacing reserved under the closing fence.
+                let frame = NSRect(x: body, y: last.maxY + 4, width: columnWidth - body, height: (Self.diagramErrorHeight - 8) * theme.scale)
+                guard frame.intersects(dirtyRect) else { continue }
+                text.draw(with: frame, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
+                continue
+            }
+            guard NSLocationInRange(span.range.location, anchorRange) else { continue }
+            let line = rect(NSRange(location: span.range.location, length: 1))
+            let container = NSRect(x: 0, y: line.minY, width: columnWidth, height: line.height)
+            guard container.intersects(dirtyRect) else { continue }
+            NSColor.codeFill.setFill()
+            NSBezierPath(roundedRect: container, xRadius: 12, yRadius: 12).fill()
+            label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: container.minY + 8))
+            switch state {
+            case .rendered(let image):
+                let size = Self.fitted(image.size, width: columnWidth)
+                image.draw(in: NSRect(x: container.midX - size.width / 2, y: container.midY - size.height / 2, width: size.width, height: size.height))
+            default:
+                let text = NSAttributedString(string: "Rendering diagram…", attributes: [.font: theme.ui(12), .foregroundColor: NSColor.secondaryLabelColor])
+                text.draw(at: NSPoint(x: container.midX - text.size().width / 2, y: container.midY - text.size().height / 2))
+            }
+        }
+    }
+
+    /// Resolves an image destination against the document's folder; inserted paths are percent-encoded.
+    static func imageURL(_ path: String, document: URL?) -> URL {
+        let base = document?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")
+        return URL(fileURLWithPath: path.removingPercentEncoding ?? path, relativeTo: base).standardizedFileURL
+    }
+
+    private func drawMath(in dirtyRect: NSRect) {
+        guard window != nil else { return }
+        let source = string as NSString
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        for span in drawingSpans where span.kind == .mathBlock && NSLocationInRange(span.range.location, anchorRange) {
+            let line = textRect(NSRange(location: span.range.location, length: 1))
             let rect = NSRect(x: 0, y: line.midY - 40, width: columnWidth, height: 80)
             guard rect.intersects(dirtyRect) else { continue }
-            let latex = source.substring(with: match.range(at: 1)).trimmingCharacters(in: .whitespacesAndNewlines)
+            let latex = source.substring(with: span.content).trimmingCharacters(in: .whitespacesAndNewlines)
             let key = "\(dark):\(latex)"
             if let image = mathCache[key] ?? renderMath(latex, dark: dark) {
                 mathCache[key] = image
@@ -766,31 +1109,47 @@ final class MarkdownTextView: NSTextView {
 
     /// Callout titles, code language labels, the footnotes rule and the frontmatter chip row.
     private func drawDecorations(in dirtyRect: NSRect) {
-        guard let window else { return }
-        let source = string as NSString
-        let whole = NSRange(location: 0, length: source.length)
-        func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
+        guard window != nil else { return }
+        func rect(_ range: NSRange) -> NSRect { textRect(range) }
 
-        if let regex = try? NSRegularExpression(pattern: #"(?m)^> (\[!(NOTE|TIP|WARNING|IMPORTANT)\])"#) {
-            for match in regex.matches(in: string, range: whole) {
-                let token = rect(match.range(at: 1))
+        for span in drawingSpans {
+            switch span.kind {
+            case .callout(let type, let range):
+                guard NSLocationInRange(range.location, anchorRange) else { continue }
+                let token = rect(range)
                 guard token.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
-                let type = source.substring(with: match.range(at: 2))
                 let title = NSAttributedString(string: type.capitalized, attributes: [
                     .font: theme.ui(13, weight: .semibold), .foregroundColor: Callout.color(type, accent: theme.accent)])
                 title.draw(at: NSPoint(x: token.minX, y: token.maxY - title.size().height))
-            }
-        }
-        if let regex = try? NSRegularExpression(pattern: #"(?ms)^```([a-zA-Z0-9_+-]+)[^\n]*\n(.*?)\n```[ \t]*$"#) {
-            for match in regex.matches(in: string, range: whole) where match.range(at: 2).length > 0 {
-                let line = rect(NSRange(location: match.range(at: 2).location, length: 1))
+            case .image(let path, false):
+                guard NSLocationInRange(span.range.location, anchorRange),
+                      let frame = inlineImageChipFrame(span), frame.intersects(dirtyRect) else { continue }
+                NSColor.labelColor.withAlphaComponent(0.06).setFill()
+                NSBezierPath(roundedRect: frame, xRadius: frame.height / 2, yRadius: frame.height / 2).fill()
+                let symbol = NSImage(systemSymbolName: "photo", accessibilityDescription: nil)?
+                    .withSymbolConfiguration(.init(pointSize: 11 * theme.scale, weight: .medium).applying(.init(hierarchicalColor: .secondaryLabelColor)))
+                if let symbol {
+                    symbol.draw(in: NSRect(x: frame.minX + 9 * theme.scale, y: frame.midY - symbol.size.height / 2, width: symbol.size.width, height: symbol.size.height))
+                }
+                let alt = (string as NSString).substring(with: span.content)
+                let text = NSAttributedString(string: alt.isEmpty ? (path as NSString).lastPathComponent : alt,
+                                              attributes: [.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.secondaryLabelColor])
+                if !alt.isEmpty { text.draw(at: NSPoint(x: rect(span.content).minX, y: frame.midY - text.size().height / 2)) }
+            case .codeBlock(let language?, true) where span.content.length > 0 && language.lowercased() != "mermaid":
+                guard NSLocationInRange(span.content.location, anchorRange) else { continue }
+                let line = rect(NSRange(location: span.content.location, length: 1))
                 guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
-                let label = NSAttributedString(string: source.substring(with: match.range(at: 1)), attributes: [
+                let label = NSAttributedString(string: language, attributes: [
                     .font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
-                label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: line.minY + 2))
+                // In the box's top padding, right-aligned.
+                label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: line.minY - 12 * theme.scale))
+            default:
+                break
             }
         }
-        if let first = Footnote.definitions(in: string).first {
+        if let first = drawingSpans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } }),
+           NSLocationInRange(first.range.location, anchorRange),
+           first.range.location == model.spans.first(where: { if case .footnoteDefinition = $0.kind { true } else { false } })?.range.location {
             let line = rect(NSRange(location: first.range.location, length: 1))
             let y = line.minY - 12 * theme.scale
             if dirtyRect.minY <= y, y <= dirtyRect.maxY {
@@ -798,7 +1157,7 @@ final class MarkdownTextView: NSTextView {
                 NSRect(x: 0, y: y, width: columnWidth, height: 1).fill()
             }
         }
-        if let frontmatter = Frontmatter.parse(string) {
+        if let frontmatter = Frontmatter.parse(string), NSLocationInRange(frontmatter.range.location, anchorRange) {
             for (chip, frame) in frontmatterChips(frontmatter) where frame.intersects(dirtyRect) {
                 if let fill = chip.fill {
                     fill.setFill()
@@ -807,6 +1166,96 @@ final class MarkdownTextView: NSTextView {
                 chip.text.draw(at: NSPoint(x: frame.minX + (chip.fill != nil ? 9 : 0), y: frame.midY - chip.text.size().height / 2))
             }
         }
+    }
+
+    static func isMDX(_ url: URL?) -> Bool { url?.pathExtension.lowercased() == "mdx" }
+
+    static let chipLead: CGFloat = 26
+    static let chipTrail: CGFloat = 9
+
+    private static var hiddenAdvances: [String: CGFloat] = [:]
+
+    /// The advance of a character in the 1pt font hidden markers use.
+    static func hiddenAdvance(_ character: String) -> CGFloat {
+        if let advance = hiddenAdvances[character] { return advance }
+        let advance = (character as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 1)]).width
+        hiddenAdvances[character] = advance
+        return advance
+    }
+
+    /// The capsule an inline image is drawn as, on the line where it starts.
+    func inlineImageChipFrame(_ span: MarkdownModel.Span) -> NSRect? {
+        guard rendered, window != nil else { return nil }
+        func rect(_ range: NSRange) -> NSRect { textRect(range) }
+        let whole = rect(span.range)
+        let height = ("Ag" as NSString).size(withAttributes: [.font: theme.ui(11.5, weight: .medium)]).height + 6
+        return NSRect(x: whole.minX, y: whole.midY - height / 2, width: whole.width, height: height)
+    }
+
+    private var hoverArea: NSTrackingArea?
+    private var previewPopover: NSPopover?
+    private var previewSpan: MarkdownModel.Span?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        let point = convert(event.locationInWindow, from: nil)
+        let hit = model.spans.first { span in
+            guard case .image(_, false) = span.kind else { return false }
+            return inlineImageChipFrame(span)?.contains(point) == true
+        }
+        if let hit { showImagePreview(for: hit) } else { closeImagePreview() }
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        closeImagePreview()
+    }
+
+    /// Hovering an inline image chip previews the image in a popover.
+    private func showImagePreview(for span: MarkdownModel.Span, force: Bool = false) {
+        guard case .image(let path, false) = span.kind, let frame = inlineImageChipFrame(span) else { return }
+        if !force, previewPopover?.isShown == true, previewSpan?.range == span.range { return }
+        closeImagePreview()
+        let content: NSView
+        switch image(for: path) {
+        case .image(let image):
+            let scale = min(1, 320 / max(image.size.width, 1), 240 / max(image.size.height, 1))
+            let view = NSImageView(frame: NSRect(x: 0, y: 0, width: image.size.width * scale, height: image.size.height * scale))
+            view.image = image
+            view.imageScaling = .scaleProportionallyUpOrDown
+            content = view
+        case .placeholder(let text):
+            let label = NSTextField(labelWithString: text)
+            label.textColor = .secondaryLabelColor
+            label.sizeToFit()
+            content = label
+        }
+        let container = NSView(frame: content.frame.insetBy(dx: -8, dy: -8).offsetBy(dx: 8, dy: 8))
+        content.frame.origin = NSPoint(x: 8, y: 8)
+        container.addSubview(content)
+        let controller = NSViewController()
+        controller.view = container
+        let popover = NSPopover()
+        popover.contentViewController = controller
+        popover.behavior = .applicationDefined
+        popover.animates = true
+        popover.show(relativeTo: frame, of: self, preferredEdge: .maxY)
+        previewPopover = popover
+        previewSpan = span
+    }
+
+    private func closeImagePreview() {
+        previewPopover?.close()
+        previewPopover = nil
+        previewSpan = nil
     }
 
     /// One item in the frontmatter row: a capsule when it has a fill, plain text otherwise; `link` makes it follow a destination.
@@ -851,9 +1300,8 @@ final class MarkdownTextView: NSTextView {
 
     /// Chip layout for the frontmatter row: OKF badges, tags as capsules, the date as plain text, then the OKF resource link.
     private func frontmatterChips(_ frontmatter: Frontmatter) -> [(chip: FrontmatterChip, frame: NSRect)] {
-        guard let window else { return [] }
-        let screen = firstRect(forCharacterRange: NSRange(location: frontmatter.range.location, length: 1), actualRange: nil)
-        let line = convert(window.convertFromScreen(screen), from: nil)
+        guard window != nil else { return [] }
+        let line = textRect(NSRange(location: frontmatter.range.location, length: 1))
         let font = theme.ui(11.5, weight: .medium)
         let tagFill = NSColor.labelColor.withAlphaComponent(0.06)
         let concept = okfConcept(frontmatter)
@@ -916,23 +1364,61 @@ final class MarkdownTextView: NSTextView {
     private var frontmatterPopoverClose: NSObjectProtocol?
 
     override func mouseDown(with event: NSEvent) {
+        closeImagePreview()
         let point = convert(event.locationInWindow, from: nil)
         if rendered, let frontmatter = Frontmatter.parse(string),
            let hit = frontmatterChips(frontmatter).first(where: { $0.frame.contains(point) }) {
             if let link = hit.chip.link { return Knowledge.follow(link, title: nil, from: documentURL, bundleRoot: bundleRoot) }
             return editFrontmatter(frontmatter, at: hit.frame)
         }
+        if event.modifierFlags.contains(.command), followFootnote(at: characterIndexForInsertion(at: point)) { return }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
         if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
             return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot)
         }
-        for match in taskMatches() {
-            guard let rect = checkboxRect(for: match), rect.contains(point) else { continue }
-            let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
-            insertText(checked ? " " : "x", replacementRange: match.range(at: 1))
+        for item in tasks() {
+            guard let rect = checkboxRect(for: item), rect.contains(point), let box = item.checkbox else { continue }
+            insertText(item.checked ? " " : "x", replacementRange: NSRange(location: box.location + 1, length: 1))
             return
         }
         super.mouseDown(with: event)
+    }
+
+    /// The reference a footnote jump left from, so ⌘-clicking the definition returns to it.
+    private var footnoteOrigin: (label: String, location: Int)?
+
+    /// ⌘-click on a footnote reference selects its definition; on a definition's label, the reference it was reached from.
+    /// Returns false when `index` is on neither.
+    func followFootnote(at index: Int) -> Bool {
+        let spans = model.spans
+        func hit(_ range: NSRange) -> Bool { range.location <= index && index <= NSMaxRange(range) }
+        func reveal(_ range: NSRange) {
+            setSelectedRange(range)
+            scrollRangeToVisible(range)
+            showFindIndicator(for: range)
+        }
+        for span in spans {
+            switch span.kind {
+            case .footnoteReference(let label) where hit(span.range):
+                let definition = spans.lazy.compactMap { span -> NSRange? in
+                    if case .footnoteDefinition(label, let labelRange) = span.kind { labelRange } else { nil }
+                }.first
+                guard let definition else { NSSound.beep(); return true }
+                footnoteOrigin = (label, span.range.location)
+                reveal(definition)
+                return true
+            case .footnoteDefinition(let label, let labelRange) where hit(NSRange(location: span.range.location, length: NSMaxRange(labelRange) + 2 - span.range.location)):
+                let references = spans.filter { $0.kind == .footnoteReference(label: label) }
+                guard let first = references.first else { NSSound.beep(); return true }
+                // Edits since the jump can move the reference; fall back to the first one.
+                let origin = references.first { footnoteOrigin?.label == label && $0.range.location == footnoteOrigin?.location }
+                reveal((origin ?? first).content)
+                return true
+            default:
+                continue
+            }
+        }
+        return false
     }
 
     /// The partial destination between `](` and the caret, when the caret is inside one.
@@ -969,13 +1455,43 @@ final class MarkdownTextView: NSTextView {
     }
 
     static let imageExtensions = ["png", "jpg", "jpeg", "gif", "heic", "webp"]
+    static let noteExtensions = ["md", "mdx", "markdown"]
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        guard let imageURL = NSURL(from: sender.draggingPasteboard) as URL?,
-              Self.imageExtensions.contains(imageURL.pathExtension.lowercased()) else {
-            return super.performDragOperation(sender)
+        guard let url = NSURL(from: sender.draggingPasteboard) as URL?, url.isFileURL else { return super.performDragOperation(sender) }
+        if Self.noteExtensions.contains(url.pathExtension.lowercased()) {
+            // A note dropped from the sidebar or Finder becomes a link to it where it lands.
+            let title = (try? String(contentsOf: url, encoding: .utf8)).map { Self.noteTitle($0, url: url) } ?? url.deletingPathExtension().lastPathComponent
+            let location = characterIndexForInsertion(at: convert(sender.draggingLocation, from: nil))
+            insertText(Self.noteLink(to: url, title: title, from: documentURL, bundleRoot: bundleRoot), replacementRange: NSRange(location: location, length: 0))
+            return true
         }
-        return insertImage(imageURL)
+        guard Self.imageExtensions.contains(url.pathExtension.lowercased()) else { return super.performDragOperation(sender) }
+        return insertImage(url)
+    }
+
+    /// A note's title: its frontmatter `title`, else its first `# ` heading, else its file name.
+    static func noteTitle(_ source: String, url: URL) -> String {
+        let lines = FrontmatterBlock.body(of: source).split(separator: "\n", omittingEmptySubsequences: true)
+        return Frontmatter.parse(source)?.title ?? lines.first { $0.hasPrefix("# ") }.map { String($0.dropFirst(2)) }
+            ?? url.deletingPathExtension().lastPathComponent
+    }
+
+    /// A portable Markdown link to another note: relative to this document, bundle-absolute when both sit in its OKF bundle,
+    /// and absolute while the document is unsaved, as dropped images are.
+    static func noteLink(to target: URL, title: String, from document: URL?, bundleRoot: URL?) -> String {
+        let path: String
+        if let document {
+            if let bundleRoot, OKFLinks.bundlePath(of: document, root: bundleRoot) != nil, let inBundle = OKFLinks.bundlePath(of: target, root: bundleRoot) {
+                path = inBundle
+            } else {
+                path = OKFLinks.relativePath(to: target, from: document.deletingLastPathComponent())
+            }
+        } else {
+            path = target.path
+        }
+        let text = title.replacingOccurrences(of: "[", with: "\\[").replacingOccurrences(of: "]", with: "\\]")
+        return "[\(text)](\(path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path))"
     }
 
     override func paste(_ sender: Any?) {
@@ -1033,27 +1549,32 @@ final class MarkdownTextView: NSTextView {
     }
 }
 
-private final class DecorationView: NSView {
-    private weak var host: MarkdownTextView?
+/// Remote images for the Rendered lens, fetched once per URL and shared by every window.
+@MainActor final class RemoteImages {
+    static let shared = RemoteImages()
+    enum State { case loading, loaded(NSImage), failed }
+    private var states: [URL: State] = [:]
+    private var waiting: [URL: [() -> Void]] = [:]
 
-    init(host: MarkdownTextView) {
-        self.host = host
-        super.init(frame: .zero)
-    }
-
-    required init?(coder: NSCoder) { fatalError("Decorations are created in code") }
-
-    override var isFlipped: Bool { true }
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-
-    override func draw(_ dirtyRect: NSRect) {
-        // Shift into the text view's coordinates so the host can draw as if on itself.
-        NSGraphicsContext.current?.cgContext.translateBy(x: -frame.minX, y: -frame.minY)
-        host?.drawOverlays(dirtyRect.offsetBy(dx: frame.minX, dy: frame.minY))
+    /// The image's state, starting a download on first request; `onChange` runs once when it settles.
+    func state(of url: URL, onChange: @escaping () -> Void) -> State {
+        if let state = states[url] {
+            if case .loading = state { waiting[url, default: []].append(onChange) }
+            return state
+        }
+        states[url] = .loading
+        waiting[url] = [onChange]
+        Task {
+            let response = try? await URLSession.shared.data(from: url)
+            let ok = (response?.1 as? HTTPURLResponse).map { (200..<300).contains($0.statusCode) } ?? true
+            states[url] = ok ? response.flatMap { NSImage(data: $0.0) }.map { .loaded($0) } ?? .failed : .failed
+            waiting.removeValue(forKey: url)?.forEach { $0() }
+        }
+        return .loading
     }
 }
 
-private final class TableRowView: NSView {
+final class TableRowView: NSView {
     override var isFlipped: Bool { true }
     var fields: [TableCellField] = []
     private var header = false
@@ -1103,7 +1624,7 @@ private final class TableRowView: NSView {
     }
 }
 
-private final class TableCellField: NSTextField, NSTextFieldDelegate {
+final class TableCellField: NSTextField, NSTextFieldDelegate {
     var sourceRange = NSRange(location: 0, length: 0)
     var onEdit: ((NSRange, String) -> NSRange)?
     var onFocus: ((NSRange) -> Void)?
@@ -1143,63 +1664,45 @@ enum MarkdownList {
         var ordered: [Int: (head: Bool, start: Int)] = [:]
     }
 
-    /// Walks the list structure. `start` picks a list's start number from its head's line location and written number.
+    /// Reads the list structure from the parsed model. `start` picks a list's start number from its head's line location and written number.
     static func scan(_ text: String, start: @escaping (Int, Int) -> Int = { $1 }) -> Scan {
-        let source = text as NSString
-        let item = try! NSRegularExpression(pattern: #"^([ \t]*)(?:([0-9]{1,9})([.)])|[-*+])[ \t]"#)
-        let rule = try! NSRegularExpression(pattern: #"^(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$"#)
-        var lists: [(indent: Int, delimiter: String, start: Int, next: Int, id: Int)] = []
+        scan(MarkdownModel(text), start: start)
+    }
+
+    static func scan(_ model: MarkdownModel, start: @escaping (Int, Int) -> Int = { $1 }) -> Scan {
+        let source = model.source as NSString
+        func lineStart(_ location: Int) -> Int { source.lineRange(for: NSRange(location: location, length: 0)).location }
         var result = Scan()
-        var fenced = false
-        var lastItem: Int?
-        source.enumerateSubstrings(in: NSRange(location: 0, length: source.length), options: .byLines) { line, range, _, _ in
-            guard let line else { return }
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            let length = (line as NSString).length
-            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") { fenced.toggle(); lists.removeAll(); lastItem = nil; return }
-            guard !fenced else { return }
-            guard !trimmed.isEmpty else { lastItem = nil; return }
-            let indent = line.prefix { $0 == " " || $0 == "\t" }.utf16.count
-            guard let match = item.firstMatch(in: line, range: NSRange(location: 0, length: length)) else {
-                let interrupts = ["#", ">", "|", "$$", "<"].contains { trimmed.hasPrefix($0) }
-                    || rule.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)) != nil
-                if let owner = lastItem, !interrupts {
-                    if indent == 0 { result.lazyLines.append((range, owner)) }
-                    if let id = lists.last?.id { result.spans[id] = result.spans[id].union(range) }
-                    return
-                }
-                lastItem = nil
-                while let last = lists.last, last.indent >= indent { lists.removeLast() }
-                return
+        for list in model.lists where list.ordered {
+            guard let head = list.items.first else { continue }
+            let id = result.spans.count
+            let headLine = lineStart(head.marker.location)
+            let first = start(headLine, list.start)
+            result.spans.append(NSRange(location: headLine, length: NSMaxRange(list.range) - headLine))
+            for (index, item) in list.items.enumerated() {
+                guard let digits = item.digits else { continue }
+                let expected = first + index
+                result.ordered[lineStart(item.marker.location)] = (index == 0, first)
+                result.numbers.append((digits, "\(expected)", id))
+                if Int(source.substring(with: digits)) != expected { result.fixes.append((digits, "\(expected)", id)) }
             }
-            lastItem = range.location
-            guard match.range(at: 2).location != NSNotFound else {
-                // A bullet at this depth ends the ordered lists it does not nest inside.
-                while let last = lists.last, last.indent >= indent { lists.removeLast() }
-                return
-            }
-            while let last = lists.last, last.indent > indent { lists.removeLast() }
-            let written = Int((line as NSString).substring(with: match.range(at: 2))) ?? 1
-            let delimiter = (line as NSString).substring(with: match.range(at: 3))
-            let expected: Int, id: Int
-            if let last = lists.last, last.indent == indent, last.delimiter == delimiter {
-                expected = last.next
-                id = last.id
-                lists[lists.count - 1].next += 1
-                result.spans[id] = result.spans[id].union(range)
-                result.ordered[range.location] = (false, last.start)
-            } else {
-                if lists.last?.indent == indent { lists.removeLast() }
-                expected = start(range.location, written)
-                id = result.spans.count
-                result.spans.append(range)
-                lists.append((indent, delimiter, expected, expected + 1, id))
-                result.ordered[range.location] = (true, expected)
-            }
-            let digits = NSRange(location: range.location + match.range(at: 2).location, length: match.range(at: 2).length)
-            result.numbers.append((digits, "\(expected)", id))
-            if written != expected { result.fixes.append((digits, "\(expected)", id)) }
         }
+        result.numbers.sort { $0.range.location < $1.range.location }
+        result.fixes.sort { $0.range.location < $1.range.location }
+        // An unindented line inside an item's range continues it lazily; nested items come later and claim their own lines.
+        var lazy: [Int: (line: NSRange, item: Int)] = [:]
+        for span in model.spans {
+            guard case .listItem(let item) = span.kind else { continue }
+            let owner = lineStart(item.marker.location)
+            var line = source.lineRange(for: NSRange(location: owner, length: 0))
+            while NSMaxRange(line) < NSMaxRange(span.range) {
+                line = source.lineRange(for: NSRange(location: NSMaxRange(line), length: 0))
+                guard line.length > 0 else { break }
+                let first = source.character(at: line.location)
+                if ![32, 9, 10, 13].contains(first) { lazy[line.location] = (line, owner) }
+            }
+        }
+        result.lazyLines = lazy.values.sorted { $0.line.location < $1.line.location }
         return result
     }
 
@@ -1207,7 +1710,11 @@ enum MarkdownList {
     /// Lists elsewhere keep their written numbers; the rendered lens shows them counted instead.
     /// A list whose head was removed keeps the start it had; a head that already led its list keeps its own number.
     static func renumbering(_ text: String, previous: Scan?, edit: NSRange, length: Int) -> [(range: NSRange, value: String)] {
-        let result = scan(text) { location, written in
+        renumbering(MarkdownModel(text), previous: previous, edit: edit, length: length)
+    }
+
+    static func renumbering(_ model: MarkdownModel, previous: Scan?, edit: NSRange, length: Int) -> [(range: NSRange, value: String)] {
+        let result = scan(model) { location, written in
             guard let previous else { return written }
             let old: Int
             if location < edit.location { old = location }
@@ -1225,12 +1732,7 @@ enum MarkdownList {
 }
 
 struct MarkdownTable {
-    struct Row {
-        let start: Int
-        let end: Int
-        let cells: [NSRange]
-        let separator: Bool
-    }
+    typealias Row = MarkdownModel.Table.Row
 
     enum Move {
         case select(NSRange)
@@ -1241,64 +1743,21 @@ struct MarkdownTable {
     let current: Int
 
     static func containing(_ text: String, location: Int) -> Self? {
-        let source = text as NSString
-        guard location <= source.length else { return nil }
-        let separator = try! NSRegularExpression(pattern: #"^\s*\|(?:\s*:?-+:?\s*\|)+\s*$"#)
-        var parsed: [Row?] = []
-        var starts: [Int] = []
-        var offset = 0
-        while offset < source.length {
-            var start = 0, end = 0, contentsEnd = 0
-            source.getLineStart(&start, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: offset, length: 0))
-            let line = source.substring(with: NSRange(location: start, length: contentsEnd - start)) as NSString
-            var pipes: [Int] = []
-            // ponytail: Escaped pipes are skipped; code spans with pipes need Markdown AST cell ranges.
-            for index in 0..<line.length where line.character(at: index) == 124 {
-                if index == 0 || line.character(at: index - 1) != 92 { pipes.append(index) }
-            }
-            let trimmed = (line as String).trimmingCharacters(in: .whitespaces)
-            if pipes.count >= 3, trimmed.hasPrefix("|"), trimmed.hasSuffix("|") {
-                let cells = zip(pipes, pipes.dropFirst()).map { left, right -> NSRange in
-                    var first = left + 1, last = right
-                    while first < last, UnicodeScalar(line.character(at: first)).map(CharacterSet.whitespaces.contains) ?? false { first += 1 }
-                    while last > first, UnicodeScalar(line.character(at: last - 1)).map(CharacterSet.whitespaces.contains) ?? false { last -= 1 }
-                    return NSRange(location: start + first, length: last - first)
-                }
-                parsed.append(Row(start: start, end: contentsEnd, cells: cells,
-                                  separator: separator.firstMatch(in: line as String, range: NSRange(location: 0, length: line.length)) != nil))
-            } else { parsed.append(nil) }
-            starts.append(start)
-            offset = end
-        }
-        guard let index = starts.indices.first(where: { starts[$0] <= location && (parsed[$0]?.end ?? starts[$0]) >= location }),
-              parsed[index] != nil else { return nil }
-        var first = index, last = index
-        while first > 0, parsed[first - 1] != nil { first -= 1 }
-        while last + 1 < parsed.count, parsed[last + 1] != nil { last += 1 }
-        let rows = parsed[first...last].compactMap { $0 }
-        guard rows.contains(where: \.separator) else { return nil }
-        return Self(rows: rows, current: index - first)
+        containing(MarkdownModel(text), location: location)
     }
 
-    static func blocks(in text: String) -> [Self] {
-        // ponytail: Reparse on style changes; keep an indexed table AST if large notes make this slow.
-        let source = text as NSString
-        var result: [Self] = []
-        var offset = 0
-        while offset < source.length {
-            if let table = containing(text, location: offset), table.rows.first?.start == offset {
-                result.append(table)
-                var end = 0
-                source.getLineStart(nil, end: &end, contentsEnd: nil,
-                                    for: NSRange(location: table.rows.last!.start, length: 0))
-                offset = end
-            } else {
-                var end = 0
-                source.getLineStart(nil, end: &end, contentsEnd: nil, for: NSRange(location: offset, length: 0))
-                offset = end
-            }
+    /// The GFM table whose rows cover `location`, with the row it is on.
+    static func containing(_ model: MarkdownModel, location: Int) -> Self? {
+        for table in model.tables {
+            if let index = table.rows.firstIndex(where: { $0.start <= location && location <= $0.end }) { return Self(rows: table.rows, current: index) }
         }
-        return result
+        return nil
+    }
+
+    static func blocks(in text: String) -> [Self] { blocks(in: MarkdownModel(text)) }
+
+    static func blocks(in model: MarkdownModel) -> [Self] {
+        model.tables.map { Self(rows: $0.rows, current: 0) }
     }
 
     func move(from location: Int, backward: Bool) -> Move? {
@@ -1334,30 +1793,6 @@ struct SourceAnchor {
     }
 }
 
-struct MarkdownSourceMap {
-    let lines: [String]
-    let starts: [Int]
-
-    init(_ source: String) {
-        lines = source.components(separatedBy: "\n")
-        var starts = [0]
-        for line in lines.dropLast() { starts.append(starts.last! + (line as NSString).length + 1) }
-        self.starts = starts
-    }
-
-    func range(_ range: Markdown.SourceRange) -> NSRange? {
-        func offset(_ location: Markdown.SourceLocation) -> Int? {
-            let line = location.line - 1
-            guard lines.indices.contains(line), location.column > 0 else { return nil }
-            let bytes = Array(lines[line].utf8)
-            guard location.column - 1 <= bytes.count else { return nil }
-            return starts[line] + (String(decoding: bytes.prefix(location.column - 1), as: UTF8.self) as NSString).length
-        }
-        guard let start = offset(range.lowerBound), let end = offset(range.upperBound), end >= start else { return nil }
-        return NSRange(location: start, length: end - start)
-    }
-}
-
 enum Callout {
     static func color(_ type: String, accent: NSColor) -> NSColor {
         switch type.uppercased() {
@@ -1365,20 +1800,6 @@ enum Callout {
         case "WARNING": .systemOrange
         case "IMPORTANT": .systemPurple
         default: accent
-        }
-    }
-}
-
-struct Footnote {
-    let range: NSRange
-    let label: String
-    let text: String
-
-    static func definitions(in source: String) -> [Self] {
-        guard let regex = try? NSRegularExpression(pattern: #"(?m)^\[\^([^]\n]+)\]:[ \t]*(.*)$"#) else { return [] }
-        let ns = source as NSString
-        return regex.matches(in: source, range: NSRange(location: 0, length: ns.length)).map {
-            Self(range: $0.range, label: ns.substring(with: $0.range(at: 1)), text: ns.substring(with: $0.range(at: 2)))
         }
     }
 }

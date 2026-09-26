@@ -8,8 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		0AF0C0012E80000000000001 /* OKFKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0032E80000000000003 /* OKFKit */; };
+		0AF0C0042E80000000000004 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
 		76A591142DC953870033A6AC /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 76A591132DC953870033A6AC /* Markdown */; };
 		A1F9C0012DC953870033A6AC /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
+		5B0C0A012E90000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 5B0C0A022E90000000000002 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +76,8 @@
 				76A591142DC953870033A6AC /* Markdown in Frameworks */,
 				A1F9C0012DC953870033A6AC /* SwaTexRender in Frameworks */,
 				0AF0C0012E80000000000001 /* OKFKit in Frameworks */,
+				0AF0C0042E80000000000004 /* MarkifyMarkdown in Frameworks */,
+				5B0C0A012E90000000000001 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +141,8 @@
 				76A591132DC953870033A6AC /* Markdown */,
 				A1F9C0022DC953870033A6AC /* SwaTexRender */,
 				0AF0C0032E80000000000003 /* OKFKit */,
+				0AF0C0062E80000000000006 /* MarkifyMarkdown */,
+				5B0C0A022E90000000000002 /* Sparkle */,
 			);
 			productName = Markify;
 			productReference = 76A590E72DC952970033A6AC /* Markify.app */;
@@ -223,7 +229,9 @@
 			packageReferences = (
 				76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown" */,
 				A1F9C0032DC953870033A6AC /* XCRemoteSwiftPackageReference "SwaTex" */,
+				5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				0AF0C0022E80000000000002 /* XCLocalSwiftPackageReference "OKFKit" */,
+				0AF0C0052E80000000000005 /* XCLocalSwiftPackageReference "MarkifyMarkdown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 76A590E82DC952970033A6AC /* Products */;
@@ -436,6 +444,7 @@
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -470,6 +479,7 @@
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -609,6 +619,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = OKFKit;
 		};
+		0AF0C0052E80000000000005 /* XCLocalSwiftPackageReference "MarkifyMarkdown" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = MarkifyMarkdown;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -628,12 +642,24 @@
 				minimumVersion = 0.5.0;
 			};
 		};
+		5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		0AF0C0032E80000000000003 /* OKFKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OKFKit;
+		};
+		0AF0C0062E80000000000006 /* MarkifyMarkdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MarkifyMarkdown;
 		};
 		76A591132DC953870033A6AC /* Markdown */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -644,6 +670,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1F9C0032DC953870033A6AC /* XCRemoteSwiftPackageReference "SwaTex" */;
 			productName = SwaTexRender;
+		};
+		5B0C0A022E90000000000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

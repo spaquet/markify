@@ -148,6 +148,7 @@ See [AGENTS.md](AGENTS.md) for development notes.
 
 - [swift-markdown](https://github.com/swiftlang/swift-markdown) - Markdown parsing (cmark-gfm)
 - [SwaTex](https://github.com/PhraseHQ/SwaTex) - Math rendering
+- [Mermaid](https://github.com/mermaid-js/mermaid) 12.0.0 - Diagram rendering, bundled in `Markify/Resources/Mermaid` (MIT, see `mermaid-LICENSE.txt`)
 
 ## License
 

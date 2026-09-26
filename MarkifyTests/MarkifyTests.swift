@@ -1,5 +1,4 @@
 import AppKit
-import Markdown
 import OKFKit
 import SwiftUI
 import Testing
@@ -25,13 +24,6 @@ struct MarkifyTests {
         #expect(anchor.selection(in: source) == NSRange(location: 17, length: 4))
         #expect((source as NSString).substring(with: anchor.topLine) == "Second line\n")
         #expect(anchor.selection(in: "short") == NSRange(location: 5, length: 0))
-    }
-
-    @Test func markdownSourceRangesMapThroughUnicode() {
-        let source = "😀 intro\n# Café\n"
-        let heading = Markdown.Document(parsing: source).children.compactMap { $0 as? Markdown.Heading }.first!
-        let range = MarkdownSourceMap(source).range(heading.range!)!
-        #expect((source as NSString).substring(with: range) == "# Café")
     }
 
     @Test func slashContextAndFuzzyMenu() {
@@ -76,6 +68,26 @@ struct MarkifyTests {
         SlashEntry.matching("tab")[0].apply(to: editor, context: context)
         #expect(editor.string == "Hello\n| Column | Column |\n| --- | --- |\n|  |  |")
         #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "Column")
+    }
+
+    @Test @MainActor func mermaidSlashEntryInsertsAStarterGraph() {
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = "/merm"
+        let context = SlashContext.detect(in: editor.string, selection: NSRange(location: 5, length: 0))!
+        SlashEntry.matching("merm")[0].apply(to: editor, context: context)
+        #expect(editor.string == "```mermaid\ngraph TD\n  A --> B\n```")
+        #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "A --> B")
+    }
+
+    @Test @MainActor func dividerNeverMakesASetextHeading() {
+        let divider = SlashEntry.all.first { $0.title == "Divider" }!
+        for (source, expected) in [("Para /div", "Para\n\n---"), ("Para\n/div", "Para\n\n---"), ("Para\n\n/div", "Para\n\n---"), ("/div", "---")] {
+            let editor = NSTextView(usingTextLayoutManager: true)
+            editor.string = source
+            let context = SlashContext.detect(in: source, selection: NSRange(location: (source as NSString).length, length: 0))!
+            divider.apply(to: editor, context: context)
+            #expect(editor.string == expected, "\(source)")
+        }
     }
 
     @Test @MainActor func tableTabMovesCellsAndAddsRow() {
@@ -191,6 +203,19 @@ struct MarkifyTests {
         editor.string = "Plain"
         editor.setSelectedRange(NSRange(location: 5, length: 0))
         #expect(!editor.continueList())
+        // List syntax inside a code block is code, not a list.
+        editor.string = "```\n- item\n```"
+        editor.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(!editor.continueList())
+        // Nested and quoted items continue at their own depth.
+        editor.string = "- a\n  1) b"
+        editor.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(editor.continueList())
+        #expect(editor.string == "- a\n  1) b\n  2) ")
+        editor.string = "> - quoted"
+        editor.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(editor.continueList())
+        #expect(editor.string == "> - quoted\n> - ")
     }
 
     @Test @MainActor func displayMathRendersLocally() {
@@ -264,12 +289,6 @@ struct MarkifyTests {
         #expect(Set(Shortcuts.actions.map(\.key)).count == Shortcuts.actions.count)
     }
 
-    @Test func footnoteDefinitionsKeepLabelAndText() {
-        let notes = Footnote.definitions(in: "Body[^1]\n\n[^1]: The note.\n[^two]: Second\n")
-        #expect(notes.map(\.label) == ["1", "two"])
-        #expect(notes.first?.text == "The note.")
-    }
-
     @Test func frontmatterReadsTitle() {
         let parsed = Frontmatter.parse("---\ntitle: \"Bug: Bullets\"\ntags: [\"bug\",\"dark mode\"]\n---\nBody\n")
         #expect(parsed?.title == "Bug: Bullets")
@@ -328,6 +347,35 @@ struct MarkifyTests {
         let label = (source as NSString).range(of: "pol]\n").location
         let tip = editor.textStorage?.attribute(.toolTip, at: label, effectiveRange: nil) as? String
         #expect(tip == "Policy\n\nSource: Revenue policy · https://wiki/p")
+    }
+
+    @Test @MainActor func footnotesJumpToTheirDefinitionAndBack() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "One[^a] and two[^a] and lost[^x].\n\n[^a]: The note.\n"
+        let ns = editor.string as NSString
+        let second = ns.range(of: "two[^a]").location + 3
+        #expect(editor.followFootnote(at: second + 2))
+        #expect(editor.selectedRange() == NSRange(location: ns.range(of: "[^a]:").location + 2, length: 1))
+        // Back from the definition to the reference the jump came from, not the first one.
+        #expect(editor.followFootnote(at: ns.range(of: "[^a]:").location + 1))
+        #expect(editor.selectedRange() == NSRange(location: second + 2, length: 1))
+        #expect(editor.followFootnote(at: ns.range(of: "[^x]").location + 2))
+        #expect(!editor.followFootnote(at: 1))
+    }
+
+    @Test @MainActor func droppedNotesBecomePortableLinks() {
+        let library = URL(fileURLWithPath: "/tmp/lib")
+        let note = library.appendingPathComponent("notes/Other note.md")
+        let document = library.appendingPathComponent("drafts/today.md")
+        #expect(MarkdownTextView.noteLink(to: note, title: "Other", from: document, bundleRoot: nil) == "[Other](../notes/Other%20note.md)")
+        #expect(MarkdownTextView.noteLink(to: note, title: "Other", from: library.appendingPathComponent("notes/a.md"), bundleRoot: nil) == "[Other](Other%20note.md)")
+        #expect(MarkdownTextView.noteLink(to: note, title: "Other", from: document, bundleRoot: library) == "[Other](/notes/Other%20note.md)")
+        // A target outside the document's bundle stays relative.
+        #expect(MarkdownTextView.noteLink(to: URL(fileURLWithPath: "/tmp/elsewhere/x.md"), title: "X", from: document, bundleRoot: library) == "[X](../../elsewhere/x.md)")
+        #expect(MarkdownTextView.noteLink(to: note, title: "A [draft]", from: nil, bundleRoot: nil) == "[A \\[draft\\]](/tmp/lib/notes/Other%20note.md)")
+        #expect(MarkdownTextView.noteTitle("---\ntitle: Front\n---\n# Heading\n", url: note) == "Front")
+        #expect(MarkdownTextView.noteTitle("Intro\n# Heading\n", url: note) == "Heading")
+        #expect(MarkdownTextView.noteTitle("No heading", url: note) == "Other note")
     }
 
     @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {

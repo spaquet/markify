@@ -1,0 +1,168 @@
+import AppKit
+import Testing
+@testable import Markify
+
+/// Rendered-lens decorations are drawn by `MarkdownLayoutFragment` from attributes `NativeEditor.style` sets.
+@MainActor struct LayoutFragmentTests {
+    static func makeEditor(_ source: String, markdownLens: Bool = false) -> (NSWindow, MarkdownTextView) {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 1200), styleMask: [.titled], backing: .buffered, defer: false)
+        let scroll = NSScrollView(frame: window.contentView!.bounds)
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.frame = scroll.bounds
+        editor.isVerticallyResizable = true
+        editor.textContainer?.widthTracksTextView = true
+        editor.textContainerInset = NSSize(width: 0, height: 40)
+        scroll.documentView = editor
+        window.contentView = scroll
+        editor.string = source
+        editor.rendered = !markdownLens
+        NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: markdownLens, findQuery: "", matchCase: false,
+                     selectedRange: .constant(NSRange(location: 0, length: 0)),
+                     textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+            .style(editor)
+        if let manager = editor.textLayoutManager { manager.ensureLayout(for: manager.documentRange) }
+        return (window, editor)
+    }
+
+    @Test func paragraphsLayOutAsMarkdownFragments() {
+        let (window, editor) = Self.makeEditor("# Title\n\nBody text.\n")
+        _ = window
+        let manager = editor.textLayoutManager!
+        var fragments: [NSTextLayoutFragment] = []
+        manager.enumerateTextLayoutFragments(from: manager.documentRange.location, options: []) { fragments.append($0); return true }
+        #expect(!fragments.isEmpty)
+        #expect(fragments.allSatisfy { $0 is MarkdownLayoutFragment })
+        #expect((fragments.first as? MarkdownLayoutFragment)?.documentRange?.location == 0)
+    }
+
+    static func fragment(_ editor: MarkdownTextView, at location: Int) -> MarkdownLayoutFragment? {
+        let manager = editor.textLayoutManager!
+        guard let content = manager.textContentManager,
+              let textLocation = content.location(content.documentRange.location, offsetBy: location) else { return nil }
+        return manager.textLayoutFragment(for: textLocation) as? MarkdownLayoutFragment
+    }
+
+    /// Draws one fragment into a bitmap and returns it, with the draw origin used.
+    static func render(_ fragment: MarkdownLayoutFragment) -> (NSBitmapImageRep, CGPoint) {
+        let surface = fragment.renderingSurfaceBounds
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(ceil(surface.width)), pixelsHigh: Int(ceil(surface.height)),
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let context = NSGraphicsContext(bitmapImageRep: rep)!.cgContext
+        // Flip so y grows downward, as TextKit draws fragments.
+        context.translateBy(x: 0, y: surface.height)
+        context.scaleBy(x: 1, y: -1)
+        let point = CGPoint(x: -surface.minX, y: -surface.minY)
+        fragment.draw(at: point, in: context)
+        return (rep, point)
+    }
+
+    /// Opaque pixels inside `rect` (in draw coordinates, y down).
+    static func inked(_ rep: NSBitmapImageRep, in rect: CGRect) -> Int {
+        var count = 0
+        for x in Int(rect.minX)..<Int(rect.maxX) {
+            for y in Int(rect.minY)..<Int(rect.maxY) where x >= 0 && y >= 0 && x < rep.pixelsWide && y < rep.pixelsHigh {
+                if (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.2 { count += 1 }
+            }
+        }
+        return count
+    }
+
+    @Test func styleMarksListDecorations() {
+        let source = "- bullet\n- [x] done\n\n3. three\n4. four\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let storage = editor.textStorage!
+        let ns = source as NSString
+        #expect(storage.attribute(.markifyBullet, at: 0, effectiveRange: nil) as? Bool == true)
+        #expect(storage.attribute(.markifyTaskBox, at: ns.range(of: "- [x]").location, effectiveRange: nil) as? Bool == true)
+        #expect(storage.attribute(.markifyListNumber, at: ns.range(of: "3.").location, effectiveRange: nil) as? String == "3.")
+        #expect(storage.attribute(.markifyListNumber, at: ns.range(of: "4.").location, effectiveRange: nil) as? String == "4.")
+        // The Markdown lens shows the syntax itself.
+        let (window2, markdown) = Self.makeEditor(source, markdownLens: true)
+        _ = window2
+        #expect(markdown.textStorage!.attribute(.markifyBullet, at: 0, effectiveRange: nil) == nil)
+    }
+
+    @Test func fragmentDrawsTheCheckboxWhereClicksLand() {
+        let source = "Intro\n\n- [x] done\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let marker = (source as NSString).range(of: "- [x]").location
+        let fragment = Self.fragment(editor, at: marker)!
+        let (rep, point) = Self.render(fragment)
+        let markerRect = fragment.rect(for: NSRange(location: marker, length: 1), at: point)!
+        let box = MarkdownLayoutFragment.checkboxRect(marker: markerRect)
+        #expect(Self.inked(rep, in: box.insetBy(dx: 4, dy: 4)) > 60, "the checked box is filled")
+        // The click rect is the drawn rect, moved from fragment to view coordinates.
+        let offset = CGPoint(x: fragment.layoutFragmentFrame.minX - point.x + editor.textContainerOrigin.x,
+                             y: fragment.layoutFragmentFrame.minY - point.y + editor.textContainerOrigin.y)
+        let viewBox = MarkdownLayoutFragment.checkboxRect(marker: editor.textRect(NSRange(location: marker, length: 1)))
+        #expect(abs(viewBox.minX - (box.minX + offset.x)) < 0.5 && abs(viewBox.minY - (box.minY + offset.y)) < 0.5)
+    }
+
+    @Test func fragmentDrawsBulletsAndCountedNumbers() {
+        let source = "- bullet\n\n7. seven\n9. nine\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let ns = source as NSString
+        for needle in ["-", "9."] {
+            let location = ns.range(of: needle).location
+            let fragment = Self.fragment(editor, at: location)!
+            let (rep, point) = Self.render(fragment)
+            let rect = fragment.rect(for: NSRange(location: location, length: needle.count), at: point)!
+            // The source glyphs are clear, so any ink over them is the drawn bullet or number ("8." for the second item).
+            #expect(Self.inked(rep, in: rect.insetBy(dx: -2, dy: 0)) > 10, "\(needle) is drawn")
+        }
+    }
+
+    @Test func codeBlocksDrawOneRoundedBoxWithPadding() {
+        let source = "Intro\n\n```swift\nlet a = 1\nlet b = 2\n```\n\nAfter\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let ns = source as NSString
+        let firstLine = Self.fragment(editor, at: ns.range(of: "let a").location)!
+        let secondLine = Self.fragment(editor, at: ns.range(of: "let b").location)!
+        #expect(firstLine !== secondLine)
+        let (rep, point) = Self.render(firstLine)
+        // The box starts at the column's left edge, left of the indented code, and its top padding is filled.
+        let text = firstLine.rect(for: NSRange(location: ns.range(of: "let a").location, length: 1), at: point)!
+        #expect(text.minX - (point.x - firstLine.layoutFragmentFrame.minX) >= 17, "code sits inside the box's horizontal padding")
+        #expect(Self.inked(rep, in: CGRect(x: point.x - firstLine.layoutFragmentFrame.minX + 30, y: point.y + 4, width: 40, height: 6)) > 100, "top padding is filled")
+        // The first line rounds its top corners: the very corner pixel stays empty.
+        #expect(Self.inked(rep, in: CGRect(x: point.x - firstLine.layoutFragmentFrame.minX, y: point.y, width: 2, height: 2)) == 0)
+        // Text after the block is outside it.
+        let after = Self.fragment(editor, at: ns.range(of: "After").location)!
+        #expect(editor.textStorage!.attribute(.markifyBlockFill, at: ns.range(of: "After").location, effectiveRange: nil) == nil)
+        _ = after
+    }
+
+    @Test func selectedCodeStaysVisibleThroughTheFill() {
+        let source = "```\nselected words here\n```\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let word = (source as NSString).range(of: "words")
+        editor.setSelectedRange(word)
+        let fragment = Self.fragment(editor, at: word.location)!
+        let (rep, point) = Self.render(fragment)
+        let rect = fragment.rect(for: word, at: point)!
+        // Under the selection the fill is cut out; only the glyphs themselves are inked.
+        let total = Int(rect.width) * Int(rect.height)
+        #expect(Self.inked(rep, in: rect) < total / 2)
+        let beside = rect.offsetBy(dx: rect.width + 60, dy: 0)
+        #expect(Self.inked(rep, in: beside) > Int(beside.width * beside.height) * 3 / 4, "unselected code keeps its fill")
+    }
+
+    /// The parse is cached by text version; edits made the way the app makes them must invalidate it.
+    @Test func modelFollowsEveryKindOfEdit() {
+        let (window, editor) = Self.makeEditor("First\n")
+        _ = window
+        #expect(editor.model.tables.isEmpty)
+        editor.string = "| a | b |\n| - | - |\n| 1 | 2 |\n"
+        #expect(editor.model.tables.count == 1, "setting the string")
+        editor.insertText("\n# Heading\n", replacementRange: NSRange(location: (editor.string as NSString).length, length: 0))
+        #expect(editor.model.spans.contains { if case .heading = $0.kind { true } else { false } }, "typing")
+        editor.textStorage?.replaceCharacters(in: NSRange(location: 0, length: (editor.string as NSString).length), with: "Plain\n")
+        #expect(editor.model.tables.isEmpty, "editing the storage directly")
+    }
+}
