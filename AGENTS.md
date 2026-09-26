@@ -57,8 +57,9 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 - **ContentView.swift**: the window — floating controls, format bar, block menu, slash menu (`SlashEntry`), find, library sidebar, Apple Intelligence flows, export.
 - **NativeEditor.swift**: `NativeEditor` (`NSViewRepresentable`) and `MarkdownTextView` (TextKit 2 `NSTextView`).
   - `NativeEditor.style(_:)` styles both lenses from the cached `MarkdownModel`: fonts first, then inline traits, then markers (dimmed in the Markdown lens, hidden in the Rendered lens), then paragraph layout.
-  - `MarkdownTextView` draws what text attributes cannot (bullets, list numbers, checkboxes, images, math, diagrams, callout titles, chips) in a pass-through `DecorationView`, and handles clicks, ⌘-click links and footnotes, drops, paste, list continuation and table editing.
+  - `MarkdownTextView` handles clicks, ⌘-click links and footnotes, drops, paste, list continuation and table editing, supplies images, math and diagram renders to its fragments, and keeps table cell fields as subviews.
   - `MarkdownList` and `MarkdownTable` keep list renumbering and table navigation, built from the model.
+- **MarkdownLayoutFragment.swift**: `MarkdownLayoutFragment`, the `NSTextLayoutFragment` every paragraph lays out as, and the rendering attribute keys. It draws what text attributes cannot — bullets, list numbers, checkboxes, rounded code and callout boxes, and (through `MarkdownTextView.drawDecorations(anchoredIn:)`) images, math, diagrams, callout titles, code labels, the footnotes rule and chips — so decorations move with the text through layout, scrolling and resizing.
 - **Mermaid.swift**: `MermaidRenderer`, one offscreen `WKWebView` running the bundled Mermaid (`Resources/Mermaid`) with no network access.
 - **Knowledge.swift**: the OKF app layer — link following, log/index writes, the knowledge sidebar section.
 - **Theme.swift**: `EditorTheme` fonts and colors. New York is a system design (`withDesign(.serif)`), not a font name.
@@ -68,8 +69,9 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 
 1. **Source is the authority.** Both lenses style one text storage; nothing converts the Markdown. Selection offsets and undo stay in source coordinates, and every style pass must leave `editor.string` unchanged.
 2. **One parse per text version.** `MarkdownTextView.model` caches `MarkdownModel` by string; styling, drawing, clicks and list/table editing read it instead of scanning with regular expressions. Follow CommonMark/GFM as cmark reads it.
-3. **Hidden markers take no room.** A hidden marker uses a 1pt clear font and kerns each character by its own advance; TextKit caps a negative kern near its glyph's advance, and a kern on the last character of a run is only partly applied.
-4. **Relative paths.** Images and note links use paths relative to the document (bundle-absolute `/…` inside an OKF bundle), falling back to absolute paths for unsaved documents.
+3. **Decorations belong to layout fragments.** `style()` marks what to draw with Markify rendering attributes (`.markifyBullet`, `.markifyTaskBox`, `.markifyBlockFill`, …) or the decoration's anchor character; the fragment that lays out that text draws it. Drawing and hit-testing share geometry functions (e.g. `MarkdownLayoutFragment.checkboxRect`). Never position drawing from `firstRect(forCharacterRange:)`: it answers only inside the viewport; use `MarkdownTextView.textRect` for views such as table cells.
+4. **Hidden markers take no room.** A hidden marker uses a 1pt clear font and kerns each character by its own advance; TextKit caps a negative kern near its glyph's advance, and a kern on the last character of a run is only partly applied.
+5. **Relative paths.** Images and note links use paths relative to the document (bundle-absolute `/…` inside an OKF bundle), falling back to absolute paths for unsaved documents.
 
 ## Key Implementation Details
 
@@ -83,12 +85,13 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 Tests use Swift Testing, not XCTest.
 
 - `MarkifyMarkdown/Tests`: model spans over the shared fixture and edge cases.
+- `MarkifyTests/LayoutFragmentTests.swift`: fragments are installed, `style()` sets rendering attributes, and pixel tests render fragments into a bitmap to check what they draw.
 - `MarkifyTests/EditorFixtureTests.swift`: golden styling probes for both lenses over `MarkifyTests/Fixtures/editor-fixture.md`, layout checks that hidden markers take no room, and a performance guard. When styling changes on purpose, update the golden entry and say why in the commit.
 - `MarkifyTests/MarkifyTests.swift`, `MermaidTests.swift`: editing behavior, lists, tables, slash menu, links, footnotes, OKF and Mermaid rendering.
 
 ## Common Workflows
 
-**Supporting new Markdown syntax**: add a `MarkdownModel.Kind` (from a cmark node in the walker, or as a masked extension), cover it in `MarkdownModelTests`, then style it in `NativeEditor.style(_:)` and, if it needs drawing, in `MarkdownTextView`. Add a fixture probe for both lenses.
+**Supporting new Markdown syntax**: add a `MarkdownModel.Kind` (from a cmark node in the walker, or as a masked extension), cover it in `MarkdownModelTests`, then style it in `NativeEditor.style(_:)`. If it needs drawing, mark it with a rendering attribute and draw it in `MarkdownLayoutFragment` (or anchor it in `MarkdownTextView.decorationAnchors` and draw it in `drawDecorations(anchoredIn:)`), with a pixel test in `LayoutFragmentTests`. Add a fixture probe for both lenses.
 
 **Adding slash menu entries**: add to `SlashEntry.all` in ContentView.swift and, if the caret should land inside the insertion, to the caret table in `SlashEntry.apply`.
 
