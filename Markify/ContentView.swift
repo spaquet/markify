@@ -16,6 +16,14 @@ struct ContentView: View {
     @AppStorage("libraryBookmark") private var libraryBookmark = Data()
     @AppStorage("fadeToolbar") private var fadeToolbar = true
     @AppStorage("lineWidth") private var lineWidth = 640.0
+    @AppStorage("rememberLens") private var rememberLens = true
+    @AppStorage("lastLens") private var lastLens = "Rendered"
+    @AppStorage("newDocumentLocation") private var newDocumentLocation = "Ask each time"
+    @AppStorage("writingTools") private var writingTools = true
+    @AppStorage("generateAtCaret") private var generateAtCaret = true
+    @AppStorage("suggestTitleTags") private var suggestTitleTags = false
+    @AppStorage("generationTone") private var generationTone = "Match document"
+    @AppStorage("useSectionContext") private var useSectionContext = true
     @State private var markdownLens = false
     @State private var sidebarOpen = false
     @State private var chromeVisible = true
@@ -43,6 +51,8 @@ struct ContentView: View {
     @State private var aiPlacement: AIPlacement = .atCaret
     @State private var aiSelectionSource = ""
     @State private var hasTyped = false
+    @State private var isNewDocument = false
+    @State private var offeredTitleTags = false
     @State private var librarySearch = ""
     @State private var libraryFolder: URL?
     @State private var libraryNotes: [LibraryNote] = []
@@ -187,7 +197,7 @@ struct ContentView: View {
                                   y: max(62, selectionRect.minY - 26))
                         .zIndex(5)
                 }
-                if showWritingMenu && formatBarVisible {
+                if showWritingMenu && formatBarVisible && writingTools {
                     let below = selectionRect.maxY + 30
                     let top = below + writingMenuHeight + 12 < geometry.size.height ? below : max(56, selectionRect.minY - 52 - writingMenuHeight)
                     writingMenu
@@ -215,8 +225,24 @@ struct ContentView: View {
         .toolbarBackground(.hidden, for: .windowToolbar)
         .background(WindowConfiguration())
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
-        .onAppear { markdownLens = defaultLens == "Markdown"; loadLibrary() }
-        .onDisappear { libraryFolder?.stopAccessingSecurityScopedResource() }
+        .onAppear {
+            markdownLens = initialLens()
+            isNewDocument = document.text.isEmpty && fileURL == nil
+            if MarkifyAppDelegate.showsLibraryOnNextWindow {
+                MarkifyAppDelegate.showsLibraryOnNextWindow = false
+                sidebarOpen = true
+            }
+            loadLibrary()
+        }
+        .onDisappear {
+            rememberDocumentLens()
+            libraryFolder?.stopAccessingSecurityScopedResource()
+        }
+        .onChange(of: fileURL) { _, _ in rememberDocumentLens() }
+        .onChange(of: document.text) { _, _ in offerTitleTagsIfNeeded() }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willBeginSheetNotification)) { notification in
+            pointSavePanelAtLibrary(notification.object as? NSWindow)
+        }
         .onChange(of: libraryBookmark) { _, _ in loadLibrary() }
         .onChange(of: selectedRange) { _, range in
             formatBarTask?.cancel()
@@ -238,6 +264,9 @@ struct ContentView: View {
             Button("Strikethrough") { wrap("~~") }.keyboardShortcut("x", modifiers: [.shift, .command]).hidden()
             Button("Inline Code") { wrap("`") }.keyboardShortcut("e", modifiers: .command).hidden()
             Button("Link") { wrap("[", suffix: "](url)") }.keyboardShortcut("k", modifiers: .command).hidden()
+            if generateAtCaret && aiAvailability == .available {
+                Button("Continue Writing") { generateAtCaretOrKeep() }.keyboardShortcut(.return, modifiers: .command).hidden()
+            }
         }
     }
 
@@ -329,7 +358,7 @@ struct ContentView: View {
 
     private var formatBar: some View {
         HStack(spacing: 1) {
-            if aiAvailability != .unavailable(.deviceNotEligible) {
+            if writingTools && aiAvailability != .unavailable(.deviceNotEligible) {
                 Button {
                     showWritingMenu.toggle()
                     showAI = false
@@ -563,9 +592,7 @@ struct ContentView: View {
                 aiRow("Suggest title & tags", detail: "Frontmatter") {
                     generate(action: "Suggest a clear title and up to five short tags for this document.", placement: .frontmatter)
                 }
-                aiRow("Continue writing", detail: "At caret · ⌘↩") {
-                    generate(action: "Continue this document in the same tone. Return only the continuation as Markdown.")
-                }
+                aiRow("Continue writing", detail: generateAtCaret ? "At caret · ⌘↩" : "At caret") { continueWriting() }
             case .unavailable(.appleIntelligenceNotEnabled):
                 Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary).padding(.horizontal, 10)
             case .unavailable(.modelNotReady):
@@ -634,6 +661,31 @@ struct ContentView: View {
         .buttonStyle(MenuRowStyle(fill: .clear, hover: rowSel, radius: 9))
     }
 
+    private func continueWriting() {
+        generate(action: "Continue this document from the caret. Return only the continuation as Markdown.")
+    }
+
+    private func generateAtCaretOrKeep() {
+        if !aiOutput.isEmpty && !aiBusy { return keepAIOutput() }
+        showAI = true
+        showWritingMenu = false
+        continueWriting()
+    }
+
+    /// Opens the document panel with a frontmatter suggestion once a new document has enough text to summarize.
+    private func offerTitleTagsIfNeeded() {
+        guard suggestTitleTags, isNewDocument, !offeredTitleTags, aiAvailability == .available, !aiBusy, aiOutput.isEmpty,
+              !document.text.hasPrefix("---\n"), wordCount >= 50 else { return }
+        offeredTitleTags = true
+        showAI = true
+        generate(action: "Suggest a clear title and up to five short tags for this document.", placement: .frontmatter)
+    }
+
+    private var toneInstruction: String {
+        generationTone == "Match document" ? "Match the tone and voice of the document."
+            : "Unless the request names another tone, write in a \(generationTone.lowercased()) tone."
+    }
+
     private func generate(action: String, placement: AIPlacement = .atCaret) {
         guard aiAvailability == .available, !action.isEmpty else { return }
         aiTask?.cancel()
@@ -642,19 +694,37 @@ struct ContentView: View {
         aiBusy = true
         aiInsertion = selectedRange.location
         aiPlacement = placement
+        let text = document.text as NSString
         let source: String
-        if case .replaceSelection(let range) = placement, NSMaxRange(range) <= (document.text as NSString).length {
-            source = (document.text as NSString).substring(with: range)
-        } else { source = document.text }
+        let prompt: String
+        switch placement {
+        case .replaceSelection(let range) where NSMaxRange(range) <= text.length:
+            source = text.substring(with: range)
+            let section = AIContext.section(around: range, in: document.text)
+            prompt = useSectionContext && section != range
+                ? "\(action)\n\nSurrounding section, for context only:\n\(text.substring(with: section))\n\nSelection:\n\(source)"
+                : "\(action)\n\nSelection:\n\(source)"
+        case .atCaret where useSectionContext:
+            source = document.text
+            let caret = min(selectedRange.location, text.length)
+            let section = AIContext.section(around: NSRange(location: caret, length: 0), in: document.text)
+            let before = text.substring(with: NSRange(location: section.location, length: caret - section.location))
+            let after = text.substring(with: NSRange(location: caret, length: NSMaxRange(section) - caret))
+            prompt = "\(action)\n\nSection text before the caret:\n\(before)\n\nSection text after the caret:\n\(after)"
+        default:
+            source = document.text
+            prompt = "\(action)\n\nDocument:\n\(source)"
+        }
         aiSelectionSource = source
+        let instructions = "You edit Markdown. Keep the response grounded in the supplied text. \(toneInstruction) Return only the requested Markdown content."
         aiTask = Task {
             do {
-                let session = LanguageModelSession(instructions: "You edit Markdown. Keep the response grounded in the supplied document. Return only the requested Markdown content.")
+                let session = LanguageModelSession(instructions: instructions)
                 if placement == .frontmatter {
-                    let response = try await session.respond(to: "\(action)\n\nDocument:\n\(source)", generating: SuggestedFrontmatter.self)
+                    let response = try await session.respond(to: prompt, generating: SuggestedFrontmatter.self)
                     if !Task.isCancelled { aiOutput = response.content.markdown }
                 } else {
-                    for try await snapshot in session.streamResponse(to: "\(action)\n\nDocument:\n\(source)") {
+                    for try await snapshot in session.streamResponse(to: prompt) {
                         if Task.isCancelled { break }
                         aiOutput = snapshot.content
                     }
@@ -800,6 +870,31 @@ struct ContentView: View {
     private func toggleLens() {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.24)) { markdownLens.toggle() }
         chromeVisible = true
+        lastLens = markdownLens ? "Markdown" : "Rendered"
+        rememberDocumentLens()
+    }
+
+    /// Per-document lens (extended attribute) when remembered, else the Settings default.
+    private func initialLens() -> Bool {
+        if rememberLens, let fileURL, let stored = LensMemory.read(fileURL) { return stored }
+        return (defaultLens == "Last used" ? lastLens : defaultLens) == "Markdown"
+    }
+
+    private func rememberDocumentLens() {
+        guard rememberLens, let fileURL else { return }
+        LensMemory.write(markdownLens, to: fileURL)
+    }
+
+    /// Starts the first save panel of an untitled document in the library folder when Settings asks for it.
+    private func pointSavePanelAtLibrary(_ window: NSWindow?) {
+        guard newDocumentLocation == "Library", fileURL == nil, let window, window === textView?.window else { return }
+        DispatchQueue.main.async {
+            guard let panel = window.attachedSheet as? NSSavePanel else { return }
+            let folder = libraryFolder ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Markify")
+            guard let folder else { return }
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            panel.directoryURL = folder
+        }
     }
     private func toggleSidebar() {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { sidebarOpen.toggle() }
@@ -919,6 +1014,39 @@ struct SlashEntry {
     }
 }
 
+enum AIContext {
+    /// The source range from the heading above `range` to the next heading after it, or the whole document without headings.
+    static func section(around range: NSRange, in source: String) -> NSRange {
+        let ns = source as NSString
+        guard let regex = try? NSRegularExpression(pattern: #"(?m)^#{1,6}[ \t]"#) else { return NSRange(location: 0, length: ns.length) }
+        let starts = regex.matches(in: source, range: NSRange(location: 0, length: ns.length)).map(\.range.location)
+        let start = starts.last { $0 <= range.location } ?? 0
+        let end = starts.first { $0 > max(start, NSMaxRange(range) - 1) } ?? ns.length
+        return NSRange(location: start, length: max(end, NSMaxRange(range)) - start)
+    }
+}
+
+/// Stores the lens a document was last shown in as an extended attribute, so the Markdown file stays clean.
+enum LensMemory {
+    static let attribute = "com.markify.lens"
+
+    static func read(_ url: URL) -> Bool? {
+        var buffer = [UInt8](repeating: 0, count: 16)
+        let count = getxattr(url.path, attribute, &buffer, buffer.count, 0, 0)
+        guard count > 0 else { return nil }
+        switch String(decoding: buffer.prefix(count), as: UTF8.self) {
+        case "markdown": return true
+        case "rendered": return false
+        default: return nil
+        }
+    }
+
+    static func write(_ markdown: Bool, to url: URL) {
+        let value = Array((markdown ? "markdown" : "rendered").utf8)
+        _ = setxattr(url.path, attribute, value, value.count, 0, 0)
+    }
+}
+
 enum AIPlacement: Equatable {
     case atCaret, atTop, newSection, frontmatter, replaceSelection(NSRange)
 
@@ -997,6 +1125,8 @@ private struct WindowConfiguration: NSViewRepresentable {
             window.titleVisibility = .hidden
             window.title = ""
             window.styleMask.insert(.fullSizeContentView)
+            // Settings › On launch decides which documents reopen, not system window restoration.
+            window.isRestorable = false
             window.setContentSize(NSSize(width: 980, height: 660))
         }
         return view

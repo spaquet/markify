@@ -209,4 +209,28 @@ struct MarkifyTests {
         let summary = AIPlacement.atTop.edit(source: source, output: "Summary", caret: 0)
         #expect(summary.range.location == edit.range.length)
     }
+
+    @Test func sectionContextSpansHeadingToNextHeading() {
+        let source = "Intro\n# One\nAlpha beta\n## Two\nGamma\n"
+        let ns = source as NSString
+        let caret = NSRange(location: ns.range(of: "beta").location, length: 0)
+        #expect(ns.substring(with: AIContext.section(around: caret, in: source)) == "# One\nAlpha beta\n")
+        let intro = AIContext.section(around: NSRange(location: 2, length: 0), in: source)
+        #expect(ns.substring(with: intro) == "Intro\n")
+        let spanning = AIContext.section(around: NSRange(location: ns.range(of: "beta").location, length: 12), in: source)
+        #expect(ns.substring(with: spanning) == "# One\nAlpha beta\n## Two\nGamma\n")
+        #expect(AIContext.section(around: NSRange(location: 1, length: 0), in: "plain") == NSRange(location: 0, length: 5))
+    }
+
+    @Test func lensMemoryRoundTripsExtendedAttribute() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+        try "# Note\n".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(LensMemory.read(url) == nil)
+        LensMemory.write(true, to: url)
+        #expect(LensMemory.read(url) == true)
+        LensMemory.write(false, to: url)
+        #expect(LensMemory.read(url) == false)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "# Note\n")
+    }
 }

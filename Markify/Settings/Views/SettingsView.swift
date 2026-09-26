@@ -4,7 +4,6 @@ import AppKit
 struct SettingsView: View {
     @AppStorage("newDocumentLocation") private var newDocumentLocation = "Ask each time"
     @AppStorage("libraryBookmark") private var libraryBookmark = Data()
-    @AppStorage("reloadExternalChanges") private var reloadExternalChanges = true
     @AppStorage("startup") private var startup = "Reopen last documents"
     @AppStorage("defaultLens") private var defaultLens = "Rendered"
     @AppStorage("rememberLens") private var rememberLens = true
@@ -36,7 +35,6 @@ struct SettingsView: View {
                         Text(libraryPath).foregroundStyle(.secondary).lineLimit(1)
                         Button("Choose…", action: chooseLibrary)
                     }
-                    Toggle("Reload when changed on disk", isOn: $reloadExternalChanges)
                 }
                 Section("Startup") {
                     Picker("On launch", selection: $startup) {
@@ -106,6 +104,7 @@ struct SettingsView: View {
             }.formStyle(.grouped).tabItem { Label("Shortcuts", systemImage: "keyboard") }.tag(Tab.shortcuts)
         }
         .frame(width: 780, height: 480)
+        .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
         .onAppear { selectedTab = .general }
         .onDisappear { selectedTab = .general }
     }
