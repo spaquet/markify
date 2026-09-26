@@ -86,7 +86,7 @@ jobs:
           cat "markify-${{ matrix.suffix }}.dmg.sha256"
 
       - name: Upload DMG and checksum as artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: markify-${{ matrix.suffix }}-v${{ env.VERSION }}
           path: |
@@ -105,7 +105,7 @@ jobs:
 
     steps:
       - name: Download DMGs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
