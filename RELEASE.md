@@ -8,22 +8,17 @@ Releases are built by GitHub Actions ([`release-dmg.yml`](.github/workflows/rele
 
 Markify checks for updates with [Sparkle](https://sparkle-project.org). Its feed is `https://github.com/spaquet/markify/releases/latest/download/appcast.xml` (`SUFeedURL` in `Markify/Info.plist`), so it always serves the appcast attached to the latest published release. Settings › General › Updates turns automatic checks and automatic installs on or off; the app menu has **Check for Updates…**.
 
-Each update is signed with an EdDSA key. The public key is `SUPublicEDKey` in `Markify/Info.plist`; the private key is the `SPARKLE_PRIVATE_KEY` repository secret, and a tag build fails without it.
+Each update is signed with an EdDSA key. The public key is `SUPublicEDKey` in `Markify/Info.plist`; the private key is the `SPARKLE_PRIVATE_KEY` repository secret. A tag build fails when the secret is missing, or when the update's signature doesn't verify against `SUPublicEDKey` ([`scripts/verify-update-signature.swift`](scripts/verify-update-signature.swift)), so a placeholder or mismatched key never reaches users.
 
 ### One-time key setup
 
-Sparkle's tools are in the package checkout after Xcode resolves packages (`…/SourcePackages/artifacts/sparkle/Sparkle/bin`).
-
 ```bash
-# Creates the key pair in your login keychain and prints the public key
-./bin/generate_keys
-# Export the private key and store it as the repository secret
-./bin/generate_keys -x sparkle-private.key
-gh secret set SPARKLE_PRIVATE_KEY < sparkle-private.key
-rm sparkle-private.key
+scripts/setup-sparkle-keys.sh
 ```
 
-Put the printed public key in `SUPublicEDKey`. Keep the private key in the keychain (and a backup somewhere safe): if it is lost, installed copies can no longer accept updates and users must download a new version by hand.
+The script creates the key pair in your login keychain (or reuses the one there), writes the public key to `SUPublicEDKey`, and stores the private key as the `SPARKLE_PRIVATE_KEY` secret with `gh`. Commit the `Info.plist` change. Run it again to repair a secret that doesn't match.
+
+Back up the private key (`generate_keys -x <file>`, the tool is in `.build/spm/artifacts/sparkle/Sparkle/bin` after the script runs) somewhere safe: if it is lost, installed copies can no longer accept updates and users must download a new version by hand.
 
 ### Signing
 

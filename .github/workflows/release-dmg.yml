@@ -124,8 +124,11 @@ jobs:
               exit 1
             fi
             SIGN_UPDATE="${{ matrix.derived_data_path }}/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update"
-            # Prints: sparkle:edSignature="…" length="…"
-            echo "ENCLOSURE_ATTRIBUTES='$(echo "$SPARKLE_PRIVATE_KEY" | "$SIGN_UPDATE" --ed-key-file - markify-update.zip)'" >> markify-update.env
+            SIGNATURE=$(echo "$SPARKLE_PRIVATE_KEY" | "$SIGN_UPDATE" --ed-key-file - -p markify-update.zip)
+            # Installed copies check the update against the app's public key.
+            swift scripts/verify-update-signature.swift \
+              "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$PLIST")" "$SIGNATURE" markify-update.zip
+            echo "ENCLOSURE_ATTRIBUTES='sparkle:edSignature=\"$SIGNATURE\" length=\"$(stat -f%z markify-update.zip)\"'" >> markify-update.env
           fi
           cat markify-update.env
 
