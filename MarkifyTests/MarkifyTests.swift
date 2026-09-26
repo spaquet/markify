@@ -233,4 +233,52 @@ struct MarkifyTests {
         #expect(LensMemory.read(url) == false)
         #expect(try String(contentsOf: url, encoding: .utf8) == "# Note\n")
     }
+
+    @Test func frontmatterParsesTagsAndDate() {
+        let inline = Frontmatter.parse("---\ntags: [essay, \"editor\"]\ndate: 2026-09-25\n---\n# Title\n")
+        #expect(inline?.tags == ["essay", "editor"])
+        #expect(inline?.date == "2026-09-25")
+        #expect(inline?.range == NSRange(location: 0, length: 49))
+        let list = Frontmatter.parse("---\ntags:\n  - one\n  - two\n---\n")
+        #expect(list?.tags == ["one", "two"])
+        #expect(Frontmatter.parse("# No frontmatter\n") == nil)
+        #expect(Frontmatter.parse("---\nunclosed: yes\n") == nil)
+    }
+
+    @Test func blockStyleRestylesEveryLine() {
+        #expect(BlockStyle.apply("Heading", to: "# Old\n- item") == "## Old\n## item")
+        #expect(BlockStyle.apply("Numbered", to: "a\n\nb") == "1. a\n\n2. b")
+        #expect(BlockStyle.apply("Body", to: "- [x] done\n> quote") == "done\nquote")
+        #expect(BlockStyle.apply("Callout", to: "one\ntwo") == "> [!NOTE]\n> one\n> two")
+        #expect(BlockStyle.apply("Code block", to: "## x") == "```\nx\n```")
+    }
+
+    @Test func shortcutsParseDisplayAndOverride() {
+        #expect(Shortcuts.display("shift cmd x") == "⇧⌘X")
+        #expect(Shortcuts.display("cmd return") == "⌘↩")
+        #expect(Shortcuts.keyboardShortcut("bold", stored: "") == KeyboardShortcut("b", modifiers: .command))
+        let stored = Shortcuts.encode(["bold": "ctrl cmd b", "italic": ""])
+        #expect(Shortcuts.keyboardShortcut("bold", stored: stored) == KeyboardShortcut("b", modifiers: [.control, .command]))
+        #expect(Shortcuts.keyboardShortcut("italic", stored: stored) == nil)
+        #expect(Set(Shortcuts.actions.map(\.key)).count == Shortcuts.actions.count)
+    }
+
+    @Test func footnoteDefinitionsKeepLabelAndText() {
+        let notes = Footnote.definitions(in: "Body[^1]\n\n[^1]: The note.\n[^two]: Second\n")
+        #expect(notes.map(\.label) == ["1", "two"])
+        #expect(notes.first?.text == "The note.")
+    }
+
+    @Test func frontmatterReadsTitle() {
+        let parsed = Frontmatter.parse("---\ntitle: \"Bug: Bullets\"\ntags: [\"bug\",\"dark mode\"]\n---\nBody\n")
+        #expect(parsed?.title == "Bug: Bullets")
+        #expect(parsed?.tags == ["bug", "dark mode"])
+        #expect(Frontmatter.parse("---\ntags: [a]\n---\n")?.title == nil)
+    }
+
+    @Test func finderTagsSwapMirroredTagsAndKeepOthers() {
+        #expect(FinderTags.merge(finder: ["Red", "old"], previous: ["old"], current: ["new"]) == ["Red", "new"])
+        #expect(FinderTags.merge(finder: ["Bug"], previous: [], current: ["bug", "ui"]) == ["Bug", "ui"])
+        #expect(FinderTags.merge(finder: [], previous: ["a"], current: []) == [])
+    }
 }

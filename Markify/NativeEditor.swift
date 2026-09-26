@@ -38,6 +38,9 @@ struct NativeEditor: NSViewRepresentable {
     let onSlash: (String?) -> Void
     let onSlashKey: (SlashKey, SlashContext) -> Bool
     let onSelectionRect: (CGRect) -> Void
+    var theme = EditorTheme()
+    /// The find match the selection sits on, drawn with the stronger highlight.
+    var currentMatch: NSRange? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -50,6 +53,7 @@ struct NativeEditor: NSViewRepresentable {
         editor.documentURL = fileURL
         editor.columnWidth = columnWidth
         editor.rendered = !markdownLens
+        editor.theme = theme
         editor.registerForDraggedTypes([.fileURL])
         editor.isRichText = false
         editor.allowsUndo = true
@@ -83,16 +87,23 @@ struct NativeEditor: NSViewRepresentable {
         (editor as? MarkdownTextView)?.documentURL = fileURL
         (editor as? MarkdownTextView)?.columnWidth = columnWidth
         (editor as? MarkdownTextView)?.rendered = !markdownLens
+        (editor as? MarkdownTextView)?.theme = theme
         context.coordinator.parent = self
-        let sourceChanged = editor.string != text
+        // A render can still carry text the editor pushed a keystroke ago; replaying it would drop the newer typing.
+        let echo = context.coordinator.pushedText.contains(text)
+        if editor.string == text || !echo { context.coordinator.pushedText.removeAll() }
+        let sourceChanged = editor.string != text && !echo
         let styleChanged = context.coordinator.lastLens != markdownLens || context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
+            || context.coordinator.lastTheme != theme || context.coordinator.lastCurrentMatch != currentMatch
         if sourceChanged || styleChanged {
             let topOffset = editor.characterIndexForInsertion(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
             let anchor = SourceAnchor(source: editor.string, selection: editor.selectedRange(), topOffset: topOffset)
             let before = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
+            context.coordinator.isUpdating = true
             if sourceChanged { editor.string = text }
             style(editor)
             editor.setSelectedRange(anchor.selection(in: editor.string))
+            context.coordinator.isUpdating = false
             editor.layoutSubtreeIfNeeded()
             let after = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
             let newY = max(0, scroll.contentView.bounds.minY + before.minY - after.minY)
@@ -102,18 +113,22 @@ struct NativeEditor: NSViewRepresentable {
         context.coordinator.lastLens = markdownLens
         context.coordinator.lastQuery = findQuery
         context.coordinator.lastMatchCase = matchCase
+        context.coordinator.lastTheme = theme
+        context.coordinator.lastCurrentMatch = currentMatch
     }
 
     func style(_ editor: NSTextView) {
         guard let storage = editor.textStorage else { return }
         let source = editor.string as NSString
         let whole = NSRange(location: 0, length: source.length)
-        guard whole.length > 0 else { return }
         let primary = NSColor.labelColor
         let dim = NSColor.tertiaryLabelColor
-        let base = markdownLens ? NSFont.monospacedSystemFont(ofSize: 14, weight: .regular) : NSFont(name: "NewYork-Regular", size: 18) ?? NSFont.systemFont(ofSize: 18)
+        let accent = theme.accent
+        let base = markdownLens ? theme.mono(14) : theme.prose(18)
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = markdownLens ? 10 : 11
+        paragraph.lineSpacing = (markdownLens ? 10 : 11) * theme.scale
+        editor.typingAttributes = [.font: base, .foregroundColor: primary, .paragraphStyle: paragraph]
+        guard whole.length > 0 else { return }
         storage.beginEditing()
         storage.setAttributes([.font: base, .foregroundColor: primary, .paragraphStyle: paragraph], range: whole)
 
@@ -124,7 +139,7 @@ struct NativeEditor: NSViewRepresentable {
         func marker(_ range: NSRange) {
             guard range.location != NSNotFound, range.length > 0 else { return }
             storage.addAttributes([.foregroundColor: markdownLens ? dim : NSColor.clear,
-                                   .font: markdownLens ? NSFont.monospacedSystemFont(ofSize: 14, weight: .regular) : NSFont.systemFont(ofSize: 1)], range: range)
+                                   .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
             // Even at 1pt the hidden marker keeps a sliver of advance; kern it back so text starts on the column edge.
             if !markdownLens {
                 let width = storage.attributedSubstring(from: range).size().width
@@ -140,14 +155,14 @@ struct NativeEditor: NSViewRepresentable {
                   let match = try? NSRegularExpression(pattern: "^(#{1,6})[ \\t]+([^\\n]+)").firstMatch(in: editor.string, range: range) else { continue }
             let level = heading.level
             let size: CGFloat = markdownLens ? 16 : (level == 1 ? 36 : level == 2 ? 22 : 19)
-            let font = markdownLens ? NSFont.monospacedSystemFont(ofSize: size, weight: .bold) : (NSFont(name: "NewYork-Bold", size: size) ?? NSFont.boldSystemFont(ofSize: size))
+            let font = markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true)
             storage.addAttribute(.font, value: font, range: match.range(at: 2))
             marker(NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
         }
         matches("(?m)^(?:[ \\t]*)(>[ \\t]?)") { match in marker(match.range(at: 1)) }
         matches("(?m)^[ \\t]*([-*+] )(?!\\[[ xX]\\] )") { match in
             if markdownLens { marker(match.range(at: 1)) }
-            else { storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.monospacedSystemFont(ofSize: 18, weight: .regular)], range: match.range(at: 1)) }
+            else { storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: match.range(at: 1)) }
         }
         matches("(?m)^[ \\t]*([0-9]+[.)]) ") { match in
             if markdownLens { marker(match.range(at: 1)) }
@@ -170,26 +185,27 @@ struct NativeEditor: NSViewRepresentable {
             }
         }
         matches("(\\*\\*|__)([^\\n]+?)\\1") { match in
-            storage.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: markdownLens ? 14 : 18), range: match.range(at: 2))
+            storage.addAttribute(.font, value: markdownLens ? theme.mono(14, weight: .bold) : theme.prose(18, bold: true), range: match.range(at: 2))
             marker(match.range(at: 1))
             marker(NSRange(location: NSMaxRange(match.range) - match.range(at: 1).length, length: match.range(at: 1).length))
         }
         matches("(?<!\\*)\\*([^*\\n]+)\\*(?!\\*)") { match in
-            storage.addAttribute(.font, value: NSFontManager.shared.convert(base, toHaveTrait: .italicFontMask), range: match.range(at: 1))
+            storage.addAttribute(.font, value: markdownLens ? NSFontManager.shared.convert(base, toHaveTrait: .italicFontMask) : theme.prose(18, italic: true), range: match.range(at: 1))
             marker(NSRange(location: match.range.location, length: 1))
             marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
         }
         matches("`([^`\\n]+)`") { match in
-            storage.addAttribute(.font, value: NSFont.monospacedSystemFont(ofSize: markdownLens ? 14 : 15, weight: .regular), range: match.range(at: 1))
+            storage.addAttribute(.font, value: theme.mono(markdownLens ? 14 : 15), range: match.range(at: 1))
             marker(NSRange(location: match.range.location, length: 1))
             marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
         }
         matches("(?m)^(```.*|\\$\\$|---)[ \\t]*$") { marker($0.range) }
-        matches("(?m)^> \\[!(NOTE|TIP|WARNING|IMPORTANT)\\].*(?:\\n>[^\\n]*)*") { match in
-            guard !markdownLens else { return }
-            storage.addAttributes([.backgroundColor: NSColor.controlAccentColor.withAlphaComponent(0.08),
-                                   .font: NSFont.systemFont(ofSize: 15)], range: match.range)
-            storage.addAttribute(.foregroundColor, value: NSColor.controlAccentColor, range: match.range(at: 1))
+        matches("(?m)^> (\\[!(NOTE|TIP|WARNING|IMPORTANT)\\]).*(?:\\n>[^\\n]*)*") { match in
+            let color = Callout.color(source.substring(with: match.range(at: 2)), accent: accent)
+            guard !markdownLens else { return storage.addAttribute(.foregroundColor, value: color, range: match.range(at: 2)) }
+            storage.addAttributes([.backgroundColor: NSColor.calloutFill(color), .font: theme.ui(15)], range: match.range)
+            // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
+            storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: match.range(at: 1))
             marker(NSRange(location: match.range.location, length: 2))
         }
         matches("(?m)^[-*+] \\[([xX ])\\] ([^\\n]+)") { match in
@@ -197,7 +213,7 @@ struct NativeEditor: NSViewRepresentable {
             storage.addAttributes([.foregroundColor: NSColor.clear,
                                    .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)],
                                   range: NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
-            storage.addAttribute(.font, value: NSFont.systemFont(ofSize: 17), range: match.range(at: 2))
+            storage.addAttribute(.font, value: theme.ui(17), range: match.range(at: 2))
             if (source.substring(with: match.range(at: 1))).lowercased() == "x" {
                 storage.addAttributes([.foregroundColor: dim, .strikethroughStyle: NSUnderlineStyle.single.rawValue], range: match.range(at: 2))
             }
@@ -227,26 +243,45 @@ struct NativeEditor: NSViewRepresentable {
                 }
             }
         }
-        matches("(?m)^\\[\\^[^]\\n]+\\]:.*$") { match in
-            storage.addAttributes([.font: NSFont.systemFont(ofSize: 13), .foregroundColor: dim], range: match.range)
+        let notes = Footnote.definitions(in: editor.string)
+        matches("(?m)^(\\[\\^)([^]\\n]+)(\\]:)(.*)$") { match in
+            storage.addAttributes([.font: markdownLens ? base : theme.ui(13), .foregroundColor: markdownLens ? dim : NSColor.secondaryLabelColor], range: match.range)
+            storage.addAttributes([.foregroundColor: accent, .font: markdownLens ? base : theme.ui(13, weight: .semibold)], range: match.range(at: 2))
+            guard !markdownLens else { return }
+            marker(match.range(at: 1))
+            storage.addAttributes([.foregroundColor: NSColor.clear], range: NSRange(location: match.range(at: 3).location, length: 1))
+            if match.range.location == notes.first?.range.location {
+                let style = (storage.attribute(.paragraphStyle, at: match.range.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+                style.paragraphSpacingBefore = 26 * theme.scale
+                storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: match.range))
+            }
+        }
+        matches("(\\[\\^)([^]\\n]+)(\\])(?!:)") { match in
+            storage.addAttributes([.foregroundColor: accent], range: markdownLens ? match.range : match.range(at: 2))
+            guard !markdownLens else { return }
+            storage.addAttributes([.font: theme.ui(11, weight: .semibold), .baselineOffset: 7 * theme.scale], range: match.range(at: 2))
+            if let note = notes.first(where: { $0.label == source.substring(with: match.range(at: 2)) }) {
+                storage.addAttribute(.toolTip, value: note.text, range: match.range(at: 2))
+            }
+            marker(match.range(at: 1))
+            marker(match.range(at: 3))
         }
         matches("(?ms)^```([a-zA-Z0-9_+-]*)[^\\n]*\\n(.*?)\\n```[ \\t]*$") { match in
             let body = match.range(at: 2)
-            storage.addAttributes([.font: NSFont.monospacedSystemFont(ofSize: markdownLens ? 14 : 13.5, weight: .regular),
-                                   .backgroundColor: NSColor.textBackgroundColor.blended(withFraction: 0.06, of: .gray) ?? NSColor.textBackgroundColor], range: body)
+            storage.addAttributes([.font: theme.mono(markdownLens ? 14 : 13.5), .backgroundColor: NSColor.codeFill], range: body)
             if !markdownLens {
                 marker(NSRange(location: match.range.location, length: body.location - match.range.location))
                 marker(NSRange(location: NSMaxRange(body), length: NSMaxRange(match.range) - NSMaxRange(body)))
             }
             let code = source.substring(with: body)
-            let colors: [(String, NSColor)] = [
-                (#"\b(func|let|var|if|else|return|class|struct|import|guard|private)\b"#, NSColor.systemPurple),
-                (#"\b[A-Z][A-Za-z0-9_]*\b"#, NSColor.systemTeal),
-                (#""[^"\n]*""#, NSColor.systemRed),
-                (#"//[^\n]*"#, NSColor.secondaryLabelColor)
+            let colors: [(String, CodeToken)] = [
+                (#"\b(func|let|var|if|else|return|class|struct|import|guard|private|def|const|function|for|while|in|true|false|nil|null)\b"#, .keyword),
+                (#"\b[A-Z][A-Za-z0-9_]*\b"#, .type),
+                (#""[^"\n]*"|\b[0-9]+(\.[0-9]+)?\b"#, .literal),
+                (#"(//|#)[^\n]*"#, .comment)
             ]
-            for (pattern, color) in colors {
-                guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+            for (pattern, kind) in colors {
+                guard let color = theme.code(kind), let regex = try? NSRegularExpression(pattern: pattern) else { continue }
                 for token in regex.matches(in: code, range: NSRange(location: 0, length: (code as NSString).length)) {
                     storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: body.location + token.range.location, length: token.range.length))
                 }
@@ -262,13 +297,13 @@ struct NativeEditor: NSViewRepresentable {
         }
         matches("(?<!\\$)\\$([^$\\n]+)\\$(?!\\$)") { match in
             guard !markdownLens else { return }
-            storage.addAttribute(.font, value: NSFont(name: "NewYork-Italic", size: 18) ?? base, range: match.range(at: 1))
+            storage.addAttribute(.font, value: theme.prose(18, italic: true), range: match.range(at: 1))
             marker(NSRange(location: match.range.location, length: 1))
             marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
         }
         matches("\\[([^]\\n]+)\\]\\(([^)\\n]+)\\)") { match in
-            storage.addAttribute(.foregroundColor, value: NSColor.controlAccentColor, range: match.range(at: 1))
-            if markdownLens { storage.addAttribute(.foregroundColor, value: NSColor.controlAccentColor, range: match.range(at: 2)) }
+            storage.addAttribute(.foregroundColor, value: accent, range: match.range(at: 1))
+            if markdownLens { storage.addAttribute(.foregroundColor, value: accent, range: match.range(at: 2)) }
             else { marker(NSRange(location: match.range.location, length: match.range(at: 1).location - match.range.location)); marker(NSRange(location: NSMaxRange(match.range(at: 1)), length: NSMaxRange(match.range) - NSMaxRange(match.range(at: 1)))) }
         }
         matches("(?m)^!\\[([^]\\n]*)\\]\\(([^)\\n]+)\\)[ \\t]*$") { match in
@@ -280,8 +315,28 @@ struct NativeEditor: NSViewRepresentable {
             style.paragraphSpacingBefore = 270
             style.paragraphSpacing = 34
             storage.addAttribute(.paragraphStyle, value: style, range: match.range)
-            storage.addAttributes([.font: NSFont.systemFont(ofSize: 13),
+            storage.addAttributes([.font: theme.ui(13),
                                    .foregroundColor: NSColor.secondaryLabelColor], range: caption)
+        }
+        if let frontmatter = Frontmatter.parse(editor.string) {
+            if markdownLens {
+                matches("(?m)^([A-Za-z_][A-Za-z0-9_-]*):") { match in
+                    if NSLocationInRange(match.range.location, frontmatter.range) {
+                        storage.addAttribute(.foregroundColor, value: CodeToken.type.color, range: match.range(at: 1))
+                    }
+                }
+            } else {
+                // The YAML collapses to one chip row that MarkdownTextView draws; the source stays untouched.
+                let hidden = NSMutableParagraphStyle()
+                hidden.minimumLineHeight = 0.01
+                hidden.maximumLineHeight = 0.01
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear, .paragraphStyle: hidden], range: frontmatter.range)
+                let row = NSMutableParagraphStyle()
+                row.minimumLineHeight = 24 * theme.scale
+                row.maximumLineHeight = 24 * theme.scale
+                row.paragraphSpacing = 20 * theme.scale
+                storage.addAttribute(.paragraphStyle, value: row, range: source.lineRange(for: NSRange(location: frontmatter.range.location, length: 0)))
+            }
         }
         if !findQuery.isEmpty {
             let options: NSRegularExpression.Options = matchCase ? [] : [.caseInsensitive]
@@ -293,12 +348,13 @@ struct NativeEditor: NSViewRepresentable {
                             if let color = value as? NSColor, color.alphaComponent == 0 { visible = false; stop.pointee = true }
                         }
                     }
-                    if visible { storage.addAttribute(.backgroundColor, value: NSColor.systemYellow.withAlphaComponent(0.4), range: match.range) }
+                    if visible { storage.addAttribute(.backgroundColor, value: match.range == currentMatch ? NSColor.findCurrent : NSColor.findMatch, range: match.range) }
                 }
             }
         }
         storage.endEditing()
         if let editor = editor as? MarkdownTextView {
+            editor.refreshDecorations()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
     }
@@ -309,7 +365,13 @@ struct NativeEditor: NSViewRepresentable {
         var lastLens = false
         var lastQuery = ""
         var lastMatchCase = false
+        var lastTheme = EditorTheme()
+        var lastCurrentMatch: NSRange?
         var isCreatingTitle = false
+        /// Text sent to the binding that SwiftUI has not yet handed back.
+        var pushedText: [String] = []
+        /// True while updateNSView edits the text view, when SwiftUI state must not be written.
+        var isUpdating = false
         var dismissedSlashLocation: Int?
         init(_ parent: NativeEditor) { self.parent = parent }
         @MainActor func handleSlashKey(_ key: SlashKey, _ slash: SlashContext) -> Bool {
@@ -335,6 +397,8 @@ struct NativeEditor: NSViewRepresentable {
         }
         func textDidChange(_ notification: Notification) {
             guard let editor else { return }
+            pushedText.append(editor.string)
+            if pushedText.count > 32 { pushedText.removeFirst() }
             parent.text = editor.string
             if (editor as? MarkdownTextView)?.isRenumbering != true { parent.onType() }
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
@@ -344,6 +408,10 @@ struct NativeEditor: NSViewRepresentable {
         }
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let editor else { return }
+            if isUpdating {
+                DispatchQueue.main.async { [weak self] in self?.textViewDidChangeSelection(notification) }
+                return
+            }
             parent.selectedRange = editor.selectedRange()
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             parent.onSlash(slash?.range.location == dismissedSlashLocation ? nil : slash?.query)
@@ -361,6 +429,7 @@ final class MarkdownTextView: NSTextView {
     var documentURL: URL?
     var columnWidth: CGFloat = 640
     var rendered = true
+    var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:]; refreshDecorations() } } }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     private var imageCache: [URL: NSImage] = [:]
     private var mathCache: [String: NSImage] = [:]
@@ -531,10 +600,40 @@ final class MarkdownTextView: NSTextView {
         return NSRect(x: local.minX + 2, y: local.midY - 9, width: 18, height: 18)
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
+    /// TextKit 2 repaints edited text in its own fragment views without calling draw(_:) here,
+    /// so rendered decorations live in a pass-through view kept over the visible area.
+    private lazy var decorations = DecorationView(host: self)
+    private var clipObserver: NSObjectProtocol?
+
+    func refreshDecorations() {
+        guard superview != nil else { return }
+        if decorations.superview !== self { addSubview(decorations) }
+        if decorations.frame != visibleRect { decorations.frame = visibleRect }
+        decorations.needsDisplay = true
+    }
+
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        if let clipObserver { NotificationCenter.default.removeObserver(clipObserver) }
+        clipObserver = nil
+        guard let clip = superview as? NSClipView else { return }
+        clip.postsBoundsChangedNotifications = true
+        clipObserver = NotificationCenter.default.addObserver(forName: NSView.boundsDidChangeNotification, object: clip, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshDecorations() }
+        }
+        refreshDecorations()
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        refreshDecorations()
+    }
+
+    /// Draws bullets, list numbers, checkboxes, images, math and chips; `dirtyRect` is in this view's coordinates.
+    fileprivate func drawOverlays(_ dirtyRect: NSRect) {
         if rendered { drawImages(in: dirtyRect) }
         if rendered { drawMath(in: dirtyRect) }
+        if rendered { drawDecorations(in: dirtyRect) }
         if rendered, let window {
             let source = string as NSString
             let numbers = MarkdownList.scan(string).numbers
@@ -552,8 +651,10 @@ final class MarkdownTextView: NSTextView {
             }
         }
         if rendered, let window, let bullets = try? NSRegularExpression(pattern: #"(?m)^[ \t]*([-*+]) (?!\[[ xX]\] )"#) {
-            let dot = NSAttributedString(string: "•", attributes: [.font: NSFont.systemFont(ofSize: 18), .foregroundColor: NSColor.secondaryLabelColor])
+            let dot = NSAttributedString(string: "•", attributes: [.font: theme.ui(18), .foregroundColor: NSColor.secondaryLabelColor])
+            let frontmatter = Frontmatter.parse(string)?.range
             for match in bullets.matches(in: string, range: NSRange(location: 0, length: (string as NSString).length)) {
+                if let frontmatter, NSLocationInRange(match.range.location, frontmatter) { continue }
                 let screen = firstRect(forCharacterRange: match.range(at: 1), actualRange: nil)
                 let rect = convert(window.convertFromScreen(screen), from: nil)
                 guard rect.intersects(dirtyRect) else { continue }
@@ -565,7 +666,7 @@ final class MarkdownTextView: NSTextView {
             let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
             let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
             if checked {
-                NSColor.controlAccentColor.setFill()
+                theme.accent.setFill()
                 path.fill()
                 let check = NSAttributedString(string: "✓", attributes: [.font: NSFont.boldSystemFont(ofSize: 13), .foregroundColor: NSColor.white])
                 check.draw(at: NSPoint(x: rect.minX + 3, y: rect.minY + 1))
@@ -633,14 +734,120 @@ final class MarkdownTextView: NSTextView {
 
     func renderMath(_ latex: String, dark: Bool) -> NSImage? {
         guard let list = try? SwaTexEngine.displayList(for: latex, style: .display, color: dark ? .white : .black),
-              let data = ImageRenderer.png(for: list, options: RenderOptions(fontSize: 22, padding: 2)),
+              let data = ImageRenderer.png(for: list, options: RenderOptions(fontSize: 22 * theme.scale, padding: 2)),
               let image = NSImage(data: data) else { return nil }
         image.size = NSSize(width: image.size.width / 2, height: image.size.height / 2)
         return image
     }
 
+    /// Callout titles, code language labels, the footnotes rule and the frontmatter chip row.
+    private func drawDecorations(in dirtyRect: NSRect) {
+        guard let window else { return }
+        let source = string as NSString
+        let whole = NSRange(location: 0, length: source.length)
+        func rect(_ range: NSRange) -> NSRect { convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil) }
+
+        if let regex = try? NSRegularExpression(pattern: #"(?m)^> (\[!(NOTE|TIP|WARNING|IMPORTANT)\])"#) {
+            for match in regex.matches(in: string, range: whole) {
+                let token = rect(match.range(at: 1))
+                guard token.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
+                let type = source.substring(with: match.range(at: 2))
+                let title = NSAttributedString(string: type.capitalized, attributes: [
+                    .font: theme.ui(13, weight: .semibold), .foregroundColor: Callout.color(type, accent: theme.accent)])
+                title.draw(at: NSPoint(x: token.minX, y: token.maxY - title.size().height))
+            }
+        }
+        if let regex = try? NSRegularExpression(pattern: #"(?ms)^```([a-zA-Z0-9_+-]+)[^\n]*\n(.*?)\n```[ \t]*$"#) {
+            for match in regex.matches(in: string, range: whole) where match.range(at: 2).length > 0 {
+                let line = rect(NSRange(location: match.range(at: 2).location, length: 1))
+                guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
+                let label = NSAttributedString(string: source.substring(with: match.range(at: 1)), attributes: [
+                    .font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
+                label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: line.minY + 2))
+            }
+        }
+        if let first = Footnote.definitions(in: string).first {
+            let line = rect(NSRange(location: first.range.location, length: 1))
+            let y = line.minY - 12 * theme.scale
+            if dirtyRect.minY <= y, y <= dirtyRect.maxY {
+                NSColor.separatorColor.setFill()
+                NSRect(x: 0, y: y, width: columnWidth, height: 1).fill()
+            }
+        }
+        if let frontmatter = Frontmatter.parse(string) {
+            for (chip, frame) in frontmatterChips(frontmatter) where frame.intersects(dirtyRect) {
+                if chip.isTag {
+                    NSColor.labelColor.withAlphaComponent(0.06).setFill()
+                    NSBezierPath(roundedRect: frame, xRadius: frame.height / 2, yRadius: frame.height / 2).fill()
+                }
+                chip.text.draw(at: NSPoint(x: frame.minX + (chip.isTag ? 9 : 0), y: frame.midY - chip.text.size().height / 2))
+            }
+        }
+    }
+
+    /// Chip layout for the frontmatter row: tags as capsules, then the date as plain text.
+    private func frontmatterChips(_ frontmatter: Frontmatter) -> [(chip: (text: NSAttributedString, isTag: Bool), frame: NSRect)] {
+        guard let window else { return [] }
+        let screen = firstRect(forCharacterRange: NSRange(location: frontmatter.range.location, length: 1), actualRange: nil)
+        let line = convert(window.convertFromScreen(screen), from: nil)
+        let font = theme.ui(11.5, weight: .medium)
+        var items = frontmatter.tags.map { (text: NSAttributedString(string: $0, attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]), isTag: true) }
+        if let date = frontmatter.displayDate {
+            items.append((NSAttributedString(string: date, attributes: [.font: theme.ui(11.5), .foregroundColor: NSColor.secondaryLabelColor]), false))
+        }
+        if items.isEmpty {
+            items.append((NSAttributedString(string: "Frontmatter", attributes: [.font: font, .foregroundColor: NSColor.tertiaryLabelColor]), true))
+        }
+        var x: CGFloat = 0
+        return items.map { item in
+            let width = item.text.size().width + (item.isTag ? 18 : 0)
+            let height = item.text.size().height + 6
+            let frame = NSRect(x: x, y: line.midY - height / 2, width: width, height: height)
+            x += width + 6
+            return (item, frame)
+        }
+    }
+
+    /// Edits the frontmatter YAML in a small popover, writing it back to the source as one undoable change.
+    private func editFrontmatter(_ frontmatter: Frontmatter, at frame: NSRect) {
+        let editor = NSTextView(frame: NSRect(x: 0, y: 0, width: 280, height: 120))
+        editor.isRichText = false
+        editor.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        editor.textContainerInset = NSSize(width: 8, height: 8)
+        editor.string = (string as NSString).substring(with: frontmatter.body)
+        let scroll = NSScrollView(frame: editor.frame)
+        scroll.documentView = editor
+        scroll.hasVerticalScroller = true
+        scroll.drawsBackground = false
+        editor.drawsBackground = false
+        let controller = NSViewController()
+        controller.view = scroll
+        let popover = NSPopover()
+        popover.contentViewController = controller
+        popover.behavior = .transient
+        let body = frontmatter.body
+        let original = editor.string
+        frontmatterPopoverClose = NotificationCenter.default.addObserver(forName: NSPopover.didCloseNotification, object: popover, queue: .main) { [weak self, weak editor] _ in
+            MainActor.assumeIsolated {
+                guard let self, let editor else { return }
+                if let token = self.frontmatterPopoverClose { NotificationCenter.default.removeObserver(token) }
+                self.frontmatterPopoverClose = nil
+                if editor.string != original, NSMaxRange(body) <= (self.string as NSString).length {
+                    self.insertText(editor.string, replacementRange: body)
+                }
+            }
+        }
+        popover.show(relativeTo: frame, of: self, preferredEdge: .maxY)
+        popover.contentViewController?.view.window?.makeFirstResponder(editor)
+    }
+    private var frontmatterPopoverClose: NSObjectProtocol?
+
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+        if rendered, let frontmatter = Frontmatter.parse(string),
+           let hit = frontmatterChips(frontmatter).first(where: { $0.frame.contains(point) }) {
+            return editFrontmatter(frontmatter, at: hit.frame)
+        }
         for match in taskMatches() {
             guard let rect = checkboxRect(for: match), rect.contains(point) else { continue }
             let checked = ((string as NSString).substring(with: match.range(at: 1))).lowercased() == "x"
@@ -650,32 +857,88 @@ final class MarkdownTextView: NSTextView {
         super.mouseDown(with: event)
     }
 
+    static let imageExtensions = ["png", "jpg", "jpeg", "gif", "heic", "webp"]
+
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         guard let imageURL = NSURL(from: sender.draggingPasteboard) as URL?,
-              ["png", "jpg", "jpeg", "gif", "heic", "webp"].contains(imageURL.pathExtension.lowercased()) else {
+              Self.imageExtensions.contains(imageURL.pathExtension.lowercased()) else {
             return super.performDragOperation(sender)
         }
-        let name = imageURL.lastPathComponent
-        guard let documentURL else {
+        return insertImage(imageURL)
+    }
+
+    override func paste(_ sender: Any?) {
+        let pasteboard = NSPasteboard.general
+        if let url = (pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL])?.first,
+           Self.imageExtensions.contains(url.pathExtension.lowercased()) {
+            _ = insertImage(url)
+        } else if documentURL != nil, pasteboard.string(forType: .string) == nil,
+                  let image = NSImage(pasteboard: pasteboard), let tiff = image.tiffRepresentation,
+                  let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+            let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false)).replacingOccurrences(of: ":", with: ".")
+            _ = insertImage(data: png, name: "Pasted image \(stamp).png")
+        } else {
+            super.paste(sender)
+        }
+    }
+
+    /// Settings › Save pasted images to: a folder name beside the document, or "" for the document's own folder.
+    private var imageFolder: String {
+        (UserDefaults.standard.string(forKey: "imageFolder") ?? "./assets").replacingOccurrences(of: "./", with: "")
+    }
+
+    private func insertImage(_ imageURL: URL) -> Bool {
+        guard documentURL != nil else {
             insertText("![\(imageURL.deletingPathExtension().lastPathComponent)](\(imageURL.path))", replacementRange: selectedRange())
             return true
         }
+        return insertImage(data: nil, name: imageURL.lastPathComponent, copying: imageURL)
+    }
+
+    /// Copies an image beside the document (numbering name collisions) and links it with a relative path.
+    private func insertImage(data: Data?, name: String, copying source: URL? = nil) -> Bool {
+        guard let documentURL else { return false }
         do {
-            let folder = documentURL.deletingLastPathComponent().appendingPathComponent("assets", isDirectory: true)
+            var folder = documentURL.deletingLastPathComponent()
+            if !imageFolder.isEmpty { folder.appendPathComponent(imageFolder, isDirectory: true) }
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let stem = (name as NSString).deletingPathExtension
+            let ext = (name as NSString).pathExtension
             var target = folder.appendingPathComponent(name)
             var number = 2
             while FileManager.default.fileExists(atPath: target.path) {
-                target = folder.appendingPathComponent("\(imageURL.deletingPathExtension().lastPathComponent)-\(number).\(imageURL.pathExtension)")
+                target = folder.appendingPathComponent("\(stem)-\(number).\(ext)")
                 number += 1
             }
-            try FileManager.default.copyItem(at: imageURL, to: target)
-            insertText("![\(imageURL.deletingPathExtension().lastPathComponent)](assets/\(target.lastPathComponent))", replacementRange: selectedRange())
+            if let source { try FileManager.default.copyItem(at: source, to: target) } else { try data?.write(to: target) }
+            let path = (imageFolder.isEmpty ? "" : imageFolder + "/") + target.lastPathComponent
+            let link = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
+            insertText("![\(stem)](\(link))", replacementRange: selectedRange())
             return true
         } catch {
             NSAlert(error: error).runModal()
             return false
         }
+    }
+}
+
+private final class DecorationView: NSView {
+    private weak var host: MarkdownTextView?
+
+    init(host: MarkdownTextView) {
+        self.host = host
+        super.init(frame: .zero)
+    }
+
+    required init?(coder: NSCoder) { fatalError("Decorations are created in code") }
+
+    override var isFlipped: Bool { true }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        // Shift into the text view's coordinates so the host can draw as if on itself.
+        NSGraphicsContext.current?.cgContext.translateBy(x: -frame.minX, y: -frame.minY)
+        host?.drawOverlays(dirtyRect.offsetBy(dx: frame.minX, dy: frame.minY))
     }
 }
 
@@ -981,5 +1244,90 @@ struct MarkdownSourceMap {
         }
         guard let start = offset(range.lowerBound), let end = offset(range.upperBound), end >= start else { return nil }
         return NSRange(location: start, length: end - start)
+    }
+}
+
+enum Callout {
+    static func color(_ type: String, accent: NSColor) -> NSColor {
+        switch type.uppercased() {
+        case "TIP": .systemGreen
+        case "WARNING": .systemOrange
+        case "IMPORTANT": .systemPurple
+        default: accent
+        }
+    }
+}
+
+struct Footnote {
+    let range: NSRange
+    let label: String
+    let text: String
+
+    static func definitions(in source: String) -> [Self] {
+        guard let regex = try? NSRegularExpression(pattern: #"(?m)^\[\^([^]\n]+)\]:[ \t]*(.*)$"#) else { return [] }
+        let ns = source as NSString
+        return regex.matches(in: source, range: NSRange(location: 0, length: ns.length)).map {
+            Self(range: $0.range, label: ns.substring(with: $0.range(at: 1)), text: ns.substring(with: $0.range(at: 2)))
+        }
+    }
+}
+
+/// YAML frontmatter at the top of a document, read for the rendered chip row.
+struct Frontmatter {
+    /// The whole block, fences included, plus its trailing newline.
+    let range: NSRange
+    /// The YAML between the fences.
+    let body: NSRange
+    let title: String?
+    let tags: [String]
+    let date: String?
+
+    var displayDate: String? {
+        guard let date else { return nil }
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.dateFormat = "yyyy-MM-dd"
+        guard let parsed = parser.date(from: String(date.prefix(10))) else { return date.isEmpty ? nil : date }
+        return parsed.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    static func parse(_ source: String) -> Self? {
+        let ns = source as NSString
+        guard source.hasPrefix("---\n"), let regex = try? NSRegularExpression(pattern: #"(?m)^---[ \t]*$"#) else { return nil }
+        let fences = regex.matches(in: source, range: NSRange(location: 4, length: ns.length - 4))
+        guard let close = fences.first?.range else { return nil }
+        var end = NSMaxRange(close)
+        if end < ns.length, ns.character(at: end) == 10 { end += 1 }
+        let body = NSRange(location: 4, length: max(0, close.location - 4))
+        let yaml = ns.substring(with: body)
+        var tags: [String] = []
+        var title: String?
+        var date: String?
+        var inTagList = false
+        for line in yaml.components(separatedBy: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if inTagList, trimmed.hasPrefix("- ") {
+                tags.append(clean(String(trimmed.dropFirst(2))))
+                continue
+            }
+            inTagList = false
+            guard let colon = trimmed.firstIndex(of: ":") else { continue }
+            let key = trimmed[..<colon].lowercased()
+            let value = trimmed[trimmed.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+            if key == "tags" {
+                if value.isEmpty { inTagList = true }
+                else { tags = value.trimmingCharacters(in: CharacterSet(charactersIn: "[]")).split(separator: ",").map { clean(String($0)) } }
+            } else if key == "date" {
+                date = clean(value)
+            } else if key == "title" {
+                title = clean(value)
+            }
+        }
+        return Self(range: NSRange(location: 0, length: end), body: body, title: title.flatMap { $0.isEmpty ? nil : $0 },
+                    tags: tags.filter { !$0.isEmpty }, date: date)
+    }
+
+    private static func clean(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
     }
 }

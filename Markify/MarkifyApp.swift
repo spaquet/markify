@@ -32,8 +32,26 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 
     private static func openInitialDocument(startup: String) {
         guard NSDocumentController.shared.documents.isEmpty else { return }
+        if !UserDefaults.standard.bool(forKey: "didShowWelcome") {
+            UserDefaults.standard.set(true, forKey: "didShowWelcome")
+            if openWelcome() { return }
+        }
         showsLibraryOnNextWindow = startup == "Library"
         NSDocumentController.shared.newDocument(nil)
+    }
+
+    /// Copies the bundled Welcome document into the library (once) and opens it.
+    @discardableResult
+    static func openWelcome() -> Bool {
+        guard let bundled = Bundle.main.url(forResource: "Welcome", withExtension: "md"),
+              let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Markify") else { return false }
+        let target = folder.appendingPathComponent("Welcome to Markify.md")
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: target.path) { try FileManager.default.copyItem(at: bundled, to: target) }
+        } catch { return false }
+        NSDocumentController.shared.openDocument(withContentsOf: target, display: true) { _, _, _ in }
+        return true
     }
 
     private static func lastOpenDocuments() -> [URL] {
@@ -57,6 +75,11 @@ struct MarkifyApp: App {
             ContentView(document: file.$document, fileURL: file.fileURL)
         }
         .defaultLaunchBehavior(.suppressed)
+        .commands {
+            CommandGroup(after: .help) {
+                Button("Welcome to Markify") { MarkifyAppDelegate.openWelcome() }
+            }
+        }
         Settings {
             SettingsView()
         }

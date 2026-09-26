@@ -24,6 +24,13 @@ struct ContentView: View {
     @AppStorage("suggestTitleTags") private var suggestTitleTags = false
     @AppStorage("generationTone") private var generationTone = "Match document"
     @AppStorage("useSectionContext") private var useSectionContext = true
+    @AppStorage("proseFont") private var proseFont = "New York"
+    @AppStorage("markdownFont") private var markdownFont = "SF Mono"
+    @AppStorage("proseSize") private var proseSize = 18.0
+    @AppStorage("accentColor") private var accentColor = "Multicolor"
+    @AppStorage("pageColor") private var pageColor = "Paper"
+    @AppStorage("codeTheme") private var codeTheme = "Match appearance"
+    @AppStorage(Shortcuts.storageKey) private var shortcutOverrides = ""
     @State private var markdownLens = false
     @State private var sidebarOpen = false
     @State private var chromeVisible = true
@@ -53,19 +60,62 @@ struct ContentView: View {
     @State private var hasTyped = false
     @State private var isNewDocument = false
     @State private var offeredTitleTags = false
+    /// Frontmatter tags last mirrored onto the file's Finder tags.
+    @State private var mirroredTags: [String] = []
+    @State private var showBlockMenu = false
+    @State private var blockMenuQuery = ""
+    @State private var blockMenuSelection = 0
+    @State private var blockMenuHeight: CGFloat = 360
+    @State private var keyMonitor: Any?
+    @FocusState private var blockMenuFocused: Bool
+    @State private var showComposer = false
+    @State private var composerPrompt = ""
+    @State private var composerLength = "Medium"
+    @State private var composerTone = "Match document"
+    @State private var composerFormat = "Paragraphs"
+    @State private var composerHeight: CGFloat = 120
+    @FocusState private var composerFocused: Bool
+    @State private var review: AIReview?
+    @State private var reviewTitle = ""
+    @State private var lastAIAction = ""
+    @State private var scrollTick = 0
+    @State private var aiEdit = AIEditGuard()
     @State private var librarySearch = ""
     @State private var libraryFolder: URL?
     @State private var libraryNotes: [LibraryNote] = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
 
-    private var page: Color { colorScheme == .dark ? Color(red: 30/255, green: 30/255, blue: 32/255) : Color(red: 252/255, green: 251/255, blue: 249/255) }
+    private var page: Color { PageColor.color(pageColor, dark: colorScheme == .dark) }
+    private var accent: Color { AccentChoice.color(accentColor) }
+    private var strong: Double { contrast == .increased ? 1.8 : 1 }
     private var glassStrong: Color { colorScheme == .dark ? Color(red: 50/255, green: 50/255, blue: 56/255).opacity(0.78) : Color.white.opacity(0.78) }
-    private var field: Color { colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.05) }
-    private var rowSel: Color { colorScheme == .dark ? Color.white.opacity(0.14) : Color.black.opacity(0.07) }
-    private var rule: Color { colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.09) }
-    private var accentSoft: Color { Color.accentColor.opacity(colorScheme == .dark ? 0.22 : 0.13) }
-    private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? "Untitled" }
+    private var field: Color { colorScheme == .dark ? Color.white.opacity(0.08 * strong) : Color.black.opacity(0.05 * strong) }
+    private var rowSel: Color { colorScheme == .dark ? Color.white.opacity(0.14 * strong) : Color.black.opacity(0.07 * strong) }
+    private var rule: Color { colorScheme == .dark ? Color.white.opacity(0.12 * strong) : Color.black.opacity(0.09 * strong) }
+    private var accentSoft: Color { accent.opacity(colorScheme == .dark ? 0.22 : 0.13) }
+    private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? suggestedName ?? "Untitled" }
+    /// The frontmatter title, else the first H1; names an untitled document and seeds its save panel.
+    private var suggestedName: String? {
+        (Frontmatter.parse(document.text)?.title
+            ?? document.text.split(separator: "\n", maxSplits: 40).first { $0.hasPrefix("# ") }
+                .map { $0.dropFirst(2).trimmingCharacters(in: .whitespaces) })
+            .flatMap { $0.isEmpty ? nil : $0.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: " -") }
+    }
+    private var theme: EditorTheme {
+        EditorTheme(proseFont: proseFont, monoFont: markdownFont, proseSize: CGFloat(proseSize),
+                    accent: AccentChoice.nsColor(accentColor), monochromeCode: codeTheme == "Monochrome")
+    }
+    /// Visible find matches: every match in the Markdown lens, only rendered text in the Rendered lens.
+    private var findMatches: [NSRange] {
+        guard showFind, !query.isEmpty, let textView,
+              let regex = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: query), options: matchCase ? [] : [.caseInsensitive]) else { return [] }
+        return regex.matches(in: document.text, range: NSRange(location: 0, length: (document.text as NSString).length)).map(\.range)
+            .filter { markdownLens || isVisible($0, in: textView) }
+    }
+    private func shortcut(_ id: String) -> KeyboardShortcut? { Shortcuts.keyboardShortcut(id, stored: shortcutOverrides) }
+    private func shortcutLabel(_ id: String) -> String { Shortcuts.display(Shortcuts.key(id, stored: shortcutOverrides)) }
     private var wordCount: Int { document.text.split(whereSeparator: \.isWhitespace).count }
     private var aiAvailability: SystemLanguageModel.Availability { SystemLanguageModel.default.availability }
 
@@ -74,21 +124,24 @@ struct ContentView: View {
             let columnWidth = min(markdownLens ? lineWidth + 20 : lineWidth, max(geometry.size.width - 48, 280))
             ZStack(alignment: .topLeading) {
                 page.ignoresSafeArea()
-                NativeEditor(text: $document.text, fileURL: fileURL, columnWidth: columnWidth, markdownLens: markdownLens, findQuery: query, matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
+                NativeEditor(text: $document.text, fileURL: fileURL, columnWidth: columnWidth, markdownLens: markdownLens, findQuery: showFind ? query : "", matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
                     hasTyped = true
+                    // Typing after a rewrite accepts it.
+                    if review != nil && !aiEdit.active { review = nil }
                     if fadeToolbar { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = false } }
                 }, onSlash: { query in
                     if slashQuery != query { slashSelection = 0 }
                     slashQuery = query
-                }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 })
+                }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 },
+                theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil)
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56)
 
                 if document.text.isEmpty {
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("Untitled").font(.system(size: 36, weight: .bold, design: .serif))
-                        Text("Start writing, or type / to insert a block.").font(.system(size: 18, design: .serif))
+                        Text("Untitled").font(Font(theme.prose(36, bold: true)))
+                        Text("Start writing, or type / to insert a block.").font(Font(theme.prose(18)))
                     }
                     .foregroundStyle(.tertiary)
                     .padding(.top, 96)
@@ -98,8 +151,8 @@ struct ContentView: View {
                 }
                 if document.text.isEmpty && !hasTyped {
                     HStack(spacing: 18) {
-                        Text("⌘/ Markdown")
-                        Text("⌃⌘S Library")
+                        Text("\(shortcutLabel("toggleMarkdown")) Markdown")
+                        Text("\(shortcutLabel("library")) Library")
                         Text("⌘O Open file")
                     }
                     .font(.system(size: 12))
@@ -110,6 +163,10 @@ struct ContentView: View {
                 }
 
                 if sidebarOpen {
+                    Color.clear
+                        .contentShape(.rect)
+                        .onTapGesture { toggleSidebar() }
+                        .zIndex(1)
                     sidebar
                         .padding(8)
                         .transition(.move(edge: .leading))
@@ -118,9 +175,15 @@ struct ContentView: View {
 
                 GlassEffectContainer {
                     HStack(spacing: 10) {
-                        Button { toggleSidebar() } label: { Image(systemName: "sidebar.left").frame(width: 36, height: 36) }
+                        Button { toggleSidebar() } label: {
+                            Image(systemName: "sidebar.left")
+                                .foregroundStyle(sidebarOpen ? accent : .primary)
+                                .frame(width: 36, height: 36)
+                                .background(sidebarOpen ? accentSoft : .clear, in: .circle)
+                                .contentShape(.circle)
+                        }
                             .buttonStyle(.plain)
-                            .glassEffect(in: .circle)
+                            .chromeGlass(in: .circle)
                             .accessibilityLabel(sidebarOpen ? "Hide Library" : "Show Library")
                         Menu {
                             Button("Rename…") { NSDocumentController.shared.currentDocument?.rename(nil) }
@@ -136,7 +199,7 @@ struct ContentView: View {
                         }
                             .buttonStyle(.plain)
                             .menuIndicator(.hidden)
-                            .glassEffect(in: .capsule)
+                            .chromeGlass(in: .capsule)
                             .offset(x: sidebarOpen ? 148 : 0)
                         Spacer()
                         HStack(spacing: 3) {
@@ -150,9 +213,9 @@ struct ContentView: View {
                                 .buttonStyle(.plain)
                                 .font(.system(size: 11.5, weight: .bold, design: .monospaced))
                                 .foregroundStyle(markdownLens ? .white : .primary)
-                                .background(markdownLens ? Color.accentColor : .clear, in: .capsule)
+                                .background(markdownLens ? accent : .clear, in: .capsule)
                                 .frame(height: 30)
-                                .help("Show Markdown ⌘/")
+                                .help("Show Markdown \(shortcutLabel("toggleMarkdown"))")
                                 .accessibilityLabel("Show Markdown")
                             Menu {
                                 if let fileURL { ShareLink(item: fileURL) { Text("Share") } }
@@ -170,7 +233,7 @@ struct ContentView: View {
                             .accessibilityLabel("More")
                         }
                         .padding(3)
-                        .glassEffect(in: .capsule)
+                        .chromeGlass(in: .capsule)
                     }
                     .padding(.leading, 88).padding(.trailing, 12).padding(.top, 4)
                 }
@@ -183,19 +246,46 @@ struct ContentView: View {
                         .font(.system(size: 11.5))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 12).frame(height: 28)
-                        .glassEffect(in: .capsule)
+                        .chromeGlass(in: .capsule)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                         .padding(.trailing, 16).padding(.bottom, 14)
                         .opacity(chromeVisible ? 1 : 0)
                         .allowsHitTesting(chromeVisible)
                 }
                 if showFind { findPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56).padding(.trailing, 12).zIndex(4) }
+                if let review, let frame = reviewFrame(review, geometry: geometry, columnWidth: columnWidth) {
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(aiGradient, lineWidth: 1.5)
+                        .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.22 : 0.13), radius: 10)
+                        .frame(width: frame.width, height: frame.height)
+                        .position(x: frame.midX, y: frame.midY)
+                        .allowsHitTesting(false)
+                        .zIndex(4)
+                    reviewCapsule(review)
+                        .position(x: geometry.size.width / 2, y: min(frame.maxY + 27, geometry.size.height - 30))
+                        .zIndex(5)
+                }
+                if showComposer {
+                    composer
+                        .frame(width: columnWidth)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { composerHeight = $0 }
+                        .position(x: geometry.size.width / 2,
+                                  y: min(selectionRect.maxY + 10 + composerHeight / 2, geometry.size.height - composerHeight / 2 - 12))
+                        .zIndex(6)
+                }
                 if showAI { aiPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56).padding(.trailing, 12).zIndex(4) }
                 if formatBarVisible && slashQuery == nil {
+                    let barX = min(max(selectionRect.midX, 210), geometry.size.width - 210)
+                    let barY = max(62, selectionRect.minY - 26)
                     formatBar
-                        .position(x: min(max(selectionRect.midX, 210), geometry.size.width - 210),
-                                  y: max(62, selectionRect.minY - 26))
+                        .position(x: barX, y: barY)
                         .zIndex(5)
+                    if showBlockMenu {
+                        blockMenu
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { blockMenuHeight = $0 }
+                            .position(x: min(max(barX - 40, 135), geometry.size.width - 135), y: barY + 19 + 10 + blockMenuHeight / 2)
+                            .zIndex(6)
+                    }
                 }
                 if showWritingMenu && formatBarVisible && writingTools {
                     let below = selectionRect.maxY + 30
@@ -216,7 +306,11 @@ struct ContentView: View {
             .onContinuousHover { phase in
                 if case .active = phase { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = true } }
             }
-            .onExitCommand { showWritingMenu = false; showAI = false; showFind = false; sidebarOpen = false }
+            .onExitCommand {
+                if review != nil { return revertReview() }
+                if showComposer { return closeComposer() }
+                showWritingMenu = false; showAI = false; showFind = false; sidebarOpen = false; closeBlockMenu()
+            }
         }
         .frame(minWidth: 520, minHeight: 400)
         .ignoresSafeArea(.container, edges: .top)
@@ -225,6 +319,10 @@ struct ContentView: View {
         .toolbarBackground(.hidden, for: .windowToolbar)
         .background(WindowConfiguration())
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
+        .tint(accent)
+        .onReceive(NotificationCenter.default.publisher(for: NSView.boundsDidChangeNotification)) { notification in
+            if review != nil, (notification.object as? NSView) === textView?.enclosingScrollView?.contentView { scrollTick += 1 }
+        }
         .onAppear {
             markdownLens = initialLens()
             isNewDocument = document.text.isEmpty && fileURL == nil
@@ -233,20 +331,33 @@ struct ContentView: View {
                 sidebarOpen = true
             }
             loadLibrary()
+            // Any ⌘ shortcut brings faded chrome back.
+            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                if event.modifierFlags.contains(.command), event.window != nil, event.window === textView?.window, !chromeVisible {
+                    withAnimation(.easeOut(duration: 0.4)) { chromeVisible = true }
+                }
+                return event
+            }
         }
         .onDisappear {
+            if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             rememberDocumentLens()
             libraryFolder?.stopAccessingSecurityScopedResource()
         }
-        .onChange(of: fileURL) { _, _ in rememberDocumentLens() }
+        .onChange(of: fileURL, initial: true) { _, _ in
+            rememberDocumentLens()
+            mirrorTags()
+        }
+        .onChange(of: Frontmatter.parse(document.text)?.tags ?? []) { _, _ in mirrorTags() }
         .onChange(of: document.text) { _, _ in offerTitleTagsIfNeeded() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willBeginSheetNotification)) { notification in
-            pointSavePanelAtLibrary(notification.object as? NSWindow)
+            prepareSavePanel(notification.object as? NSWindow)
         }
         .onChange(of: libraryBookmark) { _, _ in loadLibrary() }
         .onChange(of: selectedRange) { _, range in
             formatBarTask?.cancel()
             formatBarVisible = false
+            showBlockMenu = false
             if range.length > 0 {
                 formatBarTask = Task {
                     try? await Task.sleep(for: .milliseconds(150))
@@ -255,17 +366,29 @@ struct ContentView: View {
             } else { showWritingMenu = false }
         }
         .background {
-            Button("Toggle Markdown") { toggleLens() }.keyboardShortcut("/", modifiers: .command).hidden()
-            Button("Toggle Library") { toggleSidebar() }.keyboardShortcut("s", modifiers: [.control, .command]).hidden()
-            Button("Find") { showFind = true }.keyboardShortcut("f", modifiers: .command).hidden()
-            Button("Replace") { showFind = true }.keyboardShortcut("f", modifiers: [.option, .command]).hidden()
-            Button("Bold") { wrap("**") }.keyboardShortcut("b", modifiers: .command).hidden()
-            Button("Italic") { wrap("*") }.keyboardShortcut("i", modifiers: .command).hidden()
-            Button("Strikethrough") { wrap("~~") }.keyboardShortcut("x", modifiers: [.shift, .command]).hidden()
-            Button("Inline Code") { wrap("`") }.keyboardShortcut("e", modifiers: .command).hidden()
-            Button("Link") { wrap("[", suffix: "](url)") }.keyboardShortcut("k", modifiers: .command).hidden()
+            Button("Toggle Markdown") { toggleLens() }.keyboardShortcut(shortcut("toggleMarkdown")).hidden()
+            Button("Toggle Library") { toggleSidebar() }.keyboardShortcut(shortcut("library")).hidden()
+            Button("Find") { showFind = true }.keyboardShortcut(shortcut("find")).hidden()
+            Button("Replace") { showFind = true }.keyboardShortcut(shortcut("replace")).hidden()
+            Button("Find Next") { showFind = true; findNext() }.keyboardShortcut(shortcut("findNext")).hidden()
+            Button("Find Previous") { showFind = true; findPrevious() }.keyboardShortcut(shortcut("findPrevious")).hidden()
+            Button("Zoom In") { zoom(by: 1) }.keyboardShortcut(shortcut("zoomIn")).hidden()
+            Button("Zoom In") { zoom(by: 1) }.keyboardShortcut("+", modifiers: [.command, .shift]).hidden()
+            Button("Zoom Out") { zoom(by: -1) }.keyboardShortcut(shortcut("zoomOut")).hidden()
+            Button("Actual Size") { proseSize = 18 }.keyboardShortcut(shortcut("actualSize")).hidden()
+            Button("Bold") { wrap("**") }.keyboardShortcut(shortcut("bold")).hidden()
+            Button("Italic") { wrap("*") }.keyboardShortcut(shortcut("italic")).hidden()
+            Button("Strikethrough") { wrap("~~") }.keyboardShortcut(shortcut("strikethrough")).hidden()
+            Button("Inline Code") { wrap("`") }.keyboardShortcut(shortcut("code")).hidden()
+            Button("Link") { wrap("[", suffix: "](url)") }.keyboardShortcut(shortcut("link")).hidden()
+            ForEach(["Body", "Title", "Heading", "Subheading"], id: \.self) { style in
+                Button(style) { applyBlockStyle(style) }.keyboardShortcut(shortcut(style.lowercased())).hidden()
+            }
+            if writingTools && aiAvailability != .unavailable(.deviceNotEligible) {
+                Button("Writing Tools") { toggleWritingMenu() }.keyboardShortcut(shortcut("writingTools")).hidden()
+            }
             if generateAtCaret && aiAvailability == .available {
-                Button("Continue Writing") { generateAtCaretOrKeep() }.keyboardShortcut(.return, modifiers: .command).hidden()
+                Button("Continue Writing") { generateAtCaretOrKeep() }.keyboardShortcut(shortcut("generate")).hidden()
             }
         }
     }
@@ -302,7 +425,7 @@ struct ContentView: View {
         }
         .padding(.horizontal, 12).padding(.top, 54).padding(.bottom, 12)
         .frame(width: 260).frame(maxHeight: .infinity)
-        .glassEffect(in: .rect(cornerRadius: 20))
+        .chromeGlass(in: .rect(cornerRadius: 20))
     }
 
     private func open(_ url: URL) {
@@ -339,31 +462,50 @@ struct ContentView: View {
     }
 
     private var findPanel: some View {
-        VStack(spacing: 6) {
-            HStack {
-                TextField("Find", text: $query).onSubmit(findNext)
-                Button("‹", action: findPrevious)
-                Button("›", action: findNext)
-                Toggle("Aa", isOn: $matchCase).toggleStyle(.button)
+        let matches = findMatches
+        let current = matches.firstIndex(of: selectedRange)
+        return VStack(spacing: 6) {
+            HStack(spacing: 4) {
+                HStack {
+                    TextField("Find", text: $query).textFieldStyle(.plain).onSubmit(findNext)
+                    if !query.isEmpty {
+                        Text(matches.isEmpty ? "No results" : current.map { "\($0 + 1) of \(matches.count)" } ?? "\(matches.count) found")
+                            .font(.system(size: 11.5)).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                }
+                .padding(.horizontal, 10).frame(height: 30)
+                .background(field, in: .rect(cornerRadius: 9))
+                Button(action: findPrevious) { Image(systemName: "chevron.left").frame(width: 28, height: 28).contentShape(.rect) }
+                    .help("Find Previous \(shortcutLabel("findPrevious"))").accessibilityLabel("Previous match")
+                Button(action: findNext) { Image(systemName: "chevron.right").frame(width: 28, height: 28).contentShape(.rect) }
+                    .help("Find Next \(shortcutLabel("findNext"))").accessibilityLabel("Next match")
+                Button { matchCase.toggle() } label: {
+                    Text("Aa").font(.system(size: 12, weight: .semibold)).frame(width: 30, height: 28)
+                        .foregroundStyle(matchCase ? accent : .primary)
+                        .background(matchCase ? accentSoft : .clear, in: .rect(cornerRadius: 8))
+                }
+                .accessibilityLabel("Match case").accessibilityAddTraits(matchCase ? .isSelected : [])
             }
-            HStack {
-                TextField("Replace", text: $replacement)
-                Button("Replace", action: replaceOne)
-                Button("All", action: replaceAll)
+            HStack(spacing: 4) {
+                TextField("Replace", text: $replacement).textFieldStyle(.plain)
+                    .padding(.horizontal, 10).frame(height: 30)
+                    .background(field, in: .rect(cornerRadius: 9))
+                Button(action: replaceOne) { Text("Replace").padding(.horizontal, 10).frame(height: 28).background(field, in: .rect(cornerRadius: 8)) }
+                Button(action: replaceAll) {
+                    Text("All").fontWeight(.semibold).foregroundStyle(.white).padding(.horizontal, 12).frame(height: 28).background(accent, in: .rect(cornerRadius: 8))
+                }
             }
         }
+        .font(.system(size: 13))
+        .buttonStyle(.plain)
         .padding(8).frame(width: 380)
-        .glassEffect(in: .rect(cornerRadius: 18))
+        .chromeGlass(in: .rect(cornerRadius: 18))
     }
 
     private var formatBar: some View {
         HStack(spacing: 1) {
             if writingTools && aiAvailability != .unavailable(.deviceNotEligible) {
-                Button {
-                    showWritingMenu.toggle()
-                    showAI = false
-                    if showWritingMenu { aiTask?.cancel(); aiBusy = false; aiOutput = ""; aiError = nil }
-                } label: {
+                Button { toggleWritingMenu() } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).font(.system(size: 14))
                         Text("Writing Tools").font(.system(size: 13, weight: .semibold))
@@ -372,14 +514,12 @@ struct ContentView: View {
                     .background(showWritingMenu ? field : .clear, in: .capsule)
                     .contentShape(.capsule)
                 }
-                .help("Writing Tools ⇧⌘W")
+                .help("Writing Tools \(shortcutLabel("writingTools"))")
                 .accessibilityLabel("Writing Tools")
                 formatDivider
             }
-            Menu {
-                ForEach(["Body", "Title", "Heading", "Subheading", "Quote", "Code block", "Callout", "Bulleted", "Numbered", "Task"], id: \.self) { style in
-                    Button(style) { applyBlockStyle(style) }
-                }
+            Button {
+                if showBlockMenu { closeBlockMenu() } else { openBlockMenu() }
             } label: {
                 HStack(spacing: 4) {
                     Text(currentBlockStyle)
@@ -387,9 +527,9 @@ struct ContentView: View {
                 }
                 .foregroundStyle(.secondary)
                 .padding(.leading, 12).padding(.trailing, 10).frame(height: 32)
+                .background(showBlockMenu ? field : .clear, in: .capsule)
                 .contentShape(.capsule)
             }
-            .menuIndicator(.hidden)
             .fixedSize()
             .accessibilityLabel("Block style, \(currentBlockStyle)")
             formatDivider
@@ -399,18 +539,99 @@ struct ContentView: View {
             tool("chevron.left.forwardslash.chevron.right", help: "Inline Code", marker: "`")
             formatDivider
             Button { wrap("[", suffix: "](url)") } label: { Image(systemName: "link").frame(width: 32, height: 32).contentShape(.circle) }
-                .help("Link ⌘K").accessibilityLabel("Link")
+                .help("Link \(shortcutLabel("link"))").accessibilityLabel("Link")
         }
         .font(.system(size: 13))
         .buttonStyle(.plain)
         .padding(3)
         .frame(height: 38)
         .background(glassStrong, in: .capsule)
-        .glassEffect(in: .capsule)
+        .chromeGlass(in: .capsule)
     }
 
     private var formatDivider: some View {
         Rectangle().fill(rule).frame(width: 1, height: 18).padding(.horizontal, 2)
+    }
+
+    private var blockMenu: some View {
+        let entries = BlockStyle.all.filter { blockMenuQuery.isEmpty || $0.name.localizedCaseInsensitiveContains(blockMenuQuery) }
+        return VStack(alignment: .leading, spacing: 1) {
+            ForEach(["Text", "Lists"], id: \.self) { section in
+                let rows = entries.filter { $0.section == section }
+                if !rows.isEmpty {
+                    if section == "Lists" && entries.contains(where: { $0.section == "Text" }) {
+                        Rectangle().fill(rule).frame(height: 1).padding(.horizontal, 6).padding(.vertical, 4)
+                    }
+                    Text(section).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                        .padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 2)
+                    ForEach(rows) { style in
+                        let index = entries.firstIndex { $0.name == style.name } ?? 0
+                        blockRow(style, current: style.name == currentBlockStyle, highlighted: index == blockMenuSelection)
+                    }
+                }
+            }
+            if entries.isEmpty { Text("No matching style").foregroundStyle(.secondary).padding(10) }
+        }
+        .padding(6).frame(width: 250)
+        .background(glassStrong, in: .rect(cornerRadius: 18))
+        .chromeGlass(in: .rect(cornerRadius: 18))
+        .focusable()
+        .focusEffectDisabled()
+        .focused($blockMenuFocused)
+        .onKeyPress(.upArrow) { blockMenuSelection = max(0, blockMenuSelection - 1); return .handled }
+        .onKeyPress(.downArrow) { blockMenuSelection = min(entries.count - 1, blockMenuSelection + 1); return .handled }
+        .onKeyPress(.return) {
+            if entries.indices.contains(blockMenuSelection) { chooseBlockStyle(entries[blockMenuSelection].name) }
+            return .handled
+        }
+        .onKeyPress(.escape) { closeBlockMenu(); return .handled }
+        .onKeyPress(.delete) { if !blockMenuQuery.isEmpty { blockMenuQuery.removeLast(); blockMenuSelection = 0 }; return .handled }
+        .onKeyPress(characters: .letters.union(.whitespaces)) { press in
+            blockMenuQuery += press.characters
+            blockMenuSelection = 0
+            return .handled
+        }
+    }
+
+    private func blockRow(_ style: BlockStyle, current: Bool, highlighted: Bool) -> some View {
+        Button { chooseBlockStyle(style.name) } label: {
+            HStack(spacing: 0) {
+                Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).frame(width: 14).opacity(current ? 1 : 0)
+                    .padding(.trailing, 6)
+                Text(style.name).font(style.font)
+                    .foregroundStyle(current ? .white : style.name == "Quote" ? .secondary : .primary)
+                Spacer()
+                Text(style.name == "Body" ? shortcutLabel("body") : style.prefix)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(current ? .white.opacity(0.8) : .secondary)
+            }
+            .padding(.horizontal, 8).frame(height: style.name == "Title" ? 38 : 32)
+            .foregroundStyle(current ? .white : .primary)
+            .background(current ? accent : highlighted ? rowSel : .clear, in: .rect(cornerRadius: 11))
+            .contentShape(.rect(cornerRadius: 11))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(style.name)
+        .accessibilityAddTraits(current ? .isSelected : [])
+    }
+
+    private func openBlockMenu() {
+        blockMenuQuery = ""
+        blockMenuSelection = BlockStyle.all.firstIndex { $0.name == currentBlockStyle } ?? 0
+        showBlockMenu = true
+        showWritingMenu = false
+        DispatchQueue.main.async { blockMenuFocused = true }
+    }
+
+    private func closeBlockMenu() {
+        guard showBlockMenu else { return }
+        showBlockMenu = false
+        if let textView { textView.window?.makeFirstResponder(textView) }
+    }
+
+    private func chooseBlockStyle(_ name: String) {
+        closeBlockMenu()
+        applyBlockStyle(name)
     }
 
     private func tool(_ symbol: String, help: String, marker: String) -> some View {
@@ -418,7 +639,7 @@ struct ContentView: View {
         return Button { wrap(marker) } label: {
             Image(systemName: symbol)
                 .frame(width: 32, height: 32)
-                .foregroundStyle(active ? Color.accentColor : .primary)
+                .foregroundStyle(active ? accent : .primary)
                 .background(active ? accentSoft : .clear, in: .circle)
                 .contentShape(.circle)
         }
@@ -456,7 +677,7 @@ struct ContentView: View {
                 Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).font(.system(size: 14))
                 TextField("Describe your change", text: $selectionPrompt)
                     .textFieldStyle(.plain)
-                    .onSubmit { generateSelection("Revise the selection as follows: \(selectionPrompt). Return only the revised Markdown text.") }
+                    .onSubmit { generateSelection("Revise the selection as follows: \(selectionPrompt). Return only the revised Markdown text.", title: "Edit") }
                 Image(systemName: "return").font(.system(size: 12)).foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 12).frame(height: 36)
@@ -468,7 +689,7 @@ struct ContentView: View {
             HStack(spacing: 6) {
                 ForEach(["Friendly", "Professional", "Concise"], id: \.self) { tone in
                     Button {
-                        generateSelection("Rewrite this selection in a \(tone.lowercased()) tone. Return only the revised Markdown text.")
+                        generateSelection("Rewrite this selection in a \(tone.lowercased()) tone. Return only the revised Markdown text.", title: "Rewrite · \(tone)")
                     } label: {
                         Text(tone).frame(maxWidth: .infinity).frame(height: 32).contentShape(.rect(cornerRadius: 10))
                     }
@@ -478,12 +699,12 @@ struct ContentView: View {
             Rectangle().fill(rule).frame(height: 1).padding(.horizontal, 6).padding(.vertical, 2)
             Grid(horizontalSpacing: 2, verticalSpacing: 2) {
                 GridRow {
-                    writingRow("Summary", symbol: "text.alignleft") { generateSelection("Summarize this selection in one paragraph. Return only Markdown text.") }
-                    writingRow("Key Points", symbol: "list.bullet") { generateSelection("Extract the key points as a Markdown list. Return only the list.") }
+                    writingRow("Summary", symbol: "text.alignleft") { generateSelection("Summarize this selection in one paragraph. Return only Markdown text.", title: "Summary") }
+                    writingRow("Key Points", symbol: "list.bullet") { generateSelection("Extract the key points as a Markdown list. Return only the list.", title: "Key Points") }
                 }
                 GridRow {
-                    writingRow("List", symbol: "list.dash") { generateSelection("Turn this selection into a Markdown list. Return only the list.") }
-                    writingRow("Table", symbol: "tablecells") { generateSelection("Turn this selection into a Markdown table. Return only the table.") }
+                    writingRow("List", symbol: "list.dash") { generateSelection("Turn this selection into a Markdown list. Return only the list.", title: "List") }
+                    writingRow("Table", symbol: "tablecells") { generateSelection("Turn this selection into a Markdown table. Return only the table.", title: "Table") }
                 }
             }
             } else if aiAvailability == .unavailable(.appleIntelligenceNotEnabled) {
@@ -512,13 +733,13 @@ struct ContentView: View {
         .buttonStyle(.plain)
         .padding(8).frame(width: 340)
         .background(glassStrong, in: .rect(cornerRadius: 20))
-        .glassEffect(in: .rect(cornerRadius: 20))
+        .chromeGlass(in: .rect(cornerRadius: 20))
     }
 
     private func writingTile(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 3) {
-                Image(systemName: symbol).font(.system(size: 15, weight: .medium)).foregroundStyle(Color.accentColor).frame(height: 18)
+                Image(systemName: symbol).font(.system(size: 15, weight: .medium)).foregroundStyle(accent).frame(height: 18)
                 Text(title).fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -551,8 +772,9 @@ struct ContentView: View {
         textView?.showWritingTools(nil)
     }
 
-    private func generateSelection(_ action: String) {
+    private func generateSelection(_ action: String, title: String) {
         guard selectedRange.length > 0 else { return }
+        reviewTitle = title
         generate(action: action, placement: .replaceSelection(selectedRange))
     }
 
@@ -592,7 +814,7 @@ struct ContentView: View {
                 aiRow("Suggest title & tags", detail: "Frontmatter") {
                     generate(action: "Suggest a clear title and up to five short tags for this document.", placement: .frontmatter)
                 }
-                aiRow("Continue writing", detail: generateAtCaret ? "At caret · ⌘↩" : "At caret") { continueWriting() }
+                aiRow("Continue writing", detail: generateAtCaret ? "At caret · \(shortcutLabel("generate"))" : "At caret") { continueWriting() }
             case .unavailable(.appleIntelligenceNotEnabled):
                 Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary).padding(.horizontal, 10)
             case .unavailable(.modelNotReady):
@@ -627,7 +849,7 @@ struct ContentView: View {
                     Button { keepAIOutput() } label: {
                         Text("Keep").fontWeight(.semibold).foregroundStyle(.white)
                             .padding(.horizontal, 14).frame(height: 28)
-                            .background(Color.accentColor, in: .capsule)
+                            .background(accent, in: .capsule)
                     }
                     .disabled(aiBusy)
                 }
@@ -645,7 +867,7 @@ struct ContentView: View {
         .buttonStyle(.plain)
         .padding(8).frame(width: 320)
         .background(glassStrong, in: .rect(cornerRadius: 20))
-        .glassEffect(in: .rect(cornerRadius: 20))
+        .chromeGlass(in: .rect(cornerRadius: 20))
     }
 
     private func aiRow(_ title: String, detail: String, action: @escaping () -> Void) -> some View {
@@ -665,11 +887,204 @@ struct ContentView: View {
         generate(action: "Continue this document from the caret. Return only the continuation as Markdown.")
     }
 
+    /// ⌘↩: accepts a rewrite under review, keeps finished output, or opens the composer at the caret.
     private func generateAtCaretOrKeep() {
+        if review != nil { return acceptReview() }
         if !aiOutput.isEmpty && !aiBusy { return keepAIOutput() }
-        showAI = true
+        openComposer()
+    }
+
+    private func openComposer() {
+        guard aiAvailability == .available else { return }
+        aiTask?.cancel(); aiBusy = false; aiOutput = ""; aiError = nil
+        composerPrompt = ""
+        composerTone = generationTone
+        showAI = false
         showWritingMenu = false
-        continueWriting()
+        showComposer = true
+        DispatchQueue.main.async { composerFocused = true }
+    }
+
+    private func closeComposer() {
+        aiTask?.cancel(); aiBusy = false; aiOutput = ""; aiError = nil
+        showComposer = false
+        if let textView { textView.window?.makeFirstResponder(textView) }
+    }
+
+    private func runComposer() {
+        let request = composerPrompt.trimmingCharacters(in: .whitespaces)
+        let task = request.isEmpty ? "Continue this document from the caret." : "Write the following at the caret: \(request)."
+        let tone = composerTone == "Match document" ? "Match the document's tone." : "Use a \(composerTone.lowercased()) tone."
+        let length = ["Short": "Keep it to a sentence or two.", "Medium": "Write about one paragraph.", "Long": "Write several paragraphs."][composerLength] ?? ""
+        let format = ["Paragraphs": "Write prose paragraphs.", "List": "Format it as a Markdown list.", "Table": "Format it as a Markdown table."][composerFormat] ?? ""
+        generate(action: "\(task) \(tone) \(length) \(format) Return only the new Markdown text.")
+    }
+
+    private var aiGradient: LinearGradient {
+        LinearGradient(colors: [Color(red: 1, green: 159/255, blue: 10/255), Color(red: 1, green: 55/255, blue: 95/255),
+                                Color(red: 191/255, green: 90/255, blue: 242/255), Color(red: 10/255, green: 132/255, blue: 1)],
+                       startPoint: .leading, endPoint: .trailing)
+    }
+
+    private var composer: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).font(.system(size: 14))
+                TextField("Describe what to write, or press ↩ to continue", text: $composerPrompt)
+                    .textFieldStyle(.plain)
+                    .focused($composerFocused)
+                    .onSubmit { if !aiOutput.isEmpty && !aiBusy { keepAIOutput(); closeComposer() } else { runComposer() } }
+                Text("esc").font(.system(size: 11)).foregroundStyle(.tertiary)
+            }
+            HStack(spacing: 6) {
+                composerChip("Length", value: $composerLength, options: ["Short", "Medium", "Long"])
+                composerChip("Tone", value: $composerTone, options: ["Match document", "Friendly", "Professional", "Concise"])
+                composerChip("Format", value: $composerFormat, options: ["Paragraphs", "List", "Table"])
+            }
+            if !aiOutput.isEmpty {
+                (Text(aiOutput).foregroundStyle(.secondary) + Text(aiBusy ? " ▍" : "").foregroundStyle(aiGradient))
+                    .font(Font(theme.prose(16)))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+            if let aiError { Text(aiError).font(.system(size: 11.5)).foregroundStyle(.red) }
+            HStack(spacing: 6) {
+                if aiBusy {
+                    ProgressView().controlSize(.small)
+                    Text("Writing on this Mac…").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Stop") { aiTask?.cancel(); aiBusy = false }
+                        .padding(.horizontal, 10).frame(height: 26)
+                        .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 8))
+                } else if !aiOutput.isEmpty {
+                    Spacer()
+                    Button("Discard") { closeComposer() }
+                        .padding(.horizontal, 12).frame(height: 28)
+                        .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 999))
+                    Button("Try Again") { runComposer() }
+                        .padding(.horizontal, 12).frame(height: 28)
+                        .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 999))
+                    Button { keepAIOutput(); closeComposer() } label: {
+                        Text("Keep \(shortcutLabel("generate"))").fontWeight(.semibold).foregroundStyle(.white)
+                            .padding(.horizontal, 14).frame(height: 28)
+                            .background(accent, in: .capsule)
+                    }
+                }
+            }
+            .font(.system(size: 12.5))
+        }
+        .font(.system(size: 13))
+        .buttonStyle(.plain)
+        .padding(.vertical, 12).padding(.horizontal, 14)
+        .background(glassStrong, in: .rect(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(aiGradient, lineWidth: 1.5))
+        .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.22 : 0.13), radius: 12)
+    }
+
+    private func composerChip(_ label: String, value: Binding<String>, options: [String]) -> some View {
+        Menu {
+            Picker(label, selection: value) { ForEach(options, id: \.self) { Text($0).tag($0) } }.pickerStyle(.inline)
+        } label: {
+            Text("\(label): \(value.wrappedValue)").font(.system(size: 11.5)).padding(.horizontal, 9).frame(height: 24)
+                .background(field, in: .capsule)
+        }
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+
+    /// Frame of a reviewed rewrite in the ZStack, outset 14pt around the column.
+    private func reviewFrame(_ review: AIReview, geometry: GeometryProxy, columnWidth: CGFloat) -> CGRect? {
+        _ = scrollTick
+        guard let textView, let window = textView.window, let content = window.contentView,
+              NSMaxRange(review.range) <= (textView.string as NSString).length, review.range.length > 0 else { return nil }
+        let first = window.convertFromScreen(textView.firstRect(forCharacterRange: NSRange(location: review.range.location, length: 1), actualRange: nil))
+        let last = window.convertFromScreen(textView.firstRect(forCharacterRange: NSRange(location: NSMaxRange(review.range) - 1, length: 1), actualRange: nil))
+        let top = content.bounds.height - first.maxY
+        let bottom = content.bounds.height - last.minY
+        let left = (geometry.size.width - columnWidth) / 2
+        return CGRect(x: left - 14, y: top - 8, width: columnWidth + 28, height: max(bottom - top, 20) + 16)
+    }
+
+    private func reviewCapsule(_ review: AIReview) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).padding(.leading, 12)
+            let parts = review.title.components(separatedBy: " · ")
+            Text(parts[0]).fontWeight(.semibold)
+            if parts.count > 1 { Text("· \(parts[1])").foregroundStyle(.secondary).padding(.trailing, 6) }
+            Rectangle().fill(rule).frame(width: 1, height: 18).padding(.horizontal, 4)
+            Button("Try Again") { retryReview() }.padding(.horizontal, 10)
+            Button(review.comparing ? "Show Result" : "Compare") { compareReview() }.padding(.horizontal, 10)
+            Button("Revert") { revertReview() }.padding(.horizontal, 10)
+            Button { acceptReview() } label: {
+                HStack(spacing: 8) {
+                    Text("Accept").fontWeight(.semibold)
+                    Text(shortcutLabel("generate")).opacity(0.8)
+                }
+                .foregroundStyle(.white).padding(.horizontal, 14).frame(height: 32)
+                .background(accent, in: .capsule)
+            }
+        }
+        .font(.system(size: 13))
+        .buttonStyle(.plain)
+        .padding(3).frame(height: 38)
+        .background(glassStrong, in: .capsule)
+        .chromeGlass(in: .capsule)
+        .fixedSize()
+    }
+
+    /// Replaces the selection with finished output in place, as one undo step, and starts the review.
+    private func applyReview() {
+        guard let textView, case .replaceSelection(let range) = aiPlacement else { return }
+        let source = textView.string as NSString
+        guard NSMaxRange(range) <= source.length, source.substring(with: range) == aiSelectionSource else {
+            aiError = "The selection changed while writing. Generate again to avoid replacing newer edits."
+            return
+        }
+        let result = aiOutput
+        replaceText(in: range, with: result, undoable: true)
+        review = AIReview(range: NSRange(location: range.location, length: (result as NSString).length),
+                          original: aiSelectionSource, result: result, title: reviewTitle, action: lastAIAction)
+        aiOutput = ""
+        showWritingMenu = false
+        formatBarVisible = false
+    }
+
+    private func replaceText(in range: NSRange, with text: String, undoable: Bool) {
+        guard let textView else { return }
+        aiEdit.active = true
+        if !undoable { textView.undoManager?.disableUndoRegistration() }
+        textView.insertText(text, replacementRange: range)
+        if !undoable { textView.undoManager?.enableUndoRegistration() }
+        aiEdit.active = false
+    }
+
+    private func compareReview() {
+        guard var current = review else { return }
+        current.comparing.toggle()
+        let shown = current.comparing ? current.original : current.result
+        replaceText(in: current.range, with: shown, undoable: false)
+        current.range.length = (shown as NSString).length
+        review = current
+    }
+
+    private func acceptReview() {
+        guard let current = review else { return }
+        if current.comparing { compareReview() }
+        review = nil
+    }
+
+    private func revertReview() {
+        guard var current = review else { return }
+        if current.comparing { compareReview(); current = review ?? current }
+        replaceText(in: current.range, with: current.original, undoable: true)
+        review = nil
+    }
+
+    private func retryReview() {
+        guard let current = review else { return }
+        revertReview()
+        reviewTitle = current.title
+        generate(action: current.action, placement: .replaceSelection(NSRange(location: current.range.location, length: (current.original as NSString).length)))
     }
 
     /// Opens the document panel with a frontmatter suggestion once a new document has enough text to summarize.
@@ -694,6 +1109,7 @@ struct ContentView: View {
         aiBusy = true
         aiInsertion = selectedRange.location
         aiPlacement = placement
+        lastAIAction = action
         let text = document.text as NSString
         let source: String
         let prompt: String
@@ -733,6 +1149,8 @@ struct ContentView: View {
                 if !Task.isCancelled { aiError = error.localizedDescription }
             }
             aiBusy = false
+            // Selection edits land in place and wait for review (2c).
+            if case .replaceSelection = placement, !Task.isCancelled, aiError == nil, !aiOutput.isEmpty { applyReview() }
         }
     }
 
@@ -746,7 +1164,9 @@ struct ContentView: View {
             }
         }
         let edit = aiPlacement.edit(source: source as String, output: aiOutput, caret: aiInsertion)
+        aiEdit.active = true
         textView.insertText(edit.text, replacementRange: edit.range)
+        aiEdit.active = false
         aiOutput = ""
         showAI = false
         showWritingMenu = false
@@ -777,7 +1197,7 @@ struct ContentView: View {
     }
 
     private func slashMenu(query: String) -> some View {
-        let entries = SlashEntry.matching(query)
+        let entries = slashEntries(query)
         return VStack(alignment: .leading, spacing: 2) {
             Text("Insert").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.horizontal, 8)
             ScrollViewReader { proxy in
@@ -799,7 +1219,7 @@ struct ContentView: View {
                                 }
                                 .padding(.horizontal, 6).frame(height: 36)
                                 .foregroundStyle(index == slashSelection ? .white : .primary)
-                                .background(index == slashSelection ? Color.accentColor : .clear, in: .rect(cornerRadius: 11))
+                                .background(index == slashSelection ? accent : .clear, in: .rect(cornerRadius: 11))
                             }
                             .buttonStyle(.plain)
                             .id(entry.title)
@@ -816,11 +1236,11 @@ struct ContentView: View {
                 .font(.system(size: 11)).foregroundStyle(.secondary).padding(.horizontal, 8)
         }
         .padding(6).frame(width: 310)
-        .glassEffect(in: .rect(cornerRadius: 18))
+        .chromeGlass(in: .rect(cornerRadius: 18))
     }
 
     private func handleSlashKey(_ key: SlashKey, _ context: SlashContext) -> Bool {
-        let entries = SlashEntry.matching(context.query)
+        let entries = slashEntries(context.query)
         switch key {
         case .up:
             slashSelection = max(0, slashSelection - 1)
@@ -835,14 +1255,21 @@ struct ContentView: View {
         return true
     }
 
+    /// Slash entries, with /write only while generation at the caret is on and available.
+    private func slashEntries(_ query: String) -> [SlashEntry] {
+        SlashEntry.matching(query).filter { $0.title != "Write" || (generateAtCaret && aiAvailability == .available) }
+    }
+
     private func insertSlash(_ entry: SlashEntry, context: SlashContext) {
         guard let textView else { return }
         entry.apply(to: textView, context: context)
         slashQuery = nil
+        if entry.title == "Write" { openComposer() }
     }
 
     private func wrap(_ prefix: String, suffix: String? = nil) {
         guard let textView else { return }
+        chromeVisible = true
         let range = textView.selectedRange()
         let selected = (textView.string as NSString).substring(with: range)
         let closing = suffix ?? prefix
@@ -857,14 +1284,29 @@ struct ContentView: View {
         textView.setSelectedRange(NSRange(location: range.location + (prefix as NSString).length, length: (selected as NSString).length))
     }
 
+    /// Restyles every block the selection touches as one undoable edit.
     private func applyBlockStyle(_ style: String) {
         guard let textView else { return }
         let source = textView.string as NSString
-        let range = source.lineRange(for: textView.selectedRange())
-        let line = source.substring(with: range)
-        let stripped = line.replacingOccurrences(of: #"^(#{1,6} |[-*+] |[0-9]+\. |> )"#, with: "", options: .regularExpression)
-        let prefix = ["Title": "# ", "Heading": "## ", "Subheading": "### ", "Quote": "> ", "Bulleted": "- ", "Numbered": "1. ", "Task": "- [ ] ", "Callout": "> [!NOTE]\n> ", "Code block": "```\n"].first { $0.key == style }?.value ?? ""
-        textView.insertText(prefix + stripped + (style == "Code block" ? "\n```" : ""), replacementRange: range)
+        var range = source.lineRange(for: textView.selectedRange())
+        var lines = source.substring(with: range)
+        // Keep the trailing newline outside the edit so the next block stays put.
+        if lines.hasSuffix("\n") { lines.removeLast(); range.length -= 1 }
+        textView.insertText(BlockStyle.apply(style, to: lines), replacementRange: range)
+        chromeVisible = true
+    }
+
+    private func toggleWritingMenu() {
+        guard selectedRange.length > 0 else { return }
+        formatBarVisible = true
+        showBlockMenu = false
+        showWritingMenu.toggle()
+        showAI = false
+        if showWritingMenu { aiTask?.cancel(); aiBusy = false; aiOutput = ""; aiError = nil }
+    }
+
+    private func zoom(by step: Double) {
+        proseSize = min(max(proseSize + step, Double(EditorTheme.proseSizes.lowerBound)), Double(EditorTheme.proseSizes.upperBound))
     }
 
     private func toggleLens() {
@@ -885,11 +1327,21 @@ struct ContentView: View {
         LensMemory.write(markdownLens, to: fileURL)
     }
 
-    /// Starts the first save panel of an untitled document in the library folder when Settings asks for it.
-    private func pointSavePanelAtLibrary(_ window: NSWindow?) {
-        guard newDocumentLocation == "Library", fileURL == nil, let window, window === textView?.window else { return }
+    private func mirrorTags() {
+        guard let fileURL else { return }
+        let tags = Frontmatter.parse(document.text)?.tags ?? []
+        FinderTags.sync(fileURL, previous: mirroredTags, current: tags)
+        mirroredTags = tags
+    }
+
+    /// Names an untitled document's first save panel and fills its tags from the frontmatter, and starts it in the library when Settings asks.
+    private func prepareSavePanel(_ window: NSWindow?) {
+        guard fileURL == nil, let window, window === textView?.window else { return }
         DispatchQueue.main.async {
             guard let panel = window.attachedSheet as? NSSavePanel else { return }
+            if let suggestedName, panel.nameFieldStringValue.hasPrefix("Untitled") { panel.nameFieldStringValue = suggestedName }
+            if panel.tagNames?.isEmpty ?? true, let tags = Frontmatter.parse(document.text)?.tags, !tags.isEmpty { panel.tagNames = tags }
+            guard newDocumentLocation == "Library" else { return }
             let folder = libraryFolder ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Markify")
             guard let folder else { return }
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -983,6 +1435,7 @@ struct SlashEntry {
     }
 
     static let all: [Self] = [
+        .init(title: "Write", symbol: "apple.intelligence", shortcut: "⌘↩", insertion: ""),
         .init(title: "Table", symbol: "tablecells", shortcut: "| — |", insertion: "| Column | Column |\n| --- | --- |\n|  |  |"),
         .init(title: "Task list", symbol: "checklist", shortcut: "- [ ]", insertion: "- [ ] "),
         .init(title: "Code block", symbol: "curlybraces", shortcut: "```", insertion: "```\n\n```"),
@@ -1011,6 +1464,64 @@ struct SlashEntry {
                 return true
             }
         }
+    }
+}
+
+struct AIReview {
+    var range: NSRange
+    let original: String
+    let result: String
+    let title: String
+    let action: String
+    var comparing = false
+}
+
+/// Marks edits Markify makes for AI results, so they aren't mistaken for typing.
+final class AIEditGuard {
+    var active = false
+}
+
+struct BlockStyle: Identifiable {
+    let name: String
+    let section: String
+    let prefix: String
+    let font: Font
+    var id: String { name }
+
+    static let all: [Self] = [
+        .init(name: "Title", section: "Text", prefix: "#", font: .system(size: 20, weight: .bold, design: .serif)),
+        .init(name: "Heading", section: "Text", prefix: "##", font: .system(size: 16, weight: .bold, design: .serif)),
+        .init(name: "Subheading", section: "Text", prefix: "###", font: .system(size: 14, weight: .semibold, design: .serif)),
+        .init(name: "Body", section: "Text", prefix: "", font: .system(size: 14, design: .serif)),
+        .init(name: "Quote", section: "Text", prefix: ">", font: .system(size: 14, design: .serif).italic()),
+        .init(name: "Code block", section: "Text", prefix: "```", font: .system(size: 12.5, design: .monospaced)),
+        .init(name: "Callout", section: "Text", prefix: "> [!NOTE]", font: .system(size: 13)),
+        .init(name: "Bulleted", section: "Lists", prefix: "-", font: .system(size: 13)),
+        .init(name: "Numbered", section: "Lists", prefix: "1.", font: .system(size: 13)),
+        .init(name: "Task", section: "Lists", prefix: "- [ ]", font: .system(size: 13)),
+    ]
+
+    /// Rewrites each non-empty line with the style's prefix, replacing any block prefix it had.
+    static func apply(_ style: String, to lines: String) -> String {
+        let pattern = #"^[ \t]*(#{1,6} |[-*+] \[[ xX]\] |[-*+] |[0-9]+[.)] |> \[![A-Za-z]+\][ \t]*|> )"#
+        let stripped = lines.components(separatedBy: "\n").map { $0.replacingOccurrences(of: pattern, with: "", options: .regularExpression) }
+        if style == "Code block" { return "```\n" + stripped.joined(separator: "\n") + "\n```" }
+        var number = 0
+        let styled = stripped.enumerated().map { index, line -> String in
+            guard !line.isEmpty || style == "Callout" else { return line }
+            switch style {
+            case "Title": return "# " + line
+            case "Heading": return "## " + line
+            case "Subheading": return "### " + line
+            case "Quote": return "> " + line
+            case "Callout": return (index == 0 ? "> [!NOTE]\n> " : "> ") + line
+            case "Bulleted": return "- " + line
+            case "Numbered": number += 1; return "\(number). " + line
+            case "Task": return "- [ ] " + line
+            default: return line
+            }
+        }
+        return styled.joined(separator: "\n")
     }
 }
 
@@ -1044,6 +1555,27 @@ enum LensMemory {
     static func write(_ markdown: Bool, to url: URL) {
         let value = Array((markdown ? "markdown" : "rendered").utf8)
         _ = setxattr(url.path, attribute, value, value.count, 0, 0)
+    }
+}
+
+/// Mirrors frontmatter `tags` onto the file's Finder tags, leaving tags added in Finder alone.
+enum FinderTags {
+    /// Finder tags after swapping the previously mirrored frontmatter tags for the current ones.
+    static func merge(finder: [String], previous: [String], current: [String]) -> [String] {
+        func same(_ a: String, _ b: String) -> Bool { a.caseInsensitiveCompare(b) == .orderedSame }
+        var result = finder.filter { tag in !previous.contains { same($0, tag) } }
+        for tag in current where !result.contains(where: { same($0, tag) }) { result.append(tag) }
+        return result
+    }
+
+    static func sync(_ url: URL, previous: [String], current: [String]) {
+        var url = url
+        let finder = (try? url.resourceValues(forKeys: [.tagNamesKey]).tagNames) ?? []
+        let merged = merge(finder: finder, previous: previous, current: current)
+        guard merged != finder else { return }
+        var values = URLResourceValues()
+        values.tagNames = merged
+        try? url.setResourceValues(values)
     }
 }
 

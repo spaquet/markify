@@ -11,3 +11,10 @@
 - "Reload when changed on disk" was dropped from Settings. The system document architecture already reloads unedited documents, and SwiftUI's `DocumentGroup` offers no clean way to turn that off.
 - The per-document lens is stored in the `com.markify.lens` extended attribute and rewritten when the window closes, since saves can replace the file.
 - "Use surrounding section as context" sends the heading-bounded section around a selection or the caret with the request; when off, selection edits see only the selection and caret generation sees the whole document.
+- Proofread (2b) stays with the system Writing Tools, which already underline suggestions in place. Markify's own selection edits (tones, Describe your change, Summary, Key Points, List, Table) use the 2c review: the result replaces the selection as one undo step inside an AI edge, with Try Again, Compare, Revert and Accept (⌘↩). Esc reverts; typing accepts.
+- The generate composer (2d) floats in the column below the caret and shows output inside the composer rather than streaming it into the file, so nothing is written until Keep.
+- Footnote references show their text in the system tooltip, not a custom glass popover.
+- Frontmatter collapses to a chip row in the Rendered lens; clicking a chip edits the YAML in a native popover and writes it back as one change.
+- Settings choices where the spec gave no option list: prose font New York / SF Pro, Markdown font SF Mono / Menlo, page color Paper / White / System, code theme Match appearance / Monochrome, pasted images to ./assets / ./images / the document's folder.
+- Shortcuts are stored as overrides of the defaults. Recording a key another action uses moves it and leaves that action unassigned. ⌘+ also zooms in alongside the configurable ⌘=.
+- The Welcome document is copied into the library as "Welcome to Markify.md" on first launch and can be reopened from Help.
