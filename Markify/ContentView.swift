@@ -1653,7 +1653,8 @@ struct SlashEntry {
         let prefix = source.substring(with: NSRange(location: line.location, length: context.range.location - line.location))
         var range = context.range
         var inserted = insertion
-        if let lastContent = prefix.lastIndex(where: { !$0.isWhitespace }) {
+        // Blocks start on a line of their own; inline math goes where the slash was typed.
+        if title != "Inline math", let lastContent = prefix.lastIndex(where: { !$0.isWhitespace }) {
             let trailing = prefix[prefix.index(after: lastContent)...].utf16.count
             range.location -= trailing
             range.length += trailing
@@ -1671,6 +1672,7 @@ struct SlashEntry {
         case "Table": (2, 6)
         case "Code block": (4, 0)
         case "Math": (3, 0)
+        case "Inline math": (1, 1)
         case "Mermaid": (22, 7)
         case "Image": (2, 0)
         case "Frontmatter": (11, 0)
@@ -1689,6 +1691,7 @@ struct SlashEntry {
         .init(title: "Code block", symbol: "curlybraces", shortcut: "```", insertion: "```\n\n```"),
         .init(title: "Callout", symbol: "info.circle", shortcut: "> [!NOTE]", insertion: "> [!NOTE]\n> "),
         .init(title: "Math", symbol: "sum", shortcut: "$$", insertion: "$$\n\n$$"),
+        .init(title: "Inline math", symbol: "x.squareroot", shortcut: "$…$", insertion: "$x$"),
         .init(title: "Mermaid", symbol: "flowchart", shortcut: "```mermaid", insertion: "```mermaid\ngraph TD\n  A --> B\n```"),
         .init(title: "Image", symbol: "photo", shortcut: "![]()", insertion: "![]()"),
         .init(title: "Heading 1", symbol: "textformat", shortcut: "#", insertion: "# "),

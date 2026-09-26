@@ -70,6 +70,16 @@ struct MarkifyTests {
         #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "Column")
     }
 
+    @Test @MainActor func inlineMathSlashEntryStaysInTheLine() {
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = "Area is /inl"
+        let context = SlashContext.detect(in: editor.string, selection: NSRange(location: 12, length: 0))!
+        SlashEntry.matching("inl")[0].apply(to: editor, context: context)
+        #expect(editor.string == "Area is $x$")
+        #expect((editor.string as NSString).substring(with: editor.selectedRange()) == "x")
+        #expect(SlashEntry.matching("math").map(\.title) == ["Math", "Inline math"])
+    }
+
     @Test @MainActor func mermaidSlashEntryInsertsAStarterGraph() {
         let editor = NSTextView(usingTextLayoutManager: true)
         editor.string = "/merm"

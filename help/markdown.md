@@ -16,6 +16,7 @@ Markify reads Markdown the way GitHub does: it follows [CommonMark](https://comm
 | `*italic*` or `_italic_` | *italic* |
 | `~~strikethrough~~` | ~~strikethrough~~ |
 | `` `code` `` | `code` |
+| `$x^2$` | inline math: x² |
 | `[text](https://example.com)` | a link |
 | `\*` | a literal asterisk |
 
@@ -43,9 +44,11 @@ The types are `NOTE`, `TIP`, `IMPORTANT` and `WARNING`.
 
 ## Math
 
-Write LaTeX between dollar signs. `$e^{i\pi}+1=0$` sets math inline; `$$` on lines of their own sets a display equation:
+Write LaTeX between dollar signs. Single dollars set math inline, in the flow of the sentence; `$$` on lines of their own sets a display equation:
 
 ```markdown
+Euler's identity, $e^{i\pi}+1=0$, links five constants.
+
 $$
 \int_0^1 x^2\,dx = \frac{1}{3}
 $$

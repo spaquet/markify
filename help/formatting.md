@@ -41,6 +41,7 @@ Type **/** at the start of a line to insert a block. Keep typing to filter the l
 | Code block | A fenced code block |
 | Callout | `> [!NOTE]` |
 | Math | A `$$` display equation |
+| Inline math | `$x$` in the line, with `x` selected |
 | Mermaid | A diagram |
 | Image | `![]()` |
 | Heading 1–3 | `#`, `##`, `###` |
