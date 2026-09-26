@@ -12,7 +12,7 @@ VERSION=${1:?usage: set-website-version.sh <version>}
 perl -pi -e "s{releases/tag/v[0-9]+(?:\.[0-9]+){1,2}}{releases/tag/v$VERSION}g;
              s{Version [0-9]+(?:\.[0-9]+){1,2}}{Version $VERSION}g;
              s{Markify [0-9]+(?:\.[0-9]+){1,2} ·}{Markify $VERSION ·}g;
-             s{"softwareVersion":"[0-9.]+"}{"softwareVersion":"$VERSION"}g" docs/index.html
+             s{\"softwareVersion\":\"[0-9.]+\"}{\"softwareVersion\":\"$VERSION\"}g" docs/index.html
 
 COUNT=$(grep -c -e "releases/tag/v$VERSION" docs/index.html)
 if [ "$COUNT" -lt 2 ]; then
