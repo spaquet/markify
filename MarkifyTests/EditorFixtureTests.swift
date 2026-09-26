@@ -61,6 +61,7 @@ private final class FixtureBundle {}
         ("strike text", "~~struck~~", 2),
         ("escaped star", "\\*not", 1),
         ("escaped text", "\\*not", 2),
+        ("escape backslash", "\\*not", 0),
         ("snake", "snake_case_name", 6),
         ("code tick", "`a*b*c | d`", 0),
         ("code star", "`a*b*c | d`", 2),
@@ -91,6 +92,7 @@ private final class FixtureBundle {}
         ("math fence", "$$\n\\frac", 0),
         ("math body", "\\frac{1}{2}", 1),
         ("inline math", "$x^2$", 1),
+        ("inline math dollar", "$x^2$", 0),
         ("callout token", "[!NOTE]", 2),
         ("callout body", "Callout body", 0),
         ("quote marker", "> Plain quote", 0),
@@ -191,21 +193,22 @@ private final class FixtureBundle {}
     static let renderedGolden: [String: String] = [
         "atx marker": "1 hidden",
         "atx text": "36 b",
-        "setext text": "18",  // expected to change (EDITOR_PLAN.md)
-        "setext underline": "18",  // expected to change (EDITOR_PLAN.md)
+        "setext text": "22 b",
+        "setext underline": "1 hidden",
         "both marker": "1 hidden",
-        "both text": "18 b",
-        "underscore marker": "18",  // expected to change (EDITOR_PLAN.md)
-        "underscore text": "18",  // expected to change (EDITOR_PLAN.md)
+        "both text": "18 b i",
+        "underscore marker": "1 hidden",
+        "underscore text": "18 i",
         "nested strong": "18 b",
-        "nested emphasis": "18 i",
-        "strike marker": "18",  // expected to change (EDITOR_PLAN.md)
-        "strike text": "18",  // expected to change (EDITOR_PLAN.md)
-        "escaped star": "1 hidden",  // expected to change (EDITOR_PLAN.md)
-        "escaped text": "18 i",  // expected to change (EDITOR_PLAN.md)
+        "nested emphasis": "18 b i",
+        "strike marker": "1 hidden",
+        "strike text": "18 strike",
+        "escaped star": "18",
+        "escaped text": "18",
+        "escape backslash": "1 hidden",
         "snake": "18",
         "code tick": "1 hidden",
-        "code star": "15 m hidden",  // expected to change (EDITOR_PLAN.md)
+        "code star": "15 m",
         "link text": "18 accent",
         "link bracket": "1 hidden",
         "link url": "1 hidden",
@@ -218,8 +221,8 @@ private final class FixtureBundle {}
         "task open box": "10 m hidden",
         "task open text": "17",
         "task done text": "17 dim strike",
-        "nested task box": "18",  // expected to change (EDITOR_PLAN.md)
-        "nested task text": "18",  // expected to change (EDITOR_PLAN.md)
+        "nested task box": "10 m hidden",
+        "nested task text": "17",
         "ordered number": "18 hidden",
         "ordered text": "18",
         "lazy line": "18",
@@ -227,12 +230,13 @@ private final class FixtureBundle {}
         "table cell": "1 hidden",
         "fence open": "1 hidden",
         "fence body": "14 m code",
-        "tilde fence": "18",  // expected to change (EDITOR_PLAN.md)
-        "tilde body": "18",  // expected to change (EDITOR_PLAN.md)
-        "indented code": "18",  // expected to change (EDITOR_PLAN.md)
+        "tilde fence": "1 hidden",
+        "tilde body": "14 m code",
+        "indented code": "14 m code",
         "math fence": "1 hidden",
         "math body": "1 hidden",
         "inline math": "18 i",
+        "inline math dollar": "1 hidden",
         "callout token": "13 b hidden",
         "callout body": "15",
         "quote marker": "1 hidden",
@@ -240,7 +244,7 @@ private final class FixtureBundle {}
         "footnote ref": "11 b accent",
         "footnote def label": "13 b accent",
         "footnote def text": "13",
-        "html block": "18",  // expected to change (EDITOR_PLAN.md)
+        "html block": "18 dim",
         "thematic break": "1 hidden",
         "frontmatter key": "1 hidden",
     ]
@@ -248,48 +252,50 @@ private final class FixtureBundle {}
     static let markdownGolden: [String: String] = [
         "atx marker": "14 m dim",
         "atx text": "16 b m",
-        "setext text": "14 m",  // expected to change (EDITOR_PLAN.md)
-        "setext underline": "14 m",
+        "setext text": "16 b m",
+        "setext underline": "14 m dim",
         "both marker": "14 m dim",
-        "both text": "14 b m",
-        "underscore marker": "14 m",  // expected to change (EDITOR_PLAN.md)
-        "underscore text": "14 m",  // expected to change (EDITOR_PLAN.md)
+        "both text": "14 b i m",
+        "underscore marker": "14 m dim",
+        "underscore text": "14 i m",
         "nested strong": "14 b m",
-        "nested emphasis": "14 i m",
-        "strike marker": "14 m",  // expected to change (EDITOR_PLAN.md)
-        "strike text": "14 m",
-        "escaped star": "14 m dim",
-        "escaped text": "14 i m",  // expected to change (EDITOR_PLAN.md)
+        "nested emphasis": "14 b i m",
+        "strike marker": "14 m dim",
+        "strike text": "14 m strike",
+        "escaped star": "14 m",
+        "escaped text": "14 m",
+        "escape backslash": "14 m dim",
         "snake": "14 m",
         "code tick": "14 m dim",
-        "code star": "14 m dim",  // expected to change (EDITOR_PLAN.md)
-        "link text": "14 m accent",
-        "link bracket": "14 m",
+        "code star": "14 m",
+        "link text": "14 m",
+        "link bracket": "14 m dim",
         "link url": "14 m accent",
-        "inline image": "14 m accent",
-        "block image caption": "14 m accent",
-        "remote image caption": "14 m accent",
+        "inline image": "14 m",
+        "block image caption": "14 m",
+        "remote image caption": "14 m",
         "bullet marker": "14 m dim",
         "bullet text": "14 m",
         "nested bullet marker": "14 m dim",
-        "task open box": "14 m",
+        "task open box": "14 m dim",
         "task open text": "14 m",
         "task done text": "14 m",
-        "nested task box": "14 m",
+        "nested task box": "14 m dim",
         "nested task text": "14 m",
         "ordered number": "14 m dim",
         "ordered text": "14 m",
         "lazy line": "14 m",
-        "table pipe": "14 m",
+        "table pipe": "14 m dim",
         "table cell": "14 m",
         "fence open": "14 m dim",
         "fence body": "14 m code",
-        "tilde fence": "14 m",  // expected to change (EDITOR_PLAN.md)
-        "tilde body": "14 m",  // expected to change (EDITOR_PLAN.md)
-        "indented code": "14 m",  // expected to change (EDITOR_PLAN.md)
+        "tilde fence": "14 m dim",
+        "tilde body": "14 m code",
+        "indented code": "14 m code",
         "math fence": "14 m dim",
         "math body": "14 m",
         "inline math": "14 m",
+        "inline math dollar": "14 m dim",
         "callout token": "14 m accent",
         "callout body": "14 m",
         "quote marker": "14 m dim",
@@ -297,7 +303,7 @@ private final class FixtureBundle {}
         "footnote ref": "14 m accent",
         "footnote def label": "14 m accent",
         "footnote def text": "14 m dim",
-        "html block": "14 m",  // expected to change (EDITOR_PLAN.md)
+        "html block": "14 m dim",
         "thematic break": "14 m dim",
         "frontmatter key": "14 m",
     ]

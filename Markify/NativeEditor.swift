@@ -1,5 +1,4 @@
 import AppKit
-import Markdown
 import MarkifyMarkdown
 import OKFKit
 import SwaTex
@@ -156,27 +155,190 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.kern, value: -width, range: NSRange(location: NSMaxRange(range) - 1, length: 1))
             }
         }
-        let map = MarkdownSourceMap(editor.string)
-        let parsed = Markdown.Document(parsing: editor.string)
-        for child in parsed.children {
-            guard let heading = child as? Markdown.Heading,
-                  let sourceRange = heading.range,
-                  let range = map.range(sourceRange),
-                  let match = try? NSRegularExpression(pattern: "^(#{1,6})[ \\t]+([^\\n]+)").firstMatch(in: editor.string, range: range) else { continue }
-            let level = heading.level
-            let size: CGFloat = markdownLens ? 16 : (level == 1 ? 36 : level == 2 ? 22 : 19)
-            let font = markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true)
-            storage.addAttribute(.font, value: font, range: match.range(at: 2))
-            marker(NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
+        let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string)
+        let secondary = NSColor.secondaryLabelColor
+        var hidden: [NSRange] = []
+        /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
+        var destinations: [NSRange] = []
+        /// Markers are styled after every font, since the hidden ones measure their own width.
+        func hide(_ ranges: [NSRange]) { hidden += ranges }
+        func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
+            guard range.length > 0 else { return }
+            storage.enumerateAttribute(.font, in: range) { value, segment, _ in
+                guard var font = value as? NSFont else { return }
+                if bold { font = theme.adding(.bold, to: font) }
+                if italic { font = theme.adding(.italic, to: font) }
+                storage.addAttribute(.font, value: font, range: segment)
+            }
         }
-        matches("(?m)^(?:[ \\t]*)(>[ \\t]?)") { match in marker(match.range(at: 1)) }
-        matches("(?m)^[ \\t]*([-*+] )(?!\\[[ xX]\\] )") { match in
-            if markdownLens { marker(match.range(at: 1)) }
-            else { storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: match.range(at: 1)) }
+        let definitions = model.spans.compactMap { span -> (label: String, text: String, span: MarkdownModel.Span)? in
+            guard case .footnoteDefinition(let label, _) = span.kind else { return nil }
+            return (label, source.substring(with: span.content), span)
         }
-        matches("(?m)^[ \\t]*([0-9]+[.)]) ") { match in
-            if markdownLens { marker(match.range(at: 1)) }
-            else { storage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: match.range(at: 1)) }
+
+        // Blocks: fonts and fills that inline styles then build on.
+        for span in model.spans {
+            switch span.kind {
+            case .heading(let level, _):
+                let size: CGFloat = markdownLens ? 16 : (level == 1 ? 36 : level == 2 ? 22 : 19)
+                storage.addAttribute(.font, value: markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true), range: span.content)
+                hide(span.markers)
+            case .blockQuote:
+                hide(span.markers)
+            case .callout(let type, let token):
+                let color = Callout.color(type, accent: accent)
+                let name = NSRange(location: token.location + 2, length: token.length - 3)
+                guard !markdownLens else { storage.addAttribute(.foregroundColor, value: color, range: name); continue }
+                storage.addAttributes([.backgroundColor: NSColor.calloutFill(color), .font: theme.ui(15)], range: span.range)
+                // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: token)
+            case .listItem(let item):
+                let spaced = NSMaxRange(item.checkbox ?? item.marker) < source.length && [32, 9].contains(source.character(at: NSMaxRange(item.checkbox ?? item.marker)))
+                let prefix = NSRange(location: item.marker.location, length: NSMaxRange(item.checkbox ?? item.marker) - item.marker.location + (spaced ? 1 : 0))
+                if markdownLens {
+                    hide([prefix])
+                } else if let box = item.checkbox {
+                    // The checkbox is drawn over the hidden `- [ ] `; the item's first line takes the task style.
+                    storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)], range: prefix)
+                    let line = source.lineRange(for: NSRange(location: box.location, length: 0))
+                    var end = NSMaxRange(line)
+                    while end > NSMaxRange(prefix), [10, 13].contains(source.character(at: end - 1)) { end -= 1 }
+                    let text = NSRange(location: NSMaxRange(prefix), length: max(0, end - NSMaxRange(prefix)))
+                    storage.addAttribute(.font, value: theme.ui(17), range: text)
+                    if item.checked { storage.addAttributes([.foregroundColor: dim, .strikethroughStyle: NSUnderlineStyle.single.rawValue], range: text) }
+                } else if item.ordered {
+                    storage.addAttribute(.foregroundColor, value: secondary, range: item.marker)
+                } else {
+                    // A bullet is drawn over the hidden marker, which keeps its width.
+                    storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.mono(18)], range: prefix)
+                }
+            case .codeBlock:
+                storage.addAttributes([.font: theme.mono(markdownLens ? 14 : 13.5), .backgroundColor: NSColor.codeFill], range: span.content)
+                hide(span.markers)
+                let code = source.substring(with: span.content)
+                let colors: [(String, CodeToken)] = [
+                    (#"\b(func|let|var|if|else|return|class|struct|import|guard|private|def|const|function|for|while|in|true|false|nil|null)\b"#, .keyword),
+                    (#"\b[A-Z][A-Za-z0-9_]*\b"#, .type),
+                    (#""[^"\n]*"|\b[0-9]+(\.[0-9]+)?\b"#, .literal),
+                    (#"(//|#)[^\n]*"#, .comment)
+                ]
+                for (pattern, kind) in colors {
+                    guard let color = theme.code(kind), let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+                    for token in regex.matches(in: code, range: NSRange(location: 0, length: (code as NSString).length)) {
+                        storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.range.location, length: token.range.length))
+                    }
+                }
+            case .htmlBlock:
+                storage.addAttribute(.foregroundColor, value: dim, range: span.range)
+            case .footnoteDefinition(_, let label):
+                storage.addAttributes([.font: markdownLens ? base : theme.ui(13), .foregroundColor: markdownLens ? dim : secondary], range: span.range)
+                storage.addAttributes([.foregroundColor: accent, .font: markdownLens ? base : theme.ui(13, weight: .semibold)], range: label)
+                guard !markdownLens else { continue }
+                // The `:` stays visible after the number, as in the design's footnotes section.
+                hide([span.markers[0], NSRange(location: span.markers[1].location, length: 1)])
+                if span.range.location == definitions.first?.span.range.location {
+                    let style = (storage.attribute(.paragraphStyle, at: span.range.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+                    style.paragraphSpacingBefore = 26 * theme.scale
+                    storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: span.range))
+                }
+            case .thematicBreak, .frontmatter, .mathBlock:
+                hide(span.markers)
+            default:
+                break
+            }
+        }
+        if markdownLens {
+            // Table syntax: the separator row and the pipes around cells.
+            for table in model.tables {
+                for row in table.rows {
+                    var location = row.start
+                    for cell in row.cells + [NSRange(location: row.end, length: 0)] {
+                        let gap = NSRange(location: location, length: cell.location - location)
+                        if gap.length > 0, row.separator || source.substring(with: gap).contains("|") { storage.addAttribute(.foregroundColor, value: dim, range: gap) }
+                        if row.separator { storage.addAttribute(.foregroundColor, value: dim, range: cell) }
+                        location = NSMaxRange(cell)
+                    }
+                }
+            }
+        }
+
+        // Inline styles, layered over the block fonts.
+        // OKF footnote labels key into `sources` (§5.1).
+        let sources = Dictionary(((try? OKFConcept.parse(source: editor.string)?.get())?.sources ?? []).compactMap { source in source.id.map { ($0, source) } },
+                                 uniquingKeysWith: { first, _ in first })
+        for span in model.spans {
+            switch span.kind {
+            case .strong:
+                adding(bold: true, to: span.content)
+                hide(span.markers)
+            case .emphasis:
+                adding(italic: true, to: span.content)
+                hide(span.markers)
+            case .strikethrough:
+                storage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: span.content)
+                hide(span.markers)
+            case .inlineCode:
+                storage.addAttribute(.font, value: theme.mono(markdownLens ? 14 : 15), range: span.content)
+                hide(span.markers)
+            case .inlineMath:
+                if !markdownLens { storage.addAttribute(.font, value: theme.prose(18, italic: true), range: span.content) }
+                hide(span.markers)
+            case .escape:
+                hide(span.markers)
+            case .link, .image(_, false):
+                // The design keeps link text in ink in the Markdown lens and colors only the destination.
+                if !markdownLens { storage.addAttribute(.foregroundColor, value: accent, range: span.content) }
+                hide(span.markers)
+                if markdownLens, let tail = span.markers.last, tail.length > 3 { destinations.append(NSRange(location: tail.location + 2, length: tail.length - 3)) }
+            case .image(_, true):
+                guard !markdownLens else {
+                    hide(span.markers)
+                    if let tail = span.markers.last, tail.length > 3 { destinations.append(NSRange(location: tail.location + 2, length: tail.length - 3)) }
+                    continue
+                }
+                hide([span.range])
+                let style = NSMutableParagraphStyle()
+                style.alignment = .center
+                style.paragraphSpacingBefore = 270
+                style.paragraphSpacing = 34
+                storage.addAttribute(.paragraphStyle, value: style, range: span.range)
+            case .footnoteReference(let label):
+                storage.addAttribute(.foregroundColor, value: accent, range: markdownLens ? span.range : span.content)
+                guard !markdownLens else { continue }
+                storage.addAttributes([.font: theme.ui(11, weight: .semibold), .baselineOffset: 7 * theme.scale], range: span.content)
+                let cited = sources[label].map { source in
+                    "Source: " + [source.title, source.resource, source.author?.displayName].compactMap { $0 }.joined(separator: " · ")
+                }
+                let tip = [definitions.first(where: { $0.label == label })?.text, cited].compactMap { $0 }.joined(separator: "\n\n")
+                if !tip.isEmpty { storage.addAttribute(.toolTip, value: tip, range: span.content) }
+                hide(span.markers)
+            default:
+                break
+            }
+        }
+
+        for range in hidden { marker(range) }
+        for range in destinations { storage.addAttribute(.foregroundColor, value: accent, range: range) }
+        if !markdownLens {
+            // A block image's caption shows its alt text under the drawn image.
+            for span in model.spans { if case .image(_, true) = span.kind { storage.addAttributes([.font: theme.ui(13), .foregroundColor: secondary], range: span.content) } }
+        }
+
+        // Hanging indent: wrapped lines of a list item align with its text, not its marker.
+        for span in model.spans {
+            guard case .listItem(let item) = span.kind else { continue }
+            let line = source.lineRange(for: NSRange(location: item.marker.location, length: 0))
+            var end = NSMaxRange(item.checkbox ?? item.marker)
+            if end < source.length, [32, 9].contains(source.character(at: end)) { end += 1 }
+            let style = paragraph.mutableCopy() as! NSMutableParagraphStyle
+            style.headIndent = storage.attributedSubstring(from: NSRange(location: line.location, length: end - line.location)).size().width
+            storage.addAttribute(.paragraphStyle, value: style, range: line)
+        }
+        for lazy in MarkdownList.scan(editor.string).lazyLines {
+            guard let owner = storage.attribute(.paragraphStyle, at: lazy.item, effectiveRange: nil) as? NSParagraphStyle,
+                  let style = owner.mutableCopy() as? NSMutableParagraphStyle else { continue }
+            style.firstLineHeadIndent = owner.headIndent
+            storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: lazy.line))
         }
         if !markdownLens {
             // The file keeps its written numbers; MarkdownTextView draws each item's counted number over them.
@@ -193,54 +355,6 @@ struct NativeEditor: NSViewRepresentable {
                 let pad = CGFloat((widest[number.list] ?? 1) - number.range.length) * digit
                 if pad != 0 { storage.addAttribute(.kern, value: pad, range: NSRange(location: NSMaxRange(number.range) + 1, length: 1)) }
             }
-        }
-        matches("(\\*\\*|__)([^\\n]+?)\\1") { match in
-            storage.addAttribute(.font, value: markdownLens ? theme.mono(14, weight: .bold) : theme.prose(18, bold: true), range: match.range(at: 2))
-            marker(match.range(at: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - match.range(at: 1).length, length: match.range(at: 1).length))
-        }
-        matches("(?<!\\*)\\*([^*\\n]+)\\*(?!\\*)") { match in
-            storage.addAttribute(.font, value: markdownLens ? NSFontManager.shared.convert(base, toHaveTrait: .italicFontMask) : theme.prose(18, italic: true), range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
-        }
-        matches("`([^`\\n]+)`") { match in
-            storage.addAttribute(.font, value: theme.mono(markdownLens ? 14 : 15), range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
-        }
-        matches("(?m)^(```.*|\\$\\$|---)[ \\t]*$") { marker($0.range) }
-        matches("(?m)^> (\\[!(NOTE|TIP|WARNING|IMPORTANT)\\]).*(?:\\n>[^\\n]*)*") { match in
-            let color = Callout.color(source.substring(with: match.range(at: 2)), accent: accent)
-            guard !markdownLens else { return storage.addAttribute(.foregroundColor, value: color, range: match.range(at: 2)) }
-            storage.addAttributes([.backgroundColor: NSColor.calloutFill(color), .font: theme.ui(15)], range: match.range)
-            // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
-            storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 2))
-        }
-        matches("(?m)^[-*+] \\[([xX ])\\] ([^\\n]+)") { match in
-            guard !markdownLens else { return }
-            storage.addAttributes([.foregroundColor: NSColor.clear,
-                                   .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)],
-                                  range: NSRange(location: match.range.location, length: match.range(at: 2).location - match.range.location))
-            storage.addAttribute(.font, value: theme.ui(17), range: match.range(at: 2))
-            if (source.substring(with: match.range(at: 1))).lowercased() == "x" {
-                storage.addAttributes([.foregroundColor: dim, .strikethroughStyle: NSUnderlineStyle.single.rawValue], range: match.range(at: 2))
-            }
-        }
-        // Hanging indent: wrapped lines of a list item align with its text, not its marker.
-        matches("(?m)^[ \\t]*(?:[-*+] \\[[ xX]\\] |[-*+] |[0-9]+[.)] )") { match in
-            let style = paragraph.mutableCopy() as! NSMutableParagraphStyle
-            style.headIndent = storage.attributedSubstring(from: match.range).size().width
-            storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: match.range))
-        }
-        for lazy in MarkdownList.scan(editor.string).lazyLines {
-            guard let owner = storage.attribute(.paragraphStyle, at: lazy.item, effectiveRange: nil) as? NSParagraphStyle,
-                  let style = owner.mutableCopy() as? NSMutableParagraphStyle else { continue }
-            style.firstLineHeadIndent = owner.headIndent
-            storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: lazy.line))
-        }
-        if !markdownLens {
             for table in MarkdownTable.blocks(in: editor.string) {
                 for row in table.rows {
                     let rowStyle = NSMutableParagraphStyle()
@@ -252,92 +366,18 @@ struct NativeEditor: NSViewRepresentable {
                                           range: NSRange(location: row.start, length: row.end - row.start))
                 }
             }
-        }
-        let notes = Footnote.definitions(in: editor.string)
-        // OKF footnote labels key into `sources` (§5.1).
-        let sources = Dictionary(((try? OKFConcept.parse(source: editor.string)?.get())?.sources ?? []).compactMap { source in source.id.map { ($0, source) } },
-                                 uniquingKeysWith: { first, _ in first })
-        matches("(?m)^(\\[\\^)([^]\\n]+)(\\]:)(.*)$") { match in
-            storage.addAttributes([.font: markdownLens ? base : theme.ui(13), .foregroundColor: markdownLens ? dim : NSColor.secondaryLabelColor], range: match.range)
-            storage.addAttributes([.foregroundColor: accent, .font: markdownLens ? base : theme.ui(13, weight: .semibold)], range: match.range(at: 2))
-            guard !markdownLens else { return }
-            marker(match.range(at: 1))
-            storage.addAttributes([.foregroundColor: NSColor.clear], range: NSRange(location: match.range(at: 3).location, length: 1))
-            if match.range.location == notes.first?.range.location {
-                let style = (storage.attribute(.paragraphStyle, at: match.range.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
-                style.paragraphSpacingBefore = 26 * theme.scale
-                storage.addAttribute(.paragraphStyle, value: style, range: source.paragraphRange(for: match.range))
+            for span in model.spans where span.kind == .mathBlock {
+                let style = NSMutableParagraphStyle()
+                style.alignment = .center
+                style.minimumLineHeight = 80
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear], range: span.range)
+                storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: span.range.location, length: min(2, span.range.length)))
             }
         }
-        matches("(\\[\\^)([^]\\n]+)(\\])(?!:)") { match in
-            storage.addAttributes([.foregroundColor: accent], range: markdownLens ? match.range : match.range(at: 2))
-            guard !markdownLens else { return }
-            storage.addAttributes([.font: theme.ui(11, weight: .semibold), .baselineOffset: 7 * theme.scale], range: match.range(at: 2))
-            let label = source.substring(with: match.range(at: 2))
-            let cited = sources[label].map { source in
-                "Source: " + [source.title, source.resource, source.author?.displayName].compactMap { $0 }.joined(separator: " · ")
-            }
-            let tip = [notes.first(where: { $0.label == label })?.text, cited].compactMap { $0 }.joined(separator: "\n\n")
-            if !tip.isEmpty { storage.addAttribute(.toolTip, value: tip, range: match.range(at: 2)) }
-            marker(match.range(at: 1))
-            marker(match.range(at: 3))
-        }
-        matches("(?ms)^```([a-zA-Z0-9_+-]*)[^\\n]*\\n(.*?)\\n```[ \\t]*$") { match in
-            let body = match.range(at: 2)
-            storage.addAttributes([.font: theme.mono(markdownLens ? 14 : 13.5), .backgroundColor: NSColor.codeFill], range: body)
-            if !markdownLens {
-                marker(NSRange(location: match.range.location, length: body.location - match.range.location))
-                marker(NSRange(location: NSMaxRange(body), length: NSMaxRange(match.range) - NSMaxRange(body)))
-            }
-            let code = source.substring(with: body)
-            let colors: [(String, CodeToken)] = [
-                (#"\b(func|let|var|if|else|return|class|struct|import|guard|private|def|const|function|for|while|in|true|false|nil|null)\b"#, .keyword),
-                (#"\b[A-Z][A-Za-z0-9_]*\b"#, .type),
-                (#""[^"\n]*"|\b[0-9]+(\.[0-9]+)?\b"#, .literal),
-                (#"(//|#)[^\n]*"#, .comment)
-            ]
-            for (pattern, kind) in colors {
-                guard let color = theme.code(kind), let regex = try? NSRegularExpression(pattern: pattern) else { continue }
-                for token in regex.matches(in: code, range: NSRange(location: 0, length: (code as NSString).length)) {
-                    storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: body.location + token.range.location, length: token.range.length))
-                }
-            }
-        }
-        matches("(?ms)^\\$\\$[ \\t]*\\n?(.*?)\\n?\\$\\$[ \\t]*$") { match in
-            guard !markdownLens else { return }
-            let style = NSMutableParagraphStyle()
-            style.alignment = .center
-            style.minimumLineHeight = 80
-            storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear], range: match.range)
-            storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: match.range.location, length: min(2, match.range.length)))
-        }
-        matches("(?<!\\$)\\$([^$\\n]+)\\$(?!\\$)") { match in
-            guard !markdownLens else { return }
-            storage.addAttribute(.font, value: theme.prose(18, italic: true), range: match.range(at: 1))
-            marker(NSRange(location: match.range.location, length: 1))
-            marker(NSRange(location: NSMaxRange(match.range) - 1, length: 1))
-        }
-        matches("\\[([^]\\n]+)\\]\\(([^)\\n]+)\\)") { match in
-            storage.addAttribute(.foregroundColor, value: accent, range: match.range(at: 1))
-            if markdownLens { storage.addAttribute(.foregroundColor, value: accent, range: match.range(at: 2)) }
-            else { marker(NSRange(location: match.range.location, length: match.range(at: 1).location - match.range.location)); marker(NSRange(location: NSMaxRange(match.range(at: 1)), length: NSMaxRange(match.range) - NSMaxRange(match.range(at: 1)))) }
-        }
-        matches("(?m)^!\\[([^]\\n]*)\\]\\(([^)\\n]+)\\)[ \\t]*$") { match in
-            guard !markdownLens else { return }
-            let caption = match.range(at: 1)
-            marker(match.range)
-            let style = NSMutableParagraphStyle()
-            style.alignment = .center
-            style.paragraphSpacingBefore = 270
-            style.paragraphSpacing = 34
-            storage.addAttribute(.paragraphStyle, value: style, range: match.range)
-            storage.addAttributes([.font: theme.ui(13),
-                                   .foregroundColor: NSColor.secondaryLabelColor], range: caption)
-        }
-        if let frontmatter = Frontmatter.parse(editor.string) {
+        if let frontmatter = model.spans.first(where: { $0.kind == .frontmatter }) {
             if markdownLens {
                 matches("(?m)^([A-Za-z_][A-Za-z0-9_-]*):") { match in
-                    if NSLocationInRange(match.range.location, frontmatter.range) {
+                    if NSLocationInRange(match.range.location, frontmatter.content) {
                         storage.addAttribute(.foregroundColor, value: CodeToken.type.color, range: match.range(at: 1))
                     }
                 }
@@ -453,6 +493,15 @@ final class MarkdownTextView: NSTextView {
     private var imageCache: [URL: NSImage] = [:]
     private var mathCache: [String: NSImage] = [:]
     private var tableOverlays: [Int: TableRowView] = [:]
+    private var modelCache: MarkdownModel?
+
+    /// The parsed source, shared by styling, drawing and clicks until the text changes.
+    var model: MarkdownModel {
+        if let modelCache, modelCache.source == string { return modelCache }
+        let model = MarkdownModel(string)
+        modelCache = model
+        return model
+    }
 
     func refreshTables() {
         guard let window else { return }
