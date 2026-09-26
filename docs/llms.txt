@@ -1,0 +1,33 @@
+# Markify
+
+> Markify is a free, source-available Markdown editor for macOS 26 (Apple silicon and Intel). It shows a document on one page with two lenses over the same text — a rendered lens and a Markdown lens, switched with ⌘/ — instead of a split preview. It follows CommonMark and GitHub Flavored Markdown and adds callouts, LaTeX math, footnotes, Mermaid diagrams, YAML frontmatter and MDX files; exports self-contained HTML and paginated PDF; uses on-device Apple Intelligence for proofreading, rewriting and generation; and reads and edits Open Knowledge Format (OKF) bundles. Documents are plain .md files saved exactly as written.
+
+- Website: https://spaquet.github.io/markify/
+- Download: https://github.com/spaquet/markify/releases/latest (markify-as.dmg for Apple silicon, markify-intel.dmg for Intel)
+- Source code: https://github.com/spaquet/markify
+- License: MIT with the Commons Clause (free for non-commercial use): https://spaquet.github.io/markify/legal.html
+
+## Help
+- [Markify Help](https://spaquet.github.io/markify/help/): Learn to write, format, organize and export Markdown in Markify, the one-page Markdown editor for macOS.
+- [Getting started](https://spaquet.github.io/markify/help/getting-started.html): Create, open and save Markdown documents in Markify, and find your way around the window.
+- [Two lenses](https://spaquet.github.io/markify/help/lenses.html): Switch between the Rendered lens and the Markdown lens with ⌘/, without losing your place.
+- [Formatting](https://spaquet.github.io/markify/help/formatting.html): Format text with the floating format bar, block styles, the slash menu and keyboard shortcuts.
+- [Markdown support](https://spaquet.github.io/markify/help/markdown.html): The Markdown syntax Markify renders — CommonMark, GitHub Flavored Markdown, math, footnotes, callouts, Mermaid diagrams, frontmatter and MDX.
+- [Images and links](https://spaquet.github.io/markify/help/images-and-links.html): Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.
+- [Library and find](https://spaquet.github.io/markify/help/library.html): Use the library sidebar to reach open files and notes, and find and replace text in a document.
+- [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.html): Proofread, rewrite, summarize and generate text with Apple Intelligence, entirely on your Mac.
+- [Export to HTML and PDF](https://spaquet.github.io/markify/help/export.html): Export a Markdown document as a self-contained HTML page or a paginated PDF.
+- [Knowledge bundles](https://spaquet.github.io/markify/help/knowledge.html): Open, browse and maintain Open Knowledge Format (OKF) bundles of Markdown concepts in Markify.
+- [Settings](https://spaquet.github.io/markify/help/settings.html): Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.
+- [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.html): Every keyboard shortcut in Markify, and how to change them.
+- [Install and update](https://spaquet.github.io/markify/help/updates.html): Download and install Markify on your Mac, open it the first time, and keep it up to date.
+
+## FAQ and legal
+
+- [Frequently asked questions](https://spaquet.github.io/markify/faq.html): Answers to common questions about Markify — price, privacy, file formats, Apple Intelligence, installing, exporting and more.
+- [Legal](https://spaquet.github.io/markify/legal.html): Markify's license, privacy statement, and the third-party software, fonts and specifications it uses.
+
+## Optional
+
+- [Open Knowledge Format in Markify](https://spaquet.github.io/markify/okf.html): How Markify reads, browses and maintains OKF knowledge bundles.
+- [Full help as one Markdown file](https://spaquet.github.io/markify/llms-full.txt)

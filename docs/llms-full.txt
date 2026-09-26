@@ -1,0 +1,652 @@
+# Markify Help
+
+The complete Markify user guide as Markdown. Source: https://github.com/spaquet/markify/tree/main/help
+
+---
+
+URL: https://spaquet.github.io/markify/help/
+
+# Markify Help
+
+Markify is a Markdown editor for macOS 26 that shows your document on **one page**. Write on the rendered page, press ⌘/ to see the same text as plain Markdown, and press it again to come back. Nothing is converted: both views edit the same `.md` file.
+
+New to Markify? [Open the Welcome tour](markify://welcome), a document that shows the main features by letting you try them.
+
+> [!TIP]
+> In Markify, search this help from the **Help** menu: type a word such as “table” or “export” in its search field.
+
+---
+
+URL: https://spaquet.github.io/markify/help/getting-started.html
+
+# Getting started
+
+## Create or open a document
+
+- **File › New** (⌘N) creates an untitled document. Settings › General › *New documents are saved to* decides whether it saves into your library folder or asks each time.
+- **File › Open…** (⌘O) opens any `.md`, `.markdown` or `.mdx` file on your Mac. You can also drag a file onto the Markify icon.
+- **File › Open Recent** lists the files you used lately.
+
+Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
+
+## The window
+
+The page takes the whole window. A few controls float on glass above it and fade while you type:
+
+- **Library** (sidebar button, ⌃⌘S) shows your open files and library notes. See [Library and find](https://spaquet.github.io/markify/help/library.html).
+- **Title**: click the document's name to rename it, move it or browse its versions.
+- **Apple Intelligence** (the multicolor symbol) opens writing actions for the whole document. See [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.html).
+- **MD** switches to the Markdown lens (⌘/). See [Two lenses](https://spaquet.github.io/markify/help/lenses.html).
+- **More** (…) holds Share, Export, Knowledge, Find, the word count and Settings.
+
+## Start writing
+
+Type as you would in any text editor. Markdown formats as you type: `# ` starts a heading, `- ` a list, `**bold**` turns bold. To see everything you can insert, type `/` at the start of a line. See [Formatting](https://spaquet.github.io/markify/help/formatting.html).
+
+## Take the tour
+
+The first time you open Markify, it opens **Welcome to Markify**, a document that tours the main features by letting you try them: the two lenses, the format bar and slash menu, tasks, tables, callouts, code, math, diagrams, images, the library, Apple Intelligence and export. It's saved in your library folder, so you can edit it freely.
+
+[Open the Welcome tour](markify://welcome) anytime, or choose **Help › Welcome to Markify**. If you've deleted it, Markify puts a fresh copy back.
+
+---
+
+URL: https://spaquet.github.io/markify/help/lenses.html
+
+# Two lenses
+
+Markify has no split preview. It shows one document through two **lenses**:
+
+| Lens | What you see |
+| --- | --- |
+| Rendered | Headings, lists, tables, math and images drawn in place, with the Markdown syntax hidden. |
+| Markdown | The plain text of the file, with syntax characters dimmed so your words stand out. |
+
+Press **⌘/** or click **MD** at the top right to switch. Your caret, selection and scroll position stay where they were, and undo keeps working across the switch.
+
+Both lenses edit the same text. Switching only changes how the text is styled; Markify never rewrites your Markdown.
+
+## Choosing the lens a document opens in
+
+In **Settings › Editor › Lenses**, choose whether documents open in the Rendered lens, the Markdown lens or the one you used last. Turn on *Remember lens per document* to reopen each file the way you left it.
+
+---
+
+URL: https://spaquet.github.io/markify/help/formatting.html
+
+# Formatting
+
+## The format bar
+
+Select text and a glass **format bar** appears above it with Writing Tools, the block style menu, **bold**, *italic*, ~~strikethrough~~, `code` and link. It disappears on your next keystroke. In the Markdown lens, the same buttons wrap your selection in the right syntax.
+
+| Shortcut | Action |
+| --- | --- |
+| ⌘B | Bold |
+| ⌘I | Italic |
+| ⇧⌘X | Strikethrough |
+| ⌘E | Inline code |
+| ⌘K | Link |
+
+## Block styles
+
+The block menu in the format bar (it shows the current style, such as **Body ▾**) changes every paragraph in the selection to a title, heading, subheading, body text, quote, code block, callout or list. Each row previews the style and shows its Markdown prefix.
+
+| Shortcut | Style |
+| --- | --- |
+| ⌥⌘0 | Body |
+| ⌥⌘1 | Title (`#`) |
+| ⌥⌘2 | Heading (`##`) |
+| ⌥⌘3 | Subheading (`###`) |
+
+## The slash menu
+
+Type **/** at the start of a line to insert a block. Keep typing to filter the list (for example `/tab` for Table), use the arrow keys to choose, and press Return.
+
+| Entry | Inserts |
+| --- | --- |
+| Write | Text generated by Apple Intelligence at the caret (⌘↩) |
+| Table | A two-column table |
+| Task list | `- [ ] ` |
+| Code block | A fenced code block |
+| Callout | `> [!NOTE]` |
+| Math | A `$$` display equation |
+| Mermaid | A diagram |
+| Image | `![]()` |
+| Heading 1–3 | `#`, `##`, `###` |
+| Bullet, Numbered | `- `, `1. ` |
+| Quote, Divider | `> `, `---` |
+| Footnote | `[^1]: ` |
+| Frontmatter | A YAML block with tags and date |
+| Concept | An Open Knowledge Format concept header |
+
+Each row shows its Markdown shortcut, so you can type the syntax directly next time.
+
+## Lists and tables
+
+- Press Return in a list to continue it with the next bullet, number or checkbox; press Return on an empty item to end the list.
+- Numbered lists renumber themselves when you add, remove or move items.
+- To nest an item, indent it with spaces in the Markdown lens.
+- Click a task's checkbox to tick it; the file changes from `- [ ]` to `- [x]`.
+- In a table, press Tab to move to the next cell and ⇧Tab to go back. Pressing Tab in the last cell adds a row.
+
+See [Markdown support](https://spaquet.github.io/markify/help/markdown.html) for everything Markify renders.
+
+---
+
+URL: https://spaquet.github.io/markify/help/markdown.html
+
+# Markdown support
+
+Markify reads Markdown the way GitHub does: it follows [CommonMark](https://commonmark.org) and [GitHub Flavored Markdown](https://github.github.com/gfm/) (GFM), then adds math, footnotes, callouts, diagrams and frontmatter. It opens `.md`, `.markdown` and `.mdx` files and saves them as plain UTF-8 text, exactly as written.
+
+## Text
+
+| You type | You get |
+| --- | --- |
+| `**bold**` or `__bold__` | **bold** |
+| `*italic*` or `_italic_` | *italic* |
+| `~~strikethrough~~` | ~~strikethrough~~ |
+| `` `code` `` | `code` |
+| `[text](https://example.com)` | a link |
+| `\*` | a literal asterisk |
+
+## Blocks
+
+- **Headings**: `#` to `######`, or a line underlined with `===` or `---`.
+- **Lists**: `-`, `*` or `+` for bullets, `1.` or `1)` for numbers. Indent to nest.
+- **Task lists**: `- [ ]` and `- [x]`. Click the box to toggle it.
+- **Quotes**: start a line with `>`.
+- **Code blocks**: fence with three backticks or tildes, and name the language after the opening fence for syntax colors. Indented code also works.
+- **Tables**: GFM pipe tables, with `:--`, `:-:` and `--:` in the separator row to align columns.
+- **Dividers**: `---`, `***` or `___` on a line of their own.
+- **HTML**: HTML blocks and inline tags are kept as written.
+
+## Callouts
+
+GitHub-style alerts render as colored boxes:
+
+```markdown
+> [!NOTE]
+> Useful information.
+```
+
+The types are `NOTE`, `TIP`, `IMPORTANT` and `WARNING`.
+
+## Math
+
+Write LaTeX between dollar signs. `$e^{i\pi}+1=0$` sets math inline; `$$` on lines of their own sets a display equation:
+
+```markdown
+$$
+\int_0^1 x^2\,dx = \frac{1}{3}
+$$
+```
+
+A dollar amount such as “$5 and $10” stays text: inline math needs no space inside the dollars and no digit right after the closing one. Math is typeset on your Mac, without a network connection.
+
+## Footnotes
+
+Write `[^1]` where the note belongs and `[^1]: The note.` anywhere in the document. Hover over a reference to read its note; ⌘-click to jump to the note and back.
+
+## Mermaid diagrams
+
+A fenced block with the language `mermaid` renders as a diagram in the Rendered lens:
+
+````markdown
+```mermaid
+graph TD
+  Draft --> Review --> Publish
+```
+````
+
+If Mermaid can't read the diagram, Markify shows the source with Mermaid's error message. Diagrams render offline with a copy of Mermaid bundled in the app.
+
+## Frontmatter
+
+A YAML block at the very top of the file, between `---` lines, holds metadata. Markify shows `tags` and `date` as chips above the title and uses `title` to name an untitled document:
+
+```markdown
+---
+title: Field notes
+tags: [travel, draft]
+date: 2026-09-25
+---
+```
+
+## MDX
+
+In `.mdx` files, `import` and `export` lines and JSX blocks such as `<Chart />` are dimmed and kept exactly as written. Everything else is Markdown.
+
+---
+
+URL: https://spaquet.github.io/markify/help/images-and-links.html
+
+# Images and links
+
+## Adding images
+
+Drag an image file onto the page or paste an image. Markify copies it into a folder next to your document and inserts a relative link such as `![photo](assets/photo.png)`, so the document and its images move together.
+
+- Choose the folder in **Settings › General › Save pasted images to**: `./assets` (the default), `./images`, or the document's own folder.
+- Save a new document before adding images, so Markify knows where to put them.
+- An image alone on its line is drawn at full width. An image inside a sentence appears as a small chip; hover over it to preview the image.
+
+### Remote images
+
+Images from the web (`https://…`) load only when **Settings › General › Load remote images** is on. Turn it off to keep documents from contacting other servers.
+
+## Links
+
+- Type `[text](address)`, or select text and press ⌘K.
+- **⌘-click** a link to open it, in either lens. Links to other Markdown files open in Markify; web links open in your browser.
+- Drag a note from the library sidebar or the Finder into the page to insert a link to it. The link uses a path relative to your document, so it keeps working in other editors and on GitHub.
+
+---
+
+URL: https://spaquet.github.io/markify/help/library.html
+
+# Library and find
+
+## The library
+
+Press **⌃⌘S** or click the sidebar button to slide the library over the page. It lists:
+
+- **Open files**: every document open in Markify, wherever it's saved.
+- **Library notes**: the Markdown files in your library folder, which is `Documents/Markify` unless you change it in **Settings › General › Library location**.
+
+Type in the search field to filter by file name, title or text preview. Click a note to open it; drag it into the page to link to it.
+
+In an Open Knowledge Format bundle, the sidebar also groups concepts by folder, type or tag. See [Knowledge bundles](https://spaquet.github.io/markify/help/knowledge.html).
+
+## Find and replace
+
+| Shortcut | Action |
+| --- | --- |
+| ⌘F | Find |
+| ⌥⌘F | Find and replace |
+| ⌘G | Next match |
+| ⇧⌘G | Previous match |
+| Escape | Close the find bar |
+
+In the Rendered lens, Find matches the words you see and skips hidden syntax, so searching “important note” finds `**important** note`. Matches are highlighted in place.
+
+## Word count
+
+The capsule at the bottom right of the window shows the word count and the current lens. Turn the count off with **More (…) › Show Word Count**, or hide the capsule in **Settings › Appearance › Show status capsule**.
+
+---
+
+URL: https://spaquet.github.io/markify/help/intelligence.html
+
+# Apple Intelligence
+
+Markify uses Apple Intelligence on your Mac: the system **Writing Tools** and Apple's on-device language model. Your text isn't sent to a server, and every change waits for you to keep it.
+
+> [!NOTE]
+> Apple Intelligence needs a Mac with Apple silicon and Apple Intelligence turned on in **System Settings › Apple Intelligence & Siri**. On other Macs, Markify works the same without these features. If the model is still downloading, Markify says “Preparing on-device model…”.
+
+## Working on a selection
+
+Select text and click the Apple Intelligence symbol at the left of the format bar, or press **⇧⌘W**:
+
+- **Describe your change** in your own words and press Return.
+- **Proofread** and **Rewrite** open the system Writing Tools.
+- **Friendly**, **Professional** and **Concise** rewrite the selection in that tone.
+- **Summary**, **Key Points**, **List** and **Table** turn the selection into that form.
+
+## Working on the whole document
+
+Click the Apple Intelligence symbol at the top right of the window to:
+
+- describe a change to the whole document,
+- proofread or rewrite it,
+- **Summarize** it in a paragraph at the top,
+- add a **Key points** section,
+- **Suggest title & tags**, which fills in the frontmatter,
+- **Continue writing** at the caret.
+
+## Generating at the caret
+
+On an empty line, press **⌘↩** (or type `/write`) to have Apple Intelligence continue from what you've written. The text streams in dimmed; press **⌘↩** again to keep it, or Escape to discard it. Choose the tone and whether the surrounding section is used as context in **Settings › Intelligence**.
+
+## Reviewing changes
+
+Rewritten text appears inside a multicolor edge. **Compare** it with the original, **Try Again**, **Revert**, or **Accept** it. Nothing is saved until you accept, and ⌘Z undoes an accepted change.
+
+---
+
+URL: https://spaquet.github.io/markify/help/export.html
+
+# Export to HTML and PDF
+
+Choose **More (…) › Export › HTML** or **PDF**, then pick where to save.
+
+## HTML
+
+The HTML file is a complete, self-contained web page:
+
+- Headings, lists, task lists, tables, callouts, footnotes and code with syntax colors look as they do in the Rendered lens.
+- Math is typeset as vector graphics, and Mermaid diagrams are drawn as SVG, so the page needs no scripts or network.
+- Images from your Mac are embedded in the file, so you can email or move it on its own. Web images stay linked.
+- Links to other notes are adjusted to work from where you saved the page.
+- The page follows the reader's light or dark appearance and prints cleanly.
+- The page's title comes from the frontmatter `title`, else the first heading. Frontmatter `tags` and `date` appear as chips; other frontmatter is left out.
+
+## PDF
+
+The PDF is the same page laid out on your Mac's default paper size, such as A4 or US Letter. Headings stay with the text that follows them, and code blocks, table rows, callouts, equations and images aren't split across pages. Links stay clickable.
+
+Remote images are included in the PDF only when **Settings › General › Load remote images** is on.
+
+## Sharing the Markdown itself
+
+Your document is already a plain `.md` file. **More (…) › Share** sends the file itself with AirDrop, Mail, Messages and other services.
+
+---
+
+URL: https://spaquet.github.io/markify/help/knowledge.html
+
+# Knowledge bundles
+
+The [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) (OKF), an open specification published by Google Cloud, packages what a team knows as a folder of Markdown files that AI agents can read. Each file is a **concept** with YAML frontmatter such as `type`, `title`, `description`, `tags` and `status`.
+
+## Opening a bundle
+
+Choose **File › Open Bundle Folder…** (⇧⌘O) and pick the bundle's folder. The library sidebar shows its concepts by folder, type or tag, and flags problems the format defines, such as a missing title or a broken link.
+
+## Reading concepts
+
+A concept's type, status, staleness and trust appear as chips above its title. **⌘-click** any link to follow it; bundle links that start with `/` are resolved from the bundle's root.
+
+## Editing concepts
+
+- Type `](/` to pick another concept to link to.
+- Type `/concept` to insert a concept header.
+- **More (…) › Knowledge** marks a concept verified, makes the current document a concept, adds a log entry, or rebuilds the bundle's index.
+
+Markify changes only the lines you edit. Settings › General › Knowledge sets the name recorded when you verify a concept and whether your edits are recorded in the concept's `generated` field. Learn more on the [Open Knowledge Format page](https://spaquet.github.io/markify/okf.html).
+
+---
+
+URL: https://spaquet.github.io/markify/help/settings.html
+
+# Settings
+
+Choose **Markify › Settings…** (⌘,).
+
+## General
+
+- **New documents are saved to** your library or a place you choose each time.
+- **Library location** is the folder the sidebar lists.
+- **Save pasted images to** `./assets`, `./images` or the document's folder.
+- **Load remote images** from the web.
+- **On launch**, reopen your last documents, start a new one, or show the library.
+- **Default Markdown app**: make Markify open `.md` files from the Finder.
+- **Knowledge**: your verifier name and whether your edits are recorded in OKF concepts.
+- **Updates**: check for updates automatically, and download and install them automatically.
+
+## Editor
+
+- **Open documents in** the Rendered lens, the Markdown lens or the last one used, and optionally remember the lens per document.
+- **Prose font** (New York or SF Pro), **Markdown font** (SF Mono or Menlo) and **Line width**.
+- **Fade toolbar while typing** and **Show word count**.
+
+## Appearance
+
+Theme (light, dark or system), page color, code colors, the glass style of the floating controls, the accent color, and the status capsule.
+
+## Intelligence
+
+Turn Writing Tools in the format bar, generating at the caret, and title and tag suggestions on or off, and choose the default tone. See [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.html).
+
+## Shortcuts
+
+Double-click a shortcut to record a new one. See [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.html).
+
+---
+
+URL: https://spaquet.github.io/markify/help/shortcuts.html
+
+# Keyboard shortcuts
+
+You can change most of these in **Settings › Shortcuts**.
+
+## Editor
+
+| Shortcut | Action |
+| --- | --- |
+| ⌘/ | Toggle the Markdown lens |
+| ⌃⌘S | Show or hide the library |
+| / | Insert a block (at the start of a line) |
+| ⌘F | Find |
+| ⌥⌘F | Find and replace |
+| ⌘G / ⇧⌘G | Next / previous match |
+| ⌘= / ⌘- | Zoom in / out |
+| ⌘0 | Actual size |
+| ⌘-click | Follow a link or footnote |
+| Tab / ⇧Tab | Next / previous table cell |
+
+## Formatting
+
+| Shortcut | Action |
+| --- | --- |
+| ⌘B | Bold |
+| ⌘I | Italic |
+| ⇧⌘X | Strikethrough |
+| ⌘E | Inline code |
+| ⌘K | Link |
+| ⌥⌘0 | Body |
+| ⌥⌘1 | Title |
+| ⌥⌘2 | Heading |
+| ⌥⌘3 | Subheading |
+
+## Apple Intelligence
+
+| Shortcut | Action |
+| --- | --- |
+| ⇧⌘W | Writing Tools for the selection |
+| ⌘↩ | Generate or continue at the caret; press again to keep |
+
+## Documents
+
+| Shortcut | Action |
+| --- | --- |
+| ⌘N | New document |
+| ⌘O | Open |
+| ⇧⌘O | Open bundle folder |
+| ⌘S | Save |
+| ⌘, | Settings |
+
+---
+
+URL: https://spaquet.github.io/markify/help/updates.html
+
+# Install and update
+
+## System requirements
+
+Markify needs **macOS 26 Tahoe** or later. There are two downloads: one for Macs with **Apple silicon** (M1 and later) and one for **Intel** Macs. Apple Intelligence features need Apple silicon.
+
+## Installing
+
+1. Download the disk image for your Mac from the [Markify website](https://spaquet.github.io/markify/#download) or the [GitHub releases page](https://github.com/spaquet/markify/releases/latest).
+2. Open the downloaded `.dmg` file and drag **Markify** to the **Applications** folder.
+3. Eject the disk image.
+
+### Opening Markify the first time
+
+Markify isn't notarized by Apple yet, so the first time you open it macOS says it can't verify the app. To open it:
+
+1. Open Markify from Applications, then click **Done** in the message.
+2. Open **System Settings › Privacy & Security**.
+3. Scroll to **Security**, find the message about Markify and click **Open Anyway**, then confirm with your password or Touch ID.
+
+You only need to do this once; updates open normally.
+
+## Updating
+
+Markify checks for updates once a day and tells you when a new version is ready. To check now, choose **Markify › Check for Updates…**. Updates are signed, and Markify installs only updates signed by its developer.
+
+In **Settings › General › Updates**, turn automatic checks off, or let Markify download updates and install them when you quit.
+
+## Uninstalling
+
+Drag Markify from Applications to the Trash. Your documents stay where you saved them. To remove its settings too, delete `~/Library/Containers/com.stephanepaquet.Markify` and `~/Library/Preferences/com.stephanepaquet.Markify.plist` if they exist.
+
+---
+
+URL: https://spaquet.github.io/markify/faq.html
+
+# Frequently asked questions
+
+## About Markify
+
+### Is Markify free?
+
+Yes. Markify is free to download and use for personal, educational and other non-commercial purposes. Its source code is on [GitHub](https://github.com/spaquet/markify). Commercial use needs written permission; see [Legal](https://spaquet.github.io/markify/legal.html). You can support its development with a [GitHub sponsorship](https://github.com/sponsors/spaquet).
+
+### Which Macs does Markify run on?
+
+Any Mac with macOS 26 Tahoe or later, with Apple silicon or an Intel processor. Download the build that matches your Mac.
+
+### Is there a version for iPhone, iPad, Windows or Linux?
+
+No. Markify is a native Mac app built with SwiftUI and TextKit 2.
+
+### How is Markify different from other Markdown editors?
+
+Most Markdown editors split the window into source and preview. Markify shows one page and lets you switch its lens with ⌘/: the rendered page and the plain Markdown are the same text, so nothing is converted or rewritten. See [Two lenses](https://spaquet.github.io/markify/help/lenses.html).
+
+## Files and formats
+
+### Where are my documents stored?
+
+Wherever you save them. Every document is an ordinary `.md` file. By default new documents go to your library folder, `Documents/Markify`, which you can change in Settings.
+
+### Can I use Markify with iCloud Drive, Dropbox or Git?
+
+Yes. Because documents are plain files, anything that syncs or versions files works with them. Markify reloads a document when another app changes it.
+
+### Does Markify change my Markdown?
+
+No. Markify only styles the text it shows. The file is saved exactly as you typed it, in UTF-8.
+
+### Which Markdown features are supported?
+
+CommonMark and GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks), plus callouts, math, footnotes, Mermaid diagrams, YAML frontmatter and MDX files. See [Markdown support](https://spaquet.github.io/markify/help/markdown.html).
+
+### Can I open Obsidian or other notes folders?
+
+Yes. Open any file with ⌘O, or set your notes folder as the library location in Settings. Links written as `[text](https://spaquet.github.io/markify/help/file.html)` work; wiki links such as `[[note]]` show as plain text.
+
+### How do I export to PDF or HTML?
+
+Choose **More (…) › Export › HTML** or **PDF**. The HTML page is self-contained, with images embedded, and the PDF is paginated. See [Export to HTML and PDF](https://spaquet.github.io/markify/help/export.html).
+
+## Privacy and Apple Intelligence
+
+### Does Markify collect any data?
+
+No. Markify has no accounts, analytics or tracking. See the privacy section on the [Legal](https://spaquet.github.io/markify/legal.html) page for the few times it connects to the internet.
+
+### Is my text sent to an AI service?
+
+No. Apple Intelligence features run on your Mac with Apple's on-device model and system Writing Tools. Markify doesn't use cloud AI services.
+
+### Why don't I see the Apple Intelligence features?
+
+They need a Mac with Apple silicon and Apple Intelligence turned on in System Settings › Apple Intelligence & Siri. Check that Writing Tools and the other options are on in Markify's **Settings › Intelligence**. See [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.html).
+
+## Installing and updating
+
+### macOS says it can't verify Markify. What do I do?
+
+Markify isn't notarized yet. Open it once, click **Done**, then go to **System Settings › Privacy & Security** and click **Open Anyway** next to the message about Markify. See [Install and update](https://spaquet.github.io/markify/help/updates.html).
+
+### How do I update Markify?
+
+Markify checks for updates automatically. Choose **Markify › Check for Updates…** to check now.
+
+### I found a bug or have an idea. Where do I report it?
+
+Open an issue on [GitHub](https://github.com/spaquet/markify/issues). Include your macOS version, Markify version (Markify › About Markify) and the steps to reproduce the problem.
+
+## Accessibility
+
+### Does Markify work with VoiceOver?
+
+Yes. Markify uses the standard Mac text view, so VoiceOver reads and edits the document, and its buttons have spoken labels. The Markdown lens shows every character, which some VoiceOver users prefer. If something isn't accessible, please [report it](https://github.com/spaquet/markify/issues).
+
+### Can I make the text bigger?
+
+Yes. Press ⌘= and ⌘- to zoom, ⌘0 to return to actual size, and change the fonts and line width in **Settings › Editor**.
+
+---
+
+URL: https://spaquet.github.io/markify/legal.html
+
+# Legal
+
+## License
+
+Markify is © 2025–2026 Stéphane Paquet. It is distributed under the MIT License with the Commons Clause condition: you may use, study and modify it for personal, educational and other non-commercial purposes, and commercial use needs the author's written permission. The license below is the one published with the [source code on GitHub](https://github.com/spaquet/markify/blob/main/LICENSE), which is the authoritative version.
+
+<div id="license-text" class="license"></div>
+
+## Privacy
+
+Markify doesn't collect, store or share personal data. It has no accounts, no analytics and no advertising. Your documents stay in the files and folders you choose.
+
+Markify connects to the internet only in these cases:
+
+- **Update checks.** Markify downloads its update feed from GitHub (`github.com/spaquet/markify`) to see whether a new version exists, and downloads the update when you install it. This request includes your IP address and Markify's version, as any web request does, and is subject to [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Turn automatic checks off in **Settings › General › Updates**.
+- **Remote images.** When a document contains an image from a web address and **Settings › General › Load remote images** is on, Markify downloads it from that server. Turn the setting off to stop this.
+- **Links you open.** ⌘-clicking a web link opens it in your browser.
+
+**Apple Intelligence** features run on your Mac through Apple's on-device model and system Writing Tools; Markify sends no text to cloud services. Apple's handling of Apple Intelligence is described in [Apple's privacy policy](https://www.apple.com/legal/privacy/).
+
+**This website** is hosted on GitHub Pages, which may log visits as described in GitHub's privacy statement, and loads its typefaces from Google Fonts, which receives your IP address under [Google's privacy policy](https://policies.google.com/privacy). It sets no cookies and uses no analytics.
+
+## Third-party software and specifications
+
+Markify is built on the work of others. Thank you to everyone behind these projects.
+
+### In the app
+
+| Component | Used for | Author | License |
+| --- | --- | --- | --- |
+| [swift-markdown](https://github.com/swiftlang/swift-markdown) | Parsing Markdown | Apple Inc. and the Swift project | Apache 2.0 |
+| [swift-cmark](https://github.com/swiftlang/swift-cmark) (cmark-gfm) | CommonMark and GFM parser | John MacFarlane, GitHub, Apple and contributors | BSD 2-Clause and others |
+| [SwaTex](https://github.com/PhraseHQ/SwaTex) | Typesetting math | Phrase and SwaTex contributors | MIT |
+| [KaTeX fonts](https://github.com/KaTeX/katex-fonts) | Math typefaces, bundled with SwaTex | The KaTeX authors | SIL Open Font License 1.1 |
+| [Mermaid](https://github.com/mermaid-js/mermaid) 12 | Drawing diagrams | Knut Sveidqvist and contributors | MIT, with bundled dependencies under their own licenses |
+| [Sparkle](https://github.com/sparkle-project/Sparkle) | Software updates | Andy Matuschak and the Sparkle Project | MIT, with components under BSD and other licenses |
+| [Yams](https://github.com/jpsim/Yams) | Reading YAML frontmatter | JP Simard and contributors | MIT |
+| [swift-markdown-engine](https://github.com/nodes-app/swift-markdown-engine) | The design pattern behind the editor's layout-fragment drawing (no code is copied) | nodes-app | Apache 2.0 |
+
+### Specifications and services
+
+| Name | How Markify uses it | Owner |
+| --- | --- | --- |
+| [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) (OKF) | Reading and editing knowledge bundles | Google Cloud, Apache 2.0 |
+| [CommonMark](https://commonmark.org) and [GitHub Flavored Markdown](https://github.github.com/gfm/) | The Markdown syntax Markify follows | The CommonMark project; GitHub, Inc. |
+| Apple Intelligence, Writing Tools and the Foundation Models framework | On-device writing features | Apple Inc. |
+| [GitHub](https://github.com) | Source code, releases, update feed and this website | GitHub, Inc. |
+
+### On this website
+
+| Component | Author | License |
+| --- | --- | --- |
+| [Newsreader](https://fonts.google.com/specimen/Newsreader) typeface | Production Type | SIL Open Font License 1.1 |
+| [JetBrains Mono](https://www.jetbrains.com/lp/mono/) typeface | JetBrains | SIL Open Font License 1.1 |
+
+The full license texts ship with each project; the ones bundled in the app are in its Resources folder.
+
+## Trademarks
+
+Apple, Mac, macOS, Apple Intelligence and New York are trademarks of Apple Inc., registered in the U.S. and other countries. GitHub is a trademark of GitHub, Inc. Google Cloud is a trademark of Google LLC. Other names are trademarks of their respective owners. Markify is an independent project and isn't affiliated with or endorsed by Apple, GitHub or Google.
+
+## Disclaimer
+
+Markify is provided “as is”, without warranty of any kind, as stated in its license.

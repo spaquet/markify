@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markdown support — Markify Help</title>
+<meta name="description" content="The Markdown syntax Markify renders — CommonMark, GitHub Flavored Markdown, math, footnotes, callouts, Mermaid diagrams, frontmatter and MDX.">
+<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://spaquet.github.io/markify/help/markdown.html">
+<meta property="og:site_name" content="Markify">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://spaquet.github.io/markify/help/markdown.html">
+<meta property="og:title" content="Markdown support — Markify Help">
+<meta property="og:description" content="The Markdown syntax Markify renders — CommonMark, GitHub Flavored Markdown, math, footnotes, callouts, Mermaid diagrams, frontmatter and MDX.">
+<meta property="og:image" content="https://spaquet.github.io/markify/images/social-preview.jpg">
+<meta property="og:image:alt" content="Markify logo and One page, two lenses tagline">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
+<link rel="apple-touch-icon" href="../images/app-icon.png?v=2">
+<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/markdown.md" title="Markdown source">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/markdown.html","name":"Markdown support","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-26","description":"The Markdown syntax Markify renders — CommonMark, GitHub Flavored Markdown, math, footnotes, callouts, Mermaid diagrams, frontmatter and MDX.","headline":"Markdown support","inLanguage":"en","keywords":"markdown syntax, commonmark, gfm, table, task, callout, math, latex, footnote, mermaid, diagram, frontmatter, yaml, mdx, html","url":"https://spaquet.github.io/markify/help/markdown.html"}]}</script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="nav">
+  <nav class="cap glass" aria-label="Main">
+    <a class="brand" href="../index.html"><img src="../images/app-icon.png?v=2" alt="" width="30" height="30">Markify</a>
+    <a class="link" href="index.html" aria-current="true">Help</a>
+    <a class="link hide-s" href="../faq.html">FAQ</a>
+    <a class="link hide-s" href="../okf.html">Knowledge</a>
+    <a class="btn btn-accent" href="../index.html#download">Download</a>
+  </nav>
+</header>
+<div class="layout wrap">
+<nav class="toc" aria-label="Help topics">
+<p class="toc-title"><a href="index.html">Markify Help</a></p>
+<ul>
+<li><a href="getting-started.html">Getting started</a></li>
+<li><a href="lenses.html">Two lenses</a></li>
+<li><a href="formatting.html">Formatting</a></li>
+<li><a href="markdown.html" aria-current="page">Markdown support</a></li>
+<li><a href="images-and-links.html">Images and links</a></li>
+<li><a href="library.html">Library and find</a></li>
+<li><a href="intelligence.html">Apple Intelligence</a></li>
+<li><a href="export.html">Export to HTML and PDF</a></li>
+<li><a href="knowledge.html">Knowledge bundles</a></li>
+<li><a href="settings.html">Settings</a></li>
+<li><a href="shortcuts.html">Keyboard shortcuts</a></li>
+<li><a href="updates.html">Install and update</a></li>
+<li><a href="../faq.html">Frequently asked questions</a></li>
+<li><a href="../legal.html">Legal</a></li>
+</ul>
+</nav>
+<main id="content" tabindex="-1">
+<nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../index.html">Markify</a></li><li><a href="index.html">Help</a></li><li><span aria-current="page">Markdown support</span></li></ol></nav>
+<article>
+<h1 id="markdown-support">Markdown support</h1>
+<p>Markify reads Markdown the way GitHub does: it follows <a rel="noopener" href="https://commonmark.org">CommonMark</a> and <a rel="noopener" href="https://github.github.com/gfm/">GitHub Flavored Markdown</a> (GFM), then adds math, footnotes, callouts, diagrams and frontmatter. It opens <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files and saves them as plain UTF-8 text, exactly as written.</p>
+<h2 id="text">Text</h2>
+<div class="table"><table>
+<thead>
+<tr><th scope="col">You type</th><th scope="col">You get</th></tr>
+</thead>
+<tbody>
+<tr><td><code>**bold**</code> or <code>__bold__</code></td><td><strong>bold</strong></td></tr>
+<tr><td><code>*italic*</code> or <code>_italic_</code></td><td><em>italic</em></td></tr>
+<tr><td><code>~~strikethrough~~</code></td><td><del>strikethrough</del></td></tr>
+<tr><td><code>`code`</code></td><td><code>code</code></td></tr>
+<tr><td><code>[text](https://example.com)</code></td><td>a link</td></tr>
+<tr><td><code>\*</code></td><td>a literal asterisk</td></tr>
+</tbody>
+</table></div>
+<h2 id="blocks">Blocks</h2>
+<ul>
+<li><strong>Headings</strong>: <code>#</code> to <code>######</code>, or a line underlined with <code>===</code> or <code>---</code>.
+</li>
+<li><strong>Lists</strong>: <code>-</code>, <code>*</code> or <code>+</code> for bullets, <code>1.</code> or <code>1)</code> for numbers. Indent to nest.
+</li>
+<li><strong>Task lists</strong>: <code>- [ ]</code> and <code>- [x]</code>. Click the box to toggle it.
+</li>
+<li><strong>Quotes</strong>: start a line with <code>&gt;</code>.
+</li>
+<li><strong>Code blocks</strong>: fence with three backticks or tildes, and name the language after the opening fence for syntax colors. Indented code also works.
+</li>
+<li><strong>Tables</strong>: GFM pipe tables, with <code>:--</code>, <code>:-:</code> and <code>--:</code> in the separator row to align columns.
+</li>
+<li><strong>Dividers</strong>: <code>---</code>, <code>***</code> or <code>___</code> on a line of their own.
+</li>
+<li><strong>HTML</strong>: HTML blocks and inline tags are kept as written.
+</li>
+</ul>
+<h2 id="callouts">Callouts</h2>
+<p>GitHub-style alerts render as colored boxes:</p>
+<pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">&gt; [!NOTE]
+&gt; Useful information.</code></pre>
+<p>The types are <code>NOTE</code>, <code>TIP</code>, <code>IMPORTANT</code> and <code>WARNING</code>.</p>
+<h2 id="math">Math</h2>
+<p>Write LaTeX between dollar signs. <code>$e^{i\pi}+1=0$</code> sets math inline; <code>$$</code> on lines of their own sets a display equation:</p>
+<pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">$$
+\int_0^1 x^2\,dx = \frac{1}{3}
+$$</code></pre>
+<p>A dollar amount such as “$5 and $10” stays text: inline math needs no space inside the dollars and no digit right after the closing one. Math is typeset on your Mac, without a network connection.</p>
+<h2 id="footnotes">Footnotes</h2>
+<p>Write <code>[^1]</code> where the note belongs and <code>[^1]: The note.</code> anywhere in the document. Hover over a reference to read its note; ⌘-click to jump to the note and back.</p>
+<h2 id="mermaid-diagrams">Mermaid diagrams</h2>
+<p>A fenced block with the language <code>mermaid</code> renders as a diagram in the Rendered lens:</p>
+<pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">```mermaid
+graph TD
+  Draft --&gt; Review --&gt; Publish
+```</code></pre>
+<p>If Mermaid can't read the diagram, Markify shows the source with Mermaid's error message. Diagrams render offline with a copy of Mermaid bundled in the app.</p>
+<h2 id="frontmatter">Frontmatter</h2>
+<p>A YAML block at the very top of the file, between <code>---</code> lines, holds metadata. Markify shows <code>tags</code> and <code>date</code> as chips above the title and uses <code>title</code> to name an untitled document:</p>
+<pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">---
+title: Field notes
+tags: [travel, draft]
+date: 2026-09-25
+---</code></pre>
+<h2 id="mdx">MDX</h2>
+<p>In <code>.mdx</code> files, <code>import</code> and <code>export</code> lines and JSX blocks such as <code>&lt;Chart /&gt;</code> are dimmed and kept exactly as written. Everything else is Markdown.</p>
+<p class="edit">Updated 2026-09-26 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/markdown.md">Suggest a change on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="formatting.html"><span>Previous</span>Formatting</a><a rel="next" href="images-and-links.html"><span>Next</span>Images and links</a></nav>
+</main>
+</div>
+<footer>
+  <div class="wrap">
+    <span>© 2026 Markify · by <a href="https://github.com/spaquet">Stéphane Paquet</a></span>
+    <nav aria-label="Footer">
+      <a href="index.html">Help</a>
+      <a href="../faq.html">FAQ</a>
+      <a href="https://github.com/spaquet/markify">Source</a>
+      <a href="https://github.com/spaquet/markify/releases">Releases</a>
+      <a href="../okf.html">Open Knowledge Format</a>
+      <a href="https://github.com/spaquet/markify/issues">Issues</a>
+      <a href="https://github.com/sponsors/spaquet">Sponsor</a>
+      <a href="../legal.html">Legal &amp; privacy</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

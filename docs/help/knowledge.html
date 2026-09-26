@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge bundles — Markify Help</title>
+<meta name="description" content="Open, browse and maintain Open Knowledge Format (OKF) bundles of Markdown concepts in Markify.">
+<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://spaquet.github.io/markify/help/knowledge.html">
+<meta property="og:site_name" content="Markify">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://spaquet.github.io/markify/help/knowledge.html">
+<meta property="og:title" content="Knowledge bundles — Markify Help">
+<meta property="og:description" content="Open, browse and maintain Open Knowledge Format (OKF) bundles of Markdown concepts in Markify.">
+<meta property="og:image" content="https://spaquet.github.io/markify/images/social-preview.jpg">
+<meta property="og:image:alt" content="Markify logo and One page, two lenses tagline">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
+<link rel="apple-touch-icon" href="../images/app-icon.png?v=2">
+<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/knowledge.md" title="Markdown source">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/knowledge.html","name":"Knowledge bundles","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-26","description":"Open, browse and maintain Open Knowledge Format (OKF) bundles of Markdown concepts in Markify.","headline":"Knowledge bundles","inLanguage":"en","keywords":"okf, open knowledge format, bundle, concept, knowledge, verify, index, log","url":"https://spaquet.github.io/markify/help/knowledge.html"}]}</script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="nav">
+  <nav class="cap glass" aria-label="Main">
+    <a class="brand" href="../index.html"><img src="../images/app-icon.png?v=2" alt="" width="30" height="30">Markify</a>
+    <a class="link" href="index.html" aria-current="true">Help</a>
+    <a class="link hide-s" href="../faq.html">FAQ</a>
+    <a class="link hide-s" href="../okf.html">Knowledge</a>
+    <a class="btn btn-accent" href="../index.html#download">Download</a>
+  </nav>
+</header>
+<div class="layout wrap">
+<nav class="toc" aria-label="Help topics">
+<p class="toc-title"><a href="index.html">Markify Help</a></p>
+<ul>
+<li><a href="getting-started.html">Getting started</a></li>
+<li><a href="lenses.html">Two lenses</a></li>
+<li><a href="formatting.html">Formatting</a></li>
+<li><a href="markdown.html">Markdown support</a></li>
+<li><a href="images-and-links.html">Images and links</a></li>
+<li><a href="library.html">Library and find</a></li>
+<li><a href="intelligence.html">Apple Intelligence</a></li>
+<li><a href="export.html">Export to HTML and PDF</a></li>
+<li><a href="knowledge.html" aria-current="page">Knowledge bundles</a></li>
+<li><a href="settings.html">Settings</a></li>
+<li><a href="shortcuts.html">Keyboard shortcuts</a></li>
+<li><a href="updates.html">Install and update</a></li>
+<li><a href="../faq.html">Frequently asked questions</a></li>
+<li><a href="../legal.html">Legal</a></li>
+</ul>
+</nav>
+<main id="content" tabindex="-1">
+<nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../index.html">Markify</a></li><li><a href="index.html">Help</a></li><li><span aria-current="page">Knowledge bundles</span></li></ol></nav>
+<article>
+<h1 id="knowledge-bundles">Knowledge bundles</h1>
+<p>The <a rel="noopener" href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">Open Knowledge Format</a> (OKF), an open specification published by Google Cloud, packages what a team knows as a folder of Markdown files that AI agents can read. Each file is a <strong>concept</strong> with YAML frontmatter such as <code>type</code>, <code>title</code>, <code>description</code>, <code>tags</code> and <code>status</code>.</p>
+<h2 id="opening-a-bundle">Opening a bundle</h2>
+<p>Choose <strong>File › Open Bundle Folder…</strong> (⇧⌘O) and pick the bundle's folder. The library sidebar shows its concepts by folder, type or tag, and flags problems the format defines, such as a missing title or a broken link.</p>
+<h2 id="reading-concepts">Reading concepts</h2>
+<p>A concept's type, status, staleness and trust appear as chips above its title. <strong>⌘-click</strong> any link to follow it; bundle links that start with <code>/</code> are resolved from the bundle's root.</p>
+<h2 id="editing-concepts">Editing concepts</h2>
+<ul>
+<li>Type <code>](/</code> to pick another concept to link to.
+</li>
+<li>Type <code>/concept</code> to insert a concept header.
+</li>
+<li><strong>More (…) › Knowledge</strong> marks a concept verified, makes the current document a concept, adds a log entry, or rebuilds the bundle's index.
+</li>
+</ul>
+<p>Markify changes only the lines you edit. Settings › General › Knowledge sets the name recorded when you verify a concept and whether your edits are recorded in the concept's <code>generated</code> field. Learn more on the <a rel="noopener" href="https://spaquet.github.io/markify/okf.html">Open Knowledge Format page</a>.</p>
+<p class="edit">Updated 2026-09-26 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/knowledge.md">Suggest a change on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="export.html"><span>Previous</span>Export to HTML and PDF</a><a rel="next" href="settings.html"><span>Next</span>Settings</a></nav>
+</main>
+</div>
+<footer>
+  <div class="wrap">
+    <span>© 2026 Markify · by <a href="https://github.com/spaquet">Stéphane Paquet</a></span>
+    <nav aria-label="Footer">
+      <a href="index.html">Help</a>
+      <a href="../faq.html">FAQ</a>
+      <a href="https://github.com/spaquet/markify">Source</a>
+      <a href="https://github.com/spaquet/markify/releases">Releases</a>
+      <a href="../okf.html">Open Knowledge Format</a>
+      <a href="https://github.com/spaquet/markify/issues">Issues</a>
+      <a href="https://github.com/sponsors/spaquet">Sponsor</a>
+      <a href="../legal.html">Legal &amp; privacy</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

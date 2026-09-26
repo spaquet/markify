@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Markify — One page, two lenses</title>
-<meta name="description" content="Markify is a quiet Markdown editor for macOS 26. Write on one rendered page, flip to the Markdown source with ⌘/, and let on-device Apple Intelligence proofread and rewrite.">
+<title>Markify — Free Markdown editor for Mac · One page, two lenses</title>
+<meta name="description" content="Markify is a free Markdown editor for macOS 26. Write on one rendered page, flip to the Markdown source with ⌘/. GitHub Markdown, math, Mermaid diagrams, PDF and HTML export, and on-device Apple Intelligence.">
+<meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://spaquet.github.io/markify/">
@@ -30,12 +31,14 @@
 <link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
 <link rel="icon" type="image/svg+xml" href="images/logo.svg?v=2">
 <link rel="apple-touch-icon" href="images/app-icon.png?v=2">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","@id":"https://spaquet.github.io/markify/#app","name":"Markify","description":"A Markdown editor for macOS that shows one page through two lenses — rendered and Markdown — with GitHub Flavored Markdown, math, Mermaid diagrams, footnotes, callouts, HTML and PDF export, on-device Apple Intelligence and Open Knowledge Format support.","operatingSystem":"macOS 26 or later","applicationCategory":"ProductivityApplication","applicationSubCategory":"Markdown editor","softwareVersion":"1.60","processorRequirements":"Apple silicon or Intel","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"downloadUrl":"https://github.com/spaquet/markify/releases/latest","releaseNotes":"https://github.com/spaquet/markify/releases","installUrl":"https://spaquet.github.io/markify/help/updates.html","softwareHelp":{"@type":"CreativeWork","url":"https://spaquet.github.io/markify/help/"},"screenshot":"https://spaquet.github.io/markify/images/screens/1a.webp","image":"https://spaquet.github.io/markify/images/app-icon.png","license":"https://spaquet.github.io/markify/legal.html","isAccessibleForFree":true,"featureList":["Rendered and Markdown lenses over one text (⌘/)","CommonMark and GitHub Flavored Markdown","LaTeX math","Mermaid diagrams","Footnotes and callouts","YAML frontmatter and MDX","Self-contained HTML and paginated PDF export","On-device Apple Intelligence: proofread, rewrite, generate","Open Knowledge Format (OKF) bundles"],"author":{"@id":"https://github.com/spaquet#person"},"sameAs":["https://github.com/spaquet/markify"]},{"@type":"Person","@id":"https://github.com/spaquet#person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},{"@type":"WebSite","@id":"https://spaquet.github.io/markify/#site","url":"https://spaquet.github.io/markify/","name":"Markify","inLanguage":"en","publisher":{"@id":"https://github.com/spaquet#person"}}]}</script>
+<link rel="alternate" type="text/plain" title="Markify for AI assistants" href="llms.txt">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --page:#FCFBF9; --page2:#F4F2EE; --ink:#1D1D1F; --ink2:#6E6E73; --ink3:#B3B3B8;
+  --page:#FCFBF9; --page2:#F4F2EE; --ink:#1D1D1F; --ink2:#5E5E63; --ink3:#B3B3B8;
   --rule:rgba(0,0,0,.09); --field:rgba(0,0,0,.05);
   --accent:#0A64D6; --accentSoft:rgba(10,100,214,.13); --callout:rgba(10,100,214,.07);
   --code:#F3F1ED; --kw:#AD3DA4; --typ:#3F6E74; --str:#C41A16; --com:#8A8F96;
@@ -190,6 +193,7 @@ section{padding:112px 0}
 @media (max-width:640px){.ai-tabs{width:auto;border-radius:22px}}
 .edge{position:relative;border-radius:30px;padding:1.5px;background:var(--ai);box-shadow:0 0 0 6px var(--aiGlow),0 30px 80px -30px rgba(191,90,242,.35)}
 .edge .stage{margin:0;border-radius:28.5px}
+.ai-pause{text-align:center;margin:-12px 0 20px}.ai-pause .btn{height:30px;font-size:13px}
 .ai-cap{text-align:center;margin:26px auto 0;max-width:620px;font:18px/1.6 var(--prose);color:var(--ink2);min-height:3.2em}
 .ai-cap b{color:var(--ink);font-weight:600}
 .privacy{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:64px}
@@ -229,11 +233,11 @@ footer nav{display:flex;gap:20px;flex-wrap:wrap}
 footer a{color:var(--ink2)}
 
 /* Reveal */
-.rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
-.rv.in{opacity:1;transform:none}
+.js .rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.js .rv.in{opacity:1;transform:none}
 @media (prefers-reduced-motion: reduce){
   html{scroll-behavior:auto}
-  .rv{opacity:1;transform:none;transition:none}
+  .js .rv{opacity:1;transform:none;transition:none}
   .shot img{transition:none}
 }
 @media (max-width:560px){
@@ -243,9 +247,22 @@ footer a{color:var(--ink2)}
   .nav{padding:0 8px}
   .cap a.link{padding:0 10px}
 }
+
+/* Accessibility */
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn:focus-visible,.cap a:focus-visible,.toggle button:focus-visible,.ai-tabs button:focus-visible{outline-offset:3px}
+main p a:not(.btn),main li a:not(.btn),footer a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 16px;border-radius:10px;background:#0A64D6;color:#fff;font-weight:600}
+.skip:focus{top:12px}
+main:focus{outline:none}
+/* White text needs the deeper blue in both appearances. */
+.btn-accent,.toggle button[aria-pressed="true"]{background:#0A64D6}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
+<a class="skip" href="#top">Skip to content</a>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -256,7 +273,7 @@ footer a{color:var(--ink2)}
   </defs>
 </svg>
 
-<header class="nav">
+<nav class="nav" aria-label="Main">
   <div class="cap glass">
     <a class="brand" href="#top" aria-label="Markify home"><img src="images/app-icon.png?v=2" alt="">Markify</a>
     <a class="link hide-s" href="#writing">Writing</a>
@@ -265,16 +282,17 @@ footer a{color:var(--ink2)}
     <a class="link hide-s" href="okf.html">Knowledge</a>
   </div>
   <div class="cap glass">
+    <a class="link hide-s" href="help/">Help</a>
     <a class="link hide-s" href="#support">Support</a>
     <a class="link hide-s" href="https://github.com/spaquet/markify">★ Star</a>
     <a class="btn btn-accent" href="#download">Download</a>
   </div>
-</header>
+</nav>
 
-<main id="top">
+<main id="top" tabindex="-1">
   <!-- Hero -->
   <div class="hero wrap">
-    <div class="chips rv"><span>markdown</span><span>macOS 26</span><span class="plain">Free · source available</span></div>
+    <div class="chips rv"><span>Markdown editor</span><span>macOS 26</span><span class="plain">Free · source available</span></div>
     <h1 class="rv">One page.<br>Two lenses.</h1>
     <p class="lede rv">Most Markdown editors split the window in two. Markify <strong>keeps a single page</strong>: write it rendered, press <kbd>⌘/</kbd>, and the same text is plain Markdown. Your caret stays put.</p>
     <div class="ctas rv">
@@ -286,7 +304,7 @@ footer a{color:var(--ink2)}
     <div class="stage rv">
       <div class="shot" id="lensShot">
         <img src="images/screens/1a.webp" alt="Markify's rendered lens: a document with frontmatter chips, a large serif heading, a note callout, a task list and a table" id="lensR" fetchpriority="high">
-        <img src="images/screens/1b.webp" alt="The same document in the Markdown lens: raw source with dimmed syntax characters" id="lensM" class="off">
+        <img src="images/screens/1b.webp" alt="The same document in the Markdown lens: raw source with dimmed syntax characters" id="lensM" class="off" aria-hidden="true">
         <button class="md-hit" type="button" aria-label="Show Markdown" data-lens-toggle></button>
       </div>
     </div>
@@ -466,25 +484,28 @@ footer a{color:var(--ink2)}
       </div>
 
       <div class="ai-tabs glass rv" role="tablist" aria-label="Apple Intelligence features">
-        <button role="tab" aria-selected="true" data-ai="2a">Writing Tools</button>
-        <button role="tab" aria-selected="false" data-ai="2b">Proofread</button>
-        <button role="tab" aria-selected="false" data-ai="2c">Rewrite</button>
-        <button role="tab" aria-selected="false" data-ai="2d">Generate</button>
-        <button role="tab" aria-selected="false" data-ai="2e">Whole document</button>
+        <button role="tab" type="button" id="tab-2a" aria-controls="aiPanel" aria-selected="true" data-ai="2a">Writing Tools</button>
+        <button role="tab" type="button" id="tab-2b" aria-controls="aiPanel" aria-selected="false" tabindex="-1" data-ai="2b">Proofread</button>
+        <button role="tab" type="button" id="tab-2c" aria-controls="aiPanel" aria-selected="false" tabindex="-1" data-ai="2c">Rewrite</button>
+        <button role="tab" type="button" id="tab-2d" aria-controls="aiPanel" aria-selected="false" tabindex="-1" data-ai="2d">Generate</button>
+        <button role="tab" type="button" id="tab-2e" aria-controls="aiPanel" aria-selected="false" tabindex="-1" data-ai="2e">Whole document</button>
       </div>
+      <p class="ai-pause"><button type="button" id="aiPause" class="btn btn-field" aria-pressed="false">Pause slideshow</button></p>
+      <div id="aiPanel" role="tabpanel" aria-labelledby="tab-2a">
 
       <div class="edge rv">
         <div class="stage">
           <div class="shot" id="aiShot">
             <img src="images/screens/2a.webp" data-id="2a" alt="Writing Tools popover under a selection, offering Proofread, Rewrite, tones and transforms">
-            <img loading="lazy" src="images/screens/2b.webp" data-id="2b" class="off" alt="Proofread suggestions underlined in place with a suggestion card and a bottom capsule">
-            <img loading="lazy" src="images/screens/2c.webp" data-id="2c" class="off" alt="Rewritten paragraph wrapped in a multicolor edge with Try Again, Compare, Revert and Accept">
-            <img loading="lazy" src="images/screens/2d.webp" data-id="2d" class="off" alt="Inline composer streaming generated text at the caret">
-            <img loading="lazy" src="images/screens/2e.webp" data-id="2e" class="off" alt="Whole-document panel with Proofread, Rewrite, Summarize, Key points and Suggest title and tags">
+            <img loading="lazy" src="images/screens/2b.webp" data-id="2b" class="off" aria-hidden="true" alt="Proofread suggestions underlined in place with a suggestion card and a bottom capsule">
+            <img loading="lazy" src="images/screens/2c.webp" data-id="2c" class="off" aria-hidden="true" alt="Rewritten paragraph wrapped in a multicolor edge with Try Again, Compare, Revert and Accept">
+            <img loading="lazy" src="images/screens/2d.webp" data-id="2d" class="off" aria-hidden="true" alt="Inline composer streaming generated text at the caret">
+            <img loading="lazy" src="images/screens/2e.webp" data-id="2e" class="off" aria-hidden="true" alt="Whole-document panel with Proofread, Rewrite, Summarize, Key points and Suggest title and tags">
           </div>
         </div>
       </div>
-      <p class="ai-cap" id="aiCap" aria-live="polite"></p>
+      <p class="ai-cap" id="aiCap"></p>
+      </div>
 
       <div class="privacy">
         <div class="rv"><h3><svg class="spark" aria-hidden="true"><use href="#spark"/></svg> On-device only</h3><p>Uses the system Writing Tools and the Foundation Models framework. No cloud extensions, no accounts.</p></div>
@@ -550,15 +571,15 @@ footer a{color:var(--ink2)}
   <!-- Download -->
   <section class="dl" id="download">
     <div class="wrap">
-      <img class="icon rv" src="images/app-icon.png?v=2" alt="Markify app icon">
+      <img class="icon rv" src="images/app-icon.png?v=2" alt="" width="112" height="112">
       <h2 class="rv">Start with a blank page.</h2>
       <p class="rv">Free, with the source on GitHub. Pick the build for your Mac: Apple silicon for M1 and later, Intel for older Macs.</p>
       <div class="ctas rv">
-        <a class="btn btn-accent btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg">Download for Apple silicon</a>
-        <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg">Download for Intel</a>
+        <a class="btn btn-accent btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg" download aria-describedby="dl-req">Download for Apple silicon<span class="visually-hidden"> (disk image, M1 and later)</span></a>
+        <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg" download aria-describedby="dl-req">Download for Intel<span class="visually-hidden"> (disk image)</span></a>
       </div>
       <p class="req rv">Markify 1.60 · <a href="https://github.com/spaquet/markify/releases/tag/v1.60">Release notes</a> · <a href="https://github.com/spaquet/markify/releases">All releases</a></p>
-      <p class="req note rv" style="margin-left:auto;margin-right:auto">Requires macOS 26 Tahoe. Builds are unsigned for now, so on first launch right-click Markify in Applications and choose <b>Open</b>.</p>
+      <p class="req note rv" id="dl-req" style="margin-left:auto;margin-right:auto">Requires macOS 26 Tahoe. Markify isn’t notarized yet: the first time you open it, click <b>Done</b>, then choose <b>Open Anyway</b> in System Settings › Privacy &amp; Security. <a href="help/updates.html">Step-by-step install guide</a> · <a href="faq.html">FAQ</a></p>
     </div>
   </section>
 
@@ -582,12 +603,14 @@ footer a{color:var(--ink2)}
   <div class="wrap">
     <span>© 2026 Markify · by <a href="https://github.com/spaquet">Stéphane Paquet</a></span>
     <nav aria-label="Footer">
+      <a href="help/">Help</a>
+      <a href="faq.html">FAQ</a>
       <a href="https://github.com/spaquet/markify">Source</a>
       <a href="https://github.com/spaquet/markify/releases">Releases</a>
       <a href="okf.html">Open Knowledge Format</a>
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="https://github.com/spaquet/markify/blob/main/LICENSE">License</a>
+      <a href="legal.html">Legal &amp; privacy</a>
     </nav>
   </div>
 </footer>
@@ -602,6 +625,8 @@ footer a{color:var(--ink2)}
     lens = l;
     r.classList.toggle('off', l !== 'rendered');
     m.classList.toggle('off', l !== 'markdown');
+    r.setAttribute('aria-hidden', String(l !== 'rendered'));
+    m.setAttribute('aria-hidden', String(l !== 'markdown'));
     btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lens === l)));
     document.querySelector('[data-lens-toggle]').setAttribute('aria-label', l === 'rendered' ? 'Show Markdown' : 'Show rendered');
   };
@@ -620,25 +645,39 @@ footer a{color:var(--ink2)}
     '2e': '<b>Whole document</b> actions: summarize, pull out key points, or suggest a title and tags for the frontmatter.'
   };
   const tabs = document.querySelectorAll('[data-ai]'), imgs = document.querySelectorAll('#aiShot img'), cap = document.getElementById('aiCap');
+  const panel = document.getElementById('aiPanel'), pause = document.getElementById('aiPause');
   let cur = 0, timer = null, picked = false;
-  const show = (i) => {
+  const show = (i, announce) => {
     cur = i; const id = tabs[i].dataset.ai;
     tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
-    imgs.forEach(im => im.classList.toggle('off', im.dataset.id !== id));
+    imgs.forEach(im => { const on = im.dataset.id === id; im.classList.toggle('off', !on); im.setAttribute('aria-hidden', String(!on)); });
+    panel.setAttribute('aria-labelledby', tabs[i].id);
+    // Only a change the visitor asked for is announced; the slideshow stays quiet.
+    cap.setAttribute('aria-live', announce ? 'polite' : 'off');
     cap.innerHTML = caps[id];
   };
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const auto = () => { if (!reduce) timer = setInterval(() => show((cur + 1) % tabs.length), 5200); };
+  const stop = () => { clearInterval(timer); timer = null; };
+  const auto = () => { if (!reduce && !picked) timer = setInterval(() => show((cur + 1) % tabs.length, false), 5200); };
+  const pick = (i) => { picked = true; stop(); pause.hidden = true; show(i, true); };
+  if (reduce) pause.hidden = true;
+  pause.addEventListener('click', () => {
+    const paused = pause.getAttribute('aria-pressed') !== 'true';
+    pause.setAttribute('aria-pressed', String(paused));
+    pause.textContent = paused ? 'Play slideshow' : 'Pause slideshow';
+    picked = paused;
+    if (paused) stop(); else auto();
+  });
   tabs.forEach((t, i) => {
-    t.addEventListener('click', () => { picked = true; clearInterval(timer); timer = null; show(i); });
+    t.addEventListener('click', () => pick(i));
     t.addEventListener('keydown', (e) => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      picked = true; clearInterval(timer); timer = null;
-      const n = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
-      show(n); tabs[n].focus();
+      const keys = { ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1 };
+      if (!(e.key in keys)) return;
+      e.preventDefault();
+      pick(keys[e.key]); tabs[keys[e.key]].focus();
     });
   });
-  show(0);
+  show(0, false);
   const aiSec = document.getElementById('intelligence');
   new IntersectionObserver(([en]) => {
     if (en.isIntersecting && !timer && !picked) auto();
