@@ -48,7 +48,7 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 
 - **MarkifyMarkdown** (local): `MarkdownModel` parses the source once with swift-markdown (cmark-gfm) and exposes typed spans — content and marker ranges in UTF-16 source offsets — plus tables and lists. Markify's extensions that cmark does not know (frontmatter, `$$`/`$…$` math, footnotes, GitHub callouts, MDX blocks) are found first and masked with same-length whitespace, so cmark never misreads them and every offset still points into the original text. `MarkdownSourceMap` converts cmark locations to offsets. UI-free.
 - **OKFKit** (local): Open Knowledge Format model, bundle scan, validator and text-splice editing. See `OKF.md`.
-- **swift-markdown**, **SwaTex** (math rendering, no WebView).
+- **swift-markdown**, **SwaTex** (math rendering, no WebView), **Sparkle** (updates).
 
 ### App files (`Markify/`)
 
@@ -62,6 +62,7 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 - **MarkdownLayoutFragment.swift**: `MarkdownLayoutFragment`, the `NSTextLayoutFragment` every paragraph lays out as, and the rendering attribute keys. It draws what text attributes cannot — bullets, list numbers, checkboxes, rounded code and callout boxes, and (through `MarkdownTextView.drawDecorations(anchoredIn:)`) images, math, diagrams, callout titles, code labels, the footnotes rule and chips — so decorations move with the text through layout, scrolling and resizing.
 - **Mermaid.swift**: `MermaidRenderer`, one offscreen `WKWebView` running the bundled Mermaid (`Resources/Mermaid`) with no network access.
 - **Knowledge.swift**: the OKF app layer — link following, log/index writes, the knowledge sidebar section.
+- **Updates.swift**: Sparkle's `SPUStandardUpdaterController` (not started under tests) and the Check for Updates… button. Feed and key are in Info.plist; see RELEASE.md.
 - **Theme.swift**: `EditorTheme` fonts and colors. New York is a system design (`withDesign(.serif)`), not a font name.
 - **Shortcuts.swift**, **Settings/Views/SettingsView.swift**, **Help/**, **Resources/**.
 

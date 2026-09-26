@@ -9,6 +9,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         BundleAccess.restore()
+        _ = Updates.controller
         DispatchQueue.main.async {
             let startup = UserDefaults.standard.string(forKey: "startup") ?? "Reopen last documents"
             let urls = startup == "Reopen last documents" ? Self.lastOpenDocuments() : []
@@ -77,6 +78,9 @@ struct MarkifyApp: App {
         }
         .defaultLaunchBehavior(.suppressed)
         .commands {
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton()
+            }
             CommandGroup(after: .newItem) {
                 Button("Open Bundle Folder…") { BundleAccess.chooseAndOpen() }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
