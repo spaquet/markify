@@ -553,6 +553,24 @@ struct NativeEditor: NSViewRepresentable {
 }
 
 final class MarkdownTextView: NSTextView {
+    /// Held strongly: the layout manager keeps its delegate weakly.
+    private let layoutDelegate = MarkdownLayoutDelegate()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        textLayoutManager?.delegate = layoutDelegate
+    }
+
+    override init(frame frameRect: NSRect, textContainer container: NSTextContainer?) {
+        super.init(frame: frameRect, textContainer: container)
+        textLayoutManager?.delegate = layoutDelegate
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        textLayoutManager?.delegate = layoutDelegate
+    }
+
     var documentURL: URL?
     var bundleRoot: URL?
     var linkTargets: [String] = []
