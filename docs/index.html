@@ -192,6 +192,7 @@ figcaption{margin-top:12px;font-size:13.5px;color:var(--ink2);text-align:center}
 .dl .icon{width:112px;height:112px;border-radius:26px;margin:0 auto 26px;box-shadow:0 20px 50px -18px rgba(40,76,108,.6)}
 .dl h2{font-size:clamp(34px,5vw,56px);line-height:1.05;margin-bottom:14px}
 .dl p{font:19px/1.6 var(--prose);color:var(--ink2);max-width:560px;margin:0 auto 30px}
+.dl p.req{font:13.5px/1.6 var(--ui);margin:18px auto 0;max-width:560px}
 .dl .note{margin-top:22px;font:13.5px/1.6 var(--ui);max-width:520px}
 
 footer{border-top:1px solid var(--rule);padding:34px 0 48px;font-size:13.5px;color:var(--ink2)}
@@ -248,7 +249,7 @@ footer a{color:var(--ink2)}
       <a class="btn btn-accent btn-lg" href="#download">Download for macOS</a>
       <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify">View on GitHub</a>
     </div>
-    <p class="req rv">Requires macOS 26 Tahoe · Apple silicon and Intel</p>
+    <p class="req rv"><a href="https://github.com/spaquet/markify/releases/tag/v1.26.1">Version 1.26.1</a> · Requires macOS 26 Tahoe · Apple silicon and Intel</p>
 
     <div class="stage rv">
       <div class="shot" id="lensShot">
@@ -466,11 +467,12 @@ footer a{color:var(--ink2)}
     <div class="wrap">
       <img class="icon rv" src="images/app-icon.png?v=2" alt="Markify app icon">
       <h2 class="rv">Start with a blank page.</h2>
-      <p class="rv">Free, with the source on GitHub. Download the build for your Mac from the latest release.</p>
+      <p class="rv">Free, with the source on GitHub. Pick the build for your Mac: Apple silicon for M1 and later, Intel for older Macs.</p>
       <div class="ctas rv">
-        <a class="btn btn-accent btn-lg" href="https://github.com/spaquet/markify/releases/latest">Apple silicon</a>
-        <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify/releases/latest">Intel</a>
+        <a class="btn btn-accent btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg">Download for Apple silicon</a>
+        <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg">Download for Intel</a>
       </div>
+      <p class="req rv">Markify 1.26.1 · <a href="https://github.com/spaquet/markify/releases/tag/v1.26.1">Release notes</a> · SHA-256: <a href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg.sha256">Apple silicon</a>, <a href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg.sha256">Intel</a> · <a href="https://github.com/spaquet/markify/releases">All releases</a></p>
       <p class="req note rv" style="margin-left:auto;margin-right:auto">Requires macOS 26 Tahoe. Builds are unsigned for now, so on first launch right-click Markify in Applications and choose <b>Open</b>.</p>
     </div>
   </section>
