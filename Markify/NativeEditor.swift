@@ -175,6 +175,8 @@ struct NativeEditor: NSViewRepresentable {
         var diagrams: [(span: MarkdownModel.Span, height: CGFloat)] = []
         /// Mermaid blocks that failed to render: shown as code with room below for mermaid's message.
         var failedDiagrams: [MarkdownModel.Span] = []
+        /// Code blocks and callouts in the Rendered lens: the lines they cover and the rounded box drawn behind them.
+        var boxes: [(range: NSRange, fill: MarkdownBlockFill)] = []
         let textView = editor as? MarkdownTextView
         let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         /// Markers are styled after every font, since the hidden ones measure their own width.
@@ -206,7 +208,8 @@ struct NativeEditor: NSViewRepresentable {
                 let color = Callout.color(type, accent: accent)
                 let name = NSRange(location: token.location + 2, length: token.length - 3)
                 guard !markdownLens else { storage.addAttribute(.foregroundColor, value: color, range: name); continue }
-                storage.addAttributes([.backgroundColor: NSColor.calloutFill(color), .font: theme.ui(15)], range: span.range)
+                storage.addAttribute(.font, value: theme.ui(15), range: span.range)
+                boxes.append((span.range, MarkdownBlockFill(color: NSColor.calloutFill(color), radius: 14, padding: NSSize(width: 18, height: 14))))
                 // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
                 storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: token)
             case .listItem(let item):
@@ -239,7 +242,12 @@ struct NativeEditor: NSViewRepresentable {
                 failedDiagrams.append(span)
                 fallthrough
             case .codeBlock:
-                storage.addAttributes([.font: theme.mono(markdownLens ? 14 : 13.5), .backgroundColor: NSColor.codeFill], range: span.content)
+                if markdownLens {
+                    storage.addAttributes([.font: theme.mono(14), .backgroundColor: NSColor.codeFill], range: span.content)
+                } else {
+                    storage.addAttribute(.font, value: theme.mono(13.5), range: span.content)
+                    if span.content.length > 0 { boxes.append((span.content, MarkdownBlockFill(color: .codeFill, radius: 12, padding: NSSize(width: 18, height: 16)))) }
+                }
                 hide(span.markers)
                 let code = source.substring(with: span.content)
                 let colors: [(String, CodeToken)] = [
@@ -410,6 +418,24 @@ struct NativeEditor: NSViewRepresentable {
                                            .foregroundColor: NSColor.clear,
                                            .paragraphStyle: rowStyle],
                                           range: NSRange(location: row.start, length: row.end - row.start))
+                }
+            }
+            // A box's lines share one rounded fill with padding around the text, as the design's code blocks and callouts.
+            for box in boxes {
+                let lines = source.lineRange(for: box.range)
+                var line = source.lineRange(for: NSRange(location: lines.location, length: 0))
+                while line.length > 0 {
+                    let first = line.location == lines.location
+                    let last = NSMaxRange(line) >= NSMaxRange(lines)
+                    let style = (storage.attribute(.paragraphStyle, at: line.location, effectiveRange: nil) as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+                    style.headIndent += box.fill.padding.width * theme.scale
+                    style.firstLineHeadIndent += box.fill.padding.width * theme.scale
+                    style.tailIndent = -box.fill.padding.width * theme.scale
+                    if first { style.paragraphSpacingBefore = box.fill.padding.height * theme.scale }
+                    if last { style.paragraphSpacing = box.fill.padding.height * theme.scale }
+                    storage.addAttributes([.paragraphStyle: style, .markifyBlockFill: box.fill.edge(first: first, last: last)], range: line)
+                    guard !last, NSMaxRange(line) < source.length else { break }
+                    line = source.lineRange(for: NSRange(location: NSMaxRange(line), length: 0))
                 }
             }
             // A diagram's source collapses to one line as tall as the drawn diagram.
@@ -600,9 +626,14 @@ final class MarkdownTextView: NSTextView {
 
     private func observeEdits() {
         textLayoutManager?.delegate = layoutDelegate
-        editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: textStorage, queue: nil) { [weak self] notification in
+        // Any storage: TextKit 2 may give the view a different storage than the one it has during init.
+        editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: nil, queue: nil) { [weak self] notification in
             guard let storage = notification.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
-            MainActor.assumeIsolated { self?.textVersion += 1 }
+            let edited = ObjectIdentifier(storage)
+            MainActor.assumeIsolated {
+                guard let self, let current = self.textStorage, ObjectIdentifier(current) == edited else { return }
+                self.textVersion += 1
+            }
         }
     }
 
@@ -821,6 +852,13 @@ final class MarkdownTextView: NSTextView {
 
     }
 
+    /// Table overlays need a window to place themselves; the first style pass can run before the view has one.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil else { return }
+        DispatchQueue.main.async { [weak self] in self?.refreshTables() }
+    }
+
     override func viewDidMoveToSuperview() {
         super.viewDidMoveToSuperview()
         clipObservers.forEach(NotificationCenter.default.removeObserver)
@@ -1018,7 +1056,7 @@ final class MarkdownTextView: NSTextView {
                 // The message belongs to the closing fence's line, the label to the first line of code.
                 if span.content.length > 0, NSLocationInRange(span.content.location, anchorRange) {
                     let body = rect(NSRange(location: span.content.location, length: 1))
-                    label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: body.minY + 2))
+                    label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: body.minY - 12 * theme.scale))
                 }
                 guard NSLocationInRange(max(span.range.location, NSMaxRange(span.range) - 1), anchorRange) else { continue }
                 let last = rect(NSRange(location: max(span.range.location, NSMaxRange(span.range) - 1), length: 1))
@@ -1118,7 +1156,8 @@ final class MarkdownTextView: NSTextView {
                 guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
                 let label = NSAttributedString(string: language, attributes: [
                     .font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
-                label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: line.minY + 2))
+                // In the box's top padding, right-aligned.
+                label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: line.minY - 12 * theme.scale))
             default:
                 break
             }

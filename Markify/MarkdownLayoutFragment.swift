@@ -14,6 +14,38 @@ extension NSAttributedString.Key {
     static let markifyListNumberOffset = NSAttributedString.Key("MarkifyListNumberOffset")
     /// `Bool` (checked) on a task's hidden marker; the fragment draws the checkbox.
     static let markifyTaskBox = NSAttributedString.Key("MarkifyTaskBox")
+    /// `MarkdownBlockFill` on each line of a code block or callout; the fragment paints its slice of the rounded box.
+    static let markifyBlockFill = NSAttributedString.Key("MarkifyBlockFill")
+}
+
+/// A rounded box behind a block's lines. Each line's fragment paints its slice: the first rounds the top corners,
+/// the last the bottom ones, and the paragraph spacing they add is the box's vertical padding.
+final class MarkdownBlockFill: NSObject {
+    let color: NSColor
+    let radius: CGFloat
+    /// Horizontal and vertical space between the box and its text, before zoom.
+    let padding: NSSize
+    let first: Bool
+    let last: Bool
+
+    init(color: NSColor, radius: CGFloat, padding: NSSize, first: Bool = true, last: Bool = true) {
+        self.color = color
+        self.radius = radius
+        self.padding = padding
+        self.first = first
+        self.last = last
+    }
+
+    func edge(first: Bool, last: Bool) -> MarkdownBlockFill {
+        MarkdownBlockFill(color: color, radius: radius, padding: padding, first: first, last: last)
+    }
+
+    override func isEqual(_ object: Any?) -> Bool {
+        guard let other = object as? MarkdownBlockFill else { return false }
+        return color == other.color && radius == other.radius && padding == other.padding && first == other.first && last == other.last
+    }
+
+    override var hash: Int { radius.hashValue ^ first.hashValue ^ (last.hashValue << 1) }
 }
 
 final class MarkdownLayoutFragment: NSTextLayoutFragment {
@@ -44,12 +76,15 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
     }
 
     override func draw(at point: CGPoint, in context: CGContext) {
-        super.draw(at: point, in: context)
         guard let storage = textStorage, let range = documentRange, range.length > 0,
-              NSMaxRange(range) <= storage.length, let view = textView else { return }
+              NSMaxRange(range) <= storage.length, let view = textView else { return super.draw(at: point, in: context) }
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+        if let fill = storage.attribute(.markifyBlockFill, at: range.location, effectiveRange: nil) as? MarkdownBlockFill {
+            drawFill(fill, at: point)
+        }
+        super.draw(at: point, in: context)
         storage.enumerateAttributes(in: range) { attributes, run, _ in
             if attributes[.markifyBullet] != nil, let rect = self.rect(for: run, at: point) {
                 let dot = NSAttributedString(string: "•", attributes: [.font: view.theme.ui(18), .foregroundColor: NSColor.secondaryLabelColor])
@@ -85,6 +120,45 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
             return false
         }
         return first?.offsetBy(dx: point.x - layoutFragmentFrame.minX, dy: point.y - layoutFragmentFrame.minY)
+    }
+
+    // MARK: Block fill
+
+    /// This line's slice of a block's rounded box, across the column and the fragment's full height,
+    /// leaving any selected text uncovered so its highlight, drawn underneath, stays visible.
+    private func drawFill(_ fill: MarkdownBlockFill, at point: CGPoint) {
+        let width = textLayoutManager?.textContainer?.size.width ?? layoutFragmentFrame.width
+        let box = CGRect(x: point.x - layoutFragmentFrame.minX, y: point.y, width: width, height: layoutFragmentFrame.height)
+        let radius = min(fill.radius * (textView?.theme.scale ?? 1), box.height / 2, box.width / 2)
+        let path = NSBezierPath()
+        path.move(to: NSPoint(x: box.minX, y: box.midY))
+        path.appendArc(from: NSPoint(x: box.minX, y: box.minY), to: NSPoint(x: box.midX, y: box.minY), radius: fill.first ? radius : 0)
+        path.appendArc(from: NSPoint(x: box.maxX, y: box.minY), to: NSPoint(x: box.maxX, y: box.midY), radius: fill.first ? radius : 0)
+        path.appendArc(from: NSPoint(x: box.maxX, y: box.maxY), to: NSPoint(x: box.midX, y: box.maxY), radius: fill.last ? radius : 0)
+        path.appendArc(from: NSPoint(x: box.minX, y: box.maxY), to: NSPoint(x: box.minX, y: box.midY), radius: fill.last ? radius : 0)
+        path.close()
+        for selected in selectionRects(at: point) {
+            path.append(NSBezierPath(rect: selected.intersection(box)))
+        }
+        path.windingRule = .evenOdd
+        fill.color.setFill()
+        path.fill()
+    }
+
+    /// Selected text in this fragment, in draw coordinates.
+    private func selectionRects(at point: CGPoint) -> [CGRect] {
+        guard let manager = textLayoutManager else { return [] }
+        var rects: [CGRect] = []
+        for selection in manager.textSelections {
+            for selected in selection.textRanges where !selected.isEmpty {
+                guard let overlap = selected.intersection(rangeInElement), !overlap.isEmpty else { continue }
+                manager.enumerateTextSegments(in: overlap, type: .selection, options: []) { _, frame, _, _ in
+                    rects.append(frame.offsetBy(dx: point.x - self.layoutFragmentFrame.minX, dy: point.y - self.layoutFragmentFrame.minY))
+                    return true
+                }
+            }
+        }
+        return rects
     }
 
     // MARK: Task checkbox

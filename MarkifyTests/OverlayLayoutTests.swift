@@ -128,4 +128,18 @@ import Testing
             #expect(abs(overlay - settledY(editor, row.start)) < 1, "row \(index)")
         }
     }
+
+    /// Styling can run before the view is in a window; the overlays appear once it is.
+    @Test func tablesStyledBeforeTheWindowStillGetOverlays() async throws {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.frame = NSRect(x: 0, y: 0, width: 640, height: 800)
+        editor.string = Self.source
+        style(editor)
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(editor.tableOverlays.isEmpty)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 800), styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentView = editor
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(editor.tableOverlays.count == 3)
+    }
 }

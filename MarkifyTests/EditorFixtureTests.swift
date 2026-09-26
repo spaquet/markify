@@ -43,6 +43,7 @@ private final class FixtureBundle {}
         }
         if attributes[.strikethroughStyle] != nil { parts.append("strike") }
         if (attributes[.backgroundColor] as? NSColor) == .codeFill { parts.append("code") }
+        if attributes[.markifyBlockFill] != nil { parts.append("fill") }
         return parts.joined(separator: " ")
     }
 
@@ -273,16 +274,16 @@ private final class FixtureBundle {}
         "table pipe": "1 hidden",
         "table cell": "1 hidden",
         "fence open": "1 hidden",
-        "fence body": "14 m code",
+        "fence body": "14 m fill",
         "tilde fence": "1 hidden",
-        "tilde body": "14 m code",
-        "indented code": "14 m code",
+        "tilde body": "14 m fill",
+        "indented code": "14 m fill",
         "math fence": "1 hidden",
         "math body": "1 hidden",
         "inline math": "18 i",
         "inline math dollar": "1 hidden",
-        "callout token": "13 b hidden",
-        "callout body": "15",
+        "callout token": "13 b hidden fill",
+        "callout body": "15 fill",
         "quote marker": "1 hidden",
         "quote text": "18",
         "footnote ref": "11 b accent",
