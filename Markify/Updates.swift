@@ -9,7 +9,12 @@ enum Updates {
     /// Tests launch the app as their host; they never check for updates.
     private static let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
-    static let controller = SPUStandardUpdaterController(startingUpdater: !isTesting, updaterDelegate: nil, userDriverDelegate: nil)
+    /// Sparkle refuses to start, with an alert at every launch, until `SUPublicEDKey` holds a real EdDSA key
+    /// (scripts/setup-sparkle-keys.sh writes it). Builds without one simply don't update.
+    private static let hasSigningKey = (Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String)
+        .flatMap { Data(base64Encoded: $0) }?.count == 32
+
+    static let controller = SPUStandardUpdaterController(startingUpdater: hasSigningKey && !isTesting, updaterDelegate: nil, userDriverDelegate: nil)
     static var updater: SPUUpdater { controller.updater }
 }
 
