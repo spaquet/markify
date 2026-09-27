@@ -12,7 +12,7 @@ enum Shortcuts {
     }
 
     static let storageKey = "shortcuts"
-    static let sections = ["Editor", "Formatting", "Apple Intelligence"]
+    static let sections = ["Editor", "Formatting", "Tables", "Apple Intelligence"]
 
     static let actions: [Action] = [
         .init(id: "toggleMarkdown", title: "Toggle Markdown", section: "Editor", key: "cmd /"),
@@ -33,6 +33,12 @@ enum Shortcuts {
         .init(id: "title", title: "Title", section: "Formatting", key: "opt cmd 1"),
         .init(id: "heading", title: "Heading", section: "Formatting", key: "opt cmd 2"),
         .init(id: "subheading", title: "Subheading", section: "Formatting", key: "opt cmd 3"),
+        .init(id: "insertRowAbove", title: "Insert Row Above", section: "Tables", key: "opt cmd up"),
+        .init(id: "insertRowBelow", title: "Insert Row Below", section: "Tables", key: "opt cmd down"),
+        .init(id: "insertColumnLeft", title: "Insert Column Left", section: "Tables", key: "opt cmd left"),
+        .init(id: "insertColumnRight", title: "Insert Column Right", section: "Tables", key: "opt cmd right"),
+        .init(id: "deleteRow", title: "Delete Row", section: "Tables", key: "opt cmd delete"),
+        .init(id: "deleteColumn", title: "Delete Column", section: "Tables", key: "shift opt cmd delete"),
         .init(id: "writingTools", title: "Writing Tools", section: "Apple Intelligence", key: "shift cmd w"),
         .init(id: "generate", title: "Generate / Continue", section: "Apple Intelligence", key: "cmd return"),
     ]
@@ -62,9 +68,23 @@ enum Shortcuts {
             default: break
             }
         }
-        let equivalent: KeyEquivalent = key == "return" ? .return : KeyEquivalent(Character(key))
+        let equivalent: KeyEquivalent = switch key {
+        case "return": .return
+        case "delete": .delete
+        case "up": .upArrow
+        case "down": .downArrow
+        case "left": .leftArrow
+        case "right": .rightArrow
+        default: KeyEquivalent(Character(key))
+        }
         return KeyboardShortcut(equivalent, modifiers: modifiers)
     }
+
+    /// Keys named by a word, with their glyph and key code.
+    private static let namedKeys: [(name: String, glyph: String, code: UInt16)] = [
+        ("return", "↩", 36), ("return", "↩", 76), ("delete", "⌫", 51),
+        ("up", "↑", 126), ("down", "↓", 125), ("left", "←", 123), ("right", "→", 124),
+    ]
 
     /// Menu-style glyphs, e.g. "⇧⌘X".
     static func display(_ spec: String) -> String {
@@ -72,7 +92,7 @@ enum Shortcuts {
         guard let key = parts.last else { return "None" }
         let symbols = [("ctrl", "⌃"), ("opt", "⌥"), ("shift", "⇧"), ("cmd", "⌘")]
         let modifiers = symbols.filter { parts.dropLast().contains($0.0) }.map(\.1).joined()
-        return modifiers + (key == "return" ? "↩" : key.uppercased())
+        return modifiers + (namedKeys.first { $0.name == key }?.glyph ?? key.uppercased())
     }
 
     /// The shortcut a key press records, or nil unless it uses ⌘ or ⌃.
@@ -80,7 +100,7 @@ enum Shortcuts {
         let flags = event.modifierFlags
         guard flags.contains(.command) || flags.contains(.control) else { return nil }
         let key: String
-        if event.keyCode == 36 || event.keyCode == 76 { key = "return" }
+        if let named = namedKeys.first(where: { $0.code == event.keyCode }) { key = named.name }
         else if let character = event.charactersIgnoringModifiers?.lowercased().first, !character.isWhitespace { key = String(character) }
         else { return nil }
         let names: [(NSEvent.ModifierFlags, String)] = [(.control, "ctrl"), (.option, "opt"), (.shift, "shift"), (.command, "cmd")]

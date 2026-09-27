@@ -38,6 +38,24 @@ import Testing
         return editor.textRect(NSRange(location: location, length: 1)).minY
     }
 
+    /// Right-clicking a cell offers the table commands, and they act on the cell being edited.
+    @Test func tableCellsOfferRowAndColumnCommands() throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| A | B |\n| --- | --- |\n| C | D |"
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        let event = try #require(NSEvent.mouseEvent(with: .rightMouseDown, location: .zero, modifierFlags: [], timestamp: 0,
+                                                     windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        #expect(field.menu(for: event)?.items.map(\.title).contains("Insert Row Above") == true)
+        #expect(window.makeFirstResponder(field))
+        let fieldEditor = try #require(field.currentEditor() as? NSTextView)
+        #expect(fieldEditor.menu(for: event)?.items.first?.title == "Insert Row Above")
+        #expect(editor.tableLocation == (editor.string as NSString).range(of: "D").location)
+        #expect(editor.editTable(.insertColumnRight))
+        #expect(editor.string == "| A | B |  |\n| --- | --- | --- |\n| C | D |  |")
+        #expect(window.firstResponder === editor)
+    }
+
     /// Rows below the visible area still get their real position; `firstRect` answers zero for them.
     @Test func tableOverlaysBelowTheFoldSitOnTheirRows() async throws {
         let (window, editor) = makeEditor()

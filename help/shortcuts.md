@@ -37,6 +37,17 @@ You can change most of these in **Settings › Shortcuts**.
 | ⌥⌘2 | Heading |
 | ⌥⌘3 | Subheading |
 
+## Tables
+
+With the caret in a table cell:
+
+| Shortcut | Action |
+| --- | --- |
+| ⌥⌘↑ / ⌥⌘↓ | Insert a row above / below |
+| ⌥⌘← / ⌥⌘→ | Insert a column left / right |
+| ⌥⌘⌫ | Delete the row |
+| ⌥⇧⌘⌫ | Delete the column |
+
 ## Apple Intelligence
 
 | Shortcut | Action |
