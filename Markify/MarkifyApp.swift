@@ -50,6 +50,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
         _ = Updates.controller
         // Registered up front so Help menu items that open a page by anchor work on their first use.
         NSHelpManager.shared.registerBooks(in: .main)
+        HelpBook.watchViewer()
         DispatchQueue.main.async {
             let startup = UserDefaults.standard.string(forKey: "startup") ?? "Reopen last documents"
             let urls = startup == "Reopen last documents" ? Self.lastOpenDocuments() : []
@@ -83,6 +84,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
             try? $0.bookmarkData(options: .withSecurityScope)
         }
         UserDefaults.standard.set(bookmarks, forKey: Self.openDocumentsKey)
+        HelpBook.closeViewer()
         return .terminateNow
     }
 
@@ -206,6 +208,33 @@ struct MarkifyApp: App {
 
     static func openWeb(_ address: String) {
         if let url = URL(string: address) { NSWorkspace.shared.open(url) }
+    }
+
+    /// Help opens in Tips, which keeps running after Markify quits. A Tips that started launching while
+    /// Markify was active was launched for Markify's help (the Help menu, its search, `open(_:)`) and quits
+    /// with Markify; a Tips that was already running is left alone. Quitting it needs the Apple Events
+    /// exception for com.apple.helpviewer in Markify.entitlements.
+    private static let viewerIdentifier = "com.apple.helpviewer"
+    private static var launchedViewer: NSRunningApplication?
+    /// Tips takes focus before its launch is announced, so the launch is compared with when Markify last lost it.
+    private static var resignedActive = Date.distantPast
+
+    static func watchViewer() {
+        NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { resignedActive = .now }
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didLaunchApplicationNotification, object: nil, queue: .main) { note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  app.bundleIdentifier == viewerIdentifier else { return }
+            MainActor.assumeIsolated {
+                if NSApp.isActive || (app.launchDate ?? .distantPast) <= resignedActive { launchedViewer = app }
+            }
+        }
+    }
+
+    static func closeViewer() {
+        guard let viewer = launchedViewer, !viewer.isTerminated else { return }
+        viewer.terminate()
     }
 }
 
