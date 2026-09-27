@@ -5,7 +5,7 @@
 - Website: https://spaquet.github.io/markify/
 - Download: https://github.com/spaquet/markify/releases/latest (markify-as.dmg for Apple silicon, markify-intel.dmg for Intel)
 - Source code: https://github.com/spaquet/markify
-- License: MIT with the Commons Clause (free for non-commercial use): https://spaquet.github.io/markify/legal.html
+- License: MIT with the Commons Clause (free to use, including at work; resale restricted): https://spaquet.github.io/markify/legal.html
 
 ## Help
 - [Markify Help](https://spaquet.github.io/markify/help/): Learn to write, format, organize and export Markdown in Markify, the one-page Markdown editor for macOS.

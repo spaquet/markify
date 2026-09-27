@@ -71,6 +71,7 @@
 <tr><td><code>*italic*</code> or <code>_italic_</code></td><td><em>italic</em></td></tr>
 <tr><td><code>~~strikethrough~~</code></td><td><del>strikethrough</del></td></tr>
 <tr><td><code>`code`</code></td><td><code>code</code></td></tr>
+<tr><td><code>$x^2$</code></td><td>inline math: x²</td></tr>
 <tr><td><code>[text](https://example.com)</code></td><td>a link</td></tr>
 <tr><td><code>\*</code></td><td>a literal asterisk</td></tr>
 </tbody>
@@ -100,8 +101,10 @@
 &gt; Useful information.</code></pre>
 <p>The types are <code>NOTE</code>, <code>TIP</code>, <code>IMPORTANT</code> and <code>WARNING</code>.</p>
 <h2 id="math">Math</h2>
-<p>Write LaTeX between dollar signs. <code>$e^{i\pi}+1=0$</code> sets math inline; <code>$$</code> on lines of their own sets a display equation:</p>
-<pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">$$
+<p>Write LaTeX between dollar signs. Single dollars set math inline, in the flow of the sentence; <code>$$</code> on lines of their own sets a display equation:</p>
+<pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">Euler's identity, $e^{i\pi}+1=0$, links five constants.
+
+$$
 \int_0^1 x^2\,dx = \frac{1}{3}
 $$</code></pre>
 <p>In the Rendered lens, math is typeset in place: <code>$E = mc^2$</code> shows as a formula with a real superscript. Click a formula or move the caret into it to edit its LaTeX; it's typeset again when you leave it. A dollar amount such as “$5 and $10” stays text: inline math needs no space inside the dollars and no digit right after the closing one. Math is typeset on your Mac, without a network connection.</p>
