@@ -12,7 +12,7 @@ schema: faq
 
 ### Is Markify free?
 
-Yes. Markify is free to download and use for personal, educational and other non-commercial purposes. Its source code is on [GitHub](https://github.com/spaquet/markify). Commercial use needs written permission; see [Legal](legal.md). You can support its development with a [GitHub sponsorship](https://github.com/sponsors/spaquet).
+Yes. Markify is free to download and use, including for work. Its source code is on [GitHub](https://github.com/spaquet/markify). The [license](legal.md) restricts selling Markify itself, or a product or service whose value derives substantially from it. You can support its development with a [GitHub sponsorship](https://github.com/sponsors/spaquet).
 
 ### Which Macs does Markify run on?
 

@@ -72,3 +72,6 @@ Cartfile.resolved
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Marketing material (local only)
+marketing/

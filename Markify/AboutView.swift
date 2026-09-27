@@ -76,7 +76,7 @@ struct AboutView: View {
 
             Spacer(minLength: 16)
 
-            Text("© 2025–2026 Stéphane Paquet · Free for non-commercial use")
+            Text("© 2025–2026 Stéphane Paquet · Free to use")
                 .font(.system(size: 10.5))
                 .foregroundStyle(.tertiary)
                 .padding(.bottom, 16)

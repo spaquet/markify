@@ -451,7 +451,7 @@ var llms = """
 - Website: \(site)
 - Download: \(repository)/releases/latest (markify-as.dmg for Apple silicon, markify-intel.dmg for Intel)
 - Source code: \(repository)
-- License: MIT with the Commons Clause (free for non-commercial use): \(site)legal.html
+- License: MIT with the Commons Clause (free to use, including at work; resale restricted): \(site)legal.html
 
 ## Help
 

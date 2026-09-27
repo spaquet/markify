@@ -10,7 +10,7 @@ license: true
 
 ## License
 
-Markify is © 2025–2026 Stéphane Paquet. It is distributed under the MIT License with the Commons Clause condition: you may use, study and modify it for personal, educational and other non-commercial purposes, and commercial use needs the author's written permission. The license below is the one published with the [source code on GitHub](https://github.com/spaquet/markify/blob/main/LICENSE), which is the authoritative version.
+Markify is © 2025–2026 Stéphane Paquet. It is distributed under the MIT License with the Commons Clause condition. You may use Markify for personal or work documents, and study, modify and redistribute its source under the license terms. The condition restricts selling Markify itself, or a product or service whose value derives substantially from it. The license below is the one published with the [source code on GitHub](https://github.com/spaquet/markify/blob/main/LICENSE), which is the authoritative version.
 
 <div id="license-text" class="license"></div>
 

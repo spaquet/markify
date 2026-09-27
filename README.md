@@ -152,16 +152,14 @@ See [AGENTS.md](AGENTS.md) for development notes.
 
 ## License
 
-Markify is available under the Commons Clause License with MIT as the base license. See [LICENSE](LICENSE) for details.
+Markify is source available under the MIT License with the Commons Clause condition. See [LICENSE](LICENSE) for the terms.
 
 **In summary:**
-- ✅ You may compile and use Markify personally
-- ✅ You may modify the source code for personal use
-- ❌ Commercial use requires written permission
-- ❌ Integration into other products or commercial services is prohibited without written permission
-- ❌ Distribution on the App Store or other commercial platforms requires written permission
+- ✅ You may use Markify for personal or work documents
+- ✅ You may study, modify and redistribute the source under the license terms
+- ❌ You may not sell Markify itself, or a product or service whose value derives substantially from it, without permission
 
-For commercial licensing or exceptions, please contact the maintainer.
+For permission to sell Markify itself, contact the maintainer.
 
 ## Contributing
 
