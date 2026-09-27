@@ -840,6 +840,103 @@ final class MarkdownTextView: NSTextView {
         return true
     }
 
+    /// Where table commands act: the cell being edited in the Rendered lens, or the caret.
+    var tableLocation: Int {
+        tableOverlays.values.flatMap(\.fields).first { $0.currentEditor() != nil }?.sourceRange.location ?? selectedRange().location
+    }
+
+    func tableChange(_ edit: MarkdownTable.Edit, at location: Int) -> MarkdownTable.Change? {
+        MarkdownTable.containing(model, location: location)?.change(edit, in: string, at: location)
+    }
+
+    /// Applies a row or column edit as one undoable change and moves to the cell it leaves the caret in.
+    @discardableResult
+    func editTable(_ edit: MarkdownTable.Edit, at location: Int? = nil) -> Bool {
+        let location = location ?? tableLocation
+        guard let table = MarkdownTable.containing(model, location: location), let change = table.change(edit, in: string, at: location),
+              let storage = textStorage else { return false }
+        // The table stays where it is on screen. Restyling after the edit re-estimates the layout above it, and taking focus
+        // back from a cell, selecting the new cell and refocusing it scroll, often to the top of the document (as ticking
+        // a task did, issue #8), so the page is anchored on the table's first line rather than on a scroll offset.
+        let start = table.rows[0].start
+        let clip = enclosingScrollView?.contentView
+        let offset = clip.map { textRect(NSRange(location: start, length: 1)).minY - $0.bounds.minY }
+        func keepPage() {
+            guard let clip, let offset else { return }
+            clip.scroll(to: NSPoint(x: clip.bounds.minX, y: max(0, textRect(NSRange(location: start, length: 1)).minY - offset)))
+            enclosingScrollView?.reflectScrolledClipView(clip)
+        }
+        // A cell field would keep showing its old text over what is now another cell.
+        if window?.firstResponder !== self { window?.makeFirstResponder(self) }
+        breakUndoCoalescing()
+        guard shouldChangeText(in: change.range, replacementString: change.replacement) else { return false }
+        storage.replaceCharacters(in: change.range, with: change.replacement)
+        didChangeText()
+        undoManager?.setActionName(edit.title)
+        if let rows = model.tables.first(where: { $0.rows.first?.start == start })?.rows,
+           rows.indices.contains(change.row), rows[change.row].cells.indices.contains(change.column) {
+            setSelectedRange(rows[change.row].cells[change.column])
+        }
+        keepPage()
+        // Scroll only when the cell the caret moved to is out of sight, such as a row added below the fold.
+        func revealCell() {
+            guard window != nil else { return }
+            let cell = textRect(selectedRange())
+            if !visibleRect.contains(cell) { scrollToVisible(cell.insetBy(dx: 0, dy: -12)) }
+        }
+        revealCell()
+        if rendered {
+            DispatchQueue.main.async { [weak self] in
+                self?.refreshTables()
+                self?.focusTableCell()
+                keepPage()
+                revealCell()
+            }
+        }
+        return true
+    }
+
+    private struct TableCommand {
+        let edit: MarkdownTable.Edit
+        let location: Int
+    }
+
+    /// Row and column commands for the table at `location`, or none outside a table.
+    func tableMenuItems(at location: Int) -> [NSMenuItem] {
+        guard MarkdownTable.containing(model, location: location) != nil else { return [] }
+        let groups: [[MarkdownTable.Edit]] = [[.insertRowAbove, .insertRowBelow], [.insertColumnLeft, .insertColumnRight], [.deleteRow, .deleteColumn]]
+        return groups.enumerated().flatMap { index, edits in
+            (index > 0 ? [NSMenuItem.separator()] : []) + edits.map { edit in
+                let item = NSMenuItem(title: edit.title, action: #selector(tableMenuAction(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = TableCommand(edit: edit, location: location)
+                return item
+            }
+        }
+    }
+
+    @objc private func tableMenuAction(_ sender: NSMenuItem) {
+        guard let command = sender.representedObject as? TableCommand else { return }
+        editTable(command.edit, at: command.location)
+    }
+
+    override func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        if item.action == #selector(tableMenuAction(_:)) {
+            guard let command = item.representedObject as? TableCommand else { return false }
+            return tableChange(command.edit, at: command.location) != nil
+        }
+        return super.validateMenuItem(item)
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let menu = super.menu(for: event)
+        let location = characterIndexForInsertion(at: convert(event.locationInWindow, from: nil))
+        let items = tableMenuItems(at: location)
+        guard let menu, !items.isEmpty else { return menu }
+        for (index, item) in (items + [.separator()]).enumerated() { menu.insertItem(item, at: index) }
+        return menu
+    }
+
     /// Task items in the Rendered lens, at any depth.
     private func tasks(in spans: [MarkdownModel.Span]? = nil) -> [MarkdownModel.ListItem] {
         guard rendered else { return [] }
@@ -1725,6 +1822,30 @@ final class TableCellField: NSTextField, NSTextFieldDelegate {
         if selector == #selector(NSResponder.insertBacktab(_:)) { onTab?(sourceRange, true); return true }
         return false
     }
+
+    /// The editor's row and column commands for this cell.
+    private var tableItems: [NSMenuItem] {
+        var view = superview
+        while let current = view, !(current is MarkdownTextView) { view = current.superview }
+        return (view as? MarkdownTextView)?.tableMenuItems(at: sourceRange.location) ?? []
+    }
+
+    // Right-click on a cell that isn't being edited.
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let items = tableItems
+        guard !items.isEmpty else { return super.menu(for: event) }
+        let menu = NSMenu()
+        items.forEach(menu.addItem)
+        return menu
+    }
+
+    // Right-click in the cell being edited: the field editor asks its delegate, this field.
+    @objc(textView:menu:forEvent:atIndex:) func textView(_ textView: NSTextView, menu: NSMenu, for event: NSEvent, at charIndex: Int) -> NSMenu? {
+        let items = tableItems
+        guard !items.isEmpty else { return menu }
+        for (index, item) in (items + [.separator()]).enumerated() { menu.insertItem(item, at: index) }
+        return menu
+    }
 }
 
 enum MarkdownList {
@@ -1850,6 +1971,133 @@ struct MarkdownTable {
             return .select(next.cells[0])
         }
         return .addRow("\n|" + String(repeating: "  |", count: row.cells.count), at: row.end, caret: 3)
+    }
+
+    enum Edit: String, CaseIterable {
+        case insertRowAbove, insertRowBelow, insertColumnLeft, insertColumnRight, deleteRow, deleteColumn
+
+        var title: String {
+            switch self {
+            case .insertRowAbove: "Insert Row Above"
+            case .insertRowBelow: "Insert Row Below"
+            case .insertColumnLeft: "Insert Column Left"
+            case .insertColumnRight: "Insert Column Right"
+            case .deleteRow: "Delete Row"
+            case .deleteColumn: "Delete Column"
+            }
+        }
+    }
+
+    /// A table edit as the smallest source replacement, and the cell (row index counting the delimiter row, column) the caret moves to.
+    struct Change: Equatable {
+        let range: NSRange
+        let replacement: String
+        let row: Int
+        let column: Int
+    }
+
+    /// One row's line split at its unescaped pipes, keeping every character so an untouched row rebuilds exactly.
+    private struct Line {
+        /// Up to and including the leading pipe; empty when the row has none.
+        var lead: String
+        /// The text between pipes, padding included.
+        var cells: [String]
+        /// From the closing pipe on; empty when the row has none.
+        var trail: String
+
+        init(_ text: NSString) {
+            // The same bounds as `MarkdownModel.cells(in:)`.
+            var bounds: [Int] = []
+            for index in 0..<text.length where text.character(at: index) == 124 {
+                if index == 0 || text.character(at: index - 1) != 92 { bounds.append(index) }
+            }
+            let trimmed = text.trimmingCharacters(in: .whitespaces)
+            if !trimmed.hasPrefix("|") { bounds.insert(-1, at: 0) }
+            if !trimmed.hasSuffix("|") || bounds.count < 2 { bounds.append(text.length) }
+            lead = text.substring(to: bounds[0] + 1)
+            cells = zip(bounds, bounds.dropFirst()).map { text.substring(with: NSRange(location: $0 + 1, length: $1 - $0 - 1)) }
+            trail = text.substring(from: bounds[bounds.count - 1])
+        }
+
+        init(indent: String, cells: [String]) {
+            lead = indent + "|"
+            self.cells = cells
+            trail = "|"
+        }
+
+        var text: String {
+            // A row of one cell needs a pipe to stay a table row.
+            if cells.count == 1, !lead.hasSuffix("|"), !trail.hasPrefix("|") { return lead + "|" + cells[0] + "|" + trail }
+            return lead + cells.joined(separator: "|") + trail
+        }
+
+        var indent: String { String(lead.prefix { $0 == " " || $0 == "\t" }) }
+    }
+
+    /// The source change for `edit` with the caret at `location`. Nil when the edit would leave no table:
+    /// deleting the header of a table without body rows, or its only column.
+    ///
+    /// GFM tables start with a header row and a delimiter row, and have no footer. A new row above the header becomes
+    /// the header and the old header the first body row; a new row below the header goes under the delimiter; deleting
+    /// the header promotes the first body row. The delimiter row acts as the header.
+    func change(_ edit: Edit, in source: String, at location: Int) -> Change? {
+        let text = source as NSString
+        let start = rows[0].start, end = rows[rows.count - 1].end
+        let newline = rows.count > 1 ? text.substring(with: NSRange(location: rows[0].end, length: rows[1].start - rows[0].end)) : "\n"
+        var lines = rows.map { Line(text.substring(with: NSRange(location: $0.start, length: $0.end - $0.start)) as NSString) }
+        let columns = rows[0].cells.count
+        let at = current == 1 ? 0 : current
+        let column = rows[current].cells.firstIndex { location <= NSMaxRange($0) } ?? max(rows[current].cells.count - 1, 0)
+        let empty = "  "
+        let blank = Line(indent: lines[at].indent, cells: Array(repeating: empty, count: columns))
+        func padded(_ line: Line, to count: Int) -> Line {
+            var line = line
+            while line.cells.count < count { line.cells.append(empty) }
+            return line
+        }
+        var target = (row: at, column: column)
+        switch edit {
+        case .insertRowAbove where at == 0:
+            lines[0] = padded(lines[0], to: columns)
+            lines.insert(blank, at: 0)
+            lines.swapAt(1, 2)
+        case .insertRowAbove:
+            lines.insert(blank, at: at)
+        case .insertRowBelow:
+            target.row = max(at + 1, 2)
+            lines.insert(blank, at: target.row)
+        case .deleteRow where at == 0:
+            guard lines.count > 2 else { return nil }
+            lines[0] = padded(lines.remove(at: 2), to: columns)
+        case .deleteRow:
+            lines.remove(at: at)
+            target.row = at < lines.count ? at : at - 1
+            if target.row == 1 { target.row = 0 }
+        case .insertColumnLeft, .insertColumnRight:
+            let index = edit == .insertColumnLeft ? column : column + 1
+            target.column = index
+            for row in lines.indices {
+                lines[row] = padded(lines[row], to: index)
+                let delimiter = row == 1
+                let spaced = lines[row].cells.first?.hasPrefix(" ") ?? true
+                lines[row].cells.insert(delimiter ? (spaced ? " --- " : "---") : empty, at: index)
+            }
+        case .deleteColumn:
+            guard columns > 1 else { return nil }
+            for row in lines.indices where column < lines[row].cells.count { lines[row].cells.remove(at: column) }
+            target.column = min(column, columns - 2)
+        }
+        // Replace only what changed, so the rest of the table keeps its place in the undo history.
+        let old = text.substring(with: NSRange(location: start, length: end - start)) as NSString
+        let new = lines.map(\.text).joined(separator: newline) as NSString
+        var prefix = 0
+        while prefix < old.length, prefix < new.length, old.character(at: prefix) == new.character(at: prefix) { prefix += 1 }
+        var suffix = 0
+        while suffix < old.length - prefix, suffix < new.length - prefix,
+              old.character(at: old.length - 1 - suffix) == new.character(at: new.length - 1 - suffix) { suffix += 1 }
+        return Change(range: NSRange(location: start + prefix, length: old.length - prefix - suffix),
+                      replacement: new.substring(with: NSRange(location: prefix, length: new.length - prefix - suffix)),
+                      row: target.row, column: target.column)
     }
 }
 

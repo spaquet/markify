@@ -114,6 +114,100 @@ struct MarkifyTests {
         #expect(editor.string.hasSuffix("\n|  |  |"))
     }
 
+    /// Applies `edit` with the caret on the first `cell` text, returning the new source and the selected cell's text.
+    @MainActor private func tableEdit(_ edit: MarkdownTable.Edit, in source: String, at cell: String) -> (applied: Bool, text: String, selected: String) {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = source
+        let applied = editor.editTable(edit, at: (source as NSString).range(of: cell).location)
+        return (applied, editor.string, (editor.string as NSString).substring(with: editor.selectedRange()))
+    }
+
+    @Test @MainActor func tableRowsInsertAroundTheHeaderAndBody() {
+        let table = "Intro\n\n| A | B |\n| --- | :-: |\n| C | D |\n| E | F |\n\nAfter"
+        let cases: [(MarkdownTable.Edit, String, String)] = [
+            (.insertRowAbove, "C", "| A | B |\n| --- | :-: |\n|  |  |\n| C | D |\n| E | F |"),
+            (.insertRowBelow, "F", "| A | B |\n| --- | :-: |\n| C | D |\n| E | F |\n|  |  |"),
+            // A row above the header becomes the header; the old header moves under the delimiter.
+            (.insertRowAbove, "A", "|  |  |\n| --- | :-: |\n| A | B |\n| C | D |\n| E | F |"),
+            (.insertRowBelow, "B", "| A | B |\n| --- | :-: |\n|  |  |\n| C | D |\n| E | F |"),
+            // The delimiter row acts as the header.
+            (.insertRowBelow, ":-:", "| A | B |\n| --- | :-: |\n|  |  |\n| C | D |\n| E | F |"),
+        ]
+        for (edit, cell, expected) in cases {
+            let result = tableEdit(edit, in: table, at: cell)
+            #expect(result.applied)
+            #expect(result.text == "Intro\n\n" + expected + "\n\nAfter", "\(edit) at \(cell)")
+            #expect(result.selected == "", "\(edit) at \(cell) moves into the new row")
+            #expect(MarkdownTable.blocks(in: result.text).map(\.rows.count) == [expected.split(separator: "\n").count])
+        }
+    }
+
+    @Test @MainActor func tableRowsDeleteAndPromoteTheFirstBodyRow() {
+        let table = "| A | B |\n| --- | :-: |\n| C | D |\n| E | F |"
+        let header = tableEdit(.deleteRow, in: table, at: "B")
+        #expect(header.text == "| C | D |\n| --- | :-: |\n| E | F |")
+        #expect(header.selected == "D")
+        let last = tableEdit(.deleteRow, in: table, at: "E")
+        #expect(last.text == "| A | B |\n| --- | :-: |\n| C | D |")
+        #expect(last.selected == "C")
+        let only = tableEdit(.deleteRow, in: "| A | B |\n| --- | --- |\n| C | D |", at: "C")
+        #expect(only.text == "| A | B |\n| --- | --- |")
+        #expect(only.selected == "A")
+        // A header with no body row to promote stays.
+        let alone = tableEdit(.deleteRow, in: "| A | B |\n| --- | --- |", at: "A")
+        #expect(!alone.applied)
+        #expect(alone.text == "| A | B |\n| --- | --- |")
+    }
+
+    @Test @MainActor func tableColumnsInsertAndDeleteAtTheEdges() {
+        let table = "| A | B |\n| --- | :-: |\n| C | D |"
+        let first = tableEdit(.insertColumnLeft, in: table, at: "A")
+        #expect(first.text == "|  | A | B |\n| --- | --- | :-: |\n|  | C | D |")
+        #expect(first.selected == "")
+        let last = tableEdit(.insertColumnRight, in: table, at: "D")
+        #expect(last.text == "| A | B |  |\n| --- | :-: | --- |\n| C | D |  |")
+        let middle = tableEdit(.insertColumnRight, in: table, at: "A")
+        #expect(middle.text == "| A |  | B |\n| --- | --- | :-: |\n| C |  | D |")
+        let deleted = tableEdit(.deleteColumn, in: table, at: "A")
+        #expect(deleted.text == "| B |\n| :-: |\n| D |")
+        #expect(deleted.selected == "B")
+        let deletedLast = tableEdit(.deleteColumn, in: table, at: "D")
+        #expect(deletedLast.text == "| A |\n| --- |\n| C |")
+        #expect(deletedLast.selected == "C")
+        #expect(!tableEdit(.deleteColumn, in: "| A |\n| --- |\n| C |", at: "A").applied)
+    }
+
+    @Test @MainActor func tableEditsKeepTheSourceStyle() {
+        // No outer pipes: a table left with one column gains them, or it would stop being a table.
+        let bare = tableEdit(.deleteColumn, in: "A | B\n--- | ---\nC | D", at: "B")
+        #expect(bare.text == "|A |\n|--- |\n|C |")
+        #expect(MarkdownTable.blocks(in: bare.text).count == 1)
+        let unpadded = tableEdit(.insertColumnRight, in: "|A|B|\n|---|---|\n|C|D|", at: "B")
+        #expect(unpadded.text == "|A|B|  |\n|---|---|---|\n|C|D|  |")
+        // Escaped pipes stay inside their cell; a short row is padded to reach the new column.
+        let escaped = tableEdit(.insertColumnRight, in: "| a \\| b | c |\n| --- | --- |\n| d |", at: "c")
+        #expect(escaped.text == "| a \\| b | c |  |\n| --- | --- | --- |\n| d |  |  |")
+        let crlf = tableEdit(.insertRowBelow, in: "| A |\r\n| --- |\r\n| C |", at: "C")
+        #expect(crlf.text == "| A |\r\n| --- |\r\n| C |\r\n|  |")
+    }
+
+    @Test @MainActor func tableMenuOffersEditsOnlyInsideATable() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "Text\n\n| A |\n| --- |\n| C |"
+        #expect(editor.tableMenuItems(at: 1).isEmpty)
+        let items = editor.tableMenuItems(at: (editor.string as NSString).range(of: "C").location)
+        #expect(items.filter { !$0.isSeparatorItem }.map(\.title) == MarkdownTable.Edit.allCases.map(\.title))
+        let enabled = items.filter { !$0.isSeparatorItem && editor.validateMenuItem($0) }.map(\.title)
+        #expect(enabled == ["Insert Row Above", "Insert Row Below", "Insert Column Left", "Insert Column Right", "Delete Row"])
+    }
+
+    @Test func tableShortcutsUseArrowAndDeleteKeys() {
+        #expect(Shortcuts.display("opt cmd up") == "⌥⌘↑")
+        #expect(Shortcuts.display("shift opt cmd delete") == "⌥⇧⌘⌫")
+        #expect(Shortcuts.keyboardShortcut("insertColumnLeft", stored: "") == KeyboardShortcut(.leftArrow, modifiers: [.option, .command]))
+        #expect(Set(MarkdownTable.Edit.allCases.map(\.rawValue)).isSubset(of: Shortcuts.actions.map(\.id)))
+    }
+
     @Test @MainActor func tableCellEditsTrackTheirSourceRange() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.string = "| A | B |\n| --- | --- |\n| C | D |"

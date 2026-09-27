@@ -38,6 +38,78 @@ import Testing
         return editor.textRect(NSRange(location: location, length: 1)).minY
     }
 
+    /// Right-clicking a cell offers the table commands, and they act on the cell being edited.
+    @Test func tableCellsOfferRowAndColumnCommands() throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| A | B |\n| --- | --- |\n| C | D |"
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        let event = try #require(NSEvent.mouseEvent(with: .rightMouseDown, location: .zero, modifierFlags: [], timestamp: 0,
+                                                     windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        #expect(field.menu(for: event)?.items.map(\.title).contains("Insert Row Above") == true)
+        #expect(window.makeFirstResponder(field))
+        let fieldEditor = try #require(field.currentEditor() as? NSTextView)
+        #expect(fieldEditor.menu(for: event)?.items.first?.title == "Insert Row Above")
+        #expect(editor.tableLocation == (editor.string as NSString).range(of: "D").location)
+        #expect(editor.editTable(.insertColumnRight))
+        #expect(editor.string == "| A | B |  |\n| --- | --- | --- |\n| C | D |  |")
+        #expect(window.firstResponder === editor)
+    }
+
+    /// A long note with a table scrolled to 200pt from the top of the window, restyled after each change as the app does.
+    /// The caret was last placed at the top of the document. The coordinator is returned to keep it alive.
+    func scrolledTable() throws -> (NSWindow, MarkdownTextView, NativeEditor.Coordinator, () -> CGFloat) {
+        let (window, editor) = makeEditor()
+        let intro = (1...300).map { "Paragraph \($0) with enough words to wrap onto a second line in the column of this window." }.joined(separator: "\n\n")
+        editor.string = intro + "\n\n| A | B |\n| --- | --- |\n| C | D |\n\n" + intro
+        let coordinator = NativeEditor(text: .constant(editor.string), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                                       selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil),
+                                       onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in }).makeCoordinator()
+        coordinator.editor = editor
+        editor.delegate = coordinator
+        coordinator.parent.style(editor)
+        editor.refreshTables()
+        let clip = try #require(editor.enclosingScrollView?.contentView)
+        let start = (editor.string as NSString).range(of: "| A |").location
+        clip.scroll(to: NSPoint(x: 0, y: editor.textRect(NSRange(location: start, length: 1)).minY - 200))
+        editor.enclosingScrollView?.reflectScrolledClipView(clip)
+        editor.refreshTables()
+        editor.setSelectedRange(NSRange(location: 0, length: 0))
+        /// Where the table's first row sits in the window.
+        let onScreen = { editor.textRect(NSRange(location: start, length: 1)).minY - clip.bounds.minY }
+        #expect(abs(onScreen() - 200) < 2)
+        return (window, editor, coordinator, onScreen)
+    }
+
+    /// A table edit leaves the page where it was.
+    @Test func tableEditsKeepThePageInPlace() async throws {
+        let (window, editor, _, onScreen) = try scrolledTable()
+        let before = onScreen()
+        #expect(window.makeFirstResponder(try #require(editor.tableOverlays[1]?.fields.last)))
+        for edit in [MarkdownTable.Edit.insertRowBelow, .insertColumnRight, .deleteColumn, .deleteRow] {
+            #expect(editor.editTable(edit))
+            #expect(abs(onScreen() - before) < 2, "\(edit)")
+            try await Task.sleep(for: .milliseconds(50))
+            #expect(abs(onScreen() - before) < 2, "\(edit) after the cell is refocused")
+        }
+    }
+
+    /// Tab to the next cell, or in the last cell to add a row, leaves the page where it was.
+    @Test func tableTabKeepsThePageInPlace() async throws {
+        let (window, editor, _, onScreen) = try scrolledTable()
+        let before = onScreen()
+        for step in ["next cell", "new row"] {
+            let field = try #require(editor.tableOverlays.values.flatMap(\.fields).first { $0.sourceRange.location == editor.tableLocation }
+                                     ?? editor.tableOverlays[1]?.fields.first)
+            #expect(window.makeFirstResponder(field))
+            field.onTab?(field.sourceRange, false)
+            #expect(abs(onScreen() - before) < 2, "\(step)")
+            try await Task.sleep(for: .milliseconds(50))
+            #expect(abs(onScreen() - before) < 2, "\(step) after the cell is refocused")
+        }
+        #expect(editor.string.contains("| C | D |\n|  |  |"))
+    }
+
     /// Rows below the visible area still get their real position; `firstRect` answers zero for them.
     @Test func tableOverlaysBelowTheFoldSitOnTheirRows() async throws {
         let (window, editor) = makeEditor()

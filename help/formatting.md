@@ -60,5 +60,6 @@ Each row shows its Markdown shortcut, so you can type the syntax directly next t
 - To nest an item, indent it with spaces in the Markdown lens.
 - Click a task's checkbox to tick it; the file changes from `- [ ]` to `- [x]`.
 - In a table, press Tab to move to the next cell and ⇧Tab to go back. Pressing Tab in the last cell adds a row.
+- To add or remove rows and columns, right-click a cell and choose **Insert Row Above** or **Below**, **Insert Column Left** or **Right**, **Delete Row** or **Delete Column**, or use their shortcuts (⌥⌘ with an arrow key, ⌥⌘⌫ and ⌥⇧⌘⌫). A row inserted above the header row becomes the new header, and deleting the header promotes the first row below it. A table keeps at least its header and one column.
 
 See [Markdown support](markdown.md) for everything Markify renders.

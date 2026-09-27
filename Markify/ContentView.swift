@@ -422,6 +422,11 @@ struct ContentView: View {
             ForEach(["Body", "Title", "Heading", "Subheading"], id: \.self) { style in
                 Button(style) { applyBlockStyle(style) }.keyboardShortcut(shortcut(style.lowercased())).hidden()
             }
+            ForEach(MarkdownTable.Edit.allCases, id: \.self) { edit in
+                Button(edit.title) {
+                    if (textView as? MarkdownTextView)?.editTable(edit) != true { NSSound.beep() }
+                }.keyboardShortcut(shortcut(edit.rawValue)).hidden()
+            }
             if writingTools && aiAvailability != .unavailable(.deviceNotEligible) {
                 Button("Writing Tools") { toggleWritingMenu() }.keyboardShortcut(shortcut("writingTools")).hidden()
             }
