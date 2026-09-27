@@ -855,6 +855,17 @@ final class MarkdownTextView: NSTextView {
         let location = location ?? tableLocation
         guard let table = MarkdownTable.containing(model, location: location), let change = table.change(edit, in: string, at: location),
               let storage = textStorage else { return false }
+        // The table stays where it is on screen. Restyling after the edit re-estimates the layout above it, and taking focus
+        // back from a cell, selecting the new cell and refocusing it scroll, often to the top of the document (as ticking
+        // a task did, issue #8), so the page is anchored on the table's first line rather than on a scroll offset.
+        let start = table.rows[0].start
+        let clip = enclosingScrollView?.contentView
+        let offset = clip.map { textRect(NSRange(location: start, length: 1)).minY - $0.bounds.minY }
+        func keepPage() {
+            guard let clip, let offset else { return }
+            clip.scroll(to: NSPoint(x: clip.bounds.minX, y: max(0, textRect(NSRange(location: start, length: 1)).minY - offset)))
+            enclosingScrollView?.reflectScrolledClipView(clip)
+        }
         // A cell field would keep showing its old text over what is now another cell.
         if window?.firstResponder !== self { window?.makeFirstResponder(self) }
         breakUndoCoalescing()
@@ -862,16 +873,24 @@ final class MarkdownTextView: NSTextView {
         storage.replaceCharacters(in: change.range, with: change.replacement)
         didChangeText()
         undoManager?.setActionName(edit.title)
-        let start = table.rows[0].start
         if let rows = model.tables.first(where: { $0.rows.first?.start == start })?.rows,
            rows.indices.contains(change.row), rows[change.row].cells.indices.contains(change.column) {
             setSelectedRange(rows[change.row].cells[change.column])
         }
-        scrollRangeToVisible(selectedRange())
+        keepPage()
+        // Scroll only when the cell the caret moved to is out of sight, such as a row added below the fold.
+        func revealCell() {
+            guard window != nil else { return }
+            let cell = textRect(selectedRange())
+            if !visibleRect.contains(cell) { scrollToVisible(cell.insetBy(dx: 0, dy: -12)) }
+        }
+        revealCell()
         if rendered {
             DispatchQueue.main.async { [weak self] in
                 self?.refreshTables()
                 self?.focusTableCell()
+                keepPage()
+                revealCell()
             }
         }
         return true
