@@ -699,6 +699,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.81;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.QuickLook;
+				PRODUCT_MODULE_NAME = MarkifyQuickLook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 6.0;
@@ -719,6 +720,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.81;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.QuickLook;
+				PRODUCT_MODULE_NAME = MarkifyQuickLook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 6.0;
