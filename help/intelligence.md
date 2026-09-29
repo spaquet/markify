@@ -37,4 +37,4 @@ On an empty line, press **⌘↩** (or type `/write`) to have Apple Intelligence
 
 ## Reviewing changes
 
-Rewritten text appears inside a multicolor edge. **Compare** it with the original, **Try Again**, **Revert**, or **Accept** it. Nothing is saved until you accept, and ⌘Z undoes an accepted change.
+Rewritten text appears inside a multicolor edge. **Compare** it with the original, **Try Again**, **Discard Rewrite**, or **Accept** it. ⌘Z undoes an accepted change.

@@ -14,6 +14,8 @@ keywords: new document, open, save, library, window, welcome
 
 Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
 
+To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, local images, math and Mermaid diagrams. Remote images are not loaded in Quick Look.
+
 ## The window
 
 The page takes the whole window. A few controls float on glass above it and fade while you type:

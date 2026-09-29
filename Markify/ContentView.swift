@@ -1084,7 +1084,7 @@ struct ContentView: View {
             Rectangle().fill(rule).frame(width: 1, height: 18).padding(.horizontal, 4)
             Button("Try Again") { retryReview() }.padding(.horizontal, 10)
             Button(review.comparing ? "Show Result" : "Compare") { compareReview() }.padding(.horizontal, 10)
-            Button("Revert") { revertReview() }.padding(.horizontal, 10)
+            Button("Discard Rewrite") { revertReview() }.padding(.horizontal, 10)
             Button { acceptReview() } label: {
                 HStack(spacing: 8) {
                     Text("Accept").fontWeight(.semibold)

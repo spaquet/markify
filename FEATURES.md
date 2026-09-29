@@ -55,7 +55,6 @@ This is an inventory of features in the current Markify source tree. See the [us
 
 - Export a self-contained HTML page with local images embedded, math and Mermaid as SVG, syntax-colored code, working local links, frontmatter metadata and light/dark styling.
 - Export a paginated PDF of that page with clickable links and page-break handling for headings, tables, code, callouts, math and images.
+- Preview `.md`, `.markdown` and `.mdx` files in Finder with Space using a formatted Quick Look extension. Local images, math and Mermaid render in the preview; MDX code stays readable.
 - Customize fonts, line width, page color, code theme, app appearance, accent, floating control style and status capsule. Optionally fade the toolbar while typing.
 - Make Markify the default Markdown app; use the built-in Welcome tour and Help Book; check for signed updates automatically or on demand.
-
-Markify currently does not ship a Finder Quick Look extension. Finder previews, if available, come from macOS or another installed app.

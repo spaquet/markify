@@ -67,7 +67,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 
     /// Brings the running Markify forward with this launch's files and quits without touching saved state.
     private func handOff(to running: NSRunningApplication) {
-        let quit = { DispatchQueue.main.async { NSApp.terminate(nil) } }
+        let quit: @Sendable () -> Void = { DispatchQueue.main.async { NSApp.terminate(nil) } }
         guard !handedOff.isEmpty, let app = running.bundleURL else {
             running.activate()
             return quit()
@@ -224,9 +224,9 @@ struct MarkifyApp: App {
             MainActor.assumeIsolated { resignedActive = .now }
         }
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didLaunchApplicationNotification, object: nil, queue: .main) { note in
-            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-                  app.bundleIdentifier == viewerIdentifier else { return }
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
             MainActor.assumeIsolated {
+                guard app.bundleIdentifier == viewerIdentifier else { return }
                 if NSApp.isActive || (app.launchDate ?? .distantPast) <= resignedActive { launchedViewer = app }
             }
         }
