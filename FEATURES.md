@@ -31,7 +31,7 @@ This is an inventory of features in the current Markify source tree. See the [us
 - Paste or drop images into a configurable folder beside the document and insert relative Markdown image paths. Full-line images render at page width; inline images appear as chips with hover previews.
 - Optionally load remote images. Open web links in the browser and Markdown file links in Markify with ⌘-click.
 - Drag notes from Finder or the library into a document to insert relative links.
-- Browse open files and a configurable library folder in the sidebar; filter notes by name, title or text preview.
+- Browse open files, subfolders and all `.md`, `.markdown` and `.mdx` notes in a configurable library folder; create a document in any subfolder and filter by title, folder path or text preview.
 - Share the original Markdown file through the macOS share sheet.
 
 ## Open Knowledge Format (OKF)

@@ -88,6 +88,7 @@ struct ContentView: View {
     @State private var aiEdit = AIEditGuard()
     @State private var librarySearch = ""
     @State private var libraryFolder: URL?
+    @State private var librarySubfolders: [URL] = []
     @State private var libraryNotes: [LibraryNote] = []
     @State private var knowledge: KnowledgeState?
     @State private var bundleRoot: URL?
@@ -385,7 +386,7 @@ struct ContentView: View {
             refreshKnowledge()
         }
         .onChange(of: concept != nil) { _, _ in refreshKnowledge() }
-        .onChange(of: sidebarOpen) { _, open in if open { refreshKnowledge() } }
+        .onChange(of: sidebarOpen) { _, open in if open { refreshLibrary(); refreshKnowledge() } }
         .onChange(of: Frontmatter.parse(document.text)?.tags ?? []) { _, _ in mirrorTags() }
         .onChange(of: document.text) { _, _ in offerTitleTagsIfNeeded() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willBeginSheetNotification)) { notification in
@@ -457,13 +458,28 @@ struct ContentView: View {
                                  issues: Knowledge.issues(text: document.text, fileURL: fileURL, root: bundleRoot), search: librarySearch, open: open)
             }
             Text("Library").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.top, 12)
-            if libraryFolder != nil {
+            if let libraryFolder {
+                ForEach(librarySubfolders.filter {
+                    librarySearch.isEmpty || LibraryNote.path(of: $0, in: libraryFolder).localizedCaseInsensitiveContains(librarySearch)
+                }, id: \.self) { folder in
+                    HStack(spacing: 7) {
+                        Image(systemName: "folder").foregroundStyle(.secondary)
+                        Text(LibraryNote.path(of: folder, in: libraryFolder))
+                            .font(.system(size: 13)).lineLimit(1)
+                        Spacer(minLength: 0)
+                        Button { newDocument(in: folder) } label: { Image(systemName: "plus") }
+                            .buttonStyle(.plain).help("New document in \(folder.lastPathComponent)")
+                            .accessibilityLabel("New document in \(folder.lastPathComponent)")
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(7)
+                }
                 ForEach(libraryNotes.filter {
-                    librarySearch.isEmpty || $0.title.localizedCaseInsensitiveContains(librarySearch) || $0.preview.localizedCaseInsensitiveContains(librarySearch)
+                    librarySearch.isEmpty || $0.title.localizedCaseInsensitiveContains(librarySearch) || $0.preview.localizedCaseInsensitiveContains(librarySearch) || $0.folder.localizedCaseInsensitiveContains(librarySearch)
                 }) { note in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(note.title).font(.system(size: 13))
-                        Text(note.preview).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
+                        Text(note.folder.isEmpty ? note.preview : note.preview.isEmpty ? note.folder : "\(note.folder) · \(note.preview)")
+                            .font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(7)
                     .sidebarRow(note.url) { open(note.url) }
                 }
@@ -520,15 +536,34 @@ struct ContentView: View {
     }
 
     private func refreshLibrary() {
-        guard let libraryFolder,
-              let urls = try? FileManager.default.contentsOfDirectory(at: libraryFolder, includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles]) else { return }
-        libraryNotes = urls.filter { $0.pathExtension == "md" }.compactMap { url in
+        guard let libraryFolder else { librarySubfolders = []; libraryNotes = []; return }
+        let contents = LibraryNote.scan(in: libraryFolder)
+        librarySubfolders = contents.folders
+        libraryNotes = contents.files.compactMap { url in
             guard let source = try? String(contentsOf: url, encoding: .utf8) else { return nil }
             let lines = FrontmatterBlock.body(of: source).split(separator: "\n", omittingEmptySubsequences: true)
             let description = FrontmatterBlock.locate(in: source).flatMap { try? OKFConcept(yaml: $0.yaml) }?.description
             let preview = description ?? lines.first { !$0.hasPrefix("#") && !$0.hasPrefix("---") }.map(String.init) ?? ""
-            return LibraryNote(url: url, title: MarkdownTextView.noteTitle(source, url: url), preview: preview)
+            let folder = LibraryNote.path(of: url.deletingLastPathComponent(), in: libraryFolder)
+            return LibraryNote(url: url, title: MarkdownTextView.noteTitle(source, url: url), preview: preview, folder: folder)
         }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
+    private func newDocument(in folder: URL) {
+        let panel = NSSavePanel()
+        panel.directoryURL = folder
+        panel.nameFieldStringValue = "Untitled.md"
+        panel.allowedContentTypes = [.markdown]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard !FileManager.default.fileExists(atPath: url.path), FileManager.default.createFile(atPath: url.path, contents: Data()) else {
+            let alert = NSAlert()
+            alert.messageText = "The document couldn’t be created."
+            alert.informativeText = "Choose another name or folder."
+            alert.runModal()
+            return
+        }
+        refreshLibrary()
+        open(url)
     }
 
     private var findPanel: some View {
@@ -1901,11 +1936,33 @@ private struct MenuRowStyle: ButtonStyle {
     }
 }
 
-private struct LibraryNote: Identifiable {
+struct LibraryNote: Identifiable {
     let url: URL
     let title: String
     let preview: String
+    let folder: String
     var id: URL { url }
+
+    static func path(of url: URL, in root: URL) -> String {
+        url.pathComponents.dropFirst(root.pathComponents.count).joined(separator: "/")
+    }
+
+    static func scan(in folder: URL) -> (folders: [URL], files: [URL]) {
+        let enumerator = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey],
+                                                        options: [.skipsHiddenFiles, .skipsPackageDescendants])
+        var folders: [URL] = []
+        var files: [URL] = []
+        while let url = enumerator?.nextObject() as? URL {
+            if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+                folders.append(url)
+                continue
+            }
+            guard ["md", "markdown", "mdx"].contains(url.pathExtension.lowercased()),
+                  (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
+            files.append(url)
+        }
+        return (folders.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }, files)
+    }
 }
 
 private struct WindowConfiguration: NSViewRepresentable {

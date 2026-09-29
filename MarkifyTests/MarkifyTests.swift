@@ -5,6 +5,21 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test func libraryListsSupportedFilesInSubfolders() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let nested = root.appendingPathComponent("Projects/Notes")
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("Empty"), withIntermediateDirectories: true)
+        for path in ["home.md", "Projects/plan.markdown", "Projects/Notes/page.mdx", "Projects/Notes/skip.txt", ".hidden.md"] {
+            try "# Note".write(to: root.appendingPathComponent(path), atomically: true, encoding: .utf8)
+        }
+        let contents = LibraryNote.scan(in: root)
+        #expect(Set(contents.files.map(\.lastPathComponent)) == ["home.md", "plan.markdown", "page.mdx"])
+        #expect(Set(contents.folders.map(\.lastPathComponent)) == ["Projects", "Notes", "Empty"])
+        #expect(LibraryNote.path(of: nested, in: root) == "Projects/Notes")
+    }
+
     @Test @MainActor func lensStylingPreservesMarkdownSource() {
         let source = "---\ntags: [essay]\n---\n# Title\n\n**Bold** and [link](https://example.com)\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n$$\n\\frac{1}{2}\n$$\n"
         let editor = NSTextView(usingTextLayoutManager: true)
