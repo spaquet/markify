@@ -1,6 +1,7 @@
 import AppKit
 import FoundationModels
 import Markdown
+import MarkifyMarkdown
 import OKFKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -36,6 +37,7 @@ struct ContentView: View {
     @AppStorage(Shortcuts.storageKey) private var shortcutOverrides = ""
     @State private var markdownLens = false
     @State private var sidebarOpen = false
+    @State private var linksOpen = false
     @State private var chromeVisible = true
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var selectionRect = CGRect.zero
@@ -136,6 +138,12 @@ struct ContentView: View {
     /// The document's OKF reading, when its frontmatter has a `type`.
     private var concept: OKFConcept? { conceptCache.concept(in: document.text) }
     private var aiAvailability: SystemLanguageModel.Availability { SystemLanguageModel.default.availability }
+    private var documentLinks: [DocumentLink] {
+        let model: MarkdownModel
+        if let editor = textView as? MarkdownTextView, editor.model.source == document.text { model = editor.model }
+        else { model = MarkdownModel(document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx") }
+        return DocumentLink.extract(from: model)
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -196,6 +204,22 @@ struct ContentView: View {
                         .transition(.move(edge: .leading))
                         .zIndex(2)
                 }
+                if linksOpen {
+                    Color.clear
+                        .contentShape(.rect)
+                        .onTapGesture { toggleLinks() }
+                        .zIndex(1)
+                    LinksPanel(links: documentLinks,
+                               documentURL: fileURL, bundleRoot: bundleRoot, documentText: document.text) { range in
+                        textView?.setSelectedRange(range)
+                        textView?.scrollRangeToVisible(range)
+                        textView?.window?.makeFirstResponder(textView)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+                    .padding(8)
+                    .transition(.move(edge: .trailing))
+                    .zIndex(2)
+                }
 
                 GlassEffectContainer {
                     HStack(spacing: 10) {
@@ -227,6 +251,14 @@ struct ContentView: View {
                             .offset(x: sidebarOpen ? 148 : 0)
                         Spacer()
                         HStack(spacing: 3) {
+                            Button { toggleLinks() } label: {
+                                Image(systemName: "sidebar.right")
+                                    .foregroundStyle(linksOpen ? accent : .primary)
+                                    .frame(width: 30, height: 30)
+                                    .contentShape(.circle)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(linksOpen ? "Hide Links" : "Show Links")
                             if aiAvailability != .unavailable(.deviceNotEligible) {
                                 Button { showAI.toggle(); showWritingMenu = false } label: { Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).frame(width: 30, height: 30).contentShape(.circle) }
                                     .buttonStyle(.plain)
@@ -343,7 +375,7 @@ struct ContentView: View {
                 if showComposer { return closeComposer() }
                 // Closing find from one of its fields hands the keyboard back to the page.
                 if findFocus != nil, let textView { textView.window?.makeFirstResponder(textView) }
-                showWritingMenu = false; showAI = false; showFind = false; sidebarOpen = false; closeBlockMenu()
+                showWritingMenu = false; showAI = false; showFind = false; sidebarOpen = false; linksOpen = false; closeBlockMenu()
             }
         }
         .frame(minWidth: 520, minHeight: 400)
@@ -1627,7 +1659,13 @@ struct ContentView: View {
         }
     }
     private func toggleSidebar() {
+        if !sidebarOpen { linksOpen = false }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { sidebarOpen.toggle() }
+        chromeVisible = true
+    }
+    private func toggleLinks() {
+        if !linksOpen { sidebarOpen = false }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { linksOpen.toggle() }
         chromeVisible = true
     }
     private func openFind(_ field: FindField) {

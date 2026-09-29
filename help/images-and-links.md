@@ -23,3 +23,11 @@ Images from the web (`https://…`) load only when **Settings › General › Lo
 - Type `[text](address)`, or select text and press ⌘K.
 - **⌘-click** a link to open it, in either lens. Links to other Markdown files open in Markify; web links open in your browser.
 - Drag a note from the library sidebar or the Finder into the page to insert a link to it. The link uses a path relative to your document, so it keeps working in other editors and on GitHub.
+
+### Links panel
+
+Click the right sidebar button in the toolbar to list links in document order. Click a link's title to jump to it, or choose **Open destination** to follow it. The panel shows an empty message when the document has no links.
+
+Expand **Summary** on a link to see a saved summary or request one with Apple Intelligence. For websites, **Fetch and summarize** contacts the site only when you click it. Local `.md`, `.markdown` and `.mdx` files use their readable text; websites must return a text or HTML page. Other destinations remain in the list without a summary. The panel shows progress or an error if a destination cannot be read, and explains when Apple Intelligence is unavailable.
+
+Summaries are saved by Markify outside your Markdown file. Local summaries show when their target changed and can be refreshed. Web summaries show their generation date and stay as saved until you choose **Refresh summary**.

@@ -1,10 +1,33 @@
 import AppKit
+import MarkifyMarkdown
 import OKFKit
 import SwiftUI
 import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test func linksPanelUsesMarkdownLinksInSourceOrder() {
+        let source = "[first](a.md) [again][one] <https://example.com> ![image](skip.png)\n\n[one]: a.md\n"
+        let links = DocumentLink.extract(from: MarkdownModel(source))
+        #expect(links.map(\.destination) == ["a.md", "a.md", "https://example.com"])
+        #expect(links.map(\.range.location) == links.map(\.range.location).sorted())
+    }
+
+    @Test @MainActor func linkSummaryCacheSurvivesReloadAndDetectsTargetChanges() throws {
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: location) }
+        let document = URL(fileURLWithPath: "/tmp/notes/current.md")
+        let key = try #require(LinkSummaryStore.key("other.md", from: document, root: nil))
+        let source = "# Original"
+        let saved = LinkSummary(text: "Original summary", fingerprint: LinkSummaryStore.fingerprint(source), date: .now)
+        let store = LinkSummaryStore(location: location)
+        try store.save(saved, for: key)
+        #expect(LinkSummaryStore(location: location).entries[key] == saved)
+        #expect(!LinkSummaryStore.isStale(saved, source: source))
+        #expect(LinkSummaryStore.isStale(saved, source: "# Changed"))
+        #expect(LinkSummaryStore.key("other.md#section", from: document, root: nil) == key)
+    }
+
     @Test func libraryListsSupportedFilesInSubfolders() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
