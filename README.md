@@ -32,6 +32,8 @@ A quiet Markdown editor for macOS 26. Write on one rendered page, press <kbd>⌘
 - **Apple Intelligence, on-device only**: Writing Tools, proofread, rewrite, generate at the caret (<kbd>⌘↩</kbd>) and whole-document actions. Nothing leaves your Mac.
 - **Plain files**: Documents are ordinary `.md` files with system autosave, versions and Recents.
 
+See [FEATURES.md](FEATURES.md) for the full implemented feature inventory.
+
 ## Screenshots
 
 <table>
