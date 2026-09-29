@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/library.html","name":"Library and find","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-26","description":"Use the library sidebar to reach open files and notes, and find and replace text in a document.","headline":"Library and find","inLanguage":"en","keywords":"library, sidebar, notes, folder, search, find, replace","url":"https://spaquet.github.io/markify/help/library.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/library.html","name":"Library and find","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-29","description":"Use the library sidebar to reach open files and notes, and find and replace text in a document.","headline":"Library and find","inLanguage":"en","keywords":"library, sidebar, notes, folder, search, find, replace","url":"https://spaquet.github.io/markify/help/library.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -50,6 +50,7 @@
 <li><a href="export.html">Export to HTML and PDF</a></li>
 <li><a href="knowledge.html">Knowledge bundles</a></li>
 <li><a href="settings.html">Settings</a></li>
+<li><a href="command-line.html">Command line</a></li>
 <li><a href="shortcuts.html">Keyboard shortcuts</a></li>
 <li><a href="updates.html">Install and update</a></li>
 <li><a href="../faq.html">Frequently asked questions</a></li>
@@ -65,10 +66,11 @@
 <ul>
 <li><strong>Open files</strong>: every document open in Markify, wherever it's saved.
 </li>
-<li><strong>Library notes</strong>: the Markdown files in your library folder, which is <code>Documents/Markify</code> unless you change it in <strong>Settings › General › Library location</strong>.
+<li><strong>Library notes</strong>: <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files in your library folder and its subfolders. Hidden files are skipped. The default folder is <code>Documents/Markify</code>.
 </li>
 </ul>
-<p>Type in the search field to filter by file name, title or text preview. Click a note to open it; drag it into the page to link to it.</p>
+<p>To use an existing notes folder, choose <strong>File › Open Folder…</strong> and select it. You can also choose the folder under <strong>Markify › Settings… › General › Library location</strong>. Open the Library with <strong>⌃⌘S</strong>. The sidebar shows subfolders, including empty ones; click <strong>+</strong> beside a folder to create a document there. Notes from subfolders show their folder path below the title.</p>
+<p>Type in the search field to filter by title, folder path or text preview. Click a note to open it; drag it into the page to link to it. Reopen the sidebar to pick up files added outside Markify.</p>
 <p>In an Open Knowledge Format bundle, the sidebar also groups concepts by folder, type or tag. See <a href="knowledge.html">Knowledge bundles</a>.</p>
 <h2 id="find-and-replace">Find and replace</h2>
 <div class="table"><table>
@@ -86,7 +88,7 @@
 <p>In the Rendered lens, Find matches the words you see and skips hidden syntax, so searching “important note” finds <code>**important** note</code>. Matches are highlighted in place.</p>
 <h2 id="word-count">Word count</h2>
 <p>The capsule at the bottom right of the window shows the word count and the current lens. Turn the count off with <strong>More (…) › Show Word Count</strong>, or hide the capsule in <strong>Settings › Appearance › Show status capsule</strong>.</p>
-<p class="edit">Updated 2026-09-26 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/library.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-09-29 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/library.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="images-and-links.html"><span>Previous</span>Images and links</a><a rel="next" href="intelligence.html"><span>Next</span>Apple Intelligence</a></nav>
 </main>

@@ -28,3 +28,5 @@ Remote images are included in the PDF only when **Settings › General › Load 
 ## Sharing the Markdown itself
 
 Your document is already a plain `.md` file. **More (…) › Share** sends the file itself with AirDrop, Mail, Messages and other services.
+
+For scripted HTML export, see [Command line](command-line.md).

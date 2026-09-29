@@ -23,3 +23,5 @@ A concept's type, status, staleness and trust appear as chips above its title. *
 - **More (…) › Knowledge** marks a concept verified, makes the current document a concept, adds a log entry, or rebuilds the bundle's index.
 
 Markify changes only the lines you edit. Settings › General › Knowledge sets the name recorded when you verify a concept and whether your edits are recorded in the concept's `generated` field. Learn more on the [Open Knowledge Format page](https://spaquet.github.io/markify/okf.html).
+
+To validate a whole bundle in Terminal or CI, see [Command line](command-line.md).

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://spaquet.github.io/markify/</loc><lastmod>2026-09-27</lastmod><priority>1.0</priority></url>
+<url><loc>https://spaquet.github.io/markify/</loc><lastmod>2026-09-29</lastmod><priority>1.0</priority></url>
 <url><loc>https://spaquet.github.io/markify/okf.html</loc><lastmod>2026-09-26</lastmod><priority>0.8</priority></url>
 <url><loc>https://spaquet.github.io/markify/help/</loc><lastmod>2026-09-26</lastmod><priority>0.8</priority></url>
 <url><loc>https://spaquet.github.io/markify/help/getting-started.html</loc><lastmod>2026-09-29</lastmod><priority>0.6</priority></url>
@@ -8,13 +8,14 @@
 <url><loc>https://spaquet.github.io/markify/help/formatting.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
 <url><loc>https://spaquet.github.io/markify/help/markdown.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
 <url><loc>https://spaquet.github.io/markify/help/images-and-links.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
-<url><loc>https://spaquet.github.io/markify/help/library.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
+<url><loc>https://spaquet.github.io/markify/help/library.html</loc><lastmod>2026-09-29</lastmod><priority>0.6</priority></url>
 <url><loc>https://spaquet.github.io/markify/help/intelligence.html</loc><lastmod>2026-09-29</lastmod><priority>0.6</priority></url>
-<url><loc>https://spaquet.github.io/markify/help/export.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
-<url><loc>https://spaquet.github.io/markify/help/knowledge.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
-<url><loc>https://spaquet.github.io/markify/help/settings.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
+<url><loc>https://spaquet.github.io/markify/help/export.html</loc><lastmod>2026-09-29</lastmod><priority>0.6</priority></url>
+<url><loc>https://spaquet.github.io/markify/help/knowledge.html</loc><lastmod>2026-09-29</lastmod><priority>0.6</priority></url>
+<url><loc>https://spaquet.github.io/markify/help/settings.html</loc><lastmod>2026-09-29</lastmod><priority>0.6</priority></url>
+<url><loc>https://spaquet.github.io/markify/help/command-line.html</loc><lastmod>2026-09-29</lastmod><priority>0.6</priority></url>
 <url><loc>https://spaquet.github.io/markify/help/shortcuts.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
 <url><loc>https://spaquet.github.io/markify/help/updates.html</loc><lastmod>2026-09-26</lastmod><priority>0.6</priority></url>
-<url><loc>https://spaquet.github.io/markify/faq.html</loc><lastmod>2026-09-27</lastmod><priority>0.8</priority></url>
+<url><loc>https://spaquet.github.io/markify/faq.html</loc><lastmod>2026-09-29</lastmod><priority>0.8</priority></url>
 <url><loc>https://spaquet.github.io/markify/legal.html</loc><lastmod>2026-09-27</lastmod><priority>0.6</priority></url>
 </urlset>
