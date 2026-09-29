@@ -4,7 +4,7 @@ import Testing
 
 /// Rendered-lens decorations are drawn by `MarkdownLayoutFragment` from attributes `NativeEditor.style` sets.
 @MainActor struct LayoutFragmentTests {
-    static func makeEditor(_ source: String, markdownLens: Bool = false) -> (NSWindow, MarkdownTextView) {
+    static func makeEditor(_ source: String, markdownLens: Bool = false, fileURL: URL? = nil) -> (NSWindow, MarkdownTextView) {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 1200), styleMask: [.titled], backing: .buffered, defer: false)
         let scroll = NSScrollView(frame: window.contentView!.bounds)
         let editor = MarkdownTextView(usingTextLayoutManager: true)
@@ -15,8 +15,9 @@ import Testing
         scroll.documentView = editor
         window.contentView = scroll
         editor.string = source
+        editor.documentURL = fileURL
         editor.rendered = !markdownLens
-        NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: markdownLens, findQuery: "", matchCase: false,
+        NativeEditor(text: .constant(source), fileURL: fileURL, columnWidth: 640, markdownLens: markdownLens, findQuery: "", matchCase: false,
                      selectedRange: .constant(NSRange(location: 0, length: 0)),
                      textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
             .style(editor)
@@ -33,6 +34,28 @@ import Testing
         #expect(!fragments.isEmpty)
         #expect(fragments.allSatisfy { $0 is MarkdownLayoutFragment })
         #expect((fragments.first as? MarkdownLayoutFragment)?.documentRange?.location == 0)
+    }
+
+    @Test(arguments: ["", "Intro\n\n"]) func blockImageDrawsFromDocumentFolder(prefix: String) throws {
+        let source = prefix + "![Hero](docs/images/social-preview.jpg)\n"
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let (window, editor) = Self.makeEditor(source, fileURL: root.appendingPathComponent("README.md"))
+        _ = window
+        let fragment = try #require(Self.fragment(editor, at: (prefix as NSString).length))
+        let (rep, _) = Self.render(fragment)
+        #expect(Self.inked(rep, in: CGRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh)) > 20_000)
+    }
+
+    @Test func htmlBlockDrawsLocalImageWithoutChangingSource() throws {
+        let source = "<p><img src=\"docs/images/social-preview.jpg\" alt=\"Hero\"></p>\n"
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let (window, editor) = Self.makeEditor(source, fileURL: root.appendingPathComponent("README.md"))
+        _ = window
+        #expect(editor.string == source)
+        #expect(editor.htmlBlocks[0] != nil)
+        let fragment = try #require(Self.fragment(editor, at: 0))
+        let (rep, _) = Self.render(fragment)
+        #expect(Self.inked(rep, in: CGRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh)) > 20_000)
     }
 
     static func fragment(_ editor: MarkdownTextView, at location: Int) -> MarkdownLayoutFragment? {

@@ -30,7 +30,7 @@
 - CommonMark rules apply as cmark reads them: `text` over `---` is a setext heading, text indented four spaces is code, `~~~` fences are code, unclosed fences run to the end, nested task items get checkboxes, and an ordered list not starting at 1 cannot interrupt a paragraph. `/Divider` inserts a blank line first when text sits right above it, so it never makes a heading.
 - Tables follow GFM: outer pipes are optional, a pipe inside a code span still splits the cell (write `\|`), and cells past the header's count are dropped.
 - Inline math follows Pandoc's dollar rules: no space inside either `$`, and no digit right after the closing one, so "$5 and $10" stays text.
-- The Markdown lens follows the design: all syntax in ink3 (including task boxes and table pipes), link and image destinations in accent, link text in ink. HTML blocks are dimmed in both lenses.
+- The Markdown lens follows the design: all syntax in ink3 (including task boxes and table pipes), link and image destinations in accent, link text in ink. The Rendered lens draws HTML blocks and inline images while keeping their source in the same text storage; the Markdown lens shows the HTML source.
 - Hidden markers kern each character by its own advance; a single kern could not cancel a long marker and left gaps after links, emphasis and code.
 - ⌘-click on a footnote reference selects its definition; ⌘-click on the definition's label returns to that reference, or to the first one when edits moved it.
 - Dropping a note from the sidebar or Finder into the page inserts `[title](path)`: relative to the document, bundle-absolute (`/…`) when both notes are in its OKF bundle, absolute while the document is unsaved. There is no Copy Markdown Link menu.

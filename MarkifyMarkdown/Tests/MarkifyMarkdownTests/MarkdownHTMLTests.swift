@@ -42,6 +42,14 @@ private func html(_ source: String, mdx: Bool = false, options: MarkdownHTML.Opt
         #expect(out.contains("src=\"data:i.png\""))
     }
 
+    @Test func rawHTMLUsesImageAndLinkHooks() {
+        let options = MarkdownHTML.Options(image: { "data:" + $0 }, link: { "../" + $0 })
+        let out = html("<p><a href=\"page.md\"><img src='images/pic.png' alt='Photo'></a></p>\n\n# <img src=\"icon.png\"> Title\n", options: options)
+        #expect(out.contains("href=\"../page.md\""))
+        #expect(out.contains("src='data:images/pic.png'"))
+        #expect(out.contains("src=\"data:icon.png\""))
+    }
+
     @Test func tightAndLooseLists() {
         let tight = html("- a\n- b\n")
         #expect(tight.contains("<li>a\n</li>"))

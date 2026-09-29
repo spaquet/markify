@@ -29,7 +29,7 @@ Markify reads Markdown the way GitHub does: it follows [CommonMark](https://comm
 - **Code blocks**: fence with three backticks or tildes, and name the language after the opening fence for syntax colors. Indented code also works.
 - **Tables**: GFM pipe tables, with `:--`, `:-:` and `--:` in the separator row to align columns.
 - **Dividers**: `---`, `***` or `___` on a line of their own.
-- **HTML**: HTML blocks and inline tags are kept as written.
+- **HTML**: HTML blocks and inline images display in the Rendered lens. The Markdown lens shows the original tags, which remain editable.
 
 ## Callouts
 
