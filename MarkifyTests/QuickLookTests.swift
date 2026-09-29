@@ -4,7 +4,7 @@ import Testing
 struct QuickLookTests {
     @Test func previewExtensionIsBundled() throws {
         let plugins = try #require(Bundle.main.builtInPlugInsURL)
-        let bundle = try #require(Bundle(url: plugins.appendingPathComponent("QuickLook.appex")))
+        let bundle = try #require(Bundle(url: plugins.appendingPathComponent("MarkifyQuickLook.appex")))
         let info = try #require(bundle.infoDictionary?["NSExtension"] as? [String: Any])
         let attributes = try #require(info["NSExtensionAttributes"] as? [String: Any])
         #expect(info["NSExtensionPointIdentifier"] as? String == "com.apple.quicklook.preview")

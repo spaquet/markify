@@ -12,7 +12,7 @@
 		76A591142DC953870033A6AC /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 76A591132DC953870033A6AC /* Markdown */; };
 		A1F9C0012DC953870033A6AC /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
 		5B0C0A012E90000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 5B0C0A022E90000000000002 /* Sparkle */; };
-		B10000000000000000000001 /* QuickLook.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* QuickLook.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000001 /* MarkifyQuickLook.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* MarkifyQuickLook.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B10000000000000000000003 /* MarkifyMarkdown in QuickLook Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
 		B10000000000000000000004 /* SwaTexRender in QuickLook Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
 		B10000000000000000000005 /* MathSVG.swift in QuickLook Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* MathSVG.swift */; };
@@ -41,7 +41,7 @@
 			containerPortal = 76A590DF2DC952970033A6AC /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = B1000000000000000000000E;
-			remoteInfo = QuickLook;
+			remoteInfo = MarkifyQuickLook;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -49,7 +49,7 @@
 		76A590E72DC952970033A6AC /* Markify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Markify.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76A590F52DC952980033A6AC /* MarkifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		76A590FF2DC952980033A6AC /* MarkifyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkifyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B10000000000000000000002 /* QuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000002 /* MarkifyQuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MarkifyQuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000006 /* MathSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/MathSVG.swift; sourceTree = SOURCE_ROOT; };
 		B10000000000000000000008 /* Mermaid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/Mermaid.swift; sourceTree = SOURCE_ROOT; };
 		B1000000000000000000000A /* mermaid.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Markify/Resources/Mermaid/mermaid.html; sourceTree = SOURCE_ROOT; };
@@ -109,7 +109,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B10000000000000000000001 /* QuickLook.appex in Embed App Extensions */,
+				B10000000000000000000001 /* MarkifyQuickLook.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -170,7 +170,7 @@
 			isa = PBXGroup;
 			children = (
 				76A590E72DC952970033A6AC /* Markify.app */,
-				B10000000000000000000002 /* QuickLook.appex */,
+				B10000000000000000000002 /* MarkifyQuickLook.appex */,
 				76A590F52DC952980033A6AC /* MarkifyTests.xctest */,
 				76A590FF2DC952980033A6AC /* MarkifyUITests.xctest */,
 			);
@@ -255,7 +255,7 @@
 			productReference = 76A590FF2DC952980033A6AC /* MarkifyUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		B1000000000000000000000E /* QuickLook */ = {
+		B1000000000000000000000E /* MarkifyQuickLook */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B10000000000000000000014 /* Build configuration list for PBXNativeTarget "QuickLook" */;
 			buildPhases = (
@@ -270,13 +270,13 @@
 			fileSystemSynchronizedGroups = (
 				B10000000000000000000010 /* QuickLook */,
 			);
-			name = QuickLook;
+			name = MarkifyQuickLook;
 			packageProductDependencies = (
 				0AF0C0062E80000000000006 /* MarkifyMarkdown */,
 				A1F9C0022DC953870033A6AC /* SwaTexRender */,
 			);
-			productName = QuickLook;
-			productReference = B10000000000000000000002 /* QuickLook.appex */;
+			productName = MarkifyQuickLook;
+			productReference = B10000000000000000000002 /* MarkifyQuickLook.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
