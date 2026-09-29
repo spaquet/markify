@@ -139,7 +139,7 @@ struct SettingsView: View {
         guard let url = libraryURL else { return "~/Documents/Markify" }
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        let count = ((try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)) ?? []).filter { $0.pathExtension == "md" }.count
+        let count = LibraryNote.scan(in: url).files.count
         let path = (url.path as NSString).abbreviatingWithTildeInPath
         return "\(path) · \(count) \(count == 1 ? "note" : "notes")"
     }

@@ -11,7 +11,7 @@ Choose **Markify › Settings…** (⌘,).
 ## General
 
 - **New documents are saved to** your library or a place you choose each time.
-- **Library location** is the folder the sidebar lists.
+- **Library location** chooses the folder whose `.md`, `.markdown` and `.mdx` files and subfolders appear in the sidebar.
 - **Save pasted images to** `./assets`, `./images` or the document's folder.
 - **Load remote images** from the web.
 - **On launch**, reopen your last documents, start a new one, or show the library.
