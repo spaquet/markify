@@ -19,6 +19,7 @@
 - [Export to HTML and PDF](https://spaquet.github.io/markify/help/export.html): Export a Markdown document as a self-contained HTML page or a paginated PDF.
 - [Knowledge bundles](https://spaquet.github.io/markify/help/knowledge.html): Open, browse and maintain Open Knowledge Format (OKF) bundles of Markdown concepts in Markify.
 - [Settings](https://spaquet.github.io/markify/help/settings.html): Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.
+- [Command line](https://spaquet.github.io/markify/help/command-line.html): Validate OKF bundles and export Markdown to HTML from Terminal or a script.
 - [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.html): Every keyboard shortcut in Markify, and how to change them.
 - [Install and update](https://spaquet.github.io/markify/help/updates.html): Download and install Markify on your Mac, open it the first time, and keep it up to date.
 

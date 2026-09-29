@@ -58,3 +58,9 @@ This is an inventory of features in the current Markify source tree. See the [us
 - Preview `.md`, `.markdown` and `.mdx` files in Finder with Space using a formatted Quick Look extension. Local images, math and Mermaid render in the preview; MDX code stays readable.
 - Customize fonts, line width, page color, code theme, app appearance, accent, floating control style and status capsule. Optionally fade the toolbar while typing.
 - Make Markify the default Markdown app; use the built-in Welcome tour and Help Book; check for signed updates automatically or on demand.
+
+## Command line
+
+- Run the bundled `markify` executable from Terminal without opening an editor window; `--help` lists commands and exit status.
+- Validate an OKF bundle with `markify check BUNDLE`, showing file paths and severity for each finding. Error findings fail the command; warnings and information do not.
+- Export a `.md`, `.markdown` or `.mdx` file to a self-contained HTML page with `markify export FILE --html --output OUTPUT`, embedding local images and adjusting local links for the destination.

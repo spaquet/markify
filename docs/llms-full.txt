@@ -25,6 +25,7 @@ URL: https://spaquet.github.io/markify/help/getting-started.html
 
 - **File › New** (⌘N) creates an untitled document. Settings › General › *New documents are saved to* decides whether it saves into your library folder or asks each time.
 - **File › Open…** (⌘O) opens any `.md`, `.markdown` or `.mdx` file on your Mac. You can also drag a file onto the Markify icon.
+- **File › Open Folder…** chooses a folder for the Library sidebar. Use this for a folder of notes; the standard **Open…** command accepts individual files.
 - **File › Open Recent** lists the files you used lately.
 
 Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
@@ -260,9 +261,11 @@ URL: https://spaquet.github.io/markify/help/library.html
 Press **⌃⌘S** or click the sidebar button to slide the library over the page. It lists:
 
 - **Open files**: every document open in Markify, wherever it's saved.
-- **Library notes**: the Markdown files in your library folder, which is `Documents/Markify` unless you change it in **Settings › General › Library location**.
+- **Library notes**: `.md`, `.markdown` and `.mdx` files in your library folder and its subfolders. Hidden files are skipped. The default folder is `Documents/Markify`.
 
-Type in the search field to filter by file name, title or text preview. Click a note to open it; drag it into the page to link to it.
+To use an existing notes folder, choose **File › Open Folder…** and select it. You can also choose the folder under **Markify › Settings… › General › Library location**. Open the Library with **⌃⌘S**. The sidebar shows subfolders, including empty ones; click **+** beside a folder to create a document there. Notes from subfolders show their folder path below the title.
+
+Type in the search field to filter by title, folder path or text preview. Click a note to open it; drag it into the page to link to it. Reopen the sidebar to pick up files added outside Markify.
 
 In an Open Knowledge Format bundle, the sidebar also groups concepts by folder, type or tag. See [Knowledge bundles](https://spaquet.github.io/markify/help/knowledge.html).
 
@@ -350,6 +353,8 @@ Remote images are included in the PDF only when **Settings › General › Load 
 
 Your document is already a plain `.md` file. **More (…) › Share** sends the file itself with AirDrop, Mail, Messages and other services.
 
+For scripted HTML export, see [Command line](https://spaquet.github.io/markify/help/command-line.html).
+
 ---
 
 URL: https://spaquet.github.io/markify/help/knowledge.html
@@ -374,6 +379,8 @@ A concept's type, status, staleness and trust appear as chips above its title. *
 
 Markify changes only the lines you edit. Settings › General › Knowledge sets the name recorded when you verify a concept and whether your edits are recorded in the concept's `generated` field. Learn more on the [Open Knowledge Format page](https://spaquet.github.io/markify/okf.html).
 
+To validate a whole bundle in Terminal or CI, see [Command line](https://spaquet.github.io/markify/help/command-line.html).
+
 ---
 
 URL: https://spaquet.github.io/markify/help/settings.html
@@ -385,7 +392,7 @@ Choose **Markify › Settings…** (⌘,).
 ## General
 
 - **New documents are saved to** your library or a place you choose each time.
-- **Library location** is the folder the sidebar lists.
+- **Library location** chooses the folder whose `.md`, `.markdown` and `.mdx` files and subfolders appear in the sidebar.
 - **Save pasted images to** `./assets`, `./images` or the document's folder.
 - **Load remote images** from the web.
 - **On launch**, reopen your last documents, start a new one, or show the library.
@@ -410,6 +417,49 @@ Turn Writing Tools in the format bar, generating at the caret, and title and tag
 ## Shortcuts
 
 Double-click a shortcut to record a new one. See [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.html).
+
+---
+
+URL: https://spaquet.github.io/markify/help/command-line.html
+
+# Command line
+
+Markify includes a separate `markify` command for scripts. It runs without opening an editor window. After installing the app, find it at `/Applications/Markify.app/Contents/MacOS/markify`. If you installed Markify elsewhere, use the matching path inside that app.
+
+To call it as `markify` from any folder, link it into a directory on your `PATH`:
+
+```sh
+ln -s /Applications/Markify.app/Contents/MacOS/markify /usr/local/bin/markify
+markify --help
+```
+
+If you build from source, run `swift build -c release --package-path MarkifyCLI`; the executable is in `MarkifyCLI/.build/release/markify`.
+
+## Validate a knowledge bundle
+
+```sh
+markify check path/to/bundle
+```
+
+The command reads the folder without changing it. Each finding includes its file path, severity and message. It exits with status 0 if there are no errors. Warnings and information are printed but do not fail the command. Errors, unreadable files and invalid paths return a nonzero status.
+
+For a CI job, add a step such as:
+
+```sh
+/Applications/Markify.app/Contents/MacOS/markify check knowledge/
+```
+
+## Export HTML
+
+```sh
+markify export notes/example.md --html --output public/example.html
+```
+
+The output folder must exist. The command writes a self-contained HTML page, embeds local images, and rewrites links to other files relative to the output page. It accepts `.md`, `.markdown` and `.mdx` files. It leaves the source file unchanged and reports read or write failures on stderr with a nonzero status.
+
+The CLI renders math as LaTeX code and Mermaid fences as code blocks. Use the app's HTML export when you need their SVG rendering or syntax-colored code.
+
+Run `markify --help` for the full syntax and exit status. To open a file in the editor from Terminal, use `open -a Markify file.md`.
 
 ---
 
@@ -556,7 +606,7 @@ CommonMark and GitHub Flavored Markdown (tables, task lists, strikethrough, auto
 
 ### Can I open Obsidian or other notes folders?
 
-Yes. Open any file with ⌘O, or set your notes folder as the library location in Settings. Links written as `[text](https://spaquet.github.io/markify/help/file.html)` work; wiki links such as `[[note]]` show as plain text.
+Yes. Choose **File › Open Folder…** or set your notes folder under **Settings › General › Library location**. The Library sidebar lists `.md`, `.markdown` and `.mdx` files in that folder and its subfolders. Links written as `[text](https://spaquet.github.io/markify/help/file.html)` work; wiki links such as `[[note]]` show as plain text.
 
 ### How do I export to PDF or HTML?
 

@@ -70,6 +70,21 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             clean build
 
+      - name: Build and bundle markify CLI
+        run: |
+          CLI_BINARIES=()
+          for ARCH in ${{ matrix.archs }}; do
+            swift build --package-path MarkifyCLI -c release --arch "$ARCH" --scratch-path "cli-build-$ARCH"
+            CLI_BINARIES+=("$(swift build --package-path MarkifyCLI -c release --arch "$ARCH" --scratch-path "cli-build-$ARCH" --show-bin-path)/markify")
+          done
+          APP_CLI="${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app/Contents/MacOS/markify"
+          if [ "${#CLI_BINARIES[@]}" -eq 1 ]; then
+            cp "${CLI_BINARIES[0]}" "$APP_CLI"
+          else
+            lipo -create "${CLI_BINARIES[@]}" -output "$APP_CLI"
+          fi
+          chmod +x "$APP_CLI"
+
       # The build is only linker-signed, which `codesign --verify` and Sparkle
       # reject. Sign the bundle ad hoc, without entitlements, so Sparkle can
       # check the update's signature; the app stays unsandboxed as before.
