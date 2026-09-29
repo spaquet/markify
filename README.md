@@ -31,6 +31,7 @@ A quiet Markdown editor for macOS 26. Write on one rendered page, press <kbd>⌘
 - **Focus**: The toolbar fades while you type and comes back when you move the pointer.
 - **Apple Intelligence, on-device only**: Writing Tools, proofread, rewrite, generate at the caret (<kbd>⌘↩</kbd>) and whole-document actions. Nothing leaves your Mac.
 - **Plain files**: Documents are ordinary `.md` files with system autosave, versions and Recents.
+- **Finder Quick Look**: Press Space on a Markdown file to preview formatted text, local images, math and diagrams without opening Markify.
 
 See [FEATURES.md](FEATURES.md) for the full implemented feature inventory.
 
