@@ -259,7 +259,7 @@ Standard SwiftUI `Settings` scene, 780px wide.
 
 ### 2c — Rewrite result
 - The rewritten text replaces the original in place, wrapped in the AI edge (radius 14, padding 8×14, outset −14px horizontally).
-- A review capsule sits below it (38px): "✦ Rewrite · Concise | Try Again | Compare | Revert | [Accept ⌘↩]".
+- A review capsule sits below it (38px): "✦ Rewrite · Concise | Try Again | Compare | Discard Rewrite | [Accept ⌘↩]".
 - **Compare** toggles the original on and off. Esc reverts. Typing outside the block accepts.
 
 ### 2d — Generate at caret
