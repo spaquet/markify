@@ -392,6 +392,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willBeginSheetNotification)) { notification in
             prepareSavePanel(notification.object as? NSWindow)
         }
+        .onReceive(NotificationCenter.default.publisher(for: MarkifyAppDelegate.libraryFolderOpened)) { notification in
+            if notification.object as? NSWindow === textView?.window { sidebarOpen = true }
+        }
         .onChange(of: libraryBookmark) { _, _ in loadLibrary() }
         .onChange(of: selectedRange) { _, range in
             formatBarTask?.cancel()

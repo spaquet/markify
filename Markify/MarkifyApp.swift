@@ -6,6 +6,7 @@ import CryptoKit
 final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     /// Set at launch when Settings › On launch is "Library"; the first window consumes it to open the sidebar.
     static var showsLibraryOnNextWindow = false
+    static let libraryFolderOpened = Notification.Name("MarkifyLibraryFolderOpened")
     private static let openDocumentsKey = "openDocumentBookmarks"
     /// Tests launch the app as their host, next to any Markify the developer has open.
     private static let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
@@ -111,6 +112,24 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    static func openLibraryFolder() {
+        let window = NSApp.keyWindow
+        let panel = NSOpenPanel()
+        panel.message = "Choose a folder to show in the Library sidebar."
+        panel.prompt = "Open Folder"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        guard panel.runModal() == .OK, let url = panel.url,
+              let bookmark = try? url.bookmarkData(options: .withSecurityScope) else { return }
+        UserDefaults.standard.set(bookmark, forKey: "libraryBookmark")
+        if let window {
+            NotificationCenter.default.post(name: libraryFolderOpened, object: window)
+        } else {
+            showsLibraryOnNextWindow = true
+            NSDocumentController.shared.newDocument(nil)
+        }
+    }
+
     /// Writes the tour into `folder` unless the user has made it their own, and returns its file.
     static func installWelcome(in folder: URL, bundle: Bundle = .main) throws -> URL {
         guard let bundled = bundle.url(forResource: "Welcome", withExtension: "md") else { throw CocoaError(.fileNoSuchFile) }
@@ -165,6 +184,7 @@ struct MarkifyApp: App {
                 CheckForUpdatesButton()
             }
             CommandGroup(after: .newItem) {
+                Button("Open Folder…") { MarkifyAppDelegate.openLibraryFolder() }
                 Button("Open Bundle Folder…") { BundleAccess.chooseAndOpen() }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
             }

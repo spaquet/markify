@@ -46,7 +46,7 @@ CommonMark and GitHub Flavored Markdown (tables, task lists, strikethrough, auto
 
 ### Can I open Obsidian or other notes folders?
 
-Yes. Open any file with ⌘O, or choose your notes folder under **Settings › General › Library location**. The Library sidebar lists `.md`, `.markdown` and `.mdx` files in that folder and its subfolders. Links written as `[text](file.md)` work; wiki links such as `[[note]]` show as plain text.
+Yes. Choose **File › Open Folder…** or set your notes folder under **Settings › General › Library location**. The Library sidebar lists `.md`, `.markdown` and `.mdx` files in that folder and its subfolders. Links written as `[text](file.md)` work; wiki links such as `[[note]]` show as plain text.
 
 ### How do I export to PDF or HTML?
 

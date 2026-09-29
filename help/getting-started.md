@@ -10,6 +10,7 @@ keywords: new document, open, save, library, window, welcome
 
 - **File › New** (⌘N) creates an untitled document. Settings › General › *New documents are saved to* decides whether it saves into your library folder or asks each time.
 - **File › Open…** (⌘O) opens any `.md`, `.markdown` or `.mdx` file on your Mac. You can also drag a file onto the Markify icon.
+- **File › Open Folder…** chooses a folder for the Library sidebar. Use this for a folder of notes; the standard **Open…** command accepts individual files.
 - **File › Open Recent** lists the files you used lately.
 
 Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
