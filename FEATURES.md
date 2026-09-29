@@ -31,6 +31,7 @@ This is an inventory of features in the current Markify source tree. See the [us
 - Paste or drop images into a configurable folder beside the document and insert relative Markdown image paths. Full-line images render at page width; inline images appear as chips with hover previews.
 - Optionally load remote images. Open web links in the browser and Markdown file links in Markify with ⌘-click.
 - Drag notes from Finder or the library into a document to insert relative links.
+- Open the right Links panel to browse links in document order, jump to an occurrence, open its destination, and request an Apple Intelligence summary of a local Markdown file or web page. Summaries persist outside the document and show when a local target changes.
 - Open a folder into the Library sidebar; browse its subfolders and all `.md`, `.markdown` and `.mdx` notes, create a document in any subfolder, and filter by title, folder path or text preview.
 - Share the original Markdown file through the macOS share sheet.
 

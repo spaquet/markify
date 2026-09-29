@@ -55,6 +55,7 @@ struct NativeEditor: NSViewRepresentable {
         scroll.hasVerticalScroller = true
         scroll.borderType = .noBorder
         let editor = MarkdownTextView(usingTextLayoutManager: true)
+        MarkdownTextView.openEditors.add(editor)
         editor.documentURL = fileURL
         editor.bundleRoot = bundleRoot
         editor.linkTargets = linkTargets
@@ -604,6 +605,7 @@ struct NativeEditor: NSViewRepresentable {
 }
 
 final class MarkdownTextView: NSTextView {
+    static let openEditors = NSHashTable<MarkdownTextView>.weakObjects()
     /// Held strongly: the layout manager keeps its delegate weakly.
     private let layoutDelegate = MarkdownLayoutDelegate()
 
