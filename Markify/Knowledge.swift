@@ -69,7 +69,7 @@ struct KnowledgeState: Sendable {
         }
         let manager = FileManager.default
         let folder = url.deletingLastPathComponent().path
-        // Outside the sandbox's reach a file reads as missing, so only offer to create where the folder is readable.
+        // Offer creation when the containing folder is readable or does not exist yet.
         let reachable = manager.isReadableFile(atPath: folder) || !manager.fileExists(atPath: folder)
         var isDirectory: ObjCBool = false
         if manager.fileExists(atPath: url.path, isDirectory: &isDirectory) {
@@ -82,7 +82,8 @@ struct KnowledgeState: Sendable {
                 NSWorkspace.shared.open(url)
             }
         } else if !reachable {
-            requestAccess(to: url)
+            if ["md", "mdx", "markdown"].contains(url.pathExtension.lowercased()) { open(url) }
+            else { NSWorkspace.shared.open(url) }
         } else if url.pathExtension.lowercased() == "md" {
             offerToCreate(url, title: title)
         } else {
@@ -92,19 +93,8 @@ struct KnowledgeState: Sendable {
 
     static func open(_ url: URL) {
         NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, error in
-            // The sandbox only reaches files the person picked or the library; ask for this one.
-            if error != nil { Task { @MainActor in requestAccess(to: url) } }
+            if let error { Task { @MainActor in NSApp.presentError(error) } }
         }
-    }
-
-    private static func requestAccess(to url: URL) {
-        let panel = NSOpenPanel()
-        panel.message = "Markify needs your permission to open “\(url.lastPathComponent)”."
-        panel.prompt = "Open"
-        panel.directoryURL = url.deletingLastPathComponent()
-        panel.canChooseDirectories = false
-        guard panel.runModal() == .OK, let chosen = panel.url else { return }
-        NSDocumentController.shared.openDocument(withContentsOf: chosen, display: true) { _, _, _ in }
     }
 
     private static func offerToCreate(_ url: URL, title: String?) {
@@ -419,7 +409,7 @@ private struct IssueRow: View {
     }
 }
 
-/// Folders opened with Knowledge › Open Bundle Folder…, remembered as security-scoped bookmarks so the sandbox can reach every file in them.
+/// Folders opened with Knowledge › Open Bundle Folder…, remembered with bookmarks for later launches.
 @MainActor enum BundleAccess {
     private static let key = "okfBundleBookmarks"
     private(set) static var folders: [URL] = []

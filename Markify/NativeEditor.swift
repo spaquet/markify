@@ -4,6 +4,7 @@ import OKFKit
 import SwaTex
 import SwaTexRender
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum SlashKey { case up, down, insert, dismiss }
 
@@ -182,6 +183,8 @@ struct NativeEditor: NSViewRepresentable {
         var boxes: [(range: NSRange, fill: MarkdownBlockFill)] = []
         let textView = editor as? MarkdownTextView
         textView?.inlineFormulas = [:]
+        textView?.htmlBlocks = [:]
+        textView?.inlineHTMLImages = [:]
         textView?.styledEditedFormula = textView?.editedFormula
         let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         /// Markers are styled after every font, since the hidden ones measure their own width.
@@ -259,6 +262,22 @@ struct NativeEditor: NSViewRepresentable {
                     guard let color = theme.code(kind) else { continue }
                     storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.location, length: token.length))
                 }
+            case .htmlBlock where !markdownLens && textView != nil:
+                if let rendered = textView?.renderHTML(source.substring(with: span.range), width: columnWidth) {
+                    textView?.htmlBlocks[span.range.location] = rendered
+                    storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear], range: span.range)
+                    let collapsed = NSMutableParagraphStyle()
+                    collapsed.minimumLineHeight = 0.01
+                    collapsed.maximumLineHeight = 0.01
+                    storage.addAttribute(.paragraphStyle, value: collapsed, range: span.range)
+                    let first = NSMutableParagraphStyle()
+                    first.minimumLineHeight = rendered.height
+                    first.maximumLineHeight = rendered.height
+                    first.paragraphSpacing = 12 * theme.scale
+                    storage.addAttribute(.paragraphStyle, value: first, range: source.lineRange(for: NSRange(location: span.range.location, length: 0)))
+                } else {
+                    storage.addAttribute(.foregroundColor, value: dim, range: span.range)
+                }
             case .htmlBlock, .mdxBlock:
                 storage.addAttribute(.foregroundColor, value: dim, range: span.range)
             case .footnoteDefinition(_, let label):
@@ -330,6 +349,14 @@ struct NativeEditor: NSViewRepresentable {
                 }
             case .escape:
                 hide(span.markers)
+            case .inlineHTML where !markdownLens:
+                if source.substring(with: span.range).lowercased().hasPrefix("<img"),
+                   let path = MarkdownTextView.htmlAttribute("src", in: source.substring(with: span.range)) {
+                    let width = CGFloat(Double(MarkdownTextView.htmlAttribute("width", in: source.substring(with: span.range)) ?? "") ?? 24)
+                    let font = storage.attribute(.font, at: span.range.location, effectiveRange: nil) as? NSFont ?? base
+                    textView?.inlineHTMLImages[span.range.location] = (path, width * theme.scale, font)
+                }
+                hide([span.range])
             case .image(_, false) where !markdownLens:
                 // Drawn as a chip by MarkdownTextView; the alt text keeps its width but not its ink.
                 storage.addAttributes([.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.clear], range: span.content)
@@ -348,7 +375,13 @@ struct NativeEditor: NSViewRepresentable {
                 hide([span.range])
                 let style = NSMutableParagraphStyle()
                 style.alignment = .center
-                style.paragraphSpacingBefore = 270
+                // TextKit ignores paragraphSpacingBefore on the document's first paragraph.
+                if span.range.location == 0 {
+                    style.minimumLineHeight = 290
+                    style.maximumLineHeight = 290
+                } else {
+                    style.paragraphSpacingBefore = 270
+                }
                 style.paragraphSpacing = 34
                 storage.addAttribute(.paragraphStyle, value: style, range: span.range)
             case .footnoteReference(let label):
@@ -367,6 +400,13 @@ struct NativeEditor: NSViewRepresentable {
         }
 
         for range in hidden { marker(range) }
+        if let textView {
+            for (location, image) in textView.inlineHTMLImages {
+                let first = source.rangeOfComposedCharacterSequence(at: location)
+                let advance = (source.substring(with: first) as NSString).size(withAttributes: [.font: image.font]).width
+                storage.addAttributes([.font: image.font, .foregroundColor: NSColor.clear, .kern: image.width - advance], range: first)
+            }
+        }
         // An inline image reads as a chip: its hidden `![` leaves room for the photo symbol, its hidden destination for the end padding.
         // A kern on the first character of a run is applied in full, so the room goes there.
         for span in chips {
@@ -1023,6 +1063,58 @@ final class MarkdownTextView: NSTextView {
     /// Draws bullets, list numbers, checkboxes, images, math and chips; `dirtyRect` is in this view's coordinates.
     private var anchorCache: (version: Int, mdx: Bool, anchors: [(location: Int, span: MarkdownModel.Span)])?
 
+    struct HTMLBlockRender {
+        let text: NSAttributedString
+        let scale: CGFloat
+        let height: CGFloat
+    }
+    var htmlBlocks: [Int: HTMLBlockRender] = [:]
+    var inlineHTMLImages: [Int: (path: String, width: CGFloat, font: NSFont)] = [:]
+
+    static func htmlAttribute(_ name: String, in html: String) -> String? {
+        guard let regex = try? NSRegularExpression(pattern: "(?<=\\s)" + NSRegularExpression.escapedPattern(for: name) + #"\s*=\s*(["'])(.*?)\1"#, options: .caseInsensitive),
+              let match = regex.firstMatch(in: html, range: NSRange(location: 0, length: (html as NSString).length)) else { return nil }
+        return (html as NSString).substring(with: match.range(at: 2))
+    }
+
+    func renderHTML(_ raw: String, width: CGFloat) -> HTMLBlockRender? {
+        let imageTag = try? NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
+        let html = NSMutableString(string: raw)
+        for match in (imageTag?.matches(in: raw, range: NSRange(location: 0, length: (raw as NSString).length)) ?? []).reversed() {
+            let tag = (raw as NSString).substring(with: match.range)
+            guard let path = Self.htmlAttribute("src", in: tag) else { continue }
+            let replacement: String
+            switch image(for: path) {
+            case .image(let image) where ["http", "https"].contains(URL(string: path)?.scheme?.lowercased() ?? ""):
+                replacement = image.tiffRepresentation.map { "data:image/tiff;base64," + $0.base64EncodedString() } ?? ""
+            case .image:
+                let url = Self.imageURL(path, document: documentURL)
+                if let data = try? Data(contentsOf: url),
+                   let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType {
+                    replacement = "data:\(mime);base64," + data.base64EncodedString()
+                } else {
+                    replacement = ""
+                }
+            case .placeholder(let message):
+                html.replaceCharacters(in: match.range, with: "<span>\(MarkdownHTML.escape(message))</span>")
+                continue
+            }
+            let updated = tag.replacingOccurrences(of: path, with: replacement)
+            html.replaceCharacters(in: match.range, with: updated)
+        }
+        guard let parsed = try? NSAttributedString(data: Data((html as String).utf8), options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil),
+              parsed.length > 0 else { return nil }
+        let text = NSMutableAttributedString(attributedString: parsed)
+        let all = NSRange(location: 0, length: text.length)
+        text.addAttribute(.foregroundColor, value: NSColor.labelColor, range: all)
+        var links: [NSRange] = []
+        text.enumerateAttribute(.link, in: all) { link, range, _ in if link != nil { links.append(range) } }
+        for range in links { text.addAttribute(.foregroundColor, value: theme.accent, range: range) }
+        let size = text.size()
+        let scale = min(1, width / max(size.width, 1))
+        return HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
+    }
+
     /// Where each decoration is drawn from, sorted: the character whose layout fragment draws it.
     private var decorationAnchors: [(location: Int, span: MarkdownModel.Span)] {
         let model = self.model
@@ -1033,6 +1125,7 @@ final class MarkdownTextView: NSTextView {
             switch span.kind {
             case .image(_, true): anchors.append((span.content.location, span))
             case .image(_, false), .mathBlock, .inlineMath, .frontmatter: anchors.append((span.range.location, span))
+            case .htmlBlock, .inlineHTML: anchors.append((span.range.location, span))
             case .callout(_, let token): anchors.append((token.location, span))
             case .codeBlock(let language?, true):
                 anchors.append((span.range.location, span))
@@ -1076,6 +1169,7 @@ final class MarkdownTextView: NSTextView {
         drawingSpans = spans
         defer { drawingSpans = [] }
         drawImages(in: .infinite)
+        drawHTML()
         drawMath(in: .infinite)
         drawInlineMath()
         drawDiagrams(in: .infinite)
@@ -1087,7 +1181,8 @@ final class MarkdownTextView: NSTextView {
         for span in drawingSpans {
             guard case .image(let path, true) = span.kind, NSLocationInRange(span.content.location, anchorRange) else { continue }
             let caption = textRect(span.content)
-            let rect = NSRect(x: 0, y: caption.minY - 268, width: columnWidth, height: 260)
+            let y = span.range.location == 0 ? caption.minY + 8 : caption.minY - 268
+            let rect = NSRect(x: 0, y: y, width: columnWidth, height: 260)
             guard rect.intersects(dirtyRect) else { continue }
             NSGraphicsContext.saveGraphicsState()
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
@@ -1103,6 +1198,34 @@ final class MarkdownTextView: NSTextView {
                 label.draw(at: NSPoint(x: rect.midX - label.size().width / 2, y: rect.midY - label.size().height / 2))
             }
             NSGraphicsContext.restoreGraphicsState()
+        }
+    }
+
+    private func drawHTML() {
+        guard window != nil, let context = NSGraphicsContext.current?.cgContext else { return }
+        for span in drawingSpans where NSLocationInRange(span.range.location, anchorRange) {
+            switch span.kind {
+            case .htmlBlock:
+                guard let rendered = htmlBlocks[span.range.location] else { continue }
+                let line = textRect(NSRange(location: span.range.location, length: 1))
+                context.saveGState()
+                context.translateBy(x: 0, y: line.minY)
+                context.scaleBy(x: rendered.scale, y: rendered.scale)
+                rendered.text.draw(at: .zero)
+                context.restoreGState()
+            case .inlineHTML:
+                guard let image = inlineHTMLImages[span.range.location] else { continue }
+                let line = textRect(NSRange(location: span.range.location, length: 1))
+                let height = min(image.width, line.height)
+                switch self.image(for: image.path) {
+                case .image(let bitmap):
+                    bitmap.draw(in: NSRect(x: line.minX, y: line.minY, width: image.width, height: height))
+                case .placeholder:
+                    break
+                }
+            default:
+                break
+            }
         }
     }
 
@@ -1124,11 +1247,13 @@ final class MarkdownTextView: NSTextView {
             }
         }
         let url = Self.imageURL(path, document: documentURL)
-        if let cached = imageCache[url] { return cached.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)") }
+        if let cached = imageCache[url] {
+            return cached.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
+        }
         // Misses are remembered too, so painting never touches the disk; restyling forgets them.
         let image = NSImage(contentsOf: url)
         imageCache[url] = .some(image)
-        return image.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)")
+        return image.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
     }
 
     private func remoteImageLoaded() {

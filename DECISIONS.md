@@ -4,6 +4,7 @@
 - Saved image drops copy into `assets` beside the Markdown file. Name collisions get a numeric suffix; unsaved documents use the original absolute path until saved.
 - A library defaults to `~/Documents/Markify` when that folder exists. Settings can choose another folder with a persistent security-scoped bookmark.
 - The source remains plain Markdown. Both lenses style the same TextKit 2 text storage, so selection offsets and undo history stay in source coordinates.
+- Directly distributed Markify builds disable App Sandbox in both Debug and Release, so local images, linked documents and summaries need no folder grants. Hardened Runtime remains enabled. Quick Look stays sandboxed and uses a private, unsandboxed XPC helper that returns only validated images referenced by the previewed Markdown, with bounded reads and a check of the connecting extension's code signature. Release signing preserves the extension's sandbox entitlements.
 - Display math uses SwaTex's native CoreText renderer; formulas render locally without a WebView.
 - Ordered lists display counted numbers in the rendered lens; the file keeps its written numbers until an edit touches that list, which then renumbers only that list.
 - Settings › On launch drives startup instead of system window restoration: "Reopen last documents" reopens the files open at quit (security-scoped bookmarks), "New document" opens an empty document, and "Library" opens an empty document with the library sidebar showing.
@@ -30,7 +31,7 @@
 - CommonMark rules apply as cmark reads them: `text` over `---` is a setext heading, text indented four spaces is code, `~~~` fences are code, unclosed fences run to the end, nested task items get checkboxes, and an ordered list not starting at 1 cannot interrupt a paragraph. `/Divider` inserts a blank line first when text sits right above it, so it never makes a heading.
 - Tables follow GFM: outer pipes are optional, a pipe inside a code span still splits the cell (write `\|`), and cells past the header's count are dropped.
 - Inline math follows Pandoc's dollar rules: no space inside either `$`, and no digit right after the closing one, so "$5 and $10" stays text.
-- The Markdown lens follows the design: all syntax in ink3 (including task boxes and table pipes), link and image destinations in accent, link text in ink. HTML blocks are dimmed in both lenses.
+- The Markdown lens follows the design: all syntax in ink3 (including task boxes and table pipes), link and image destinations in accent, link text in ink. The Rendered lens draws HTML blocks and inline images while keeping their source in the same text storage; the Markdown lens shows the HTML source.
 - Hidden markers kern each character by its own advance; a single kern could not cancel a long marker and left gaps after links, emphasis and code.
 - ⌘-click on a footnote reference selects its definition; ⌘-click on the definition's label returns to that reference, or to the first one when edits moved it.
 - Dropping a note from the sidebar or Finder into the page inserts `[title](path)`: relative to the document, bundle-absolute (`/…`) when both notes are in its OKF bundle, absolute while the document is unsaved. There is no Copy Markdown Link menu.

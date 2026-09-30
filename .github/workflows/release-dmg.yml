@@ -86,11 +86,13 @@ jobs:
           chmod +x "$APP_CLI"
 
       # The build is only linker-signed, which `codesign --verify` and Sparkle
-      # reject. Sign the bundle ad hoc, without entitlements, so Sparkle can
-      # check the update's signature; the app stays unsandboxed as before.
+      # reject. Preserve Quick Look’s sandbox while keeping the main app and
+      # its private image helper unsandboxed, matching the Xcode builds.
       - name: Sign ad hoc
         run: |
           codesign --force --deep --sign - "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
+          codesign --force --sign - --entitlements QuickLook/QuickLook.entitlements "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app/Contents/PlugIns/MarkifyQuickLook.appex"
+          codesign --force --sign - "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
           codesign --verify --deep --strict --verbose=2 "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
 
       - name: Install create-dmg

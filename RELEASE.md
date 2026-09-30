@@ -22,7 +22,9 @@ Back up the private key (`generate_keys -x <file>`, the tool is in `.build/spm/a
 
 ### Signing
 
-CI builds aren't signed with a Developer ID. The workflow signs each app ad hoc after building, because Sparkle rejects an update whose code signature is invalid, and a linker-only signature is. The ad hoc signature carries no entitlements, so the released app runs unsandboxed as before. Sparkle accepts an ad hoc update from an ad hoc app on its EdDSA signature alone.
+CI builds aren't signed with a Developer ID. The workflow signs each app ad hoc after building, because Sparkle rejects an update whose code signature is invalid, and a linker-only signature is. The main app explicitly disables App Sandbox in both Debug and Release, so local images and linked documents need no folder grant. Quick Look remains sandboxed and uses a private, read-only image helper. The release signing step preserves the extension’s sandbox entitlements. Sparkle accepts an ad hoc update from an ad hoc app on its EdDSA signature alone.
+
+Run `bash scripts/check-preview-images.sh` to verify the image helper from a signed, sandboxed extension client without any folder grants. It checks the release signing order and the README's local images as well as Markdown, HTML and SVG image references.
 
 ## How to Create a Release
 
@@ -155,7 +157,7 @@ See the [Releases page](https://github.com/spaquet/markify/releases).
 - Buy an Apple Developer ID certificate
 - Sign and notarize in the workflow
 - Remove the security warning on first launch
-- Turns on the App Sandbox in released builds; Sparkle is already set up for it (`SUEnableInstallerLauncherService` and the mach-lookup exceptions in `Markify.entitlements`)
+- Keep the main app unsandboxed for direct filesystem access; Developer ID signing and notarization do not require App Sandbox. Keep Quick Look sandboxed.
 - The first Developer ID release changes the signing identity; Sparkle accepts it because the EdDSA key stays the same
 
 ## Questions?

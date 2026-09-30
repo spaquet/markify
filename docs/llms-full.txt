@@ -30,7 +30,7 @@ URL: https://spaquet.github.io/markify/help/getting-started.html
 
 Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
 
-To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, local images, math and Mermaid diagrams. Remote images are not loaded in Quick Look.
+To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams. It loads HTTPS images and local images referenced by the document, without a folder permission step.
 
 ## The window
 
@@ -166,7 +166,7 @@ Markify reads Markdown the way GitHub does: it follows [CommonMark](https://comm
 - **Code blocks**: fence with three backticks or tildes, and name the language after the opening fence for syntax colors. Indented code also works.
 - **Tables**: GFM pipe tables, with `:--`, `:-:` and `--:` in the separator row to align columns.
 - **Dividers**: `---`, `***` or `___` on a line of their own.
-- **HTML**: HTML blocks and inline tags are kept as written.
+- **HTML**: HTML blocks and inline images display in the Rendered lens. The Markdown lens shows the original tags, which remain editable.
 
 ## Callouts
 
@@ -239,6 +239,8 @@ Drag an image file onto the page or paste an image. Markify copies it into a fol
 - Choose the folder in **Settings › General › Save pasted images to**: `./assets` (the default), `./images`, or the document's own folder.
 - Save a new document before adding images, so Markify knows where to put them.
 - An image alone on its line is drawn at full width. An image inside a sentence appears as a small chip; hover over it to preview the image.
+
+Local images and linked Markdown files are read directly from their paths relative to the document. No folder permission step is needed.
 
 ### Remote images
 

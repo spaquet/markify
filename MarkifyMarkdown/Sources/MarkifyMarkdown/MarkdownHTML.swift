@@ -101,6 +101,20 @@ private struct Renderer {
 
     init(options: MarkdownHTML.Options) { self.options = options }
 
+    /// Raw HTML uses the same image and link rules as Markdown syntax, including embedded local images.
+    private func rawHTML(_ source: String) -> String {
+        let pattern = #"(?<=\s)(src|href)\s*=\s*(["'])(.*?)\2"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return source }
+        let result = NSMutableString(string: source)
+        for match in regex.matches(in: source, range: NSRange(location: 0, length: (source as NSString).length)).reversed() {
+            let name = (source as NSString).substring(with: match.range(at: 1)).lowercased()
+            let value = (source as NSString).substring(with: match.range(at: 3)).replacingOccurrences(of: "&amp;", with: "&")
+            let resolved = name == "src" ? options.image(value) : options.link(value)
+            result.replaceCharacters(in: match.range(at: 3), with: MarkdownHTML.escape(resolved))
+        }
+        return result as String
+    }
+
     // MARK: Preparing the source
 
     /// The source without frontmatter, each extension replaced by a token naming its item.
@@ -158,7 +172,7 @@ private struct Renderer {
         case let paragraph as Paragraph:
             return self.paragraph(paragraph, tight: tight)
         case let heading as Heading:
-            let text = heading.plainText
+            let text = heading.children.map(headingText).joined().trimmingCharacters(in: .whitespacesAndNewlines)
             if heading.level == 1, firstHeading == nil { firstHeading = text }
             var id = MarkdownHTML.slug(text)
             if let count = headingIDs[id] { headingIDs[id] = count + 1; id += "-\(count)" } else { headingIDs[id] = 1 }
@@ -170,7 +184,7 @@ private struct Renderer {
         case is ThematicBreak:
             return "<hr>\n"
         case let html as HTMLBlock:
-            return html.rawHTML
+            return rawHTML(html.rawHTML)
         case let list as OrderedList:
             let start = list.startIndex != 1 ? " start=\"\(list.startIndex)\"" : ""
             return "<ol\(start)>\n\(listItems(list))</ol>\n"
@@ -182,6 +196,15 @@ private struct Renderer {
         default:
             return blocks(node.children, tight: tight)
         }
+    }
+
+    private func headingText(_ node: Markup) -> String {
+        if node is InlineHTML { return "" }
+        if let text = node as? Text { return text.string }
+        if let code = node as? InlineCode { return code.code }
+        if let image = node as? Image { return image.plainText }
+        if node is SoftBreak || node is LineBreak { return " " }
+        return node.children.map(headingText).joined()
     }
 
     private mutating func paragraph(_ paragraph: Paragraph, tight: Bool) -> String {
@@ -332,7 +355,7 @@ private struct Renderer {
             let title = image.title.flatMap { $0.isEmpty ? nil : " title=\"\(MarkdownHTML.escape($0))\"" } ?? ""
             return "<img src=\"\(MarkdownHTML.escape(source))\" alt=\"\(MarkdownHTML.escape(image.plainText))\"\(title)>"
         case let html as InlineHTML:
-            return html.rawHTML
+            return rawHTML(html.rawHTML)
         case is LineBreak:
             return "<br>\n"
         case is SoftBreak:
