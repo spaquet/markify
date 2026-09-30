@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Read coding-agent reports in Markify, with Claude Code installation and manual fallbacks.">
+<meta name="keywords" content="claude, codex, opencode, agent, report, plugin, marketplace, clipboard">
+<title>Coding agents</title>
+<link rel="stylesheet" href="help.css">
+</head>
+<body>
+<a name="coding-agents"></a>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Markify Help</a></nav>
+<main>
+<article>
+<h1 id="coding-agents">Coding agents</h1>
+<p>Send a long Markdown answer to Markify to read it on the rendered page. Each report opens as a new, editable, untitled document. Press ⌘/ to inspect the Markdown and ⌘S to keep it. An untouched report closes without a save prompt; after edits, normal save protection applies.</p>
+<p>Install <a rel="noopener" href="https://github.com/spaquet/markify/releases/latest">Markify from GitHub Releases</a>, using a version whose <a href="command-line.html">command line</a> help lists <code>view</code>. The agent and Markify must run on the same Mac. A plugin does not install the macOS app. Remote, container, and cloud sessions cannot directly open a local window through this integration.</p>
+<h2 id="claude-code">Claude Code</h2>
+<p>The Markify plugin adds <code>/markify:view</code>. In Claude Code, add Markify's own marketplace and install the plugin:</p>
+<pre><span class="code-label" aria-hidden="true">text</span><code class="language-text">/plugin marketplace add spaquet/markify
+/plugin install markify@markify</code></pre>
+<p>These repository installation commands become available when the plugin is included in the published repository. For a source checkout containing this feature, use <code>/plugin marketplace add /absolute/path/to/markify</code> instead. Install from the plugin details panel if prompted, then start a new session.</p>
+<p>Ask for a report, then run:</p>
+<pre><span class="code-label" aria-hidden="true">text</span><code class="language-text">/markify:view</code></pre>
+<p>Or request one directly, for example <code>/markify:view Explain the architecture we just discussed</code>. Claude sends Markdown through the bundled CLI; you do not need a <code>markify</code> symlink. Sending an earlier response from conversation context can differ from its exact original wording.</p>
+<p>To update, run <code>/plugin marketplace update markify</code>, then <code>/plugin update markify@markify</code> and restart the session. To remove, run <code>/plugin uninstall markify@markify</code>; optionally remove its catalog with <code>/plugin marketplace remove markify</code>. This is Markify's first-party catalog, separate from Anthropic's official marketplace. See <a rel="noopener" href="https://code.claude.com/docs/en/plugins">Claude's plugin guide</a>.</p>
+<h3 id="optional-automatic-responses">Optional automatic responses</h3>
+<p>The plugin does not enable automatic viewing. If you want every completed response to open a new document, install <code>jq</code> and use Claude's <code>/hooks</code> interface to add a <strong>Stop</strong> command pointing to the plugin's <code>scripts/stop.sh</code>:</p>
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">bash &quot;/absolute/path/to/markify/agents/claude/scripts/stop.sh&quot;</code></pre>
+<p>Use a stable checkout path for this optional command; marketplace cache paths may change on updates. The script reads <code>last_assistant_message</code> from the hook input, skips empty messages and hook continuations, and reports viewer failures without blocking Claude. It does not parse transcripts or reuse windows. Remove the Stop entry in <code>/hooks</code> to turn it off. Older Claude versions without that message field need updating for automatic mode. See <a rel="noopener" href="https://code.claude.com/docs/en/hooks#stop">Claude's Stop hook reference</a>.</p>
+<h2 id="codex-and-opencode">Codex and OpenCode</h2>
+<p>Dedicated packages are planned in the next phases. For now, ask either agent to send its Markdown through the <code>view</code> command below.</p>
+<h2 id="clipboard-and-manual-use">Clipboard and manual use</h2>
+<p>Copy the answer, then choose <strong>File › New from Clipboard</strong> (⌃⌥⌘V). Clipboard reports have no project base, so use absolute paths for local links and images.</p>
+<p>From Terminal:</p>
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">pbpaste | /Applications/Markify.app/Contents/MacOS/markify view - --title 'Agent report' --base &quot;$PWD&quot;
+/Applications/Markify.app/Contents/MacOS/markify view report.md --title 'Architecture review'</code></pre>
+<p>File input resolves relative resources beside the input file; stdin uses the current directory unless <code>--base</code> specifies another existing directory. File input is copied into a new document; the original file is never changed.</p>
+<h2 id="save-privacy-and-troubleshooting">Save, privacy, and troubleshooting</h2>
+<p>Save beside the referenced project assets, or use absolute paths. Saving into another folder changes how relative links resolve; Markify preserves the Markdown and does not copy assets or rewrite paths during the first save.</p>
+<p>Reports are transferred locally through a private cache envelope, limited to 10 MiB including JSON metadata. Markify deletes it after creating the document. Failed transfers remain available temporarily; a later <code>view</code> command removes envelopes older than 24 hours. macOS may keep document recovery data. Markify's existing remote-image setting still controls image downloads; no extra AI service is used by this handoff.</p>
+<p>If the launcher cannot find Markify, install the app, add its CLI to PATH, or set <code>MARKIFY_CLI</code> to the absolute path of <code>Markify.app/Contents/MacOS/markify</code> in the agent's environment. An “unsupported view” error means that executable needs updating. Missing or outdated app messages include a GitHub Releases download link. For local source testing, point it to <code>MarkifyCLI/.build/debug/markify</code>.</p>
+<p>Allow the agent's normal permission request to launch the app or write the cache. If denied, use New from Clipboard. A successful command means macOS accepted the launch request; an app-side failure appears in Markify. A missing/already-opened report URL cannot reopen a consumed request: send the report again.</p>
+</article>
+</main>
+<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="shortcuts.html">← Keyboard shortcuts</a><a rel="next" href="updates.html">Install and update →</a></nav>
+</body>
+</html>

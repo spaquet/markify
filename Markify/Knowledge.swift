@@ -62,8 +62,8 @@ struct KnowledgeState: Sendable {
 
     /// Opens a link destination: web URLs in the browser, Markdown in Markify, other files in their app.
     /// A missing Markdown file can be created as a new concept, since OKF treats broken links as unwritten knowledge.
-    static func follow(_ target: String, title: String?, from document: URL?, bundleRoot: URL?) {
-        guard let url = OKFLinks.resolve(target, from: document, bundleRoot: bundleRoot) else {
+    static func follow(_ target: String, title: String?, from document: URL?, bundleRoot: URL?, baseDirectory: URL? = nil) {
+        guard let url = OKFLinks.resolve(target, from: document, bundleRoot: bundleRoot, baseDirectory: baseDirectory) else {
             if let web = URL(string: target), web.scheme != nil { NSWorkspace.shared.open(web) }
             return
         }

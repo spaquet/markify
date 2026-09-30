@@ -10,13 +10,15 @@ public enum MarkdownPage {
         public let bundleRoot: URL?
         public let destination: URL
         public let fallbackTitle: String
+        public let baseDirectory: URL?
 
-        public init(source: String, documentURL: URL?, bundleRoot: URL? = nil, destination: URL, fallbackTitle: String) {
+        public init(source: String, documentURL: URL?, bundleRoot: URL? = nil, destination: URL, fallbackTitle: String, baseDirectory: URL? = nil) {
             self.source = source
             self.documentURL = documentURL
             self.bundleRoot = bundleRoot
             self.destination = destination
             self.fallbackTitle = fallbackTitle
+            self.baseDirectory = baseDirectory
         }
     }
 
@@ -62,7 +64,7 @@ public enum MarkdownPage {
     }
 
     public static func linkTarget(_ destination: String, context: Context) -> String {
-        guard !destination.hasPrefix("#"), context.documentURL != nil || destination.hasPrefix("/") else { return destination }
+        guard !destination.hasPrefix("#"), context.documentURL != nil || context.baseDirectory != nil || destination.hasPrefix("/") else { return destination }
         let split = destination.firstIndex { $0 == "#" || $0 == "?" }
         let path = String(destination[..<(split ?? destination.endIndex)])
         let suffix = split.map { String(destination[$0...]) } ?? ""
@@ -76,7 +78,7 @@ public enum MarkdownPage {
         if decoded.hasPrefix("/"), let root = context.bundleRoot {
             return root.appendingPathComponent(String(decoded.dropFirst())).standardizedFileURL
         }
-        return URL(fileURLWithPath: decoded, relativeTo: context.documentURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")).standardizedFileURL
+        return URL(fileURLWithPath: decoded, relativeTo: context.documentURL?.deletingLastPathComponent() ?? context.baseDirectory ?? URL(fileURLWithPath: "/")).standardizedFileURL
     }
 
     private static func relative(_ url: URL, from destination: URL) -> String {

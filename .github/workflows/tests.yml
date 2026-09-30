@@ -38,8 +38,9 @@ jobs:
 
       - name: Test markify CLI
         run: |
-          swift build --package-path MarkifyCLI
+          swift test --package-path MarkifyCLI
           bash scripts/test-cli.sh
+          python3 scripts/test-agent-integrations.py
 
       # help/*.md is built into the app's Help Book and the website; both must be regenerated with it.
       - name: Check generated help

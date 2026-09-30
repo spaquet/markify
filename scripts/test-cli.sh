@@ -26,4 +26,7 @@ cmp "$TMP/input.md" "$TMP/original.md"
 
 if "$CLI" export "$TMP/missing.md" --html --output "$TMP/out/missing.html" 2> "$TMP/error.out"; then exit 1; fi
 grep -q 'markify:' "$TMP/error.out"
+if "$CLI" view --title > "$TMP/view.out" 2>&1; then exit 1; fi
+grep -q 'markify view' "$TMP/view.out"
+if "$CLI" view --unknown > "$TMP/view.out" 2>&1; then exit 1; fi
 echo 'CLI checks passed.'

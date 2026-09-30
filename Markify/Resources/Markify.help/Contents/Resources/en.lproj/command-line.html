@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Validate OKF bundles and export Markdown to HTML from Terminal or a script.">
+<meta name="description" content="Open agent reports, validate OKF bundles and export Markdown to HTML from Terminal or a script.">
 <meta name="keywords" content="cli, terminal, command line, markify, check, validation, export, html, ci">
 <title>Command line</title>
 <link rel="stylesheet" href="help.css">
@@ -14,11 +14,17 @@
 <main>
 <article>
 <h1 id="command-line">Command line</h1>
-<p>Markify includes a separate <code>markify</code> command for scripts. It runs without opening an editor window. After installing the app, find it at <code>/Applications/Markify.app/Contents/MacOS/markify</code>. If you installed Markify elsewhere, use the matching path inside that app.</p>
+<p>Markify includes a separate <code>markify</code> command for scripts. <code>check</code> and <code>export</code> run without opening an editor window; <code>view</code> opens Markdown in the app. After installing the app, find it at <code>/Applications/Markify.app/Contents/MacOS/markify</code>. If you installed Markify elsewhere, use the matching path inside that app.</p>
 <p>To call it as <code>markify</code> from any folder, link it into a directory on your <code>PATH</code>:</p>
 <pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">ln -s /Applications/Markify.app/Contents/MacOS/markify /usr/local/bin/markify
 markify --help</code></pre>
 <p>If you build from source, run <code>swift build -c release --package-path MarkifyCLI</code>; the executable is in <code>MarkifyCLI/.build/release/markify</code>.</p>
+<h2 id="read-a-report">Read a report</h2>
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">markify view report.md --title 'Architecture review'
+pbpaste | markify view - --title 'Agent report' --base &quot;$PWD&quot;</code></pre>
+<p><code>markify view [FILE | -] [--title TITLE] [--base DIRECTORY]</code> opens UTF-8 Markdown as a new, untitled document in the Rendered lens. Omit FILE or use <code>-</code> to read stdin. The source file is never changed. Press ⌘S to save the new document.</p>
+<p>Relative images and links use the input file's parent directory, or the current directory for stdin. <code>--base</code> overrides that with an existing directory. Without <code>--title</code>, the document uses its frontmatter title or first heading. The private cache envelope, including metadata, must fit within 10 MiB; invalid UTF-8 is rejected.</p>
+<p>Exit status 0 means macOS accepted the app launch request, rather than confirming rendering. Input, cache, and launch errors return 1; invalid arguments return 2. See <a href="coding-agents.html">Coding agents</a> for plugin installation and clipboard use.</p>
 <h2 id="validate-a-knowledge-bundle">Validate a knowledge bundle</h2>
 <pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">markify check path/to/bundle</code></pre>
 <p>The command reads the folder without changing it. Each finding includes its file path, severity and message. It exits with status 0 if there are no errors. Warnings and information are printed but do not fail the command. Errors, unreadable files and invalid paths return a nonzero status.</p>

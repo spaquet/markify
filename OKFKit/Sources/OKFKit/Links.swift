@@ -40,7 +40,7 @@ public enum OKFLinks {
 
     /// Resolves a destination to a file URL: `/…` against the bundle root, anything else against the document's folder.
     /// Returns nil for external URLs and in-page anchors.
-    public static func resolve(_ target: String, from document: URL?, bundleRoot: URL?) -> URL? {
+    public static func resolve(_ target: String, from document: URL?, bundleRoot: URL?, baseDirectory: URL? = nil) -> URL? {
         guard !hasScheme(target) || target.lowercased().hasPrefix("file:") else { return nil }
         if target.lowercased().hasPrefix("file:") { return URL(string: target)?.standardizedFileURL }
         var path = target
@@ -48,12 +48,15 @@ public enum OKFLinks {
         path = path.removingPercentEncoding ?? path
         guard !path.isEmpty else { return nil }
         let isDirectory = path.hasSuffix("/")
+        if path.hasPrefix("/"), document == nil, bundleRoot == nil, baseDirectory != nil {
+            return URL(fileURLWithPath: path, isDirectory: isDirectory).standardizedFileURL
+        }
         if path.hasPrefix("/") {
             guard let base = bundleRoot ?? document?.deletingLastPathComponent() else { return nil }
             return base.appendingPathComponent(String(path.dropFirst()), isDirectory: isDirectory).standardizedFileURL
         }
-        guard let document else { return nil }
-        return document.deletingLastPathComponent().appendingPathComponent(path, isDirectory: isDirectory).standardizedFileURL
+        guard let base = document?.deletingLastPathComponent() ?? baseDirectory else { return nil }
+        return base.appendingPathComponent(path, isDirectory: isDirectory).standardizedFileURL
     }
 
     /// A bundle-absolute path for a file inside the root, such as `/tables/orders.md`.
