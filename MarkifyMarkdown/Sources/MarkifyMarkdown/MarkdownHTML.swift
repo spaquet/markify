@@ -172,7 +172,7 @@ private struct Renderer {
         case let paragraph as Paragraph:
             return self.paragraph(paragraph, tight: tight)
         case let heading as Heading:
-            let text = heading.plainText
+            let text = heading.children.map(headingText).joined().trimmingCharacters(in: .whitespacesAndNewlines)
             if heading.level == 1, firstHeading == nil { firstHeading = text }
             var id = MarkdownHTML.slug(text)
             if let count = headingIDs[id] { headingIDs[id] = count + 1; id += "-\(count)" } else { headingIDs[id] = 1 }
@@ -196,6 +196,15 @@ private struct Renderer {
         default:
             return blocks(node.children, tight: tight)
         }
+    }
+
+    private func headingText(_ node: Markup) -> String {
+        if node is InlineHTML { return "" }
+        if let text = node as? Text { return text.string }
+        if let code = node as? InlineCode { return code.code }
+        if let image = node as? Image { return image.plainText }
+        if node is SoftBreak || node is LineBreak { return " " }
+        return node.children.map(headingText).joined()
     }
 
     private mutating func paragraph(_ paragraph: Paragraph, tight: Bool) -> String {

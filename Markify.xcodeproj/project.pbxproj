@@ -9,16 +9,19 @@
 /* Begin PBXBuildFile section */
 		0AF0C0012E80000000000001 /* OKFKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0032E80000000000003 /* OKFKit */; };
 		0AF0C0042E80000000000004 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
+		5B0C0A012E90000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 5B0C0A022E90000000000002 /* Sparkle */; };
 		76A591142DC953870033A6AC /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 76A591132DC953870033A6AC /* Markdown */; };
 		A1F9C0012DC953870033A6AC /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
-		5B0C0A012E90000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 5B0C0A022E90000000000002 /* Sparkle */; };
 		B10000000000000000000001 /* MarkifyQuickLook.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* MarkifyQuickLook.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		B10000000000000000000003 /* MarkifyMarkdown in QuickLook Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
-		B10000000000000000000004 /* SwaTexRender in QuickLook Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
-		B10000000000000000000005 /* MathSVG.swift in QuickLook Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* MathSVG.swift */; };
-		B10000000000000000000007 /* Mermaid.swift in QuickLook Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* Mermaid.swift */; };
-		B10000000000000000000009 /* mermaid.html in QuickLook Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* mermaid.html */; };
-		B1000000000000000000000B /* mermaid.min.js in QuickLook Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* mermaid.min.js */; };
+		B10000000000000000000003 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
+		B10000000000000000000004 /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
+		B10000000000000000000005 /* Markify/MathSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* Markify/MathSVG.swift */; };
+		B10000000000000000000007 /* Markify/Mermaid.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* Markify/Mermaid.swift */; };
+		B10000000000000000000009 /* Markify/Resources/Mermaid/mermaid.html in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */; };
+		B1000000000000000000000B /* Markify/Resources/Mermaid/mermaid.min.js in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */; };
+		C10000000000000000000001 /* PreviewImages.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C10000000000000000000003 /* PreviewImageProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000004; };
+		C10000000000000000000005 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,17 +46,35 @@
 			remoteGlobalIDString = B1000000000000000000000E;
 			remoteInfo = MarkifyQuickLook;
 		};
+		C10000000000000000000006 = {isa = PBXContainerItemProxy; containerPortal = 76A590DF2DC952970033A6AC; proxyType = 1; remoteGlobalIDString = C10000000000000000000007; remoteInfo = PreviewImages; };
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B10000000000000000000011 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B10000000000000000000001 /* MarkifyQuickLook.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C10000000000000000000008 /* Embed XPC Services */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = Contents/XPCServices; dstSubfolderSpec = 1; files = (C10000000000000000000001, ); name = "Embed XPC Services"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		76A590E72DC952970033A6AC /* Markify.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Markify.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76A590F52DC952980033A6AC /* MarkifyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkifyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		76A590FF2DC952980033A6AC /* MarkifyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkifyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000002 /* MarkifyQuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MarkifyQuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		B10000000000000000000006 /* MathSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/MathSVG.swift; sourceTree = SOURCE_ROOT; };
-		B10000000000000000000008 /* Mermaid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/Mermaid.swift; sourceTree = SOURCE_ROOT; };
-		B1000000000000000000000A /* mermaid.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Markify/Resources/Mermaid/mermaid.html; sourceTree = SOURCE_ROOT; };
-		B1000000000000000000000C /* mermaid.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Markify/Resources/Mermaid/mermaid.min.js; sourceTree = SOURCE_ROOT; };
+		B10000000000000000000006 /* Markify/MathSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/MathSVG.swift; sourceTree = SOURCE_ROOT; };
+		B10000000000000000000008 /* Markify/Mermaid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/Mermaid.swift; sourceTree = SOURCE_ROOT; };
+		B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Markify/Resources/Mermaid/mermaid.html; sourceTree = SOURCE_ROOT; };
+		B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Markify/Resources/Mermaid/mermaid.min.js; sourceTree = SOURCE_ROOT; };
+		C10000000000000000000002 /* PreviewImages.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; path = PreviewImages.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
+		C10000000000000000000004 /* PreviewImageProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLook/PreviewImageProtocol.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -64,13 +85,14 @@
 			);
 			target = 76A590E62DC952970033A6AC /* Markify */;
 		};
-		B1000000000000000000000F /* Exceptions for "QuickLook" folder in "QuickLook" target */ = {
+		B1000000000000000000000F /* Exceptions for "QuickLook" folder in "MarkifyQuickLook" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = B1000000000000000000000E /* QuickLook */;
+			target = B1000000000000000000000E /* MarkifyQuickLook */;
 		};
+		C10000000000000000000009 = {isa = PBXFileSystemSynchronizedBuildFileExceptionSet; membershipExceptions = (Info.plist, ); target = C10000000000000000000007; };
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -95,26 +117,13 @@
 		B10000000000000000000010 /* QuickLook */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B1000000000000000000000F /* Exceptions for "QuickLook" folder in "QuickLook" target */,
+				B1000000000000000000000F /* Exceptions for "QuickLook" folder in "MarkifyQuickLook" target */,
 			);
 			path = QuickLook;
 			sourceTree = "<group>";
 		};
+		C1000000000000000000000A /* PreviewImages */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (C10000000000000000000009, ); path = PreviewImages; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		B10000000000000000000011 /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				B10000000000000000000001 /* MarkifyQuickLook.appex in Embed App Extensions */,
-			);
-			name = "Embed App Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		76A590E42DC952970033A6AC /* Frameworks */ = {
@@ -143,15 +152,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B10000000000000000000012 /* QuickLook Frameworks */ = {
+		B10000000000000000000012 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000000000000000000003 /* MarkifyMarkdown in QuickLook Frameworks */,
-				B10000000000000000000004 /* SwaTexRender in QuickLook Frameworks */,
+				B10000000000000000000003 /* MarkifyMarkdown in Frameworks */,
+				B10000000000000000000004 /* SwaTexRender in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C1000000000000000000000B /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (C10000000000000000000005, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -160,9 +170,12 @@
 			children = (
 				76A590E92DC952970033A6AC /* Markify */,
 				B10000000000000000000010 /* QuickLook */,
+				C1000000000000000000000A /* PreviewImages */,
 				76A590F82DC952980033A6AC /* MarkifyTests */,
 				76A591022DC952980033A6AC /* MarkifyUITests */,
 				76A590E82DC952970033A6AC /* Products */,
+				76CBCEE6306C58E200E3E13B /* Recovered References */,
+				C10000000000000000000004 /* PreviewImageProtocol.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -171,10 +184,22 @@
 			children = (
 				76A590E72DC952970033A6AC /* Markify.app */,
 				B10000000000000000000002 /* MarkifyQuickLook.appex */,
+				C10000000000000000000002 /* PreviewImages.xpc */,
 				76A590F52DC952980033A6AC /* MarkifyTests.xctest */,
 				76A590FF2DC952980033A6AC /* MarkifyUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		76CBCEE6306C58E200E3E13B /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000006 /* Markify/MathSVG.swift */,
+				B10000000000000000000008 /* Markify/Mermaid.swift */,
+				B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */,
+				B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -257,15 +282,17 @@
 		};
 		B1000000000000000000000E /* MarkifyQuickLook */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B10000000000000000000014 /* Build configuration list for PBXNativeTarget "QuickLook" */;
+			buildConfigurationList = B10000000000000000000014 /* Build configuration list for PBXNativeTarget "MarkifyQuickLook" */;
 			buildPhases = (
-				B10000000000000000000015 /* QuickLook Sources */,
-				B10000000000000000000012 /* QuickLook Frameworks */,
-				B10000000000000000000016 /* QuickLook Resources */,
+				B10000000000000000000015 /* Sources */,
+				B10000000000000000000012 /* Frameworks */,
+				B10000000000000000000016 /* Resources */,
+				C10000000000000000000008 /* Embed XPC Services */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C1000000000000000000000D,
 			);
 			fileSystemSynchronizedGroups = (
 				B10000000000000000000010 /* QuickLook */,
@@ -278,6 +305,19 @@
 			productName = MarkifyQuickLook;
 			productReference = B10000000000000000000002 /* MarkifyQuickLook.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		C10000000000000000000007 /* PreviewImages */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C1000000000000000000000E;
+			buildPhases = (C1000000000000000000000C, C1000000000000000000000B, );
+			buildRules = ();
+			dependencies = ();
+			fileSystemSynchronizedGroups = (C1000000000000000000000A, );
+			name = PreviewImages;
+			packageProductDependencies = (0AF0C0062E80000000000006, );
+			productName = PreviewImages;
+			productReference = C10000000000000000000002;
+			productType = "com.apple.product-type.xpc-service";
 		};
 /* End PBXNativeTarget section */
 
@@ -327,7 +367,8 @@
 			projectRoot = "";
 			targets = (
 				76A590E62DC952970033A6AC /* Markify */,
-				B1000000000000000000000E /* QuickLook */,
+				B1000000000000000000000E /* MarkifyQuickLook */,
+				C10000000000000000000007 /* PreviewImages */,
 				76A590F42DC952980033A6AC /* MarkifyTests */,
 				76A590FE2DC952980033A6AC /* MarkifyUITests */,
 			);
@@ -356,12 +397,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B10000000000000000000016 /* QuickLook Resources */ = {
+		B10000000000000000000016 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000000000000000000009 /* mermaid.html in QuickLook Resources */,
-				B1000000000000000000000B /* mermaid.min.js in QuickLook Resources */,
+				B10000000000000000000009 /* Markify/Resources/Mermaid/mermaid.html in Resources */,
+				B1000000000000000000000B /* Markify/Resources/Mermaid/mermaid.min.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,15 +430,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B10000000000000000000015 /* QuickLook Sources */ = {
+		B10000000000000000000015 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000000000000000000005 /* MathSVG.swift in QuickLook Sources */,
-				B10000000000000000000007 /* Mermaid.swift in QuickLook Sources */,
+				B10000000000000000000005 /* Markify/MathSVG.swift in Sources */,
+				B10000000000000000000007 /* Markify/Mermaid.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C1000000000000000000000C /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (C10000000000000000000003, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -413,9 +455,10 @@
 		};
 		B10000000000000000000013 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B1000000000000000000000E /* QuickLook */;
+			target = B1000000000000000000000E /* MarkifyQuickLook */;
 			targetProxy = B1000000000000000000000D /* PBXContainerItemProxy */;
 		};
+		C1000000000000000000000D = {isa = PBXTargetDependency; target = C10000000000000000000007; targetProxy = C10000000000000000000006; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -554,7 +597,7 @@
 				CURRENT_PROJECT_VERSION = 287;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 342L82G5GB;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
@@ -589,7 +632,7 @@
 				CURRENT_PROJECT_VERSION = 287;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 342L82G5GB;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
@@ -689,10 +732,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 287;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickLook/Info.plist;
@@ -703,17 +748,19 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 6.0;
-		};
+			};
 			name = Debug;
 		};
 		B10000000000000000000018 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 287;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickLook/Info.plist;
@@ -724,7 +771,47 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
 		};
+		C1000000000000000000000F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 287;
+				DEVELOPMENT_TEAM = 342L82G5GB;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PreviewImages/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks", );
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.90;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.PreviewImages;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		C10000000000000000000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 287;
+				DEVELOPMENT_TEAM = 342L82G5GB;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PreviewImages/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks", );
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.90;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.PreviewImages;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
+			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
@@ -766,7 +853,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B10000000000000000000014 /* Build configuration list for PBXNativeTarget "QuickLook" */ = {
+		B10000000000000000000014 /* Build configuration list for PBXNativeTarget "MarkifyQuickLook" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B10000000000000000000017 /* Debug */,
@@ -775,6 +862,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		C1000000000000000000000E = {isa = XCConfigurationList; buildConfigurations = (C1000000000000000000000F, C10000000000000000000010, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -789,6 +877,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
 		76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swiftlang/swift-markdown";
@@ -805,14 +901,6 @@
 				minimumVersion = 0.5.0;
 			};
 		};
-		5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.10.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -824,6 +912,11 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = MarkifyMarkdown;
 		};
+		5B0C0A022E90000000000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		76A591132DC953870033A6AC /* Markdown */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown" */;
@@ -833,11 +926,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1F9C0032DC953870033A6AC /* XCRemoteSwiftPackageReference "SwaTex" */;
 			productName = SwaTexRender;
-		};
-		5B0C0A022E90000000000002 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

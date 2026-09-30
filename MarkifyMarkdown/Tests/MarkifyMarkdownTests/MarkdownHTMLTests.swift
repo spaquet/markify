@@ -50,6 +50,12 @@ private func html(_ source: String, mdx: Bool = false, options: MarkdownHTML.Opt
         #expect(out.contains("src=\"data:icon.png\""))
     }
 
+    @Test func headingTitleExcludesInlineHTMLTags() {
+        let result = MarkdownHTML.render("# <img src=\"icon.png\" alt=\"\"> Markify <small>Editor</small>\n")
+        #expect(result.firstHeading == "Markify Editor")
+        #expect(result.body.contains("<img src=\"icon.png\""))
+    }
+
     @Test func tightAndLooseLists() {
         let tight = html("- a\n- b\n")
         #expect(tight.contains("<li>a\n</li>"))

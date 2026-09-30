@@ -14,7 +14,7 @@ Drag an image file onto the page or paste an image. Markify copies it into a fol
 - Save a new document before adding images, so Markify knows where to put them.
 - An image alone on its line is drawn at full width. An image inside a sentence appears as a small chip; hover over it to preview the image.
 
-When you open a Markdown file outside your library, macOS may give Markify access to the file but not to nearby images. If an image cannot be read, choose its containing folder when Markify asks; the permission is remembered for later visits.
+Local images and linked Markdown files are read directly from their paths relative to the document. No folder permission step is needed.
 
 ### Remote images
 

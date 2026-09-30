@@ -4,6 +4,7 @@
 - Saved image drops copy into `assets` beside the Markdown file. Name collisions get a numeric suffix; unsaved documents use the original absolute path until saved.
 - A library defaults to `~/Documents/Markify` when that folder exists. Settings can choose another folder with a persistent security-scoped bookmark.
 - The source remains plain Markdown. Both lenses style the same TextKit 2 text storage, so selection offsets and undo history stay in source coordinates.
+- Directly distributed Markify builds disable App Sandbox in both Debug and Release, so local images, linked documents and summaries need no folder grants. Hardened Runtime remains enabled. Quick Look stays sandboxed and uses a private, unsandboxed XPC helper that returns only validated images referenced by the previewed Markdown, with bounded reads and a check of the connecting extension's code signature. Release signing preserves the extension's sandbox entitlements.
 - Display math uses SwaTex's native CoreText renderer; formulas render locally without a WebView.
 - Ordered lists display counted numbers in the rendered lens; the file keeps its written numbers until an edit touches that list, which then renumbers only that list.
 - Settings › On launch drives startup instead of system window restoration: "Reopen last documents" reopens the files open at quit (security-scoped bookmarks), "New document" opens an empty document, and "Library" opens an empty document with the library sidebar showing.

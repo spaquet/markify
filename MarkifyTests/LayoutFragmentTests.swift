@@ -47,12 +47,20 @@ import Testing
     }
 
     @Test func htmlBlockDrawsLocalImageWithoutChangingSource() throws {
-        let source = "<p><img src=\"docs/images/social-preview.jpg\" alt=\"Hero\"></p>\n"
+        let source = """
+        <p align="center">
+          <a href="https://spaquet.github.io/markify/"><img src="docs/images/social-preview.jpg" alt="Markify — One page, two lenses" width="100%"></a>
+        </p>
+
+        # <img src="docs/images/app-icon.png" alt="" width="36" align="top"> Markify
+        """
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let (window, editor) = Self.makeEditor(source, fileURL: root.appendingPathComponent("README.md"))
         _ = window
         #expect(editor.string == source)
-        #expect(editor.htmlBlocks[0] != nil)
+        let html = try #require(editor.htmlBlocks[0])
+        #expect(html.text.size().height > 100)
+        #expect(!editor.inlineHTMLImages.isEmpty)
         let fragment = try #require(Self.fragment(editor, at: 0))
         let (rep, _) = Self.render(fragment)
         #expect(Self.inked(rep, in: CGRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh)) > 20_000)

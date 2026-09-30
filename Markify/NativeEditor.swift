@@ -4,6 +4,7 @@ import OKFKit
 import SwaTex
 import SwaTexRender
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum SlashKey { case up, down, insert, dismiss }
 
@@ -1087,15 +1088,21 @@ final class MarkdownTextView: NSTextView {
             case .image(let image) where ["http", "https"].contains(URL(string: path)?.scheme?.lowercased() ?? ""):
                 replacement = image.tiffRepresentation.map { "data:image/tiff;base64," + $0.base64EncodedString() } ?? ""
             case .image:
-                replacement = Self.imageURL(path, document: documentURL).absoluteString
-            case .placeholder:
-                replacement = ""
+                let url = Self.imageURL(path, document: documentURL)
+                if let data = try? Data(contentsOf: url),
+                   let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType {
+                    replacement = "data:\(mime);base64," + data.base64EncodedString()
+                } else {
+                    replacement = ""
+                }
+            case .placeholder(let message):
+                html.replaceCharacters(in: match.range, with: "<span>\(MarkdownHTML.escape(message))</span>")
+                continue
             }
             let updated = tag.replacingOccurrences(of: path, with: replacement)
             html.replaceCharacters(in: match.range, with: updated)
         }
-        let base = documentURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")
-        guard let parsed = try? NSAttributedString(data: Data((html as String).utf8), options: [.documentType: NSAttributedString.DocumentType.html, .baseURL: base], documentAttributes: nil),
+        guard let parsed = try? NSAttributedString(data: Data((html as String).utf8), options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil),
               parsed.length > 0 else { return nil }
         let text = NSMutableAttributedString(attributedString: parsed)
         let all = NSRange(location: 0, length: text.length)
@@ -1240,16 +1247,13 @@ final class MarkdownTextView: NSTextView {
             }
         }
         let url = Self.imageURL(path, document: documentURL)
-        ImageFolderAccess.restore()
-        if let cached = imageCache[url] { return cached.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)") }
+        if let cached = imageCache[url] {
+            return cached.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
+        }
         // Misses are remembered too, so painting never touches the disk; restyling forgets them.
         let image = NSImage(contentsOf: url)
         imageCache[url] = .some(image)
-        // ponytail: a failed read can also mean a missing file; ask once per folder, then keep the placeholder.
-        if image == nil, window != nil, (documentURL != nil || path.hasPrefix("/")) {
-            ImageFolderAccess.request(for: url.deletingLastPathComponent(), from: self)
-        }
-        return image.map(ImageContent.image) ?? .placeholder("image — \(url.lastPathComponent)")
+        return image.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
     }
 
     private func remoteImageLoaded() {
@@ -1868,46 +1872,6 @@ final class MarkdownTextView: NSTextView {
             waiting.removeValue(forKey: url)?.forEach { $0() }
         }
         return .loading
-    }
-}
-
-/// A selected Markdown file grants sandbox access to that file, not to its sibling image files.
-@MainActor private enum ImageFolderAccess {
-    private static let key = "imageFolderBookmarks"
-    private static var folders: [URL] = []
-    private static var prompted: Set<String> = []
-    private static var restored = false
-
-    static func restore() {
-        guard !restored else { return }
-        restored = true
-        for bookmark in UserDefaults.standard.array(forKey: key) as? [Data] ?? [] {
-            var stale = false
-            if let url = try? URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, bookmarkDataIsStale: &stale),
-               url.startAccessingSecurityScopedResource() { folders.append(url) }
-        }
-    }
-
-    static func request(for folder: URL, from editor: MarkdownTextView) {
-        let path = folder.standardizedFileURL.path
-        guard !folders.contains(where: { path == $0.path || path.hasPrefix($0.path + "/") }),
-              prompted.insert(path).inserted else { return }
-        DispatchQueue.main.async { [weak editor] in
-            guard let editor, editor.window != nil else { return }
-            let panel = NSOpenPanel()
-            panel.directoryURL = folder
-            panel.message = "Choose the folder containing images for \(editor.documentURL?.lastPathComponent ?? "this document")."
-            panel.prompt = "Allow Images"
-            panel.canChooseFiles = false
-            panel.canChooseDirectories = true
-            guard panel.runModal() == .OK, let url = panel.url,
-                  let bookmark = try? url.bookmarkData(options: .withSecurityScope) else { return }
-            _ = url.startAccessingSecurityScopedResource()
-            folders.append(url)
-            UserDefaults.standard.set((UserDefaults.standard.array(forKey: key) as? [Data] ?? []) + [bookmark], forKey: key)
-            editor.forgetImages()
-            editor.restyle?()
-        }
     }
 }
 

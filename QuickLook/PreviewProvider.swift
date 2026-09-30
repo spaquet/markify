@@ -7,6 +7,7 @@ final class PreviewProvider: QLPreviewProvider, QLPreviewingController {
     func providePreview(for request: QLFilePreviewRequest) async throws -> QLPreviewReply {
         let file = request.fileURL
         let source = try String(contentsOf: file, encoding: .utf8)
+        let images = await PreviewImageClient.images(for: file)
         let mdx = file.pathExtension.lowercased() == "mdx"
         var diagrams: [String: String] = [:]
         for span in MarkdownModel(source, mdx: mdx).spans {
@@ -20,27 +21,21 @@ final class PreviewProvider: QLPreviewProvider, QLPreviewingController {
             diagram: { language, code in
                 language.lowercased() == "mermaid" ? diagrams[code.trimmingCharacters(in: .whitespacesAndNewlines)] : nil
             },
-            image: { Self.image($0, relativeTo: file) },
+            image: { path in
+                URL(string: path)?.scheme?.lowercased() == "https" ? path : images[path] ?? ""
+            },
             link: { Self.link($0, relativeTo: file) })
         let body = MarkdownHTML.render(source, mdx: mdx, options: options)
         let title = body.firstHeading ?? file.deletingPathExtension().lastPathComponent
         let html = """
         <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src data:">
         <title>\(MarkdownHTML.escape(title))</title><style>\(Self.style)</style></head>
         <body><main>\(body.body)</main></body></html>
         """
         let reply = QLPreviewReply(dataOfContentType: .html, contentSize: CGSize(width: 800, height: 1000)) { _ in Data(html.utf8) }
         reply.title = title
         return reply
-    }
-
-    private static func image(_ source: String, relativeTo file: URL) -> String {
-        guard let url = localURL(source, relativeTo: file),
-              let type = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType,
-              type.hasPrefix("image/"),
-              let data = try? Data(contentsOf: url), data.count < 25_000_000 else { return "" }
-        return "data:\(type);base64,\(data.base64EncodedString())"
     }
 
     private static func link(_ destination: String, relativeTo file: URL) -> String {

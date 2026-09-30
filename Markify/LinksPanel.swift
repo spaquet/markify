@@ -162,11 +162,12 @@ struct LinksPanel: View {
         stale = []
         for link in links {
             guard let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot),
-                  let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot) else { continue }
+                  let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot),
+                  let summary = store.entries[key] else { continue }
             do {
                 let text = try localText(url)
                 errors[key] = nil
-                if let summary = store.entries[key], LinkSummaryStore.isStale(summary, source: text) { stale.insert(key) }
+                if LinkSummaryStore.isStale(summary, source: text) { stale.insert(key) }
             } catch { errors[key] = error.localizedDescription }
         }
     }
