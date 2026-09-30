@@ -2,7 +2,7 @@
 
 Status: implementation on `feature/agent-reports`. Phase 1 implements the shared
 transport, Claude package, and help. Phase 2 adds a separate Codex package using
-the same launcher. OpenCode follows as a separate commit.
+the same launcher. Phase 3 adds a separate OpenCode tool package.
 Reviewed against the repository and official agent documentation on 2026-09-30.
 
 ## Goal and phases
@@ -185,3 +185,16 @@ Missing/outdated Markify errors include the GitHub Releases link. The help docum
 the verified `codex plugin add` / `remove` commands and `$markify-view` invocation.
 Uninstall/catalog removal and the skill-creator validator also pass. Help ordering
 uses the page slug to break equal-order ties, keeping generated navigation stable.
+
+## Phase 3 validation
+
+The self-contained npm package uses OpenCode’s 1.18.33 plugin API. An isolated
+configuration-directory install is detected by `opencode debug config`. Package
+install and direct tool execution preserve Unicode, CRLF, literal shell
+characters, title argument boundaries, and the session base directory. Permission
+denial prevents any CLI execution. Missing-app errors survive early stdin closure
+and retain the GitHub Releases link. All three launchers are byte-identical and
+pass the shared missing/outdated-app and dispatch-failure checks. Installation,
+updates, uninstall, and permission settings are documented in the help. Publication
+to npm or agent catalogs is a separate release action.
+The real URL and rapid CLI-to-app smoke checks pass again after all three phases.

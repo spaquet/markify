@@ -21,7 +21,7 @@
 - [Command line](https://spaquet.github.io/markify/help/command-line.html): Open agent reports, validate OKF bundles and export Markdown to HTML from Terminal or a script.
 - [Settings](https://spaquet.github.io/markify/help/settings.html): Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.
 - [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.html): Every keyboard shortcut in Markify, and how to change them.
-- [Coding agents](https://spaquet.github.io/markify/help/coding-agents.html): Read coding-agent reports in Markify, with Claude Code and Codex plugin installation.
+- [Coding agents](https://spaquet.github.io/markify/help/coding-agents.html): Read coding-agent reports in Markify, with Claude Code, Codex, and OpenCode installation.
 - [Install and update](https://spaquet.github.io/markify/help/updates.html): Download and install Markify on your Mac, open it the first time, and keep it up to date.
 
 ## FAQ and legal

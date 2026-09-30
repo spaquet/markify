@@ -1,6 +1,6 @@
 ---
 title: Coding agents
-description: Read coding-agent reports in Markify, with Claude Code and Codex plugin installation.
+description: Read coding-agent reports in Markify, with Claude Code, Codex, and OpenCode installation.
 order: 12
 keywords: claude, codex, opencode, agent, report, plugin, marketplace, clipboard
 ---
@@ -62,7 +62,19 @@ For a Git-backed catalog, refresh it with `codex plugin marketplace upgrade mark
 
 ## OpenCode
 
-The dedicated OpenCode tool is planned in Phase 3. For now, ask the agent to send its Markdown through the `view` command below.
+The separate `markify_view` tool accepts Markdown, a title, and an optional base directory. It was tested with OpenCode 1.18.33 and uses its plugin API at that version. OpenCode supports local and npm plugins rather than Claude-style marketplaces. This package is ready to distribute but is not published to npm yet; install from a checkout containing this feature:
+
+```sh
+npm install --prefix "$HOME/.config/opencode" /absolute/path/to/markify/agents/opencode --install-links --ignore-scripts
+mkdir -p "$HOME/.config/opencode/plugins"
+cat > "$HOME/.config/opencode/plugins/markify.js" <<'PLUGIN'
+export { MarkifyPlugin } from "markify-opencode";
+PLUGIN
+```
+
+Use your configured OpenCode configuration directory if it differs from `~/.config/opencode`. Keep the checkout available and restart OpenCode. Ask: “Open the architecture report in Markify using markify_view.” The tool requests permission before launching Markify; set `"permission": { "markify_view": "ask" }` in your OpenCode configuration if you want every delivery confirmed. A denial stops delivery. The report uses the session directory for relative resources unless an absolute `base` is supplied.
+
+Missing or outdated Markify errors include the GitHub download link. Reports travel through stdin, without shell interpolation. To update, pull the checkout, repeat the npm installation, and restart OpenCode. To uninstall, remove only `plugins/markify.js`, then run `npm uninstall --prefix "$HOME/.config/opencode" markify-opencode` and restart. No automatic session hook is installed. See [OpenCode’s plugin guide](https://opencode.ai/docs/plugins/).
 
 ## Clipboard and manual use
 

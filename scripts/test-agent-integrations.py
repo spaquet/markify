@@ -25,8 +25,8 @@ sys.exit(int(os.environ.get('FAIL_CLI', '0')))
     capture = folder / "capture.json"
     env = dict(os.environ, MARKIFY_CLI=str(fake), CAPTURE=str(capture))
     report = "# café 🌻\n\n$(touch never) `literal`\nNo final newline"
-    launchers = [ROOT / "agents/claude/scripts/view.sh", ROOT / "agents/codex/skills/markify-view/scripts/view.sh"]
-    assert launchers[0].read_bytes() == launchers[1].read_bytes()
+    launchers = [ROOT / "agents/claude/scripts/view.sh", ROOT / "agents/codex/skills/markify-view/scripts/view.sh", ROOT / "agents/opencode/scripts/view.sh"]
+    assert all(launcher.read_bytes() == launchers[0].read_bytes() for launcher in launchers)
     for launcher in launchers:
         result = subprocess.run(["bash", str(launcher), "-", "--title", "A & B", "--base", str(folder)], input=report, text=True, env=env, capture_output=True)
         assert result.returncode == 0, result.stderr

@@ -1,0 +1,9 @@
+{
+  "name": "markify-opencode",
+  "version": "1.0.0",
+  "description": "Read OpenCode Markdown reports in the local Markify app",
+  "type": "module",
+  "exports": "./index.js",
+  "files": ["index.js", "scripts/view.sh"],
+  "dependencies": { "@opencode-ai/plugin": "1.18.33" }
+}

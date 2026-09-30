@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Coding agents — Markify Help</title>
-<meta name="description" content="Read coding-agent reports in Markify, with Claude Code and Codex plugin installation.">
+<meta name="description" content="Read coding-agent reports in Markify, with Claude Code, Codex, and OpenCode installation.">
 <meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://spaquet.github.io/markify/help/coding-agents.html">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://spaquet.github.io/markify/help/coding-agents.html">
 <meta property="og:title" content="Coding agents — Markify Help">
-<meta property="og:description" content="Read coding-agent reports in Markify, with Claude Code and Codex plugin installation.">
+<meta property="og:description" content="Read coding-agent reports in Markify, with Claude Code, Codex, and OpenCode installation.">
 <meta property="og:image" content="https://spaquet.github.io/markify/images/social-preview.jpg">
 <meta property="og:image:alt" content="Markify logo and One page, two lenses tagline">
 <meta name="twitter:card" content="summary_large_image">
@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/coding-agents.html","name":"Coding agents","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-30","description":"Read coding-agent reports in Markify, with Claude Code and Codex plugin installation.","headline":"Coding agents","inLanguage":"en","keywords":"claude, codex, opencode, agent, report, plugin, marketplace, clipboard","url":"https://spaquet.github.io/markify/help/coding-agents.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/coding-agents.html","name":"Coding agents","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-30","description":"Read coding-agent reports in Markify, with Claude Code, Codex, and OpenCode installation.","headline":"Coding agents","inLanguage":"en","keywords":"claude, codex, opencode, agent, report, plugin, marketplace, clipboard","url":"https://spaquet.github.io/markify/help/coding-agents.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -86,7 +86,14 @@ codex plugin add markify@markify</code></pre>
 <p>You can also ask Codex to open a report in Markify in ordinary language. The launcher checks for the app and the <code>view</code> command; if either is missing, it reports the problem and links to <a rel="noopener" href="https://github.com/spaquet/markify/releases/latest">GitHub Releases</a>. You do not need a CLI symlink. Allow the normal sandbox request to launch Markify or write the report cache; if denied, use the clipboard fallback.</p>
 <p>For a Git-backed catalog, refresh it with <code>codex plugin marketplace upgrade markify</code>, then reinstall the package with <code>codex plugin remove markify@markify</code> and <code>codex plugin add markify@markify</code>. Start a new thread. To uninstall, run <code>codex plugin remove markify@markify</code>; optionally run <code>codex plugin marketplace remove markify</code> to remove the catalog. This package does not install an automatic response hook or a cloud connection. See <a rel="noopener" href="https://developers.openai.com/plugins/build/plugins">OpenAI's plugin packaging guide</a>.</p>
 <h2 id="opencode">OpenCode</h2>
-<p>The dedicated OpenCode tool is planned in Phase 3. For now, ask the agent to send its Markdown through the <code>view</code> command below.</p>
+<p>The separate <code>markify_view</code> tool accepts Markdown, a title, and an optional base directory. It was tested with OpenCode 1.18.33 and uses its plugin API at that version. OpenCode supports local and npm plugins rather than Claude-style marketplaces. This package is ready to distribute but is not published to npm yet; install from a checkout containing this feature:</p>
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">npm install --prefix &quot;$HOME/.config/opencode&quot; /absolute/path/to/markify/agents/opencode --install-links --ignore-scripts
+mkdir -p &quot;$HOME/.config/opencode/plugins&quot;
+cat &gt; &quot;$HOME/.config/opencode/plugins/markify.js&quot; &lt;&lt;'PLUGIN'
+export { MarkifyPlugin } from &quot;markify-opencode&quot;;
+PLUGIN</code></pre>
+<p>Use your configured OpenCode configuration directory if it differs from <code>~/.config/opencode</code>. Keep the checkout available and restart OpenCode. Ask: “Open the architecture report in Markify using markify_view.” The tool requests permission before launching Markify; set <code>&quot;permission&quot;: { &quot;markify_view&quot;: &quot;ask&quot; }</code> in your OpenCode configuration if you want every delivery confirmed. A denial stops delivery. The report uses the session directory for relative resources unless an absolute <code>base</code> is supplied.</p>
+<p>Missing or outdated Markify errors include the GitHub download link. Reports travel through stdin, without shell interpolation. To update, pull the checkout, repeat the npm installation, and restart OpenCode. To uninstall, remove only <code>plugins/markify.js</code>, then run <code>npm uninstall --prefix &quot;$HOME/.config/opencode&quot; markify-opencode</code> and restart. No automatic session hook is installed. See <a rel="noopener" href="https://opencode.ai/docs/plugins/">OpenCode’s plugin guide</a>.</p>
 <h2 id="clipboard-and-manual-use">Clipboard and manual use</h2>
 <p>Copy the answer, then choose <strong>File › New from Clipboard</strong> (⌃⌥⌘V). Clipboard reports have no project base, so use absolute paths for local links and images.</p>
 <p>From Terminal:</p>
