@@ -1,7 +1,8 @@
 # Agent reports in Markify
 
 Status: implementation on `feature/agent-reports`. Phase 1 implements the shared
-transport, Claude package, and help. Codex and OpenCode follow as separate commits.
+transport, Claude package, and help. Phase 2 adds a separate Codex package using
+the same launcher. OpenCode follows as a separate commit.
 Reviewed against the repository and official agent documentation on 2026-09-30.
 
 ## Goal and phases
@@ -172,3 +173,15 @@ All app tests, 42 Markdown package tests, 36 OKF package tests, and CLI tests pa
 The local smoke check exercises cold URL launch and two rapid real CLI dispatches.
 The CLI targets an already-running copy by its bundle path to avoid Launch Services
 selecting an older installed Xcode build. Public marketplace publication is pending.
+
+## Phase 2 validation
+
+Codex CLI 0.159.2 successfully adds the local `.agents/plugins/marketplace.json`
+catalog and installs the portable `agents/codex/plugin.json` package in an isolated
+configuration. `codex plugin list` reports it installed and enabled. The skill
+has its own copy of the tested launcher, kept identical by the integration check,
+so marketplace installation does not depend on files outside its package.
+Missing/outdated Markify errors include the GitHub Releases link. The help documents
+the verified `codex plugin add` / `remove` commands and `$markify-view` invocation.
+Uninstall/catalog removal and the skill-creator validator also pass. Help ordering
+uses the page slug to break equal-order ties, keeping generated navigation stable.

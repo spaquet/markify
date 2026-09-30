@@ -25,16 +25,18 @@ sys.exit(int(os.environ.get('FAIL_CLI', '0')))
     capture = folder / "capture.json"
     env = dict(os.environ, MARKIFY_CLI=str(fake), CAPTURE=str(capture))
     report = "# café 🌻\n\n$(touch never) `literal`\nNo final newline"
-    launcher = ROOT / "agents/claude/scripts/view.sh"
-    result = subprocess.run(["bash", str(launcher), "-", "--title", "A & B", "--base", str(folder)], input=report, text=True, env=env, capture_output=True)
-    assert result.returncode == 0, result.stderr
-    received = json.loads(capture.read_text())
-    assert received == {"args": ["view", "-", "--title", "A & B", "--base", str(folder)], "text": report}
-    for extra in [{"MARKIFY_CLI": str(folder / "missing")}, {"OLD_CLI": "1"}, {"FAIL_CLI": "1"}]:
-        result = subprocess.run(["bash", str(launcher), "-"], input=report, text=True, env=dict(env, **extra), capture_output=True)
-        assert result.returncode != 0
-        if "FAIL_CLI" not in extra:
-            assert "https://github.com/spaquet/markify/releases/latest" in result.stderr
+    launchers = [ROOT / "agents/claude/scripts/view.sh", ROOT / "agents/codex/skills/markify-view/scripts/view.sh"]
+    assert launchers[0].read_bytes() == launchers[1].read_bytes()
+    for launcher in launchers:
+        result = subprocess.run(["bash", str(launcher), "-", "--title", "A & B", "--base", str(folder)], input=report, text=True, env=env, capture_output=True)
+        assert result.returncode == 0, result.stderr
+        received = json.loads(capture.read_text())
+        assert received == {"args": ["view", "-", "--title", "A & B", "--base", str(folder)], "text": report}
+        for extra in [{"MARKIFY_CLI": str(folder / "missing")}, {"OLD_CLI": "1"}, {"FAIL_CLI": "1"}]:
+            result = subprocess.run(["bash", str(launcher), "-"], input=report, text=True, env=dict(env, **extra), capture_output=True)
+            assert result.returncode != 0
+            if "FAIL_CLI" not in extra:
+                assert "https://github.com/spaquet/markify/releases/latest" in result.stderr
     if shutil.which("jq"):
         hook = ["bash", str(ROOT / "agents/claude/scripts/stop.sh")]
         payload = {"last_assistant_message": report, "cwd": str(folder), "stop_hook_active": False}

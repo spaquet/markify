@@ -1,6 +1,6 @@
 ---
 title: Coding agents
-description: Read coding-agent reports in Markify, with Claude Code installation and manual fallbacks.
+description: Read coding-agent reports in Markify, with Claude Code and Codex plugin installation.
 order: 12
 keywords: claude, codex, opencode, agent, report, plugin, marketplace, clipboard
 ---
@@ -41,9 +41,28 @@ bash "/absolute/path/to/markify/agents/claude/scripts/stop.sh"
 
 Use a stable checkout path for this optional command; marketplace cache paths may change on updates. The script reads `last_assistant_message` from the hook input, skips empty messages and hook continuations, and reports viewer failures without blocking Claude. It does not parse transcripts or reuse windows. Remove the Stop entry in `/hooks` to turn it off. Older Claude versions without that message field need updating for automatic mode. See [Claude's Stop hook reference](https://code.claude.com/docs/en/hooks#stop).
 
-## Codex and OpenCode
+## Codex
 
-Dedicated packages are planned in the next phases. For now, ask either agent to send its Markdown through the `view` command below.
+The separate Codex plugin adds the `markify-view` skill and uses the same local report transport. Installation was tested with Codex CLI 0.159.2. Use a version that provides these plugin commands:
+
+```sh
+codex plugin marketplace add spaquet/markify
+codex plugin add markify@markify
+```
+
+As with Claude, the GitHub commands require the package to be published. In a source checkout, replace the first command with `codex plugin marketplace add /absolute/path/to/markify`. Start a new Codex thread after installation, then invoke the skill:
+
+```text
+$markify-view Send the report we just discussed to Markify.
+```
+
+You can also ask Codex to open a report in Markify in ordinary language. The launcher checks for the app and the `view` command; if either is missing, it reports the problem and links to [GitHub Releases](https://github.com/spaquet/markify/releases/latest). You do not need a CLI symlink. Allow the normal sandbox request to launch Markify or write the report cache; if denied, use the clipboard fallback.
+
+For a Git-backed catalog, refresh it with `codex plugin marketplace upgrade markify`, then reinstall the package with `codex plugin remove markify@markify` and `codex plugin add markify@markify`. Start a new thread. To uninstall, run `codex plugin remove markify@markify`; optionally run `codex plugin marketplace remove markify` to remove the catalog. This package does not install an automatic response hook or a cloud connection. See [OpenAI's plugin packaging guide](https://developers.openai.com/plugins/build/plugins).
+
+## OpenCode
+
+The dedicated OpenCode tool is planned in Phase 3. For now, ask the agent to send its Markdown through the `view` command below.
 
 ## Clipboard and manual use
 
