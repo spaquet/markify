@@ -113,10 +113,11 @@ struct ContentView: View {
     private var rowSel: Color { colorScheme == .dark ? Color.white.opacity(0.14 * strong) : Color.black.opacity(0.07 * strong) }
     private var rule: Color { colorScheme == .dark ? Color.white.opacity(0.12 * strong) : Color.black.opacity(0.09 * strong) }
     private var accentSoft: Color { accent.opacity(colorScheme == .dark ? 0.22 : 0.13) }
-    private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? suggestedName ?? "Untitled" }
+    private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? document.report?.title ?? suggestedName ?? "Untitled" }
+    private var reportBase: URL? { fileURL == nil ? document.report?.baseDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) } : nil }
     /// The frontmatter title, else the first H1; names an untitled document and seeds its save panel.
     private var suggestedName: String? {
-        (Frontmatter.parse(document.text)?.title
+        (document.report?.title ?? Frontmatter.parse(document.text)?.title
             ?? document.text.split(separator: "\n", maxSplits: 40).first { $0.hasPrefix("# ") }
                 .map { $0.dropFirst(2).trimmingCharacters(in: .whitespaces) })
             .flatMap { $0.isEmpty ? nil : $0.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: " -") }
@@ -165,7 +166,7 @@ struct ContentView: View {
                     slashQuery = query
                 }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 },
                 theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil, bundleRoot: bundleRoot,
-                linkTargets: knowledge?.bundle.documents.filter { $0.url != fileURL?.standardizedFileURL }.map(\.path) ?? [])
+                linkTargets: knowledge?.bundle.documents.filter { $0.url != fileURL?.standardizedFileURL }.map(\.path) ?? [], baseDirectory: reportBase)
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56)
@@ -210,7 +211,7 @@ struct ContentView: View {
                         .onTapGesture { toggleLinks() }
                         .zIndex(1)
                     LinksPanel(links: documentLinks,
-                               documentURL: fileURL, bundleRoot: bundleRoot, documentText: document.text) { range in
+                               documentURL: fileURL, bundleRoot: bundleRoot, documentText: document.text, baseDirectory: reportBase) { range in
                         textView?.setSelectedRange(range)
                         textView?.scrollRangeToVisible(range)
                         textView?.window?.makeFirstResponder(textView)
@@ -1348,7 +1349,7 @@ struct ContentView: View {
         panel.allowedContentTypes = [format == .html ? .html : .pdf]
         panel.nameFieldStringValue = title + (format == .html ? ".html" : ".pdf")
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        let context = DocumentExport.Context(source: document.text, documentURL: fileURL, bundleRoot: bundleRoot, destination: url, fallbackTitle: title)
+        let context = DocumentExport.Context(source: document.text, documentURL: fileURL, bundleRoot: bundleRoot, destination: url, fallbackTitle: title, baseDirectory: reportBase)
         Task {
             do {
                 switch format {
@@ -1481,6 +1482,7 @@ struct ContentView: View {
 
     /// Per-document lens (extended attribute) when remembered, else the Settings default.
     private func initialLens() -> Bool {
+        if fileURL == nil, document.report != nil { return false }
         if rememberLens, let fileURL, let stored = LensMemory.read(fileURL) { return stored }
         return (defaultLens == "Last used" ? lastLens : defaultLens) == "Markdown"
     }

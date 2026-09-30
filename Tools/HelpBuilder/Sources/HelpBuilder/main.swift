@@ -68,7 +68,7 @@ let pages: [Page] = try fm.contentsOfDirectory(at: helpFolder, includingProperti
                     keywords: fields["keywords"] ?? "", web: fields["web"] ?? "help/\(slug).html", schema: fields["schema"],
                     license: fields["license"] == "true", body: body, lastModified: lastModified(url))
     }
-    .sorted { $0.order < $1.order }
+    .sorted { ($0.order, $0.slug) < ($1.order, $1.slug) }
 let bySlug = Dictionary(uniqueKeysWithValues: pages.map { ($0.slug, $0) })
 
 let licenseText = try String(contentsOf: root.appendingPathComponent("LICENSE"), encoding: .utf8)

@@ -60,6 +60,7 @@ With the caret in a table cell:
 | Shortcut | Action |
 | --- | --- |
 | ⌘N | New document |
+| ⌃⌥⌘V | New from Clipboard |
 | ⌘O | Open |
 | ⇧⌘O | Open bundle folder |
 | ⌘S | Save |

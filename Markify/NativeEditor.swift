@@ -47,6 +47,7 @@ struct NativeEditor: NSViewRepresentable {
     var bundleRoot: URL? = nil
     /// Bundle-absolute paths offered while typing a link destination.
     var linkTargets: [String] = []
+    var baseDirectory: URL? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -58,6 +59,7 @@ struct NativeEditor: NSViewRepresentable {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         MarkdownTextView.openEditors.add(editor)
         editor.documentURL = fileURL
+        editor.baseDirectory = baseDirectory
         editor.bundleRoot = bundleRoot
         editor.linkTargets = linkTargets
         editor.columnWidth = columnWidth
@@ -98,6 +100,7 @@ struct NativeEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let editor = scroll.documentView as? NSTextView else { return }
         (editor as? MarkdownTextView)?.documentURL = fileURL
+        (editor as? MarkdownTextView)?.baseDirectory = baseDirectory
         (editor as? MarkdownTextView)?.bundleRoot = bundleRoot
         (editor as? MarkdownTextView)?.linkTargets = linkTargets
         (editor as? MarkdownTextView)?.columnWidth = columnWidth
@@ -665,6 +668,7 @@ final class MarkdownTextView: NSTextView {
     }
 
     var documentURL: URL?
+    var baseDirectory: URL?
     var bundleRoot: URL?
     var linkTargets: [String] = []
     private var isCompletingLink = false
@@ -1088,7 +1092,7 @@ final class MarkdownTextView: NSTextView {
             case .image(let image) where ["http", "https"].contains(URL(string: path)?.scheme?.lowercased() ?? ""):
                 replacement = image.tiffRepresentation.map { "data:image/tiff;base64," + $0.base64EncodedString() } ?? ""
             case .image:
-                let url = Self.imageURL(path, document: documentURL)
+                let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
                 if let data = try? Data(contentsOf: url),
                    let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType {
                     replacement = "data:\(mime);base64," + data.base64EncodedString()
@@ -1246,7 +1250,7 @@ final class MarkdownTextView: NSTextView {
             case .failed: return .placeholder("Image unavailable — \(host)")
             }
         }
-        let url = Self.imageURL(path, document: documentURL)
+        let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
         if let cached = imageCache[url] {
             return cached.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
         }
@@ -1318,8 +1322,8 @@ final class MarkdownTextView: NSTextView {
     }
 
     /// Resolves an image destination against the document's folder; inserted paths are percent-encoded.
-    static func imageURL(_ path: String, document: URL?) -> URL {
-        let base = document?.deletingLastPathComponent() ?? URL(fileURLWithPath: "/")
+    static func imageURL(_ path: String, document: URL?, baseDirectory: URL? = nil) -> URL {
+        let base = document?.deletingLastPathComponent() ?? baseDirectory ?? URL(fileURLWithPath: "/")
         return URL(fileURLWithPath: path.removingPercentEncoding ?? path, relativeTo: base).standardizedFileURL
     }
 
@@ -1651,13 +1655,13 @@ final class MarkdownTextView: NSTextView {
         let point = convert(event.locationInWindow, from: nil)
         if rendered, let frontmatter = Frontmatter.parse(string),
            let hit = frontmatterChips(frontmatter).first(where: { $0.frame.contains(point) }) {
-            if let link = hit.chip.link { return Knowledge.follow(link, title: nil, from: documentURL, bundleRoot: bundleRoot) }
+            if let link = hit.chip.link { return Knowledge.follow(link, title: nil, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) }
             return editFrontmatter(frontmatter, at: hit.frame)
         }
         if event.modifierFlags.contains(.command), followFootnote(at: characterIndexForInsertion(at: point)) { return }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
         if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
-            return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot)
+            return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory)
         }
         for item in tasks() {
             guard let rect = checkboxRect(for: item), rect.contains(point), let box = item.checkbox else { continue }
@@ -1764,7 +1768,7 @@ final class MarkdownTextView: NSTextView {
             // A note dropped from the sidebar or Finder becomes a link to it where it lands.
             let title = (try? String(contentsOf: url, encoding: .utf8)).map { Self.noteTitle($0, url: url) } ?? url.deletingPathExtension().lastPathComponent
             let location = characterIndexForInsertion(at: convert(sender.draggingLocation, from: nil))
-            insertText(Self.noteLink(to: url, title: title, from: documentURL, bundleRoot: bundleRoot), replacementRange: NSRange(location: location, length: 0))
+            insertText(Self.noteLink(to: url, title: title, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory), replacementRange: NSRange(location: location, length: 0))
             return true
         }
         guard Self.imageExtensions.contains(url.pathExtension.lowercased()) else { return super.performDragOperation(sender) }
@@ -1780,7 +1784,7 @@ final class MarkdownTextView: NSTextView {
 
     /// A portable Markdown link to another note: relative to this document, bundle-absolute when both sit in its OKF bundle,
     /// and absolute while the document is unsaved, as dropped images are.
-    static func noteLink(to target: URL, title: String, from document: URL?, bundleRoot: URL?) -> String {
+    static func noteLink(to target: URL, title: String, from document: URL?, bundleRoot: URL?, baseDirectory: URL? = nil) -> String {
         let path: String
         if let document {
             if let bundleRoot, OKFLinks.bundlePath(of: document, root: bundleRoot) != nil, let inBundle = OKFLinks.bundlePath(of: target, root: bundleRoot) {
@@ -1788,6 +1792,8 @@ final class MarkdownTextView: NSTextView {
             } else {
                 path = OKFLinks.relativePath(to: target, from: document.deletingLastPathComponent())
             }
+        } else if let baseDirectory {
+            path = OKFLinks.relativePath(to: target, from: baseDirectory)
         } else {
             path = target.path
         }

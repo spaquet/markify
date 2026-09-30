@@ -1,0 +1,13 @@
+{
+  "name": "markify",
+  "metadata": { "description": "Read coding-agent reports in Markify on macOS" },
+  "owner": { "name": "Stéphane Paquet" },
+  "plugins": [
+    {
+      "name": "markify",
+      "source": "./agents/claude",
+      "description": "Read Markdown reports in the Markify macOS editor",
+      "version": "1.0.0"
+    }
+  ]
+}

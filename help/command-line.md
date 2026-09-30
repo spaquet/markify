@@ -1,12 +1,12 @@
 ---
 title: Command line
-description: Validate OKF bundles and export Markdown to HTML from Terminal or a script.
+description: Open agent reports, validate OKF bundles and export Markdown to HTML from Terminal or a script.
 order: 10
 keywords: cli, terminal, command line, markify, check, validation, export, html, ci
 ---
 # Command line
 
-Markify includes a separate `markify` command for scripts. It runs without opening an editor window. After installing the app, find it at `/Applications/Markify.app/Contents/MacOS/markify`. If you installed Markify elsewhere, use the matching path inside that app.
+Markify includes a separate `markify` command for scripts. `check` and `export` run without opening an editor window; `view` opens Markdown in the app. After installing the app, find it at `/Applications/Markify.app/Contents/MacOS/markify`. If you installed Markify elsewhere, use the matching path inside that app.
 
 To call it as `markify` from any folder, link it into a directory on your `PATH`:
 
@@ -16,6 +16,19 @@ markify --help
 ```
 
 If you build from source, run `swift build -c release --package-path MarkifyCLI`; the executable is in `MarkifyCLI/.build/release/markify`.
+
+## Read a report
+
+```sh
+markify view report.md --title 'Architecture review'
+pbpaste | markify view - --title 'Agent report' --base "$PWD"
+```
+
+`markify view [FILE | -] [--title TITLE] [--base DIRECTORY]` opens UTF-8 Markdown as a new, untitled document in the Rendered lens. Omit FILE or use `-` to read stdin. The source file is never changed. Press ⌘S to save the new document.
+
+Relative images and links use the input file's parent directory, or the current directory for stdin. `--base` overrides that with an existing directory. Without `--title`, the document uses its frontmatter title or first heading. The private cache envelope, including metadata, must fit within 10 MiB; invalid UTF-8 is rejected.
+
+Exit status 0 means macOS accepted the app launch request, rather than confirming rendering. Input, cache, and launch errors return 1; invalid arguments return 2. See [Coding agents](coding-agents.md) for plugin installation and clipboard use.
 
 ## Validate a knowledge bundle
 

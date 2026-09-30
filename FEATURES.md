@@ -6,6 +6,7 @@ This is an inventory of features in the current Markify source tree. See the [us
 
 - Open and save `.md`, `.markdown` and `.mdx` files as plain UTF-8 text. macOS document autosave, recent files, rename, move and version browsing are available.
 - Create new documents in a chosen library folder or choose a location each time. Reopen previous documents, start a new document or show the library at launch.
+- Open Markdown text as an editable, untitled document in the Rendered lens. Untouched reports close without a save prompt; edits receive normal save protection. Create one from the clipboard with File › New from Clipboard (⌃⌥⌘V).
 - Edit the same source through two lenses: **Rendered** shows formatting in place; **Markdown** shows source with syntax dimmed. Switch with ⌘/ while keeping the caret, selection, scroll position and undo history.
 - Select a default lens or the last used lens, and optionally remember the lens for each document.
 - Use a floating format bar for block styles, bold, italic, strikethrough, inline code and links; use keyboard shortcuts for the same actions.
@@ -62,6 +63,13 @@ This is an inventory of features in the current Markify source tree. See the [us
 
 ## Command line
 
-- Run the bundled `markify` executable from Terminal without opening an editor window; `--help` lists commands and exit status.
+- Run the bundled `markify` executable from Terminal; `--help` lists commands and exit status. Validation and export run without opening an editor window.
+- Open file or stdin text as an untitled report with `markify view [FILE | -] [--title TITLE] [--base DIRECTORY]`. Relative images, links and exports use the supplied base until the document is saved. The source file is never changed.
 - Validate an OKF bundle with `markify check BUNDLE`, showing file paths and severity for each finding. Error findings fail the command; warnings and information do not.
 - Export a `.md`, `.markdown` or `.mdx` file to a self-contained HTML page with `markify export FILE --html --output OUTPUT`, embedding local images and adjusting local links for the destination.
+
+## Coding agents
+
+- Send local Markdown reports directly from Claude Code (`/markify:view`), Codex (`markify-view` skill), or OpenCode (`markify_view` tool). Separate packages share the bundled CLI transport and detect missing or outdated Markify, reporting a GitHub Releases download link.
+- Install Claude and Codex packages through Markify's own marketplace catalogs; install OpenCode from a local package. Public distribution is pending. The [coding agents guide](help/coding-agents.md) covers installation, invocation, updates, removal, permissions and clipboard fallback for each agent.
+- Optionally open each completed Claude response through a Stop hook. Reports transfer through a private local cache; no extra AI service is used. Integrations require the agent and Markify on the same Mac.

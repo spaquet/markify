@@ -1,0 +1,8 @@
+{
+  "name": "markify",
+  "version": "1.0.0",
+  "description": "Send Markdown reports to an untitled Markify document on this Mac",
+  "author": { "name": "Stéphane Paquet" },
+  "homepage": "https://spaquet.github.io/markify/help/coding-agents.html",
+  "repository": "https://github.com/spaquet/markify"
+}

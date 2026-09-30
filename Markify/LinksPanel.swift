@@ -36,8 +36,8 @@ struct LinkSummary: Codable, Equatable {
         entries = (try? JSONDecoder().decode([String: LinkSummary].self, from: Data(contentsOf: location))) ?? [:]
     }
 
-    static func key(_ destination: String, from document: URL?, root: URL?) -> String? {
-        if let local = OKFLinks.resolve(destination, from: document, bundleRoot: root) {
+    static func key(_ destination: String, from document: URL?, root: URL?, baseDirectory: URL? = nil) -> String? {
+        if let local = OKFLinks.resolve(destination, from: document, bundleRoot: root, baseDirectory: baseDirectory) {
             return local.standardizedFileURL.absoluteString
         }
         guard var parts = URLComponents(string: destination), let scheme = parts.scheme?.lowercased(),
@@ -71,6 +71,7 @@ struct LinksPanel: View {
     let documentURL: URL?
     let bundleRoot: URL?
     let documentText: String
+    var baseDirectory: URL? = nil
     let jump: (NSRange) -> Void
     @State private var store = LinkSummaryStore()
     @State private var expanded: Set<Int> = []
@@ -101,7 +102,7 @@ struct LinksPanel: View {
     }
 
     private func row(_ link: DocumentLink) -> some View {
-        let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot)
+        let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot, baseDirectory: baseDirectory)
         let saved = key.flatMap { store.entries[$0] }
         return VStack(alignment: .leading, spacing: 6) {
             Button { jump(link.range) } label: {
@@ -111,7 +112,7 @@ struct LinksPanel: View {
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }.buttonStyle(.plain)
             HStack {
-                Button("Open destination") { Knowledge.follow(link.destination, title: link.text, from: documentURL, bundleRoot: bundleRoot) }
+                Button("Open destination") { Knowledge.follow(link.destination, title: link.text, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) }
                 Spacer()
                 Button(expanded.contains(link.id) ? "Hide summary" : "Summary") {
                     if expanded.contains(link.id) { expanded.remove(link.id) }
@@ -161,8 +162,8 @@ struct LinksPanel: View {
     private func checkLocalStaleness() {
         stale = []
         for link in links {
-            guard let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot),
-                  let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot),
+            guard let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory),
+                  let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot, baseDirectory: baseDirectory),
                   let summary = store.entries[key] else { continue }
             do {
                 let text = try localText(url)
@@ -180,7 +181,7 @@ struct LinksPanel: View {
             do {
                 let text: String
                 let fingerprint: String
-                if let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot) {
+                if let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) {
                     let source = try localText(url)
                     fingerprint = LinkSummaryStore.fingerprint(source)
                     let html = MarkdownHTML.render(source, mdx: url.pathExtension.lowercased() == "mdx").body

@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     dependencies: [.package(path: "../MarkifyMarkdown"), .package(path: "../OKFKit")],
     targets: [
-        .executableTarget(name: "markify", dependencies: ["MarkifyMarkdown", "OKFKit"])
+        .executableTarget(name: "markify", dependencies: ["MarkifyMarkdown", "OKFKit"]),
+        .testTarget(name: "MarkifyCLITests", dependencies: ["markify", "MarkifyMarkdown"])
     ]
 )

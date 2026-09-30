@@ -38,8 +38,14 @@ jobs:
 
       - name: Test markify CLI
         run: |
-          swift build --package-path MarkifyCLI
+          swift test --package-path MarkifyCLI
           bash scripts/test-cli.sh
+          python3 scripts/test-agent-integrations.py
+
+      - name: Test OpenCode package
+        run: |
+          npm install --prefix "$RUNNER_TEMP/markify-opencode" "$PWD/agents/opencode" --install-links --ignore-scripts --no-audit --no-fund
+          node scripts/test-opencode.mjs "$RUNNER_TEMP/markify-opencode/node_modules/markify-opencode/index.js"
 
       # help/*.md is built into the app's Help Book and the website; both must be regenerated with it.
       - name: Check generated help

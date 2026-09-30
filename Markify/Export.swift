@@ -14,6 +14,7 @@ import WebKit
         /// Where the export is written; relative links are rewritten to work from there.
         let destination: URL
         let fallbackTitle: String
+        var baseDirectory: URL? = nil
     }
 
     enum Format { case html, pdf }
@@ -61,7 +62,7 @@ import WebKit
 
     private static func shared(_ context: Context) -> MarkdownPage.Context {
         .init(source: context.source, documentURL: context.documentURL, bundleRoot: context.bundleRoot,
-              destination: context.destination, fallbackTitle: context.fallbackTitle)
+              destination: context.destination, fallbackTitle: context.fallbackTitle, baseDirectory: context.baseDirectory)
     }
 
     // MARK: Code

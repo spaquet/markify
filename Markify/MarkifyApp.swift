@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import CryptoKit
+import MarkifyMarkdown
 
 @MainActor
 final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
@@ -15,11 +16,14 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     /// the files and links it was launched with, and quits: only one Markify runs at a time.
     private var runningInstance: NSRunningApplication?
     private var handedOff: [URL] = []
+    private var ready = false
+    private var pendingURLs: [URL] = []
+    private var openedReports: Set<UUID> = []
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // markify:// links, used by the help to open the Welcome tour. A URL handler leaves document opening alone.
         NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(handleURL(_:withReply:)),
-                                                     forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+            forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
         runningInstance = Self.isTesting ? nil : NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
             .first { $0 != .current && !$0.isTerminated }
         if runningInstance != nil {
@@ -38,11 +42,35 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func handleURL(_ event: NSAppleEventDescriptor, withReply reply: NSAppleEventDescriptor) {
         guard let text = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue, let url = URL(string: text), url.scheme == "markify" else { return }
+        openURL(url)
+    }
+
+    func openURL(_ url: URL) {
+        guard url.scheme == "markify" else { return }
         if runningInstance != nil { return handedOff.append(url) }
+        guard ready else { pendingURLs.append(url); return }
+        receive(url)
+    }
+
+    private func receive(_ url: URL) {
         switch url.host() {
         case "welcome": Self.openWelcome()
+        case "view":
+            do {
+                let id = try ReportInbox.id(from: url)
+                guard openedReports.insert(id).inserted else { return }
+                do { try Self.consumeReport(url) }
+                catch { openedReports.remove(id); throw error }
+            } catch { Self.reportError(error) }
         default: break
         }
+    }
+
+    @discardableResult static func consumeReport(_ url: URL, inbox: ReportInbox = ReportInbox()) throws -> NSDocument {
+        let id = try ReportInbox.id(from: url)
+        let document = try openUntitled(report: inbox.read(id))
+        try inbox.remove(id)
+        return document
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -53,6 +81,10 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
         NSHelpManager.shared.registerBooks(in: .main)
         HelpBook.watchViewer()
         DispatchQueue.main.async {
+            self.ready = true
+            let requests = self.pendingURLs
+            self.pendingURLs.removeAll()
+            requests.forEach(self.receive)
             let startup = UserDefaults.standard.string(forKey: "startup") ?? "Reopen last documents"
             let urls = startup == "Reopen last documents" ? Self.lastOpenDocuments() : []
             guard !urls.isEmpty else { return Self.openInitialDocument(startup: startup) }
@@ -64,6 +96,26 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+    }
+
+    @discardableResult static func openUntitled(report: MarkifyReport) throws -> NSDocument {
+        try report.validate()
+        let document = try MarkifyDocument.makeUntitled(report: report, display: true)
+        NSApp.activate()
+        return document
+    }
+
+    static func newFromClipboard() {
+        guard let text = NSPasteboard.general.string(forType: .string) else { return }
+        do { try openUntitled(report: .init(text: text)) }
+        catch { reportError(error) }
+    }
+
+    private static func reportError(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = "Could not open report"
+        alert.informativeText = error.localizedDescription
+        alert.runModal()
     }
 
     /// Brings the running Markify forward with this launch's files and quits without touching saved state.
@@ -174,7 +226,7 @@ struct MarkifyApp: App {
     @NSApplicationDelegateAdaptor(MarkifyAppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        DocumentGroup(newDocument: MarkifyDocument()) { file in
+        DocumentGroup(newDocument: MarkifyDocument.newDocument()) { file in
             ContentView(document: file.$document, fileURL: file.fileURL)
         }
         .defaultLaunchBehavior(.suppressed)
@@ -184,6 +236,9 @@ struct MarkifyApp: App {
                 CheckForUpdatesButton()
             }
             CommandGroup(after: .newItem) {
+                Button("New from Clipboard") { MarkifyAppDelegate.newFromClipboard() }
+                    .keyboardShortcut("v", modifiers: [.command, .option, .control])
+                    .disabled(NSPasteboard.general.string(forType: .string) == nil)
                 Button("Open Folder…") { MarkifyAppDelegate.openLibraryFolder() }
                 Button("Open Bundle Folder…") { BundleAccess.chooseAndOpen() }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
@@ -191,6 +246,7 @@ struct MarkifyApp: App {
             CommandGroup(after: .help) {
                 Button("Keyboard Shortcuts") { HelpBook.open("shortcuts") }
                 Button("Markdown Guide") { HelpBook.open("markdown") }
+                Button("Coding Agents") { HelpBook.open("coding-agents") }
                 Button("Frequently Asked Questions") { HelpBook.open("faq") }
                 Divider()
                 Button("Welcome to Markify") { MarkifyAppDelegate.openWelcome() }
