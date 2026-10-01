@@ -31,7 +31,7 @@
 <link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
 <link rel="icon" type="image/svg+xml" href="images/logo.svg?v=2">
 <link rel="apple-touch-icon" href="images/app-icon.png?v=2">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","@id":"https://spaquet.github.io/markify/#app","name":"Markify","description":"A Markdown editor for macOS that shows one page through two lenses — rendered and Markdown — with GitHub Flavored Markdown, math, Mermaid diagrams, footnotes, callouts, HTML and PDF export, on-device Apple Intelligence and Open Knowledge Format support.","operatingSystem":"macOS 26 or later","applicationCategory":"ProductivityApplication","applicationSubCategory":"Markdown editor","softwareVersion":"1.90","processorRequirements":"Apple silicon or Intel","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"downloadUrl":"https://github.com/spaquet/markify/releases/latest","releaseNotes":"https://github.com/spaquet/markify/releases","installUrl":"https://spaquet.github.io/markify/help/updates.html","softwareHelp":{"@type":"CreativeWork","url":"https://spaquet.github.io/markify/help/"},"screenshot":"https://spaquet.github.io/markify/images/screens/1a.webp","image":"https://spaquet.github.io/markify/images/app-icon.png","license":"https://spaquet.github.io/markify/legal.html","isAccessibleForFree":true,"featureList":["Rendered and Markdown lenses over one text (⌘/)","CommonMark and GitHub Flavored Markdown","LaTeX math","Mermaid diagrams","Footnotes and callouts","YAML frontmatter and MDX","Self-contained HTML and paginated PDF export","On-device Apple Intelligence: proofread, rewrite, generate","Open Knowledge Format (OKF) bundles"],"author":{"@id":"https://github.com/spaquet#person"},"sameAs":["https://github.com/spaquet/markify"]},{"@type":"Person","@id":"https://github.com/spaquet#person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},{"@type":"WebSite","@id":"https://spaquet.github.io/markify/#site","url":"https://spaquet.github.io/markify/","name":"Markify","inLanguage":"en","publisher":{"@id":"https://github.com/spaquet#person"}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","@id":"https://spaquet.github.io/markify/#app","name":"Markify","description":"A Markdown editor for macOS that shows one page through two lenses — rendered and Markdown — with GitHub Flavored Markdown, math, Mermaid diagrams, footnotes, callouts, HTML and PDF export, on-device Apple Intelligence and Open Knowledge Format support.","operatingSystem":"macOS 26 or later","applicationCategory":"ProductivityApplication","applicationSubCategory":"Markdown editor","softwareVersion":"2.0.0","processorRequirements":"Apple silicon or Intel","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"downloadUrl":"https://github.com/spaquet/markify/releases/latest","releaseNotes":"https://github.com/spaquet/markify/releases","installUrl":"https://spaquet.github.io/markify/help/updates.html","softwareHelp":{"@type":"CreativeWork","url":"https://spaquet.github.io/markify/help/"},"screenshot":"https://spaquet.github.io/markify/images/screens/1a.webp","image":"https://spaquet.github.io/markify/images/app-icon.png","license":"https://spaquet.github.io/markify/legal.html","isAccessibleForFree":true,"featureList":["Rendered and Markdown lenses over one text (⌘/)","CommonMark and GitHub Flavored Markdown","LaTeX math","Mermaid diagrams","Footnotes and callouts","YAML frontmatter and MDX","Self-contained HTML and paginated PDF export","On-device Apple Intelligence: proofread, rewrite, generate","Open Knowledge Format (OKF) bundles","Open Markdown from HTTPS URLs and GitHub or GitLab repositories","Links panel with on-device summaries","markify command line: view, OKF check and HTML export","Coding-agent plugins for Claude Code, Codex and OpenCode"],"author":{"@id":"https://github.com/spaquet#person"},"sameAs":["https://github.com/spaquet/markify"]},{"@type":"Person","@id":"https://github.com/spaquet#person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},{"@type":"WebSite","@id":"https://spaquet.github.io/markify/#site","url":"https://spaquet.github.io/markify/","name":"Markify","inLanguage":"en","publisher":{"@id":"https://github.com/spaquet#person"}}]}</script>
 <link rel="alternate" type="text/plain" title="Markify for AI assistants" href="llms.txt">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -299,7 +299,7 @@ main:focus{outline:none}
       <a class="btn btn-accent btn-lg" href="#download">Download for macOS</a>
       <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify"><svg class="gl" aria-hidden="true"><use href="#gh"/></svg>Star on GitHub</a>
     </div>
-    <p class="req rv"><a href="https://github.com/spaquet/markify/releases/tag/v1.90">Version 1.90</a> · Requires macOS 26 Tahoe · Apple silicon and Intel</p>
+    <p class="req rv"><a href="https://github.com/spaquet/markify/releases/tag/v2.0.0">Version 2.0.0</a> · Requires macOS 26 Tahoe · Apple silicon and Intel</p>
 
     <div class="stage rv">
       <div class="shot" id="lensShot">
@@ -316,6 +316,22 @@ main:focus{outline:none}
       <span>Try it: press <kbd>⌘/</kbd> or click <b>MD</b></span>
     </div>
   </div>
+
+  <!-- New in 2.0 -->
+  <section class="alt" id="new">
+    <div class="wrap">
+      <div class="head rv">
+        <p class="eyebrow">New in 2.0</p>
+        <h2>Markdown from anywhere, links at a glance.</h2>
+        <p>Open files from the web and from GitHub or GitLab, see every link in a document, and send reports from your terminal or coding agent straight to the page.</p>
+      </div>
+      <div class="trio">
+        <div class="rv"><h3>Open a URL</h3><p><b>File › Open URL…</b> opens Markdown over HTTPS or browses a GitHub or GitLab repository, with token sign-in for private ones. Documents open as local copies; nothing is sent back.</p></div>
+        <div class="rv"><h3>Links panel</h3><p>Every destination in the document, with the lines that mention it. Jump to each one, open it, or ask Apple Intelligence for an on-device summary.</p></div>
+        <div class="rv"><h3>Command line &amp; agents</h3><p>The bundled <code>markify</code> command opens reports, validates knowledge bundles and exports HTML. Plugins for Claude Code, Codex and OpenCode send long answers to a Markify window.</p></div>
+      </div>
+    </div>
+  </section>
 
   <!-- Principles -->
   <section id="writing">
@@ -374,7 +390,7 @@ main:focus{outline:none}
         <div class="copy rv">
           <p class="eyebrow">Library</p>
           <h3>Open files and notes in one list.</h3>
-          <p>The sidebar slides over the page instead of pushing it aside. Files you opened from anywhere sit next to your library notes, all searchable.</p>
+          <p>The sidebar slides over the page instead of pushing it aside. Files you opened from anywhere sit next to your library notes and their subfolders, all searchable. Open any notes folder as your library.</p>
           <ul><li><kbd>⌃⌘S</kbd> Toggle the library</li></ul>
         </div>
         <div class="frame rv"><div class="shot"><img loading="lazy" src="images/screens/1f.webp" alt="Dark mode library sidebar showing open files and library notes over the document"></div></div>
@@ -578,7 +594,7 @@ main:focus{outline:none}
         <a class="btn btn-accent btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg" download aria-describedby="dl-req">Download for Apple silicon<span class="visually-hidden"> (disk image, M1 and later)</span></a>
         <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg" download aria-describedby="dl-req">Download for Intel<span class="visually-hidden"> (disk image)</span></a>
       </div>
-      <p class="req rv">Markify 1.90 · <a href="https://github.com/spaquet/markify/releases/tag/v1.90">Release notes</a> · <a href="https://github.com/spaquet/markify/releases">All releases</a></p>
+      <p class="req rv">Markify 2.0.0 · <a href="https://github.com/spaquet/markify/releases/tag/v2.0.0">Release notes</a> · <a href="https://github.com/spaquet/markify/releases">All releases</a></p>
       <p class="req note rv" id="dl-req" style="margin-left:auto;margin-right:auto">Requires macOS 26 Tahoe. Markify isn’t notarized yet: the first time you open it, click <b>Done</b>, then choose <b>Open Anyway</b> in System Settings › Privacy &amp; Security. <a href="help/updates.html">Step-by-step install guide</a> · <a href="faq.html">FAQ</a></p>
     </div>
   </section>

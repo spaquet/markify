@@ -602,7 +602,7 @@ URL: https://spaquet.github.io/markify/help/coding-agents.html
 
 Send a long Markdown answer to Markify to read it on the rendered page. Each report opens as a new, editable, untitled document. Press ⌘/ to inspect the Markdown and ⌘S to keep it. An untouched report closes without a save prompt; after edits, normal save protection applies.
 
-Install [Markify from GitHub Releases](https://github.com/spaquet/markify/releases/latest), using a version whose [command line](https://spaquet.github.io/markify/help/command-line.html) help lists `view`. The agent and Markify must run on the same Mac. A plugin does not install the macOS app. Remote, container, and cloud sessions cannot directly open a local window through this integration.
+Install [Markify 2.0 or later from GitHub Releases](https://github.com/spaquet/markify/releases/latest); its [command line](https://spaquet.github.io/markify/help/command-line.html) provides `view`. The agent and Markify must run on the same Mac. A plugin does not install the macOS app. Remote, container, and cloud sessions cannot directly open a local window through this integration.
 
 ## Claude Code
 
@@ -613,7 +613,7 @@ The Markify plugin adds `/markify:view`. In Claude Code, add Markify's own marke
 /plugin install markify@markify
 ```
 
-These repository installation commands become available when the plugin is included in the published repository. For a source checkout containing this feature, use `/plugin marketplace add /absolute/path/to/markify` instead. Install from the plugin details panel if prompted, then start a new session.
+To install from a source checkout, use `/plugin marketplace add /absolute/path/to/markify` instead. Install from the plugin details panel if prompted, then start a new session.
 
 Ask for a report, then run:
 
@@ -774,6 +774,18 @@ CommonMark and GitHub Flavored Markdown (tables, task lists, strikethrough, auto
 ### Can I open Obsidian or other notes folders?
 
 Yes. Choose **File › Open Folder…** or set your notes folder under **Settings › General › Library location**. The Library sidebar lists `.md`, `.markdown` and `.mdx` files in that folder and its subfolders. Links written as `[text](https://spaquet.github.io/markify/help/file.html)` work; wiki links such as `[[note]]` show as plain text.
+
+### Can I open Markdown from GitHub or the web?
+
+Yes. Choose **File › Open URL…** and paste an HTTPS link to a `.md` file, or a GitHub or GitLab repository to browse its Markdown files. Private repositories work with a personal access token. The file opens as an unsaved local copy; your edits are never sent back. See [Open a URL](https://spaquet.github.io/markify/help/getting-started.html#open-a-url).
+
+### Is there a command-line tool?
+
+Yes. The `markify` command inside the app opens Markdown in a new window (`markify view`), validates knowledge bundles (`markify check`) and exports HTML (`markify export`). See [Command line](https://spaquet.github.io/markify/help/command-line.html).
+
+### Can coding agents send their answers to Markify?
+
+Yes. Plugins for Claude Code, Codex and OpenCode open a long answer as a new document on the rendered page. See [Coding agents](https://spaquet.github.io/markify/help/coding-agents.html).
 
 ### How do I export to PDF or HTML?
 
