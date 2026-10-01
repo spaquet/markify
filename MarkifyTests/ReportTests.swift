@@ -5,6 +5,53 @@ import Testing
 @testable import Markify
 
 @Suite(.serialized) @MainActor struct ReportTests {
+    @Test func openedFileReusesOnlyUntouchedEmptyStartupWindow() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")
+        try Data("# Opened file".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let startup = try NSDocumentController.shared.openUntitledDocumentAndDisplay(true)
+        defer { MarkifyAppDelegate.startupDocument = nil; startup.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        let window = try #require(startup.windowControllers.first?.window)
+        let requestedFrame = NSRect(x: 100, y: 100, width: 1100, height: 800)
+        window.setFrame(window.constrainFrameRect(requestedFrame, to: window.screen), display: true)
+        let frame = window.frame
+        MarkifyAppDelegate.startupDocument = startup
+        let opened: NSDocument = try await withCheckedThrowingContinuation { continuation in
+            NSDocumentController.shared.openDocument(withContentsOf: url, display: false) { document, _, error in
+                if let document { continuation.resume(returning: document) }
+                else { continuation.resume(throwing: error ?? CocoaError(.fileReadUnknown)) }
+            }
+        }
+        defer { opened.close() }
+        startup.updateChangeCount(.changeDone)
+        #expect(!MarkifyAppDelegate.replaceStartupDocument(with: opened))
+        startup.updateChangeCount(.changeCleared)
+        let report = try MarkifyDocument.makeUntitled(report: .init(text: "User content"), display: true)
+        defer { report.close() }
+        MarkifyAppDelegate.startupDocument = report
+        #expect(!MarkifyAppDelegate.replaceStartupDocument(with: opened))
+        MarkifyAppDelegate.startupDocument = startup
+        opened.makeWindowControllers()
+        opened.showWindows()
+        // Native reloading reaches the SwiftUI editor asynchronously, especially on busy CI runners.
+        for _ in 0..<200 {
+            if MarkdownTextView.openEditors.allObjects.contains(where: {
+                $0.window === window && $0.documentURL == url && $0.string == "# Opened file"
+            }) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(startup.fileURL == url)
+        #expect(startup.windowControllers.first?.window === window)
+        #expect(window.frame == frame)
+        #expect(!NSDocumentController.shared.documents.contains { $0 === opened })
+        #expect(try startup.fileWrapper(ofType: "net.daringfireball.markdown").regularFileContents == Data("# Opened file".utf8))
+        #expect(!startup.isDocumentEdited)
+        let editor = try #require(MarkdownTextView.openEditors.allObjects.first { $0.window === window && $0.documentURL == url })
+        #expect(editor.string == "# Opened file")
+        #expect(editor.documentURL == url)
+    }
+
     @Test func reportURLConsumesOnlyItsEnvelope() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }

@@ -2035,6 +2035,8 @@ private struct WindowConfiguration: NSViewRepresentable {
         let view = NSView()
         DispatchQueue.main.async {
             guard let window = view.window else { return }
+            if let document = NSDocumentController.shared.document(for: window),
+               MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.title = ""
@@ -2047,6 +2049,8 @@ private struct WindowConfiguration: NSViewRepresentable {
     }
     func updateNSView(_ nsView: NSView, context: Context) {
         DispatchQueue.main.async {
+            if let window = nsView.window, let document = NSDocumentController.shared.document(for: window),
+               MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
             nsView.window?.titleVisibility = .hidden
             nsView.window?.titlebarAppearsTransparent = true
             nsView.window?.title = ""

@@ -36,6 +36,34 @@ import Testing
         #expect((fragments.first as? MarkdownLayoutFragment)?.documentRange?.location == 0)
     }
 
+    @Test(arguments: [CGFloat(18), CGFloat(24)]) func caretFontFollowsVisibleTextAfterSelectionAndRestyling(proseSize: CGFloat) throws {
+        let source = "# Title\n## Subtitle\nBody `code`\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        editor.isRichText = false
+        for markdownLens in [false, true] {
+            let native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: markdownLens, findQuery: "", matchCase: false,
+                                      selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil),
+                                      onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in }, theme: EditorTheme(proseSize: proseSize))
+            let coordinator = native.makeCoordinator()
+            coordinator.editor = editor
+            editor.delegate = coordinator
+            native.style(editor)
+            let ns = source as NSString
+            for (location, size) in [(0, markdownLens ? 14 : 36), (ns.range(of: "Title").location + 5, markdownLens ? 16 : 36),
+                                     (ns.range(of: "Subtitle").location + 2, markdownLens ? 16 : 22),
+                                     (ns.range(of: "Body").location + 2, markdownLens ? 14 : 18),
+                                     (ns.range(of: "code").location + 2, markdownLens ? 14 : 15), (ns.length, markdownLens ? 14 : 18)] {
+                editor.setSelectedRange(NSRange(location: location, length: 0))
+                coordinator.textViewDidChangeSelection(Notification(name: NSTextView.didChangeSelectionNotification, object: editor))
+                #expect((editor.typingAttributes[.font] as? NSFont)?.pointSize == CGFloat(size) * native.theme.scale)
+                native.style(editor)
+                #expect((editor.typingAttributes[.font] as? NSFont)?.pointSize == CGFloat(size) * native.theme.scale)
+            }
+        }
+        #expect(editor.string == source)
+    }
+
     @Test(arguments: ["", "Intro\n\n"]) func blockImageDrawsFromDocumentFolder(prefix: String) throws {
         let source = prefix + "![Hero](docs/images/social-preview.jpg)\n"
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
