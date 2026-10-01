@@ -15,12 +15,12 @@
 <article>
 <h1 id="coding-agents">Coding agents</h1>
 <p>Send a long Markdown answer to Markify to read it on the rendered page. Each report opens as a new, editable, untitled document. Press ⌘/ to inspect the Markdown and ⌘S to keep it. An untouched report closes without a save prompt; after edits, normal save protection applies.</p>
-<p>Install <a rel="noopener" href="https://github.com/spaquet/markify/releases/latest">Markify from GitHub Releases</a>, using a version whose <a href="command-line.html">command line</a> help lists <code>view</code>. The agent and Markify must run on the same Mac. A plugin does not install the macOS app. Remote, container, and cloud sessions cannot directly open a local window through this integration.</p>
+<p>Install <a rel="noopener" href="https://github.com/spaquet/markify/releases/latest">Markify 2.0 or later from GitHub Releases</a>; its <a href="command-line.html">command line</a> provides <code>view</code>. The agent and Markify must run on the same Mac. A plugin does not install the macOS app. Remote, container, and cloud sessions cannot directly open a local window through this integration.</p>
 <h2 id="claude-code">Claude Code</h2>
 <p>The Markify plugin adds <code>/markify:view</code>. In Claude Code, add Markify's own marketplace and install the plugin:</p>
 <pre><span class="code-label" aria-hidden="true">text</span><code class="language-text">/plugin marketplace add spaquet/markify
 /plugin install markify@markify</code></pre>
-<p>These repository installation commands become available when the plugin is included in the published repository. For a source checkout containing this feature, use <code>/plugin marketplace add /absolute/path/to/markify</code> instead. Install from the plugin details panel if prompted, then start a new session.</p>
+<p>To install from a source checkout, use <code>/plugin marketplace add /absolute/path/to/markify</code> instead. Install from the plugin details panel if prompted, then start a new session.</p>
 <p>Ask for a report, then run:</p>
 <pre><span class="code-label" aria-hidden="true">text</span><code class="language-text">/markify:view</code></pre>
 <p>Or request one directly, for example <code>/markify:view Explain the architecture we just discussed</code>. Claude sends Markdown through the bundled CLI; you do not need a <code>markify</code> symlink. Sending an earlier response from conversation context can differ from its exact original wording.</p>

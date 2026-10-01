@@ -27,10 +27,13 @@ A quiet Markdown editor for macOS 26. Write on one rendered page, press <kbd>⌘
 - **Format bar**: Select text to get a floating glass bar for block style, bold, italic, strikethrough, code and links.
 - **Slash menu**: Type `/` to insert tables, task lists, code blocks, callouts, math, images, footnotes or frontmatter. Each row shows its Markdown shortcut.
 - **GitHub-Flavored Markdown and more**: Tables, task lists, callouts (`> [!NOTE]`), `$…$` / `$$…$$` math, footnotes and YAML frontmatter.
-- **Library**: A glass sidebar (<kbd>⌃⌘S</kbd>) lists open files and library notes together.
+- **Library**: A glass sidebar (<kbd>⌃⌘S</kbd>) lists open files and library notes, including subfolders. Open any notes folder as your library.
 - **Focus**: The toolbar fades while you type and comes back when you move the pointer.
 - **Apple Intelligence, on-device only**: Writing Tools, proofread, rewrite, generate at the caret (<kbd>⌘↩</kbd>) and whole-document actions. Nothing leaves your Mac.
 - **Plain files**: Documents are ordinary `.md` files with system autosave, versions and Recents.
+- **Open from the web**: **File › Open URL…** opens Markdown over HTTPS or browses a GitHub or GitLab repository, with token access for private ones.
+- **Links panel**: Lists every link destination with its lines, and summarizes local notes or web pages on-device with Apple Intelligence.
+- **Command line and coding agents**: The bundled `markify` command opens reports (`view`), validates OKF bundles (`check`) and exports HTML (`export`). Plugins for Claude Code, Codex and OpenCode send agent answers to a Markify window.
 - **Finder Quick Look**: Press Space on a Markdown file to preview formatted text, local images, math and diagrams without opening Markify.
 
 See [FEATURES.md](FEATURES.md) for the full implemented feature inventory.

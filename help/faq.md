@@ -48,6 +48,18 @@ CommonMark and GitHub Flavored Markdown (tables, task lists, strikethrough, auto
 
 Yes. Choose **File › Open Folder…** or set your notes folder under **Settings › General › Library location**. The Library sidebar lists `.md`, `.markdown` and `.mdx` files in that folder and its subfolders. Links written as `[text](file.md)` work; wiki links such as `[[note]]` show as plain text.
 
+### Can I open Markdown from GitHub or the web?
+
+Yes. Choose **File › Open URL…** and paste an HTTPS link to a `.md` file, or a GitHub or GitLab repository to browse its Markdown files. Private repositories work with a personal access token. The file opens as an unsaved local copy; your edits are never sent back. See [Open a URL](getting-started.md#open-a-url).
+
+### Is there a command-line tool?
+
+Yes. The `markify` command inside the app opens Markdown in a new window (`markify view`), validates knowledge bundles (`markify check`) and exports HTML (`markify export`). See [Command line](command-line.md).
+
+### Can coding agents send their answers to Markify?
+
+Yes. Plugins for Claude Code, Codex and OpenCode open a long answer as a new document on the rendered page. See [Coding agents](coding-agents.md).
+
 ### How do I export to PDF or HTML?
 
 Choose **More (…) › Export › HTML** or **PDF**. The HTML page is self-contained, with images embedded, and the PDF is paginated. See [Export to HTML and PDF](export.md).

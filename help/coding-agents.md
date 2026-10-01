@@ -8,7 +8,7 @@ keywords: claude, codex, opencode, agent, report, plugin, marketplace, clipboard
 
 Send a long Markdown answer to Markify to read it on the rendered page. Each report opens as a new, editable, untitled document. Press ⌘/ to inspect the Markdown and ⌘S to keep it. An untouched report closes without a save prompt; after edits, normal save protection applies.
 
-Install [Markify from GitHub Releases](https://github.com/spaquet/markify/releases/latest), using a version whose [command line](command-line.md) help lists `view`. The agent and Markify must run on the same Mac. A plugin does not install the macOS app. Remote, container, and cloud sessions cannot directly open a local window through this integration.
+Install [Markify 2.0 or later from GitHub Releases](https://github.com/spaquet/markify/releases/latest); its [command line](command-line.md) provides `view`. The agent and Markify must run on the same Mac. A plugin does not install the macOS app. Remote, container, and cloud sessions cannot directly open a local window through this integration.
 
 ## Claude Code
 
@@ -19,7 +19,7 @@ The Markify plugin adds `/markify:view`. In Claude Code, add Markify's own marke
 /plugin install markify@markify
 ```
 
-These repository installation commands become available when the plugin is included in the published repository. For a source checkout containing this feature, use `/plugin marketplace add /absolute/path/to/markify` instead. Install from the plugin details panel if prompted, then start a new session.
+To install from a source checkout, use `/plugin marketplace add /absolute/path/to/markify` instead. Install from the plugin details panel if prompted, then start a new session.
 
 Ask for a report, then run:
 
