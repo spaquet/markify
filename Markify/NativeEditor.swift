@@ -28,6 +28,7 @@ struct SlashContext {
 }
 
 struct NativeEditor: NSViewRepresentable {
+    @AppStorage("loadRemoteImages") private var loadRemoteImages = true
     @Binding var text: String
     let fileURL: URL?
     let columnWidth: CGFloat
@@ -48,6 +49,8 @@ struct NativeEditor: NSViewRepresentable {
     /// Bundle-absolute paths offered while typing a link destination.
     var linkTargets: [String] = []
     var baseDirectory: URL? = nil
+    var onWritingToolsBegin: () -> Void = {}
+    var onWritingToolsEnd: (Bool) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -65,6 +68,7 @@ struct NativeEditor: NSViewRepresentable {
         editor.columnWidth = columnWidth
         editor.rendered = !markdownLens
         editor.theme = theme
+        editor.loadRemoteImages = loadRemoteImages
         editor.registerForDraggedTypes([.fileURL])
         editor.isRichText = false
         editor.allowsUndo = true
@@ -107,6 +111,7 @@ struct NativeEditor: NSViewRepresentable {
         (editor as? MarkdownTextView)?.rendered = !markdownLens
         (editor as? MarkdownTextView)?.theme = theme
         context.coordinator.parent = self
+        (editor as? MarkdownTextView)?.loadRemoteImages = loadRemoteImages
         // A render can still carry text the editor pushed a keystroke ago; replaying it would drop the newer typing.
         let echo = context.coordinator.pushedText.contains(text)
         if editor.string == text || !echo { context.coordinator.pushedText.removeAll() }
@@ -616,6 +621,7 @@ struct NativeEditor: NSViewRepresentable {
         var pushedText: [String] = []
         /// True while updateNSView edits the text view, when SwiftUI state must not be written.
         var isUpdating = false
+        private var writingToolsOriginalBody: String?
         var dismissedSlashLocation: Int?
         init(_ parent: NativeEditor) { self.parent = parent }
         @MainActor func handleSlashKey(_ key: SlashKey, _ slash: SlashContext) -> Bool {
@@ -644,11 +650,20 @@ struct NativeEditor: NSViewRepresentable {
             pushedText.append(editor.string)
             if pushedText.count > 32 { pushedText.removeFirst() }
             parent.text = editor.string
-            if (editor as? MarkdownTextView)?.isRenumbering != true { parent.onType() }
+            if writingToolsOriginalBody == nil, (editor as? MarkdownTextView)?.isRenumbering != true { parent.onType() }
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             if slash?.range.location != dismissedSlashLocation { dismissedSlashLocation = nil }
             parent.onSlash(dismissedSlashLocation == nil ? slash?.query : nil)
             parent.style(editor)
+        }
+        func textViewWritingToolsWillBegin(_ textView: NSTextView) {
+            writingToolsOriginalBody = FrontmatterBlock.body(of: textView.string)
+            parent.onWritingToolsBegin()
+        }
+        func textViewWritingToolsDidEnd(_ textView: NSTextView) {
+            guard let original = writingToolsOriginalBody else { return }
+            writingToolsOriginalBody = nil
+            parent.onWritingToolsEnd(FrontmatterBlock.body(of: textView.string) != original)
         }
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let editor else { return }
@@ -703,6 +718,9 @@ final class MarkdownTextView: NSTextView {
     var rendered = true
     /// A theme change restyles the text, which redraws its fragments; renders made with the old one are dropped.
     var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:] } } }
+    var loadRemoteImages = true {
+        didSet { if loadRemoteImages != oldValue { remoteImageLoaded() } }
+    }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     /// Restyles the text, for results that arrive later, such as a rendered diagram.
     var restyle: (() -> Void)?
@@ -1273,7 +1291,7 @@ final class MarkdownTextView: NSTextView {
         if ["http", "https"].contains(resolved.scheme?.lowercased() ?? "") {
             let remote = resolved
             let host = remote.host() ?? path
-            guard UserDefaults.standard.object(forKey: "loadRemoteImages") as? Bool ?? true else { return .placeholder("Remote image — \(host)") }
+            guard loadRemoteImages else { return .placeholder("Remote image — \(host)") }
             switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.remoteImageLoaded() }) {
             case .loaded(let image): return .image(image)
             case .loading: return .placeholder("Loading image — \(host)")

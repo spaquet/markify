@@ -8,6 +8,8 @@ keywords: keyboard shortcuts, keys, hotkeys, command
 
 You can change most of these in **Settings › Shortcuts**.
 
+Double-click a shortcut and press the new combination. Assigning a combination already used by another configurable action leaves that action unassigned. **Restore Defaults** resets all custom shortcuts.
+
 ## Editor
 
 | Shortcut | Action |

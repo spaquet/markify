@@ -486,6 +486,90 @@ struct MarkifyTests {
         #expect(Set(Shortcuts.actions.map(\.key)).count == Shortcuts.actions.count)
     }
 
+    @Test func shortcutReassignmentComparesModifierSets() {
+        let spec = "opt shift cmd delete"
+        let moved = Shortcuts.assigning(spec, to: "bold", stored: "")
+        #expect(Shortcuts.keyboardShortcut("deleteColumn", stored: moved) == nil)
+        #expect(Shortcuts.keyboardShortcut("bold", stored: moved) == Shortcuts.keyboardShortcut("deleteColumn", stored: ""))
+        let restored = Shortcuts.assigning(spec, to: "deleteColumn", stored: moved)
+        #expect(Shortcuts.overrides(restored)["deleteColumn"] == nil)
+        #expect(Shortcuts.keyboardShortcut("bold", stored: restored) == nil)
+        let legacy = Shortcuts.encode(["italic": "cmd shift opt delete", "deleteColumn": ""])
+        #expect(Shortcuts.keyboardShortcut("italic", stored: Shortcuts.assigning(spec, to: "bold", stored: legacy)) == nil)
+    }
+
+    @Test @MainActor func remoteImageSettingRefreshesCachedRendering() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        let source = "<img src=\"https://example.com/settings.png\">"
+        editor.string = source
+        let native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false,
+            findQuery: "", matchCase: false, selectedRange: .constant(NSRange(location: 0, length: 0)),
+            textView: .constant(editor), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+        editor.htmlBlocks[0] = .init(text: NSAttributedString(string: "Previously loaded image"), scale: 1, height: 20)
+        var refreshes = 0
+        editor.restyle = {
+            refreshes += 1
+            // HTML images are cached during styling rather than resolved at each paint.
+            if !editor.loadRemoteImages {
+                native.style(editor)
+            }
+        }
+        defer { editor.restyle = nil }
+        editor.loadRemoteImages = false
+        #expect(refreshes == 1)
+        #expect(editor.htmlBlocks[0]?.text.string.contains("Remote image") == true)
+        #expect(editor.htmlBlocks[0]?.text.string.contains("example.com") == true)
+        guard case .placeholder(let message) = editor.image(for: "https://example.com/settings.png") else {
+            Issue.record("Disabled remote images must show a placeholder")
+            return
+        }
+        #expect(message == "Remote image — example.com")
+        editor.loadRemoteImages = false
+        #expect(refreshes == 1)
+        editor.loadRemoteImages = true
+        #expect(refreshes == 2)
+        #expect(editor.string == source)
+    }
+
+    @Test @MainActor func systemWritingToolsOnlyReportsRetainedBodyEdits() {
+        let original = "---\ntype: note\n---\nOriginal body"
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = original
+        var humanEdits = 0
+        var starts = 0
+        var results: [Bool] = []
+        let native = NativeEditor(text: .constant(original), fileURL: nil, columnWidth: 640, markdownLens: false,
+            findQuery: "", matchCase: false, selectedRange: .constant(NSRange(location: 0, length: 0)),
+            textView: .constant(editor), onType: { humanEdits += 1 }, onSlash: { _ in },
+            onSlashKey: { _, _ in false }, onSelectionRect: { _ in },
+            onWritingToolsBegin: { starts += 1 }, onWritingToolsEnd: { results.append($0) })
+        let coordinator = native.makeCoordinator()
+        coordinator.editor = editor
+        func change(_ text: String) {
+            editor.string = text
+            coordinator.textDidChange(Notification(name: NSText.didChangeNotification, object: editor))
+        }
+        coordinator.textViewWritingToolsWillBegin(editor)
+        change(original + " rewritten")
+        #expect(humanEdits == 0)
+        coordinator.textViewWritingToolsDidEnd(editor)
+        #expect(results == [true])
+        coordinator.textViewWritingToolsWillBegin(editor)
+        change(original)
+        change(original + " rewritten") // Discard the proposed edit.
+        coordinator.textViewWritingToolsDidEnd(editor)
+        coordinator.textViewWritingToolsWillBegin(editor)
+        change(editor.string.replacingOccurrences(of: "type: note", with: "type: concept"))
+        coordinator.textViewWritingToolsDidEnd(editor)
+        coordinator.textViewWritingToolsWillBegin(editor)
+        coordinator.textViewWritingToolsDidEnd(editor) // Opening and closing without editing.
+        #expect(starts == 4)
+        #expect(results == [true, false, false, false])
+        #expect(humanEdits == 0)
+        change(original + " typed")
+        #expect(humanEdits == 1)
+    }
+
     @Test func frontmatterReadsTitle() {
         let parsed = Frontmatter.parse("---\ntitle: \"Bug: Bullets\"\ntags: [\"bug\",\"dark mode\"]\n---\nBody\n")
         #expect(parsed?.title == "Bug: Bullets")

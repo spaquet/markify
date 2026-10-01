@@ -400,14 +400,7 @@ struct SettingsView: View {
         recordMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 53 { stopRecording(); return nil }
             guard let spec = Shortcuts.spec(from: event) else { NSSound.beep(); return nil }
-            var overrides = Shortcuts.overrides(shortcutOverrides)
-            let defaultKey = Shortcuts.actions.first { $0.id == id }?.key
-            // A key taken by another action moves here; that action falls back to nothing until reassigned.
-            for other in Shortcuts.actions where other.id != id && Shortcuts.key(other.id, stored: shortcutOverrides) == spec {
-                overrides[other.id] = ""
-            }
-            overrides[id] = spec == defaultKey ? nil : spec
-            shortcutOverrides = Shortcuts.encode(overrides)
+            shortcutOverrides = Shortcuts.assigning(spec, to: id, stored: shortcutOverrides)
             stopRecording()
             return nil
         }
