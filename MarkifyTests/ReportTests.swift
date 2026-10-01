@@ -34,14 +34,20 @@ import Testing
         MarkifyAppDelegate.startupDocument = startup
         opened.makeWindowControllers()
         opened.showWindows()
-        try await Task.sleep(for: .milliseconds(500))
+        // Native reloading reaches the SwiftUI editor asynchronously, especially on busy CI runners.
+        for _ in 0..<200 {
+            if MarkdownTextView.openEditors.allObjects.contains(where: {
+                $0.window === window && $0.documentURL == url && $0.string == "# Opened file"
+            }) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
         #expect(startup.fileURL == url)
         #expect(startup.windowControllers.first?.window === window)
         #expect(window.frame == frame)
         #expect(!NSDocumentController.shared.documents.contains { $0 === opened })
         #expect(try startup.fileWrapper(ofType: "net.daringfireball.markdown").regularFileContents == Data("# Opened file".utf8))
         #expect(!startup.isDocumentEdited)
-        let editor = try #require(MarkdownTextView.openEditors.allObjects.first { $0.window === window })
+        let editor = try #require(MarkdownTextView.openEditors.allObjects.first { $0.window === window && $0.documentURL == url })
         #expect(editor.string == "# Opened file")
         #expect(editor.documentURL == url)
     }
