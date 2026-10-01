@@ -146,7 +146,10 @@ struct NativeEditor: NSViewRepresentable {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = (markdownLens ? 10 : 11) * theme.scale
         editor.typingAttributes = [.font: base, .foregroundColor: primary, .paragraphStyle: paragraph]
-        guard whole.length > 0 else { return }
+        guard whole.length > 0 else {
+            updateTypingFont(editor)
+            return
+        }
         storage.beginEditing()
         storage.setAttributes([.font: base, .foregroundColor: primary, .paragraphStyle: paragraph], range: whole)
 
@@ -570,7 +573,8 @@ struct NativeEditor: NSViewRepresentable {
     /// Plain-text NSTextView sizes its caret from the typing font, which must follow our styled text.
     func updateTypingFont(_ editor: NSTextView) {
         let base = markdownLens ? theme.mono(14) : theme.prose(18)
-        var font = base
+        // The empty-document overlay shows a title in both lenses.
+        var font = editor.string.isEmpty ? theme.prose(36, bold: true) : base
         if let storage = editor.textStorage, storage.length > 0 {
             let source = editor.string as NSString
             let location = min(editor.selectedRange().location, source.length)

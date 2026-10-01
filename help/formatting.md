@@ -6,6 +6,8 @@ keywords: bold, italic, heading, format bar, slash menu, insert, block style, li
 ---
 # Formatting
 
+In an empty document, the caret matches the **Untitled** placeholder's title size. Once you start typing, it follows the text's font.
+
 ## The format bar
 
 Select text and a glass **format bar** appears above it with Writing Tools, the block style menu, **bold**, *italic*, ~~strikethrough~~, `code` and link. It disappears on your next keystroke. In the Markdown lens, the same buttons wrap your selection in the right syntax.
