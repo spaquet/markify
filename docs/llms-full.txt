@@ -305,6 +305,8 @@ To use an existing notes folder, choose **File › Open Folder…** and select i
 
 Type in the search field to filter by title, folder path or text preview. Click a note to open it; drag it into the page to link to it. Reopen the sidebar to pick up files added outside Markify.
 
+The Library overlays the page, with window controls above search. Choose **New Document** at the bottom, or press **⌘N**, to create a document.
+
 In an Open Knowledge Format bundle, the sidebar also groups concepts by folder, type or tag. See [Knowledge bundles](https://spaquet.github.io/markify/help/knowledge.html).
 
 ## Find and replace
