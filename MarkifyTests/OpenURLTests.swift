@@ -55,6 +55,40 @@ import Testing
         await #expect(throws: RemoteOpenError.self) { try await client.fetch(URL(string: "https://example.com/downgrade.md")!) }
     }
 
+    @Test func credentialsStayAtOrigin() throws {
+        let credential = RemoteCredential(origin: URL(string: "https://example.com")!, kind: "basic", account: "reader", secret: "secret")
+        var request = URLRequest(url: URL(string: "https://example.com/private.md")!)
+        try credential.apply(to: &request)
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Basic " + Data("reader:secret".utf8).base64EncodedString())
+        for address in ["https://other.example.com/private.md", "http://example.com/private.md", "https://example.com:444/private.md"] {
+            var redirected = URLRequest(url: URL(string: address)!)
+            #expect(throws: RemoteOpenError.self) { try credential.apply(to: &redirected) }
+            #expect(redirected.value(forHTTPHeaderField: "Authorization") == nil)
+        }
+    }
+
+    @Test func protectedProviderURLs() async throws {
+        let source = URL(string: "https://github.com/example/repository/blob/release/docs/README.md")!
+        let parsed = RemoteAddress(source)
+        #expect(try parsed.fileAPI().absoluteString == "https://api.github.com/repos/example/repository/contents/docs/README.md?ref=release")
+        let gitlab = RemoteAddress(URL(string: "https://gitlab.acme.dev/group/subgroup/project/-/blob/release/docs/README.md")!)
+        #expect(gitlab.project == "group/subgroup/project")
+        #expect(try gitlab.fileAPI().absoluteString == "https://gitlab.acme.dev/api/v4/projects/group%2Fsubgroup%2Fproject/repository/files/docs%2FREADME%2Emd/raw?ref=release")
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [PublicURLFixture.self]
+        let client = PublicURLClient(configuration: configuration)
+        let credential = RemoteCredential(origin: parsed.credentialOrigin, kind: "bearer", account: "token", secret: "test-token")
+        let remote = try await RemoteMarkdown.load(source, client: client, credential: credential)
+        #expect(remote.text == "# Public README\n")
+        #expect(remote.base.absoluteString == "https://raw.githubusercontent.com/example/repository/release/docs/")
+        let gitlabCredential = RemoteCredential(origin: gitlab.credentialOrigin, kind: "gitlab", account: "token", secret: "gitlab-test-token")
+        let gitlabRemote = try await RemoteMarkdown.load(gitlab.url, client: client, credential: gitlabCredential)
+        #expect(gitlabRemote.text == "# Private GitLab README\n")
+        let branchFiles = try await PublicRepository.files(URL(string: "https://gitlab.acme.dev/group/project/-/tree/release/docs")!, client: client, credential: gitlabCredential)
+        #expect(branchFiles.map(\.path) == ["docs/guide.md"])
+        await #expect(throws: RemoteOpenError.self) { try await client.fetch(URL(string: "https://example.com/cross-origin.md")!, credential: RemoteCredential(origin: URL(string: "https://example.com")!, kind: "bearer", account: "token", secret: "test")) }
+    }
+
     @Test func remotePathsAndUntitledSource() throws {
         let base = URL(string: "https://raw.githubusercontent.com/owner/repo/main/docs/")!
         #expect(MarkdownTextView.imageURL("../assets/a%20b.png", document: nil, baseDirectory: base).absoluteString == "https://raw.githubusercontent.com/owner/repo/main/assets/a%20b.png")
@@ -81,7 +115,21 @@ private final class PublicURLFixture: URLProtocol, @unchecked Sendable {
         let body: String
         var status = 200
         var headers = ["Content-Type": "application/json"]
-        if url.path.hasSuffix("missing.md") {
+        if url.host == "gitlab.acme.dev" {
+            #expect(request.value(forHTTPHeaderField: "PRIVATE-TOKEN") == "gitlab-test-token")
+        }
+        if url.path.contains("/repository/tree"), url.host == "gitlab.acme.dev" {
+            #expect(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "ref" })?.value == "release")
+        }
+        if url.path.contains("/contents/") {
+            #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
+            #expect(request.value(forHTTPHeaderField: "Accept") == "application/vnd.github.raw+json")
+        }
+        if url.path.contains("/repository/files/") {
+            body = "# Private GitLab README\n"; headers["Content-Type"] = "text/plain"
+        } else if url.path.hasSuffix("cross-origin.md") {
+            status = 302; headers["Location"] = "https://other.example.com/private.md"; body = ""
+        } else if url.path.hasSuffix("missing.md") {
             status = 404; body = "Not found"
         } else if url.path.hasSuffix("downgrade.md") {
             status = 302; headers["Location"] = "http://example.com/file.md"; body = ""
