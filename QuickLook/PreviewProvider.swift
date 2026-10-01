@@ -7,6 +7,8 @@ import WebKit
 
 // Quick Look calls preparation on the main thread; its Objective-C protocol predates actor annotations.
 @MainActor final class PreviewProvider: NSViewController, @preconcurrency QLPreviewingController, WKNavigationDelegate {
+    // about:blank fragment navigation is unreliable across WebKit versions.
+    private static let pageURL = URL(string: "https://markify.invalid/preview")!
     private var document: URL?
     private let webView: WKWebView = {
         let configuration = WKWebViewConfiguration()
@@ -35,7 +37,7 @@ import WebKit
         Task {
             do {
                 let html = try await html(for: url)
-                webView.loadHTMLString(html, baseURL: URL(string: "about:blank"))
+                webView.loadHTMLString(html, baseURL: Self.pageURL)
                 completionHandler(nil)
             } catch { completionHandler(error) }
         }
@@ -45,7 +47,7 @@ import WebKit
                  decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { decisionHandler(.cancel); return }
         // The only navigation inside the preview is its own page and fragment anchors.
-        if url.absoluteString.split(separator: "#", maxSplits: 1).first == "about:blank" {
+        if url.absoluteString.split(separator: "#", maxSplits: 1).first == Substring(Self.pageURL.absoluteString) {
             decisionHandler(.allow)
             return
         }
