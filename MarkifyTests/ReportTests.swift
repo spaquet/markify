@@ -13,8 +13,9 @@ import Testing
         defer { MarkifyAppDelegate.startupDocument = nil; startup.close() }
         try await Task.sleep(for: .milliseconds(300))
         let window = try #require(startup.windowControllers.first?.window)
-        let frame = NSRect(x: 100, y: 100, width: 1100, height: 800)
-        window.setFrame(frame, display: true)
+        let requestedFrame = NSRect(x: 100, y: 100, width: 1100, height: 800)
+        window.setFrame(window.constrainFrameRect(requestedFrame, to: window.screen), display: true)
+        let frame = window.frame
         MarkifyAppDelegate.startupDocument = startup
         let opened: NSDocument = try await withCheckedThrowingContinuation { continuation in
             NSDocumentController.shared.openDocument(withContentsOf: url, display: false) { document, _, error in
