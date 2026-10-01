@@ -14,6 +14,8 @@ keywords: new document, open, save, library, window, welcome, URL, HTTPS, GitHub
 - **File › Open Folder…** chooses a folder for the Library sidebar. Use this for a folder of notes; the standard **Open…** command accepts individual files.
 - **File › Open Recent** lists the files you used lately.
 
+Opening a file replaces an untouched, empty startup document in the same window, keeping its size. Once you edit that document, files open in separate windows.
+
 Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
 
 To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams. It loads HTTPS images and local images referenced by the document, without a folder permission step. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See [Images and links](images-and-links.md#links-in-finder-previews).

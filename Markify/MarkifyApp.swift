@@ -7,6 +7,7 @@ import MarkifyMarkdown
 final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     /// Set at launch when Settings › On launch is "Library"; the first window consumes it to open the sidebar.
     static var showsLibraryOnNextWindow = false
+    static weak var startupDocument: NSDocument?
     static let libraryFolderOpened = Notification.Name("MarkifyLibraryFolderOpened")
     private static let openDocumentsKey = "openDocumentBookmarks"
     /// Tests launch the app as their host, next to any Markify the developer has open.
@@ -148,7 +149,28 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
             if openWelcome() { return }
         }
         showsLibraryOnNextWindow = startup == "Library"
-        NSDocumentController.shared.newDocument(nil)
+        do { startupDocument = try NSDocumentController.shared.openUntitledDocumentAndDisplay(true) }
+        catch { NSApp.presentError(error) }
+    }
+
+    /// All file-opening paths reach the document window's configuration, including Finder and File › Open.
+    @discardableResult
+    static func replaceStartupDocument(with opened: NSDocument) -> Bool {
+        guard let startup = startupDocument, startup !== opened,
+              let url = opened.fileURL, let type = opened.fileType,
+              startup.fileURL == nil, !startup.isDocumentEdited,
+              let data = try? startup.fileWrapper(ofType: type).regularFileContents, data.isEmpty,
+              let window = startup.windowControllers.first?.window, window.isVisible else { return false }
+        // Read successfully before closing either document; a failed open leaves both windows intact.
+        do { try startup.revert(toContentsOf: url, ofType: type) }
+        catch { return false }
+        startupDocument = nil
+        opened.close()
+        startup.fileType = type
+        startup.fileURL = url
+        startup.updateChangeCount(.changeCleared)
+        window.makeKeyAndOrderFront(nil)
+        return true
     }
 
     /// Copies the bundled Welcome tour into the library (once), with the image it shows, and opens it.
