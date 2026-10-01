@@ -98,6 +98,9 @@ struct SelectableLinkText: NSViewRepresentable {
     }
 
     static func key(_ destination: String, from document: URL?, root: URL?, baseDirectory: URL? = nil) -> String? {
+        if let baseDirectory, !baseDirectory.isFileURL {
+            return key(URL(string: destination, relativeTo: baseDirectory)?.absoluteURL.absoluteString ?? destination, from: nil, root: nil)
+        }
         if let local = OKFLinks.resolve(destination, from: document, bundleRoot: root, baseDirectory: baseDirectory) {
             return local.standardizedFileURL.absoluteString
         }
@@ -239,7 +242,7 @@ struct LinksPanel: View {
         stale = []
         for group in groups {
             let link = group.first
-            guard let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory),
+            guard baseDirectory?.isFileURL != false, let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory),
                   let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot, baseDirectory: baseDirectory),
                   let summary = store.entries[key] else { continue }
             do {
@@ -258,12 +261,12 @@ struct LinksPanel: View {
             do {
                 let text: String
                 let fingerprint: String
-                if let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) {
+                if baseDirectory?.isFileURL != false, let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) {
                     let source = try localText(url)
                     fingerprint = LinkSummaryStore.fingerprint(source)
                     let html = MarkdownHTML.render(source, mdx: url.pathExtension.lowercased() == "mdx").body
                     text = try NSAttributedString(data: Data(html.utf8), options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil).string
-                } else if let url = URL(string: link.destination), ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+                } else if let url = URL(string: key), ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
                     var request = URLRequest(url: url)
                     request.timeoutInterval = 20
                     let (data, response) = try await URLSession.shared.data(for: request)

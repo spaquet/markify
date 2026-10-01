@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/getting-started.html","name":"Getting started","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-30","description":"Create, open and save Markdown documents in Markify, and find your way around the window.","headline":"Getting started","inLanguage":"en","keywords":"new document, open, save, library, window, welcome","url":"https://spaquet.github.io/markify/help/getting-started.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/getting-started.html","name":"Getting started","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-01","description":"Create, open and save Markdown documents in Markify, and find your way around the window.","headline":"Getting started","inLanguage":"en","keywords":"new document, open, save, library, window, welcome, URL, HTTPS, GitHub, GitLab, repository","url":"https://spaquet.github.io/markify/help/getting-started.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -68,6 +68,8 @@
 </li>
 <li><strong>File › Open…</strong> (⌘O) opens any <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> file on your Mac. You can also drag a file onto the Markify icon.
 </li>
+<li><strong>File › Open URL…</strong> opens a public file from the web or browses a public GitHub or GitLab repository. See <a href="#open-a-url">Open a URL</a>.
+</li>
 <li><strong>File › Open Folder…</strong> chooses a folder for the Library sidebar. Use this for a folder of notes; the standard <strong>Open…</strong> command accepts individual files.
 </li>
 <li><strong>File › Open Recent</strong> lists the files you used lately.
@@ -75,6 +77,16 @@
 </ul>
 <p>Markify saves automatically, like other Mac apps. Use <strong>File › Revert To</strong> or the title menu's <strong>Browse All Versions…</strong> to go back to an earlier version.</p>
 <p>To preview a Markdown file without opening it, select a <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams. It loads HTTPS images and local images referenced by the document, without a folder permission step. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See <a href="images-and-links.html#links-in-finder-previews">Images and links</a>.</p>
+<h2 id="open-a-url">Open a URL</h2>
+<p>Choose <strong>File › Open URL…</strong>, then select one of the two options:</p>
+<ul>
+<li><strong>File</strong>: paste a direct HTTPS URL ending in <code>.md</code>, <code>.markdown</code> or <code>.mdx</code>, or a GitHub or GitLab file-page URL, and choose <strong>Open</strong>. File-page links fetch the Markdown source rather than the website’s HTML.
+</li>
+<li><strong>Repository</strong>: paste a public GitHub or GitLab repository URL and choose <strong>Browse</strong>. Markify lists Markdown files from the default branch. Search by folder or filename, select a file, then choose <strong>Open</strong>.
+</li>
+</ul>
+<p>Loading and errors appear in the dialog. The entered URL stays there so you can correct it or retry; <strong>Cancel</strong> stops the request. Only public HTTPS resources are supported. Private files and repositories requiring sign-in are not available yet. HTTP URLs, redirects to HTTP, HTML pages and downloads over 10 MB are rejected. For repositories too large to browse, use a file URL instead.</p>
+<p>Documents opened from URLs are unsaved local copies. Use <strong>⌘S</strong> to choose a local name and location; edits are never sent to the server. Relative links and images use the fetched document’s web location, including during the current session after saving locally. Remote images still follow Settings › General › Load remote images. <strong>More (…) › Source</strong> offers <strong>Open Original in Browser</strong> and <strong>Copy Source URL</strong>. This source information lasts for the current document session; reopening a saved copy uses its local folder.</p>
 <h2 id="the-window">The window</h2>
 <p>The page takes the whole window. A few controls float on glass above it and fade while you type:</p>
 <ul>
@@ -86,7 +98,7 @@
 </li>
 <li><strong>MD</strong> switches to the Markdown lens (⌘/). See <a href="lenses.html">Two lenses</a>.
 </li>
-<li><strong>More</strong> (…) holds Share, Export, Knowledge, Find, the word count and Settings.
+<li><strong>More</strong> (…) holds Share, Export, Source (for documents opened from URLs), Knowledge, Find, the word count and Settings.
 </li>
 </ul>
 <h2 id="start-writing">Start writing</h2>
@@ -94,7 +106,7 @@
 <h2 id="take-the-tour">Take the tour</h2>
 <p>The first time you open Markify, it opens <strong>Welcome to Markify</strong>, a document that tours the main features by letting you try them: the two lenses, the format bar and slash menu, tasks, tables, callouts, code, math, diagrams, images, the library, Apple Intelligence and export. It's saved in your library folder, so you can edit it freely.</p>
 <p><a rel="noopener" href="https://github.com/spaquet/markify/blob/main/Markify/Resources/Welcome.md">Open the Welcome tour</a> anytime, or choose <strong>Help › Welcome to Markify</strong>. If you've deleted it, Markify puts a fresh copy back.</p>
-<p class="edit">Updated 2026-09-30 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/getting-started.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-01 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/getting-started.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="index.html"><span>Previous</span>Markify Help</a><a rel="next" href="lenses.html"><span>Next</span>Two lenses</a></nav>
 </main>

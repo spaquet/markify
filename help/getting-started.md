@@ -2,7 +2,7 @@
 title: Getting started
 description: Create, open and save Markdown documents in Markify, and find your way around the window.
 order: 1
-keywords: new document, open, save, library, window, welcome
+keywords: new document, open, save, library, window, welcome, URL, HTTPS, GitHub, GitLab, repository
 ---
 # Getting started
 
@@ -10,12 +10,24 @@ keywords: new document, open, save, library, window, welcome
 
 - **File › New** (⌘N) creates an untitled document. Settings › General › *New documents are saved to* decides whether it saves into your library folder or asks each time.
 - **File › Open…** (⌘O) opens any `.md`, `.markdown` or `.mdx` file on your Mac. You can also drag a file onto the Markify icon.
+- **File › Open URL…** opens a public file from the web or browses a public GitHub or GitLab repository. See [Open a URL](#open-a-url).
 - **File › Open Folder…** chooses a folder for the Library sidebar. Use this for a folder of notes; the standard **Open…** command accepts individual files.
 - **File › Open Recent** lists the files you used lately.
 
 Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
 
 To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams. It loads HTTPS images and local images referenced by the document, without a folder permission step. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See [Images and links](images-and-links.md#links-in-finder-previews).
+
+## Open a URL
+
+Choose **File › Open URL…**, then select one of the two options:
+
+- **File**: paste a direct HTTPS URL ending in `.md`, `.markdown` or `.mdx`, or a GitHub or GitLab file-page URL, and choose **Open**. File-page links fetch the Markdown source rather than the website’s HTML.
+- **Repository**: paste a public GitHub or GitLab repository URL and choose **Browse**. Markify lists Markdown files from the default branch. Search by folder or filename, select a file, then choose **Open**.
+
+Loading and errors appear in the dialog. The entered URL stays there so you can correct it or retry; **Cancel** stops the request. Only public HTTPS resources are supported. Private files and repositories requiring sign-in are not available yet. HTTP URLs, redirects to HTTP, HTML pages and downloads over 10 MB are rejected. For repositories too large to browse, use a file URL instead.
+
+Documents opened from URLs are unsaved local copies. Use **⌘S** to choose a local name and location; edits are never sent to the server. Relative links and images use the fetched document’s web location, including during the current session after saving locally. Remote images still follow Settings › General › Load remote images. **More (…) › Source** offers **Open Original in Browser** and **Copy Source URL**. This source information lasts for the current document session; reopening a saved copy uses its local folder.
 
 ## The window
 
@@ -25,7 +37,7 @@ The page takes the whole window. A few controls float on glass above it and fade
 - **Title**: click the document's name to rename it, move it or browse its versions.
 - **Apple Intelligence** (the multicolor symbol) opens writing actions for the whole document. See [Apple Intelligence](intelligence.md).
 - **MD** switches to the Markdown lens (⌘/). See [Two lenses](lenses.md).
-- **More** (…) holds Share, Export, Knowledge, Find, the word count and Settings.
+- **More** (…) holds Share, Export, Source (for documents opened from URLs), Knowledge, Find, the word count and Settings.
 
 ## Start writing
 

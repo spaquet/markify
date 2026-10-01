@@ -31,6 +31,13 @@ require('node:fs').writeFileSync(${JSON.stringify(capture)}, JSON.stringify({arg
   await assert.rejects(access(capture));
   process.env.MARKIFY_CLI = join(folder, "missing");
   await assert.rejects(view.execute({ text: text.repeat(10000) }, context), /https:\/\/github.com\/spaquet\/markify\/releases\/latest/);
+  process.env.MARKIFY_CLI = cli;
+  await writeFile(cli, "#!/bin/bash\necho 'old CLI'\n", { mode: 0o700 });
+  await assert.rejects(view.execute({ text: text.repeat(10000) }, context), /This Markify CLI does not support view.*https:\/\/github.com\/spaquet\/markify\/releases\/latest/);
+  await writeFile(cli, "#!/bin/bash\nif [ \"$1\" = '--help' ]; then echo 'markify view'; exit 0; fi\necho 'Could not open report' >&2\nexit 1\n", { mode: 0o700 });
+  await assert.rejects(view.execute({ text: text.repeat(10000) }, context), /Could not open report/);
+  await writeFile(cli, "#!/bin/bash\nif [ \"$1\" = '--help' ]; then echo 'markify view'; fi\nexit 0\n", { mode: 0o700 });
+  await assert.rejects(view.execute({ text: text.repeat(10000) }, context));
   console.log("OpenCode tool checks passed.");
 } finally {
   if (previous === undefined) delete process.env.MARKIFY_CLI; else process.env.MARKIFY_CLI = previous;

@@ -18,11 +18,12 @@ export const MarkifyPlugin = async () => ({
         await new Promise((resolve, reject) => {
           const child = spawn("/bin/bash", args, { stdio: ["pipe", "ignore", "pipe"], signal: context.abort });
           let error = "";
+          let inputError;
           child.stderr.setEncoding("utf8").on("data", chunk => { error += chunk; });
           child.on("error", reject);
-          child.on("close", code => code === 0 ? resolve() : reject(new Error(error.trim() || `Markify launch failed (${code})`)));
+          child.on("close", code => code === 0 && !inputError ? resolve() : reject(new Error(error.trim() || inputError?.message || `Markify launch failed (${code})`)));
           // A missing/outdated CLI can exit before it reads stdin; preserve its useful stderr.
-          child.stdin.on("error", failure => { if (failure.code !== "EPIPE") reject(failure); });
+          child.stdin.on("error", failure => { inputError = failure; });
           child.stdin.end(text, "utf8");
         });
         return "macOS accepted the Markify report launch. The report opens unsaved; use Save to keep it.";
