@@ -38,3 +38,5 @@ On an empty line, press **⌘↩** (or type `/write`) to have Apple Intelligence
 ## Reviewing changes
 
 Rewritten text appears inside a multicolor edge. **Compare** it with the original, **Try Again**, **Discard Rewrite**, or **Accept** it. ⌘Z undoes an accepted change.
+
+In OKF concepts, **Settings › Intelligence › Record AI edits in OKF concepts** also covers system Writing Tools. When its session ends with changes to the concept's body, Markify records Apple Intelligence as the producer. Discarding all changes leaves attribution unchanged.

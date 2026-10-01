@@ -55,6 +55,17 @@ enum Shortcuts {
         overrides(stored)[id] ?? actions.first { $0.id == id }?.key ?? ""
     }
 
+    /// Move a combination to an action, comparing modifiers independently of their stored order.
+    static func assigning(_ spec: String, to id: String, stored: String) -> String {
+        var values = overrides(stored)
+        let shortcut = keyboardShortcut(id, stored: encode([id: spec]))
+        for other in actions where other.id != id && keyboardShortcut(other.id, stored: stored) == shortcut {
+            values[other.id] = ""
+        }
+        values[id] = shortcut == keyboardShortcut(id, stored: "") ? nil : spec
+        return encode(values)
+    }
+
     static func keyboardShortcut(_ id: String, stored: String) -> KeyboardShortcut? {
         let parts = key(id, stored: stored).split(separator: " ").map(String.init)
         guard let key = parts.last else { return nil }

@@ -13,7 +13,7 @@ Choose **Markify › Settings…** (⌘,).
 - **New documents are saved to** your library or a place you choose each time.
 - **Library location** chooses the folder whose `.md`, `.markdown` and `.mdx` files and subfolders appear in the sidebar.
 - **Save pasted images to** `./assets`, `./images` or the document's folder.
-- **Load remote images** from the web.
+- **Load remote images** from the web. Changes apply to open documents and image previews immediately.
 - **On launch**, reopen your last documents, start a new one, or show the library.
 - **Default Markdown app**: make Markify open `.md` files from the Finder.
 - **Knowledge**: your verifier name and whether your edits are recorded in OKF concepts.

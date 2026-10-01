@@ -166,7 +166,16 @@ struct ContentView: View {
                     slashQuery = query
                 }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 },
                 theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil, bundleRoot: bundleRoot,
-                linkTargets: knowledge?.bundle.documents.filter { $0.url != fileURL?.standardizedFileURL }.map(\.path) ?? [], baseDirectory: reportBase)
+                linkTargets: knowledge?.bundle.documents.filter { $0.url != fileURL?.standardizedFileURL }.map(\.path) ?? [], baseDirectory: reportBase,
+                onWritingToolsBegin: { humanStampTask?.cancel() }, onWritingToolsEnd: { changed in
+                    if changed {
+                        stampAIGenerated()
+                        // Even with AI recording off, these edits must not become a delayed human stamp.
+                        stampedBody = FrontmatterBlock.body(of: textView?.string ?? document.text)
+                    } else {
+                        scheduleHumanStamp()
+                    }
+                })
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56)
