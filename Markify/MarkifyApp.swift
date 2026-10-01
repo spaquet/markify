@@ -225,6 +225,8 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 struct MarkifyApp: App {
     @NSApplicationDelegateAdaptor(MarkifyAppDelegate.self) private var appDelegate
 
+    @Environment(\.openWindow) private var openWindow
+
     var body: some Scene {
         DocumentGroup(newDocument: MarkifyDocument.newDocument()) { file in
             ContentView(document: file.$document, fileURL: file.fileURL)
@@ -239,6 +241,7 @@ struct MarkifyApp: App {
                 Button("New from Clipboard") { MarkifyAppDelegate.newFromClipboard() }
                     .keyboardShortcut("v", modifiers: [.command, .option, .control])
                     .disabled(NSPasteboard.general.string(forType: .string) == nil)
+                Button("Open URL…") { openWindow(id: "open-url") }
                 Button("Open Folder…") { MarkifyAppDelegate.openLibraryFolder() }
                 Button("Open Bundle Folder…") { BundleAccess.chooseAndOpen() }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
@@ -255,6 +258,13 @@ struct MarkifyApp: App {
                 Button("Report an Issue…") { HelpBook.openWeb("https://github.com/spaquet/markify/issues/new") }
             }
         }
+        Window("Open URL", id: "open-url") {
+            OpenURLView()
+        }
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
+        .defaultPosition(.center)
+        .commandsRemoved()
         Window("About Markify", id: "about") {
             AboutView()
                 .containerBackground(.thickMaterial, for: .window)

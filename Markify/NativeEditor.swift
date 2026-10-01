@@ -1089,7 +1089,7 @@ final class MarkdownTextView: NSTextView {
             guard let path = Self.htmlAttribute("src", in: tag) else { continue }
             let replacement: String
             switch image(for: path) {
-            case .image(let image) where ["http", "https"].contains(URL(string: path)?.scheme?.lowercased() ?? ""):
+            case .image(let image) where ["http", "https"].contains(Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory).scheme?.lowercased() ?? ""):
                 replacement = image.tiffRepresentation.map { "data:image/tiff;base64," + $0.base64EncodedString() } ?? ""
             case .image:
                 let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
@@ -1241,7 +1241,10 @@ final class MarkdownTextView: NSTextView {
 
     /// The image an `![](path)` shows: a file beside the document, or a remote image when Settings allows it.
     func image(for path: String) -> ImageContent {
-        if let remote = URL(string: path), let scheme = remote.scheme?.lowercased(), ["http", "https"].contains(scheme) {
+        let resolved = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
+        if baseDirectory?.isFileURL == false && resolved.isFileURL { return .placeholder("Local image unavailable in a web document") }
+        if ["http", "https"].contains(resolved.scheme?.lowercased() ?? "") {
+            let remote = resolved
             let host = remote.host() ?? path
             guard UserDefaults.standard.object(forKey: "loadRemoteImages") as? Bool ?? true else { return .placeholder("Remote image — \(host)") }
             switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.remoteImageLoaded() }) {
@@ -1323,6 +1326,9 @@ final class MarkdownTextView: NSTextView {
 
     /// Resolves an image destination against the document's folder; inserted paths are percent-encoded.
     static func imageURL(_ path: String, document: URL?, baseDirectory: URL? = nil) -> URL {
+        if let baseDirectory, !baseDirectory.isFileURL,
+           let remote = URL(string: path, relativeTo: baseDirectory)?.absoluteURL { return remote }
+        if let absolute = URL(string: path), absolute.scheme != nil { return absolute }
         let base = document?.deletingLastPathComponent() ?? baseDirectory ?? URL(fileURLWithPath: "/")
         return URL(fileURLWithPath: path.removingPercentEncoding ?? path, relativeTo: base).standardizedFileURL
     }

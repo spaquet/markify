@@ -49,6 +49,9 @@ public enum MarkdownPage {
     }
 
     public static func imageSource(_ source: String, context: Context) -> String {
+        if let base = context.baseDirectory, !base.isFileURL {
+            return URL(string: source, relativeTo: base)?.absoluteURL.absoluteString ?? source
+        }
         guard let url = localURL(source, context: context) else { return source }
         let extensionName = url.pathExtension.lowercased()
         let mime = UTType(filenameExtension: extensionName)?.preferredMIMEType ?? [
@@ -64,6 +67,9 @@ public enum MarkdownPage {
     }
 
     public static func linkTarget(_ destination: String, context: Context) -> String {
+        if !destination.hasPrefix("#"), let base = context.baseDirectory, !base.isFileURL {
+            return URL(string: destination, relativeTo: base)?.absoluteURL.absoluteString ?? destination
+        }
         guard !destination.hasPrefix("#"), context.documentURL != nil || context.baseDirectory != nil || destination.hasPrefix("/") else { return destination }
         let split = destination.firstIndex { $0 == "#" || $0 == "?" }
         let path = String(destination[..<(split ?? destination.endIndex)])

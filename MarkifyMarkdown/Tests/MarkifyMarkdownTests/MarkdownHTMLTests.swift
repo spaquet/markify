@@ -7,6 +7,21 @@ private func html(_ source: String, mdx: Bool = false, options: MarkdownHTML.Opt
 }
 
 @Suite struct MarkdownHTMLTests {
+    @Test func webSourceResolvesExportPathsWithoutChangingMarkdown() {
+        let source = "[Next](../next.md#part) ![Image](images/a%20b.png)"
+        let base = URL(string: "https://example.com/docs/")!
+        let context = MarkdownPage.Context(source: source, documentURL: URL(fileURLWithPath: "/tmp/local.md"),
+                                           destination: URL(fileURLWithPath: "/tmp/out.html"), fallbackTitle: "Remote", baseDirectory: base)
+        #expect(MarkdownPage.linkTarget("../next.md#part", context: context) == "https://example.com/next.md#part")
+        #expect(MarkdownPage.linkTarget("#part", context: context) == "#part")
+        #expect(MarkdownPage.imageSource("images/a%20b.png", context: context) == "https://example.com/docs/images/a%20b.png")
+        #expect(MarkdownPage.imageSource("/logo.png", context: context) == "https://example.com/logo.png")
+        let page = MarkdownPage.html(context)
+        #expect(page.contains("https://example.com/next.md#part"))
+        #expect(page.contains("https://example.com/docs/images/a%20b.png"))
+        #expect(context.source == source)
+    }
+
     @Test func escapesTextAndCode() {
         let out = html("a < b & \"c\"\n\n`<div>`\n\n```\nif a < b {}\n```\n")
         #expect(out.contains("<p>a &lt; b &amp; &quot;c&quot;</p>"))

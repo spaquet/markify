@@ -26,6 +26,12 @@ Images from the web (`https://…`) load only when **Settings › General › Lo
 - **⌘-click** a link to open it, in either lens. Links to other Markdown files open in Markify; web links open in your browser.
 - Drag a note from the library sidebar or the Finder into the page to insert a link to it. The link uses a path relative to your document, so it keeps working in other editors and on GitHub.
 
+### Documents opened from the web
+
+When you [open a URL](getting-started.md#open-a-url), relative image paths and links resolve against the fetched document’s web location. **⌘-click** opens these resolved web links in your browser; remote images follow **Load remote images**. Local image URLs are not loaded in a web document.
+
+The web location remains in use for the current document session, including after saving locally. Reopening the saved copy resolves relative paths against its local folder. Use **More (…) › Source** to open the original page in your browser or copy its URL while that document session is open.
+
 ### Links panel
 
 Click the right sidebar button in the toolbar to list destinations in the order they first appear. Repeated links to the same resolved destination share one entry, even when their labels differ. Each entry lists its source line numbers, which update as you edit. Click a line number to jump to that occurrence, click the title to jump to the first occurrence, or choose **Open destination** to follow the link. Multiple mentions on one line list that line once. The panel shows an empty message when the document has no links.

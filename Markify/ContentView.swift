@@ -114,7 +114,7 @@ struct ContentView: View {
     private var rule: Color { colorScheme == .dark ? Color.white.opacity(0.12 * strong) : Color.black.opacity(0.09 * strong) }
     private var accentSoft: Color { accent.opacity(colorScheme == .dark ? 0.22 : 0.13) }
     private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? document.report?.title ?? suggestedName ?? "Untitled" }
-    private var reportBase: URL? { fileURL == nil ? document.report?.baseDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) } : nil }
+    private var reportBase: URL? { document.remoteBase ?? (fileURL == nil ? document.report?.baseDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) } : nil) }
     /// The frontmatter title, else the first H1; names an untitled document and seeds its save panel.
     private var suggestedName: String? {
         (document.report?.title ?? Frontmatter.parse(document.text)?.title
@@ -281,6 +281,15 @@ struct ContentView: View {
                             Menu {
                                 if let fileURL { ShareLink(item: fileURL) { Text("Share") } }
                                 else { Button("Share") { }.disabled(true) }
+                                if let source = document.sourceURL {
+                                    Menu("Source") {
+                                        Button("Open Original in Browser") { NSWorkspace.shared.open(source) }
+                                        Button("Copy Source URL") {
+                                            NSPasteboard.general.clearContents()
+                                            NSPasteboard.general.setString(source.absoluteString, forType: .string)
+                                        }
+                                    }
+                                }
                                 Menu("Export") {
                                     Button("HTML") { exportHTML() }
                                     Button("PDF") { exportPDF() }
