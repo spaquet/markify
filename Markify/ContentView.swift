@@ -202,6 +202,7 @@ struct ContentView: View {
                         .zIndex(1)
                     sidebar
                         .padding(8)
+                        .ignoresSafeArea(.container, edges: .top)
                         .transition(.move(edge: .leading))
                         .zIndex(2)
                 }
@@ -218,6 +219,7 @@ struct ContentView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
                     .padding(8)
+                    .ignoresSafeArea(.container, edges: .top)
                     .transition(.move(edge: .trailing))
                     .zIndex(2)
                 }
@@ -309,7 +311,7 @@ struct ContentView: View {
                         .padding(3)
                         .chromeGlass(in: .capsule)
                     }
-                    .padding(.leading, 88).padding(.trailing, 12).padding(.top, 4)
+                    .padding(.leading, 88).padding(.trailing, 12).padding(.top, 14)
                 }
                 .opacity(chromeVisible ? 1 : 0)
                 .allowsHitTesting(chromeVisible)
@@ -533,7 +535,18 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollIndicators(.never)
-            Button("New Document ⌘N") { NSDocumentController.shared.newDocument(nil) }
+            Button { NSDocumentController.shared.newDocument(nil) } label: {
+                HStack {
+                    Text("New Document")
+                    Spacer()
+                    Text("⌘N")
+                }
+                .font(.system(size: 12.5))
+                .foregroundStyle(.secondary)
+                .padding(8)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 12).padding(.top, 54).padding(.bottom, 12)
         .frame(width: 260).frame(maxHeight: .infinity)
