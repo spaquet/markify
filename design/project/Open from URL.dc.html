@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#efede9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}a{color:#0a84ff;text-decoration:none}a:hover{color:#409cff}input{font:inherit;color:inherit;background:none;border:0;outline:0;padding:0;margin:0;width:100%}input::placeholder{color:#6e6e73}</style></helmet>
+<section id="1" style="padding:48px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:860px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-size:17px;font-weight:600;color:#1d1d1f">Open from URL — sheet</span></div>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#6e6e73;text-wrap:pretty">One sheet for files and repositories. The URL is parsed live into owner / repo / branch / path; the Access group adapts to the host (GitHub &amp; GitLab: account or token · any HTTPS: basic auth or bearer token). Both themes share state — try the states below, type a URL, or click Sign in.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ scenarios }}" as="s" hint-placeholder-count="6">
+<div onClick="{{ s.onClick }}" style="padding:6px 12px;border-radius:999px;font-size:12px;font-weight:500;cursor:default;background:{{ s.bg }};color:{{ s.color }};box-shadow:0 0 0 .5px rgba(0,0,0,.14)">{{ s.label }}</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:28px">
+<div style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#1a" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">1a</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Dark</span></div>
+<div id="1a" style="width:860px;padding:40px 0 56px;border-radius:22px;display:flex;justify-content:center;background:radial-gradient(circle at 20% 15%,#3a3346 0,transparent 50%),radial-gradient(circle at 85% 30%,#24384a 0,transparent 55%),#1b1b1e;box-shadow:0 20px 60px rgba(0,0,0,.18)">
+<div style="width:600px;border-radius:24px;background:#2a2a2d;color:#f5f5f7;font-size:13px;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 0 .5px rgba(255,255,255,.14),inset 0 .5px 0 rgba(255,255,255,.12)">
+<div style="padding:22px 24px 0;display:flex;gap:14px;align-items:center">
+<div style="width:40px;height:40px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#3a3a3e,#303034);box-shadow:inset 0 .5px 0 rgba(255,255,255,.16),0 0 0 .5px rgba(0,0,0,.4)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#0a84ff" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"></circle><path d="M2.8 10h14.4M10 2.8c2 2.1 3 4.5 3 7.2s-1 5.1-3 7.2c-2-2.1-3-4.5-3-7.2s1-5.1 3-7.2z"></path></svg></div>
+<div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:15px;font-weight:600">Open from URL</div><div style="font-size:12px;color:#98989d">A Markdown file on the web, or a GitHub / GitLab repository.</div></div>
+</div>
+<div style="padding:18px 24px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<sc-for list="{{ modes }}" as="m" hint-placeholder-count="2">
+<div onClick="{{ m.onClick }}" style="padding:11px 12px;border-radius:12px;display:flex;gap:10px;align-items:center;cursor:default;background:{{ m.bg }};box-shadow:{{ m.ring }}">
+<div style="width:28px;height:28px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:{{ m.iconBg }};color:{{ m.iconColor }}">{{ m.glyph }}</div>
+<div style="display:flex;flex-direction:column;gap:1px"><span style="font-weight:600">{{ m.title }}</span><span style="font-size:11.5px;color:#98989d">{{ m.sub }}</span></div>
+</div>
+</sc-for>
+</div>
+<div style="padding:18px 24px 0;display:flex;flex-direction:column;gap:8px">
+<div style="height:38px;padding:0 6px 0 10px;border-radius:10px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.28);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 0 0 3.5px {{ fieldRing }}">
+<span style="width:20px;height:20px;flex:none;border-radius:5px;display:flex;align-items:center;justify-content:center;font:700 9px -apple-system,sans-serif;background:{{ prov.bg }};color:{{ prov.color }}">{{ prov.badge }}</span>
+<input value="{{ url }}" onChange="{{ onUrl }}" placeholder="{{ placeholder }}" spellcheck="false" style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12.5px"></input>
+<sc-if value="{{ hasUrl }}" hint-placeholder-val="{{ true }}"><span onClick="{{ clearUrl }}" style="width:18px;height:18px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;background:rgba(255,255,255,.18);color:#2a2a2d;cursor:default">✕</span></sc-if>
+<sc-if value="{{ noUrl }}" hint-placeholder-val="{{ false }}"><span onClick="{{ paste }}" style="padding:4px 9px;border-radius:7px;font-size:11.5px;font-weight:500;background:rgba(255,255,255,.1);cursor:default">Paste</span></sc-if>
+</div>
+<sc-if value="{{ hasCrumbs }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:0 2px;font-size:12px;color:#98989d">
+<span style="padding:2px 7px;border-radius:6px;font-weight:600;font-size:11px;background:{{ prov.bg }};color:{{ prov.color }}">{{ prov.name }}</span>
+<sc-for list="{{ crumbs }}" as="c" hint-placeholder-count="3">
+<span style="display:flex;align-items:center;gap:5px"><span style="color:#5a5a5f">{{ c.sep }}</span><span style="padding:2px 7px;border-radius:6px;background:{{ c.bg }};color:{{ c.color }};font-family:{{ c.font }}">{{ c.text }}</span></span>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ noUrl }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:#98989d"><span>Try</span>
+<sc-for list="{{ examples }}" as="e" hint-placeholder-count="2"><span onClick="{{ e.onClick }}" style="padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.07);color:#c7c7cc;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;cursor:default">{{ e.text }}</span></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ hasNotice }}" hint-placeholder-val="{{ false }}">
+<div style="padding:9px 11px;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:12px;line-height:1.4;background:{{ notice.bg }};color:{{ notice.color }}">
+<span style="font-size:13px">{{ notice.glyph }}</span><span style="flex:1;text-wrap:pretty">{{ notice.text }}</span>
+<sc-if value="{{ notice.hasAction }}" hint-placeholder-val="{{ false }}"><span onClick="{{ notice.onAction }}" style="padding:3px 9px;border-radius:6px;font-weight:600;background:rgba(255,255,255,.12);color:#f5f5f7;cursor:default;white-space:nowrap">{{ notice.action }}</span></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ showAccess }}" hint-placeholder-val="{{ true }}">
+<div style="padding:18px 24px 0;display:flex;flex-direction:column;gap:6px">
+<div style="padding:0 4px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11.5px;font-weight:600;color:#98989d">Access</span>
+<span style="padding:2px 8px;border-radius:999px;display:flex;gap:5px;align-items:center;font-size:11px;font-weight:600;background:{{ status.bg }};color:{{ status.color }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ status.color }}"></span>{{ status.text }}</span></div>
+<div style="border-radius:12px;background:rgba(255,255,255,.05);box-shadow:0 0 0 .5px rgba(255,255,255,.08)">
+<sc-for list="{{ access }}" as="a" hint-placeholder-count="3">
+<div style="border-top:{{ a.border }}">
+<div onClick="{{ a.onClick }}" style="padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:default">
+<span style="width:16px;height:16px;flex:none;border-radius:50%;box-sizing:border-box;border:{{ a.radioBorder }};background:{{ a.radioBg }};display:flex;align-items:center;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ a.dot }}"></span></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:1px"><span>{{ a.title }}</span><span style="font-size:11.5px;color:#98989d">{{ a.sub }}</span></div>
+</div>
+<sc-if value="{{ a.showSignIn }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 14px 12px 42px;display:flex;align-items:center;gap:10px">
+<span onClick="{{ signIn }}" style="padding:6px 12px;border-radius:8px;font-weight:500;background:#f5f5f7;color:#1d1d1f;cursor:default;display:flex;gap:7px;align-items:center">{{ signInLabel }}<span style="font-size:11px;color:#6e6e73">↗</span></span>
+<span style="font-size:11.5px;color:#98989d;text-wrap:pretty">Opens {{ host }} in your browser. Markify only requests read access.</span>
+</div>
+</sc-if>
+<sc-if value="{{ a.showAccount }}" hint-placeholder-val="{{ false }}">
+<div style="margin:0 14px 12px 42px;padding:8px 10px;border-radius:10px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.22)">
+<span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:linear-gradient(135deg,#ff9f0a,#ff375f);color:#fff">MC</span>
+<div style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-weight:500">@mira-chen</span><span style="font-size:11.5px;color:#98989d">{{ host }} · read-only · Keychain</span></div>
+<span onClick="{{ signOut }}" style="padding:4px 10px;border-radius:7px;font-size:12px;background:rgba(255,255,255,.1);cursor:default">Sign Out</span>
+</div>
+</sc-if>
+<sc-if value="{{ a.showToken }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 14px 12px 42px;display:flex;flex-direction:column;gap:8px">
+<div style="height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.28);box-shadow:0 0 0 .5px rgba(255,255,255,.12)"><span style="color:#98989d;font-size:12px">🔒︎</span><input type="password" value="{{ token }}" onChange="{{ onToken }}" placeholder="{{ tokenPlaceholder }}" style="font-family:ui-monospace,Menlo,monospace;font-size:12px"></input></div>
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#98989d"><span onClick="{{ toggleKeychain }}" style="display:flex;gap:7px;align-items:center;cursor:default"><span style="width:14px;height:14px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:{{ kcBg }};box-shadow:0 0 0 .5px rgba(255,255,255,.25)">{{ kcCheck }}</span>Remember in Keychain for {{ host }}</span><sc-if value="{{ a.hasHelp }}" hint-placeholder-val="{{ false }}"><a href="#1a">Create a token…</a></sc-if></div>
+</div>
+</sc-if>
+<sc-if value="{{ a.showBasic }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 14px 12px 42px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;background:rgba(0,0,0,.28);box-shadow:0 0 0 .5px rgba(255,255,255,.12)"><input value="{{ user }}" onChange="{{ onUser }}" placeholder="Username"></input></div>
+<div style="height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;background:rgba(0,0,0,.28);box-shadow:0 0 0 .5px rgba(255,255,255,.12)"><input type="password" value="{{ pass }}" onChange="{{ onPass }}" placeholder="Password"></input></div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="margin-top:20px;padding:14px 24px;display:flex;align-items:center;gap:14px;border-top:.5px solid rgba(255,255,255,.08)">
+<span style="flex:1;font-size:11.5px;line-height:1.4;color:#8e8e93;text-wrap:pretty">{{ footnote }}</span>
+<span style="padding:6px 16px;border-radius:999px;font-weight:500;background:rgba(255,255,255,.1);cursor:default">Cancel</span>
+<span onClick="{{ onPrimary }}" style="min-width:64px;text-align:center;padding:6px 16px;border-radius:999px;font-weight:600;cursor:default;background:{{ primaryBg }};color:{{ primaryColor }}">{{ primaryLabel }}</span>
+</div>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#1b" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">1b</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Light</span></div>
+<div id="1b" style="width:860px;padding:40px 0 56px;border-radius:22px;display:flex;justify-content:center;background:radial-gradient(circle at 18% 22%,#f2d8c6 0,transparent 48%),radial-gradient(circle at 82% 28%,#c8d7f2 0,transparent 52%),radial-gradient(circle at 55% 95%,#d4e7d6 0,transparent 55%),#e8e5ee;box-shadow:0 20px 60px rgba(0,0,0,.08)">
+<div style="width:600px;border-radius:24px;background:#f6f5f3;color:#1d1d1f;font-size:13px;box-shadow:0 30px 80px rgba(40,30,60,.28),0 0 0 .5px rgba(0,0,0,.16),inset 0 .5px 0 #fff">
+<div style="padding:22px 24px 0;display:flex;gap:14px;align-items:center">
+<div style="width:40px;height:40px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#fff,#f0eff2);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 .5px rgba(0,0,0,.12)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#007aff" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"></circle><path d="M2.8 10h14.4M10 2.8c2 2.1 3 4.5 3 7.2s-1 5.1-3 7.2c-2-2.1-3-4.5-3-7.2s1-5.1 3-7.2z"></path></svg></div>
+<div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:15px;font-weight:600">Open from URL</div><div style="font-size:12px;color:#6e6e73">A Markdown file on the web, or a GitHub / GitLab repository.</div></div>
+</div>
+<div style="padding:18px 24px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<sc-for list="{{ light.modes }}" as="m" hint-placeholder-count="2">
+<div onClick="{{ m.onClick }}" style="padding:11px 12px;border-radius:12px;display:flex;gap:10px;align-items:center;cursor:default;background:{{ m.bg }};box-shadow:{{ m.ring }}">
+<div style="width:28px;height:28px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:{{ m.iconBg }};color:{{ m.iconColor }}">{{ m.glyph }}</div>
+<div style="display:flex;flex-direction:column;gap:1px"><span style="font-weight:600">{{ m.title }}</span><span style="font-size:11.5px;color:#6e6e73">{{ m.sub }}</span></div>
+</div>
+</sc-for>
+</div>
+<div style="padding:18px 24px 0;display:flex;flex-direction:column;gap:8px">
+<div style="height:38px;padding:0 6px 0 10px;border-radius:10px;display:flex;align-items:center;gap:8px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.072),0 0 0 3.5px {{ light.fieldRing }}">
+<span style="width:20px;height:20px;flex:none;border-radius:5px;display:flex;align-items:center;justify-content:center;font:700 9px -apple-system,sans-serif;background:{{ light.prov.bg }};color:{{ light.prov.color }}">{{ light.prov.badge }}</span>
+<input value="{{ light.url }}" onChange="{{ light.onUrl }}" placeholder="{{ light.placeholder }}" spellcheck="false" style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12.5px"></input>
+<sc-if value="{{ light.hasUrl }}" hint-placeholder-val="{{ light.true }}"><span onClick="{{ light.clearUrl }}" style="width:18px;height:18px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;background:rgba(0,0,0,.108);color:#f6f5f3;cursor:default">✕</span></sc-if>
+<sc-if value="{{ light.noUrl }}" hint-placeholder-val="{{ light.false }}"><span onClick="{{ light.paste }}" style="padding:4px 9px;border-radius:7px;font-size:11.5px;font-weight:500;background:rgba(0,0,0,.06);cursor:default">Paste</span></sc-if>
+</div>
+<sc-if value="{{ light.hasCrumbs }}" hint-placeholder-val="{{ light.true }}">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:0 2px;font-size:12px;color:#6e6e73">
+<span style="padding:2px 7px;border-radius:6px;font-weight:600;font-size:11px;background:{{ light.prov.bg }};color:{{ light.prov.color }}">{{ light.prov.name }}</span>
+<sc-for list="{{ light.crumbs }}" as="c" hint-placeholder-count="3">
+<span style="display:flex;align-items:center;gap:5px"><span style="color:#aeaeb2">{{ c.sep }}</span><span style="padding:2px 7px;border-radius:6px;background:{{ c.bg }};color:{{ c.color }};font-family:{{ c.font }}">{{ c.text }}</span></span>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ light.noUrl }}" hint-placeholder-val="{{ light.false }}">
+<div style="padding:0 2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:#6e6e73"><span>Try</span>
+<sc-for list="{{ light.examples }}" as="e" hint-placeholder-count="2"><span onClick="{{ e.onClick }}" style="padding:2px 8px;border-radius:6px;background:rgba(0,0,0,.042);color:#3a3a3c;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;cursor:default">{{ e.text }}</span></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ light.hasNotice }}" hint-placeholder-val="{{ light.false }}">
+<div style="padding:9px 11px;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:12px;line-height:1.4;background:{{ light.notice.bg }};color:{{ light.notice.color }}">
+<span style="font-size:13px">{{ light.notice.glyph }}</span><span style="flex:1;text-wrap:pretty">{{ light.notice.text }}</span>
+<sc-if value="{{ light.notice.hasAction }}" hint-placeholder-val="{{ light.false }}"><span onClick="{{ light.notice.onAction }}" style="padding:3px 9px;border-radius:6px;font-weight:600;background:rgba(0,0,0,.072);color:#1d1d1f;cursor:default;white-space:nowrap">{{ light.notice.action }}</span></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ light.showAccess }}" hint-placeholder-val="{{ light.true }}">
+<div style="padding:18px 24px 0;display:flex;flex-direction:column;gap:6px">
+<div style="padding:0 4px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11.5px;font-weight:600;color:#6e6e73">Access</span>
+<span style="padding:2px 8px;border-radius:999px;display:flex;gap:5px;align-items:center;font-size:11px;font-weight:600;background:{{ light.status.bg }};color:{{ light.status.color }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ light.status.color }}"></span>{{ light.status.text }}</span></div>
+<div style="border-radius:12px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<sc-for list="{{ light.access }}" as="a" hint-placeholder-count="3">
+<div style="border-top:{{ a.border }}">
+<div onClick="{{ a.onClick }}" style="padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:default">
+<span style="width:16px;height:16px;flex:none;border-radius:50%;box-sizing:border-box;border:{{ a.radioBorder }};background:{{ a.radioBg }};display:flex;align-items:center;justify-content:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ a.dot }}"></span></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:1px"><span>{{ a.title }}</span><span style="font-size:11.5px;color:#6e6e73">{{ a.sub }}</span></div>
+</div>
+<sc-if value="{{ a.showSignIn }}" hint-placeholder-val="{{ light.false }}">
+<div style="padding:0 14px 12px 42px;display:flex;align-items:center;gap:10px">
+<span onClick="{{ light.signIn }}" style="padding:6px 12px;border-radius:8px;font-weight:500;background:#1d1d1f;color:#fff;cursor:default;display:flex;gap:7px;align-items:center">{{ light.signInLabel }}<span style="font-size:11px;color:#aeaeb2">↗</span></span>
+<span style="font-size:11.5px;color:#6e6e73;text-wrap:pretty">Opens {{ light.host }} in your browser. Markify only requests read access.</span>
+</div>
+</sc-if>
+<sc-if value="{{ a.showAccount }}" hint-placeholder-val="{{ light.false }}">
+<div style="margin:0 14px 12px 42px;padding:8px 10px;border-radius:10px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.04)">
+<span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:linear-gradient(135deg,#ff9f0a,#ff375f);color:#fff">MC</span>
+<div style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-weight:500">@mira-chen</span><span style="font-size:11.5px;color:#6e6e73">{{ light.host }} · read-only · Keychain</span></div>
+<span onClick="{{ light.signOut }}" style="padding:4px 10px;border-radius:7px;font-size:12px;background:rgba(0,0,0,.06);cursor:default">Sign Out</span>
+</div>
+</sc-if>
+<sc-if value="{{ a.showToken }}" hint-placeholder-val="{{ light.false }}">
+<div style="padding:0 14px 12px 42px;display:flex;flex-direction:column;gap:8px">
+<div style="height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;gap:8px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.072)"><span style="color:#6e6e73;font-size:12px">🔒︎</span><input type="password" value="{{ light.token }}" onChange="{{ light.onToken }}" placeholder="{{ light.tokenPlaceholder }}" style="font-family:ui-monospace,Menlo,monospace;font-size:12px"></input></div>
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#6e6e73"><span onClick="{{ light.toggleKeychain }}" style="display:flex;gap:7px;align-items:center;cursor:default"><span style="width:14px;height:14px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:{{ light.kcBg }};box-shadow:0 0 0 .5px rgba(0,0,0,.15)">{{ light.kcCheck }}</span>Remember in Keychain for {{ light.host }}</span><sc-if value="{{ a.hasHelp }}" hint-placeholder-val="{{ light.false }}"><a href="#1a">Create a token…</a></sc-if></div>
+</div>
+</sc-if>
+<sc-if value="{{ a.showBasic }}" hint-placeholder-val="{{ light.false }}">
+<div style="padding:0 14px 12px 42px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.072)"><input value="{{ light.user }}" onChange="{{ light.onUser }}" placeholder="Username"></input></div>
+<div style="height:32px;padding:0 10px;border-radius:8px;display:flex;align-items:center;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.072)"><input type="password" value="{{ light.pass }}" onChange="{{ light.onPass }}" placeholder="Password"></input></div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="margin-top:20px;padding:14px 24px;display:flex;align-items:center;gap:14px;border-top:.5px solid rgba(0,0,0,.048)">
+<span style="flex:1;font-size:11.5px;line-height:1.4;color:#6e6e73;text-wrap:pretty">{{ light.footnote }}</span>
+<span style="padding:6px 16px;border-radius:999px;font-weight:500;background:rgba(0,0,0,.06);cursor:default">Cancel</span>
+<span onClick="{{ light.onPrimary }}" style="min-width:64px;text-align:center;padding:6px 16px;border-radius:999px;font-weight:600;cursor:default;background:{{ light.primaryBg }};color:{{ light.primaryColor }}">{{ light.primaryLabel }}</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SC = {
+  empty: { label: 'Empty', mode: 'file', url: '', access: 'public', priv: false },
+  pubFile: { label: 'Public file', mode: 'file', url: 'https://github.com/markify-app/docs/blob/main/guide/getting-started.md', access: 'public', priv: false },
+  mismatch: { label: 'Repo link in File mode', mode: 'file', url: 'https://gitlab.com/inkwell/notes', access: 'public', priv: false },
+  locked: { label: 'Private repo — locked', mode: 'repo', url: 'https://github.com/acme/handbook', access: 'public', priv: true },
+  signedIn: { label: 'Private repo — signed in', mode: 'repo', url: 'https://github.com/acme/handbook', access: 'account', priv: true, signedIn: true },
+  token: { label: 'GitLab + token', mode: 'repo', url: 'https://gitlab.acme.dev/platform/runbooks/-/tree/release', access: 'token', priv: true, token: 'glpat-xxxxxxxxxxxxxxxx' },
+  https: { label: 'Secured HTTPS', mode: 'file', url: 'https://docs.internal.acme.com/runbooks/deploy.md', access: 'bearer', priv: true, token: 'eyJhbGciOi…' }
+};
+const PROV = {
+  github: { name: 'GitHub', badge: 'GH', bg: 'rgba(255,255,255,.14)', color: '#f5f5f7' },
+  gitlab: { name: 'GitLab', badge: 'GL', bg: 'rgba(252,109,38,.2)', color: '#ff9f5a' },
+  https: { name: 'HTTPS', badge: '⌁', bg: 'rgba(10,132,255,.2)', color: '#64b0ff' },
+  none: { name: '', badge: '↗', bg: 'rgba(255,255,255,.08)', color: '#8e8e93' }
+};
+const PROVL = {
+  github: { bg: 'rgba(0,0,0,.08)', color: '#1d1d1f' },
+  gitlab: { bg: 'rgba(252,109,38,.14)', color: '#c4501a' },
+  https: { bg: 'rgba(0,122,255,.12)', color: '#0062cc' },
+  none: { bg: 'rgba(0,0,0,.05)', color: '#8e8e93' }
+};
+function parse(url) {
+  let m;
+  try { m = new URL(url); } catch (e) { return null; }
+  if (m.protocol !== 'https:' || !m.hostname.includes('.')) return null;
+  const host = m.hostname, parts = m.pathname.split('/').filter(Boolean);
+  const isGH = host === 'github.com', isGL = host.includes('gitlab');
+  if ((isGH || isGL) && parts.length >= 2) {
+    let rest = parts.slice(2); if (rest[0] === '-') rest = rest.slice(1);
+    let branch = null, path = '';
+    if (rest[0] === 'blob' || rest[0] === 'tree') { branch = rest[1]; path = rest.slice(2).join('/'); }
+    return { kind: isGH ? 'github' : 'gitlab', host, owner: parts[0], repo: parts[1], branch, path, isFile: /\.(md|markdown|mdx|txt)$/i.test(path) };
+  }
+  return { kind: 'https', host, path: m.pathname, isFile: /\.(md|markdown|mdx|txt)$/i.test(m.pathname) };
+}
+class Component extends DCLogic {
+  state = Object.assign({ sc: 'locked', user: '', pass: '', token: '', kc: true, signedIn: false, signing: false }, SC.locked);
+  load(k) { this.setState(Object.assign({ sc: k, user: '', pass: '', token: '', signedIn: false, signing: false }, SC[k])); }
+  signIn() { this.setState({ signing: true }); setTimeout(() => this.setState({ signing: false, signedIn: true }), 1200); }
+  renderVals() {
+    const d = this.vals(false);
+    return Object.assign(d, { light: this.vals(true) });
+  }
+  vals(L) {
+    const k = (dk, lt) => L ? lt : dk;
+    const s = this.state, p = s.url ? parse(s.url) : null;
+    const kind = p ? p.kind : 'none', git = kind === 'github' || kind === 'gitlab';
+    const host = p ? p.host : '';
+    const prov = L ? Object.assign({}, PROV[kind], PROVL[kind]) : PROV[kind];
+    const mismatchRepo = p && s.mode === 'file' && git && !p.isFile;
+    const mismatchHttps = p && s.mode === 'repo' && kind === 'https';
+    const invalid = s.url && !p;
+    const opts = git
+      ? [{ id: 'public', title: 'Public', sub: 'No credentials are sent' },
+         { id: 'account', title: prov.name + ' account', sub: s.signedIn ? 'Signed in as @mira-chen' : 'Sign in once, works for every repo you can read' },
+         { id: 'token', title: 'Personal access token', sub: kind === 'github' ? 'Fine-grained token with Contents: read' : 'Token with read_repository scope' }]
+      : [{ id: 'public', title: 'Public', sub: 'No credentials are sent' },
+         { id: 'basic', title: 'Username & password', sub: 'HTTP Basic authentication' },
+         { id: 'bearer', title: 'Bearer token', sub: 'Sent as an Authorization header' }];
+    const access = s.access === 'account' && !git ? 'public' : s.access;
+    const authed = (access === 'account' && s.signedIn) || ((access === 'token' || access === 'bearer') && s.token.length > 0) || (access === 'basic' && s.user && s.pass);
+    const locked = s.priv && !authed;
+    let status = { text: 'Public', bg: k('rgba(48,209,88,.14)','rgba(52,199,89,.14)'), color: k('#30d158','#248a3d') };
+    if (locked) status = { text: 'Sign-in required', bg: k('rgba(255,159,10,.15)','rgba(255,149,0,.15)'), color: k('#ff9f0a','#b25000') };
+    else if (authed) status = { text: s.priv ? 'Authorized' : 'Credentials set', bg: k('rgba(10,132,255,.16)','rgba(0,122,255,.12)'), color: k('#64b0ff','#0062cc') };
+    let notice = null;
+    if (invalid) notice = { glyph: '⚠︎', text: 'Enter a full https:// address.', bg: k('rgba(255,69,58,.12)','rgba(255,59,48,.1)'), color: k('#ff8a80','#c4271d') };
+    else if (mismatchRepo) notice = { glyph: '⇄', text: 'This links to a whole repository. Browse it instead of opening a single file?', bg: k('rgba(10,132,255,.12)','rgba(0,122,255,.09)'), color: k('#9ccaff','#0058b8'), action: 'Browse Repository', onAction: () => this.setState({ mode: 'repo' }) };
+    else if (mismatchHttps) notice = { glyph: '⇄', text: 'Repositories need a GitHub or GitLab address. Open this URL as a file?', bg: k('rgba(10,132,255,.12)','rgba(0,122,255,.09)'), color: k('#9ccaff','#0058b8'), action: 'Open as File', onAction: () => this.setState({ mode: 'file' }) };
+    else if (p && locked) notice = { glyph: '🔒︎', text: git ? `${p.owner}/${p.repo} is private, or doesn't exist for you. Choose how to sign in below.` : `${host} responded 401 Unauthorized. Add credentials below.`, bg: k('rgba(255,159,10,.12)','rgba(255,149,0,.12)'), color: k('#ffc46b','#8f4300') };
+    const crumbs = [];
+    if (p && git) {
+      crumbs.push({ text: p.owner + ' / ' + p.repo, sep: '' });
+      crumbs.push({ text: '⑂ ' + (p.branch || (s.mode === 'repo' ? 'main  ⌃' : 'main')), sep: '·', pill: true });
+      if (p.path) crumbs.push({ text: p.path, sep: '·', mono: true });
+    } else if (p) {
+      crumbs.push({ text: host, sep: '' });
+      if (p.path && p.path !== '/') crumbs.push({ text: p.path, sep: '·', mono: true });
+    }
+    const valid = p && !mismatchRepo && !mismatchHttps;
+    const can = valid && !locked;
+    const label = s.mode === 'repo' ? 'Browse' : 'Open';
+    const sign = 'Sign in with ' + (prov.name || 'GitHub') + '…';
+    const pk = git ? (kind === 'github' ? 'github_pat_…' : 'glpat-…') : 'Token';
+    return {
+      scenarios: Object.keys(SC).map(k => ({ label: SC[k].label, onClick: () => this.load(k), bg: s.sc === k ? '#1d1d1f' : '#fff', color: s.sc === k ? '#fff' : '#1d1d1f' })),
+      modes: [['file', '📄︎', 'File', 'Open one Markdown document'], ['repo', '⑂', 'Repository', 'Browse its files and folders']].map(([id, g, t, sub]) => {
+        const on = s.mode === id;
+        return { glyph: g, title: t, sub, onClick: () => this.setState({ mode: id }), bg: on ? k('rgba(10,132,255,.14)','rgba(0,122,255,.08)') : k('rgba(255,255,255,.05)','#fff'), ring: on ? k('0 0 0 1.5px #0a84ff','0 0 0 1.5px #007aff') : k('0 0 0 .5px rgba(255,255,255,.1)','0 0 0 .5px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.04)'), iconBg: on ? k('#0a84ff','#007aff') : k('rgba(255,255,255,.08)','rgba(0,0,0,.05)'), iconColor: on ? '#fff' : k('#c7c7cc','#3a3a3c') };
+      }),
+      url: s.url, hasUrl: !!s.url, noUrl: !s.url,
+      placeholder: s.mode === 'repo' ? 'https://github.com/owner/repo' : 'https://…/document.md',
+      onUrl: e => this.setState({ url: e.target.value, sc: null }),
+      clearUrl: () => this.setState({ url: '', sc: null }),
+      paste: () => this.setState({ url: 'https://github.com/acme/handbook', priv: true, sc: null }),
+      fieldRing: invalid ? k('rgba(255,69,58,.35)','rgba(255,59,48,.25)') : k('rgba(10,132,255,.45)','rgba(0,122,255,.3)'),
+      prov, host,
+      hasCrumbs: crumbs.length > 0,
+      crumbs: crumbs.map(c => ({ text: c.text, sep: c.sep, bg: c.pill ? k('rgba(255,255,255,.08)','rgba(0,0,0,.05)') : 'transparent', color: k('#e5e5ea','#1d1d1f'), font: c.mono ? 'ui-monospace,Menlo,monospace' : 'inherit' })),
+      examples: (s.mode === 'repo' ? ['github.com/owner/repo', 'gitlab.com/group/project'] : ['github.com/…/README.md', 'example.com/notes.md']).map(t => ({ text: t, onClick: () => this.setState({ url: 'https://' + t.replace('…', 'markify-app/docs/blob/main').replace('owner/repo', 'markify-app/docs').replace('group/project', 'inkwell/notes'), priv: false, access: 'public' }) })),
+      hasNotice: !!notice, notice: notice ? Object.assign({ hasAction: !!notice.action }, notice) : {},
+      showAccess: !!valid,
+      status,
+      access: opts.map((o, i) => {
+        const on = access === o.id;
+        return { title: o.title, sub: o.sub, border: i ? k('.5px solid rgba(255,255,255,.08)','.5px solid rgba(0,0,0,.08)') : '0', onClick: () => this.setState({ access: o.id }),
+          radioBorder: on ? '0' : k('1px solid rgba(255,255,255,.3)','1px solid rgba(0,0,0,.25)'), radioBg: on ? k('#0a84ff','#007aff') : k('transparent','#fff'), dot: on ? '#fff' : 'transparent',
+          showSignIn: on && o.id === 'account' && !s.signedIn, showAccount: on && o.id === 'account' && s.signedIn,
+          showToken: on && (o.id === 'token' || o.id === 'bearer'), showBasic: on && o.id === 'basic', hasHelp: o.id === 'token' };
+      }),
+      signIn: () => this.signIn(), signOut: () => this.setState({ signedIn: false }),
+      signInLabel: s.signing ? 'Waiting for browser…' : sign,
+      token: s.token, onToken: e => this.setState({ token: e.target.value }), tokenPlaceholder: pk,
+      user: s.user, pass: s.pass, onUser: e => this.setState({ user: e.target.value }), onPass: e => this.setState({ pass: e.target.value }),
+      toggleKeychain: () => this.setState({ kc: !s.kc }), kcBg: s.kc ? k('#0a84ff','#007aff') : k('transparent','#fff'), kcCheck: s.kc ? '✓' : '',
+      footnote: !p ? 'Paste a link to a file or repository.' : access === 'public' ? `Only a read request is sent to ${host}.` : `Credentials stay in your Keychain and are only sent to ${host}.`,
+      primaryLabel: label,
+      primaryBg: can ? k('#0a84ff','#007aff') : k('rgba(255,255,255,.08)','rgba(0,0,0,.05)'), primaryColor: can ? '#fff' : k('#636366','#aeaeb2'),
+      onPrimary: () => {}
+    };
+  }
+}
+</script>
+</body>
+</html>
