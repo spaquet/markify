@@ -9,14 +9,42 @@ struct DocumentLink: Identifiable, Equatable {
     let range: NSRange
     let text: String
     let destination: String
+    let line: Int
     var id: Int { range.location }
 
     static func extract(from model: MarkdownModel) -> [Self] {
         let source = model.source as NSString
+        let starts = MarkdownSourceMap(model.source).starts
+        var line = 0
         return model.spans.compactMap { span in
             guard case let .link(destination) = span.kind, !destination.isEmpty else { return nil }
-            return Self(range: span.range, text: source.substring(with: span.content), destination: destination)
+            while line + 1 < starts.count, starts[line + 1] <= span.range.location { line += 1 }
+            return Self(range: span.range, text: source.substring(with: span.content), destination: destination, line: line + 1)
         }
+    }
+}
+
+struct DocumentLinkGroup: Identifiable {
+    let id: String
+    var occurrences: [DocumentLink]
+    var first: DocumentLink { occurrences[0] }
+    var lines: [DocumentLink] {
+        var seen: Set<Int> = []
+        return occurrences.filter { seen.insert($0.line).inserted }
+    }
+
+    @MainActor static func group(_ links: [DocumentLink], from document: URL?, root: URL?, baseDirectory: URL? = nil) -> [Self] {
+        var groups: [Self] = []
+        var indices: [String: Int] = [:]
+        for link in links {
+            let key = LinkSummaryStore.key(link.destination, from: document, root: root, baseDirectory: baseDirectory) ?? link.destination
+            if let index = indices[key] { groups[index].occurrences.append(link) }
+            else {
+                indices[key] = groups.count
+                groups.append(Self(id: key, occurrences: [link]))
+            }
+        }
+        return groups
     }
 }
 
@@ -24,6 +52,39 @@ struct LinkSummary: Codable, Equatable {
     let text: String
     let fingerprint: String
     let date: Date
+}
+
+/// Read-only native text supports partial selection, ⌘C and the standard text context menu.
+struct SelectableLinkText: NSViewRepresentable {
+    let text: String
+    var font: NSFont = .systemFont(ofSize: 13)
+    var color: NSColor = .labelColor
+
+    func makeNSView(context: Context) -> NSTextView {
+        let view = NSTextView()
+        view.isEditable = false
+        view.isSelectable = true
+        view.isRichText = false
+        view.drawsBackground = false
+        view.textContainerInset = .zero
+        view.textContainer?.lineFragmentPadding = 0
+        view.textContainer?.widthTracksTextView = false
+        updateNSView(view, context: context)
+        return view
+    }
+
+    func updateNSView(_ view: NSTextView, context: Context) {
+        if view.string != text { view.string = text }
+        view.font = font
+        view.textColor = color
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView view: NSTextView, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0, let container = view.textContainer, let layout = view.layoutManager else { return nil }
+        container.containerSize = CGSize(width: width, height: .greatestFiniteMagnitude)
+        layout.ensureLayout(for: container)
+        return CGSize(width: width, height: ceil(layout.usedRect(for: container).height))
+    }
 }
 
 @MainActor final class LinkSummaryStore {
@@ -74,11 +135,14 @@ struct LinksPanel: View {
     var baseDirectory: URL? = nil
     let jump: (NSRange) -> Void
     @State private var store = LinkSummaryStore()
-    @State private var expanded: Set<Int> = []
+    @State private var expanded: Set<String> = []
     @State private var stale: Set<String> = []
     @State private var busy: Set<String> = []
     @State private var errors: [String: String] = [:]
     private let extensions: Set<String> = ["md", "markdown", "mdx"]
+    private var groups: [DocumentLinkGroup] {
+        DocumentLinkGroup.group(links, from: documentURL, root: bundleRoot, baseDirectory: baseDirectory)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -89,7 +153,7 @@ struct LinksPanel: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
-                        ForEach(links) { link in row(link) }
+                        ForEach(groups) { group in row(group) }
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }.scrollIndicators(.never)
             }
@@ -101,7 +165,9 @@ struct LinksPanel: View {
         .onChange(of: links) { _, _ in checkLocalStaleness() }
     }
 
-    private func row(_ link: DocumentLink) -> some View {
+    private func row(_ group: DocumentLinkGroup) -> some View {
+        let link = group.first
+        let occurrences = group.lines
         let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot, baseDirectory: baseDirectory)
         let saved = key.flatMap { store.entries[$0] }
         return VStack(alignment: .leading, spacing: 6) {
@@ -111,34 +177,44 @@ struct LinksPanel: View {
                     Text(link.destination).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }.buttonStyle(.plain)
+            ScrollView(.horizontal) {
+                HStack(spacing: 4) {
+                    Text(occurrences.count == 1 ? "Line" : "Lines")
+                    ForEach(occurrences) { occurrence in
+                        Button("\(occurrence.line)\(occurrence.line == occurrences.last?.line ? "" : ",")") { jump(occurrence.range) }
+                            .buttonStyle(.plain).foregroundStyle(.tint)
+                            .accessibilityLabel("Go to line \(occurrence.line)")
+                    }
+                }.font(.caption)
+            }.scrollIndicators(.never)
             HStack {
                 Button("Open destination") { Knowledge.follow(link.destination, title: link.text, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) }
                 Spacer()
-                Button(expanded.contains(link.id) ? "Hide summary" : "Summary") {
-                    if expanded.contains(link.id) { expanded.remove(link.id) }
-                    else { expanded.insert(link.id); checkLocalStaleness() }
+                Button(expanded.contains(group.id) ? "Hide summary" : "Summary") {
+                    if expanded.contains(group.id) { expanded.remove(group.id) }
+                    else { expanded.insert(group.id); checkLocalStaleness() }
                 }
             }.font(.caption)
-            if expanded.contains(link.id) {
+            if expanded.contains(group.id) {
                 if let saved {
-                    Text(saved.text).font(.callout).textSelection(.enabled)
+                    SelectableLinkText(text: saved.text)
                     Text("Generated \(saved.date.formatted(date: .abbreviated, time: .shortened))\(key.map { stale.contains($0) } == true ? " · Source changed" : "")")
                         .font(.caption2).foregroundStyle(.secondary)
                 }
                 if let key, busy.contains(key) {
                     HStack { ProgressView().controlSize(.small); Text("Summarizing…") }.font(.caption)
                 } else if let key, let error = errors[key] {
-                    Text(error).font(.caption).foregroundStyle(.red)
+                    SelectableLinkText(text: error, font: .systemFont(ofSize: 11), color: .systemRed)
                 }
                 if let key {
                     if SystemLanguageModel.default.availability == .available {
                         Button(saved == nil ? actionTitle(link) : "Refresh summary") { summarize(link, key: key) }
                             .disabled(busy.contains(key))
                     } else {
-                        Text("Apple Intelligence is unavailable on this Mac.").font(.caption).foregroundStyle(.secondary)
+                        SelectableLinkText(text: "Apple Intelligence is unavailable on this Mac.", font: .systemFont(ofSize: 11), color: .secondaryLabelColor)
                     }
                 } else {
-                    Text("This destination cannot be summarized.").font(.caption).foregroundStyle(.secondary)
+                    SelectableLinkText(text: "This destination cannot be summarized.", font: .systemFont(ofSize: 11), color: .secondaryLabelColor)
                 }
             }
         }
@@ -161,7 +237,8 @@ struct LinksPanel: View {
 
     private func checkLocalStaleness() {
         stale = []
-        for link in links {
+        for group in groups {
+            let link = group.first
             guard let url = OKFLinks.resolve(link.destination, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory),
                   let key = LinkSummaryStore.key(link.destination, from: documentURL, root: bundleRoot, baseDirectory: baseDirectory),
                   let summary = store.entries[key] else { continue }

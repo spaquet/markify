@@ -3,6 +3,7 @@ import ImageIO
 import MarkifyMarkdown
 import Security
 import UniformTypeIdentifiers
+import AppKit
 
 enum PreviewImages {
     static func load(from document: URL) -> [String: String] {
@@ -35,7 +36,7 @@ enum PreviewImages {
         return nil
     }
 
-    private static func read(_ url: URL, limit: Int) -> Data? {
+    static func read(_ url: URL, limit: Int) -> Data? {
         guard limit > 0,
               let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
               values.isRegularFile == true, let size = values.fileSize, size <= limit,
@@ -70,5 +71,28 @@ final class PreviewImageService: NSObject, NSXPCListenerDelegate, PreviewImagePr
 
     func images(for document: URL, reply: @escaping @Sendable ([String: String]) -> Void) {
         reply(PreviewImages.load(from: document))
+    }
+
+    func openMarkdown(_ target: URL, from document: URL, reply: @escaping @Sendable (String?) -> Void) {
+        do {
+            guard document.isFileURL, ["md", "markdown", "mdx"].contains(document.pathExtension.lowercased()),
+                  let data = PreviewImages.read(document, limit: 2_000_000),
+                  let source = String(data: data, encoding: .utf8) else {
+                throw CocoaError(.fileReadNoPermission, userInfo: [NSFilePathErrorKey: document.path])
+            }
+            let file = try PreviewLinks.referencedMarkdown(target, in: source, from: document)
+            let values = try file.resourceValues(forKeys: [.isRegularFileKey])
+            guard values.isRegularFile == true else { throw CocoaError(.fileReadUnsupportedScheme, userInfo: [NSFilePathErrorKey: file.path]) }
+            // Check readability here so the preview can explain missing or inaccessible destinations.
+            let handle = try FileHandle(forReadingFrom: file)
+            try handle.close()
+            let app = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+                .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            DispatchQueue.main.async {
+                NSWorkspace.shared.open([file], withApplicationAt: app, configuration: .init()) { _, error in
+                    reply(error?.localizedDescription)
+                }
+            }
+        } catch { reply("Unable to open \(target.lastPathComponent): \(error.localizedDescription)") }
     }
 }
