@@ -34,11 +34,9 @@ keep() {
 
 run() { if [ "$DRY" = 1 ]; then echo "  would run: $*"; else "$@" || true; fi; }
 
-# Top-level Markify bundles (the app and the UI test runner), not the bundles nested inside them.
-apps=$("$LSREGISTER" -dump \
-    | sed -n 's/^path: *\(.*\) (0x[0-9a-f]*)$/\1/p' \
-    | grep -E '/(Markify|MarkifyUITests-Runner)\.app$' \
-    | grep -v '\.app/.*\.app$' | sort -u)
+# Every registered path, then the top-level Markify bundles (the app and the UI test runner).
+paths=$("$LSREGISTER" -dump | sed -n 's/^path: *\(.*\) (0x[0-9a-f]*)$/\1/p' | sort -u)
+apps=$(grep -E '/(Markify|MarkifyUITests-Runner)\.app$' <<< "$paths" | grep -v '\.app/.*\.app$' || true)
 
 while IFS= read -r app; do
     [ -n "$app" ] || continue
@@ -47,6 +45,8 @@ while IFS= read -r app; do
     [ -d "$app/Contents/PlugIns" ] && for appex in "$app"/Contents/PlugIns/*.appex; do
         [ -e "$appex" ] && run pluginkit -r "$appex"
     done
+    # Nested bundles (Sparkle's Updater.app) keep their own records, even after the app is deleted.
+    grep -F "$app/" <<< "$paths" | while IFS= read -r nested; do run "$LSREGISTER" -u "$nested"; done
     run "$LSREGISTER" -u "$app"
     if [ "$DELETE" = 1 ] && [ -d "$app" ]; then
         # Delete the whole derived-data folder a /tmp build came from.
@@ -56,6 +56,12 @@ while IFS= read -r app; do
         esac
     fi
 done <<< "$apps"
+
+# Nested records left behind after their Markify.app was unregistered earlier.
+grep -E '/(Markify|MarkifyUITests-Runner)\.app/' <<< "$paths" | while IFS= read -r nested; do
+    app=$(sed -E 's#(/(Markify|MarkifyUITests-Runner)\.app)/.*#\1#' <<< "$nested")
+    grep -qxF "$app" <<< "$apps" || keep "$app" || { echo "remove $nested"; run "$LSREGISTER" -u "$nested"; }
+done
 
 # Extension records whose app is gone or was just unregistered.
 pluginkit -mAv 2>/dev/null | awk '$1 ~ /^com\.stephanepaquet\.Markify/ { print $NF }' | while IFS= read -r appex; do
