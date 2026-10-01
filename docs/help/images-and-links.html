@@ -85,9 +85,13 @@
 </li>
 </ul>
 <h3 id="links-panel">Links panel</h3>
-<p>Click the right sidebar button in the toolbar to list links in document order. Click a link's title to jump to it, or choose <strong>Open destination</strong> to follow it. The panel shows an empty message when the document has no links.</p>
+<p>Click the right sidebar button in the toolbar to list destinations in the order they first appear. Repeated links to the same resolved destination share one entry, even when their labels differ. Each entry lists its source line numbers, which update as you edit. Click a line number to jump to that occurrence, click the title to jump to the first occurrence, or choose <strong>Open destination</strong> to follow the link. Multiple mentions on one line list that line once. The panel shows an empty message when the document has no links.</p>
 <p>Expand <strong>Summary</strong> on a link to see a saved summary or request one with Apple Intelligence. For websites, <strong>Fetch and summarize</strong> contacts the site only when you click it. Local <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files use their readable text; websites must return a text or HTML page. Other destinations remain in the list without a summary. The panel shows progress or an error if a destination cannot be read, and explains when Apple Intelligence is unavailable.</p>
 <p>Summaries are saved by Markify outside your Markdown file. Local summaries show when their target changed and can be refreshed. Web summaries show their generation date and stay as saved until you choose <strong>Refresh summary</strong>.</p>
+<p>Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.</p>
+<h3 id="links-in-finder-previews">Links in Finder previews</h3>
+<p>Press Space on a Markdown file in Finder to preview it. Click a local <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> link to open the linked file in Markify. Relative paths, including <code>../</code> and percent-encoded filenames, resolve beside the previewed file. A missing or inaccessible destination produces a selectable message at the bottom of the preview. Links to other local file types are not opened by this preview.</p>
+<p>HTTPS links open in your browser; in-document anchors stay inside the preview. Links to a section of another Markdown file open that document without jumping to its section. No folder permission step is added.</p>
 <p class="edit">Updated 2026-09-30 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/images-and-links.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="markdown.html"><span>Previous</span>Markdown support</a><a rel="next" href="library.html"><span>Next</span>Library and find</a></nav>

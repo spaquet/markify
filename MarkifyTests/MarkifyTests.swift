@@ -28,6 +28,61 @@ struct MarkifyTests {
         #expect(LinkSummaryStore.key("other.md#section", from: document, root: nil) == key)
     }
 
+    @Test @MainActor func linksPanelGroupsResolvedDestinationsAndTracksSourceLines() throws {
+        let file = URL(fileURLWithPath: "/tmp/notes/current.md")
+        let source = "🌻 [first](other%20note.md) [same](./other%20note.md#part)\r\n\r\n[alias][note]\n[web](https://EXAMPLE.com:443/page#one)\n[again](https://example.com/page#two)\n[distinct](https://example.com/page?q=1)\n\n[note]: other%20note.md\n"
+        func groups(_ source: String) -> [DocumentLinkGroup] {
+            DocumentLinkGroup.group(DocumentLink.extract(from: MarkdownModel(source)), from: file, root: nil)
+        }
+        let original = groups(source)
+        #expect(original.count == 3)
+        #expect(original[0].occurrences.map(\.text) == ["first", "same", "alias"])
+        #expect(original[0].lines.map(\.line) == [1, 3])
+        #expect(original[1].lines.map(\.line) == [4, 5])
+        #expect(original[2].lines.map(\.line) == [6])
+        for link in original[0].occurrences {
+            #expect((source as NSString).substring(with: link.range).hasPrefix("["))
+        }
+        let edited = groups("Inserted\n" + source)
+        #expect(edited[0].id == original[0].id)
+        #expect(edited[0].lines.map(\.line) == [2, 4])
+        let report = DocumentLinkGroup.group(DocumentLink.extract(from: MarkdownModel("[a](other.md) [b](./other.md)")),
+            from: nil, root: nil, baseDirectory: file.deletingLastPathComponent())
+        #expect(report.count == 1)
+    }
+
+    @Test @MainActor func linksPanelTextCopiesOnlyTheSelectedRangeAndCannotBeEdited() throws {
+        let text = "Summary café 🌻\nA second sentence to select."
+        let host = NSHostingView(rootView: SelectableLinkText(text: text).frame(width: 250))
+        host.frame = NSRect(x: 0, y: 0, width: 250, height: 100)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        defer { window.close() }
+        host.layoutSubtreeIfNeeded()
+        func textView(in view: NSView) -> NSTextView? {
+            if let text = view as? NSTextView { return text }
+            return view.subviews.lazy.compactMap { textView(in: $0) }.first
+        }
+        let view = try #require(textView(in: host))
+        #expect(!view.isEditable)
+        #expect(view.isSelectable)
+        #expect(view.string == text)
+        window.makeFirstResponder(view)
+        let range = (text as NSString).range(of: "café 🌻")
+        view.setSelectedRange(range)
+        #expect(view.selectedRange() == range)
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        pasteboard.declareTypes([.string], owner: nil)
+        #expect(view.writeSelection(to: pasteboard, types: view.writablePasteboardTypes))
+        #expect(pasteboard.string(forType: .string) == "café 🌻")
+        view.selectAll(nil)
+        pasteboard.declareTypes([.string], owner: nil)
+        #expect(view.writeSelection(to: pasteboard, types: view.writablePasteboardTypes))
+        #expect(pasteboard.string(forType: .string) == text)
+    }
+
     @Test func libraryListsSupportedFilesInSubfolders() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
