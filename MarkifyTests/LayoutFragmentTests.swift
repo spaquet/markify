@@ -64,6 +64,31 @@ import Testing
         #expect(editor.string == source)
     }
 
+    @Test(arguments: [CGFloat(18), CGFloat(24)]) func emptyDocumentCaretMatchesPlaceholder(proseSize: CGFloat) throws {
+        let (window, editor) = Self.makeEditor("")
+        _ = window
+        editor.isRichText = false
+        for markdownLens in [false, true] {
+            let native = NativeEditor(text: .constant(""), fileURL: nil, columnWidth: 640, markdownLens: markdownLens, findQuery: "", matchCase: false,
+                                      selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil),
+                                      onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in }, theme: EditorTheme(proseSize: proseSize))
+            let coordinator = native.makeCoordinator()
+            coordinator.editor = editor
+            editor.string = ""
+            native.style(editor)
+            #expect(editor.typingAttributes[.font] as? NSFont == native.theme.prose(36, bold: true))
+            coordinator.textViewDidChangeSelection(Notification(name: NSTextView.didChangeSelectionNotification, object: editor))
+            #expect(editor.typingAttributes[.font] as? NSFont == native.theme.prose(36, bold: true))
+            #expect(editor.string.isEmpty)
+            editor.string = "Body"
+            native.style(editor)
+            #expect(editor.typingAttributes[.font] as? NSFont == (markdownLens ? native.theme.mono(14) : native.theme.prose(18)))
+            editor.string = ""
+            native.style(editor)
+            #expect(editor.typingAttributes[.font] as? NSFont == native.theme.prose(36, bold: true))
+        }
+    }
+
     @Test(arguments: ["", "Intro\n\n"]) func blockImageDrawsFromDocumentFolder(prefix: String) throws {
         let source = prefix + "![Hero](docs/images/social-preview.jpg)\n"
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
