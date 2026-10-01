@@ -560,10 +560,32 @@ struct NativeEditor: NSViewRepresentable {
             }
         }
         storage.endEditing()
+        updateTypingFont(editor)
         if let editor = editor as? MarkdownTextView {
             editor.forgetImages()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
+    }
+
+    /// Plain-text NSTextView sizes its caret from the typing font, which must follow our styled text.
+    func updateTypingFont(_ editor: NSTextView) {
+        let base = markdownLens ? theme.mono(14) : theme.prose(18)
+        var font = base
+        if let storage = editor.textStorage, storage.length > 0 {
+            let source = editor.string as NSString
+            let location = min(editor.selectedRange().location, source.length)
+            let line = source.lineRange(for: NSRange(location: location, length: 0))
+            let anchor = max(line.location, location - 1)
+            var nearest = Int.max
+            storage.enumerateAttributes(in: line) { attributes, range, _ in
+                guard let candidate = attributes[.font] as? NSFont,
+                      (attributes[.foregroundColor] as? NSColor)?.alphaComponent != 0,
+                      !source.substring(with: range).trimmingCharacters(in: .newlines).isEmpty else { return }
+                let distance = max(range.location - anchor, anchor - (NSMaxRange(range) - 1), 0)
+                if distance < nearest { nearest = distance; font = candidate }
+            }
+        }
+        editor.typingAttributes[.font] = font
     }
 
     /// The height a Mermaid block takes as a diagram, or nil when it failed and shows as code with the error below.
@@ -637,6 +659,7 @@ struct NativeEditor: NSViewRepresentable {
             if let markdown = editor as? MarkdownTextView, markdown.rendered, markdown.editedFormula != markdown.styledEditedFormula {
                 parent.style(editor)
             }
+            parent.updateTypingFont(editor)
             if let window = editor.window {
                 let selection = editor.selectedRange()
                 let position = editor.firstRect(forCharacterRange: NSRange(location: selection.location, length: max(1, selection.length)), actualRange: nil)

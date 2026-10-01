@@ -85,6 +85,8 @@ Press **⌘/** or click **MD** at the top right to switch. Your caret, selection
 
 Both lenses edit the same text. Switching only changes how the text is styled; Markify never rewrites your Markdown.
 
+The insertion cursor follows the size of the visible text, including headings, body text and code.
+
 ## Choosing the lens a document opens in
 
 In **Settings › Editor › Lenses**, choose whether documents open in the Rendered lens, the Markdown lens or the one you used last. Turn on *Remember lens per document* to reopen each file the way you left it.
