@@ -40,7 +40,7 @@
 :root{
   --page:#FCFBF9; --page2:#F4F2EE; --ink:#1D1D1F; --ink2:#5E5E63; --ink3:#B3B3B8;
   --rule:rgba(0,0,0,.09); --field:rgba(0,0,0,.05);
-  --accent:#0A64D6; --accentSoft:rgba(10,100,214,.13); --callout:rgba(10,100,214,.07);
+  --accent:#0A64D6; --accentSoft:rgba(10,100,214,.13); --callout:rgba(10,100,214,.07); --orange:#C75300; --orangeSoft:rgba(255,149,0,.15); --orangeEdge:rgba(199,83,0,.38);
   --code:#F3F1ED; --kw:#AD3DA4; --typ:#3F6E74; --str:#C41A16; --com:#8A8F96;
   --ai:linear-gradient(90deg,#FF9F0A,#FF375F,#BF5AF2,#0A84FF); --aiGlow:rgba(191,90,242,.13);
   --glass:rgba(255,255,255,.62);
@@ -56,7 +56,7 @@
   :root{
     --page:#1E1E20; --page2:#18181A; --ink:#F2F2F7; --ink2:#A1A1A6; --ink3:#5C5C61;
     --rule:rgba(255,255,255,.12); --field:rgba(255,255,255,.08);
-    --accent:#3D8BFF; --accentSoft:rgba(61,139,255,.22); --callout:rgba(61,139,255,.14);
+    --accent:#3D8BFF; --accentSoft:rgba(61,139,255,.22); --callout:rgba(61,139,255,.14); --orange:#FF9F0A; --orangeSoft:rgba(255,159,10,.16); --orangeEdge:rgba(255,159,10,.45);
     --code:#2A2A2D; --kw:#FF7AB2; --typ:#78C2B3; --str:#D9C97C; --com:#7F8C98; --aiGlow:rgba(191,90,242,.22);
     --glass:rgba(62,62,70,.55);
     --glassEdge:0 0 0 .5px rgba(255,255,255,.14),0 6px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);
@@ -258,6 +258,21 @@ main:focus{outline:none}
 /* White text needs the deeper blue in both appearances. */
 .btn-accent,.toggle button[aria-pressed="true"]{background:#0A64D6}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Flash note (temporary): 2.0.0 and 2.0.1 don't open, issue #49. */
+.flash{display:flex;justify-content:center;margin:0 0 26px}
+.flash-in{display:inline-flex;align-items:center;gap:12px;max-width:100%;padding:7px 8px 7px 16px;border-radius:999px;background:linear-gradient(var(--orangeSoft),var(--orangeSoft)),var(--glass);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 0 0 1px var(--orangeEdge),0 8px 24px -10px var(--orangeEdge);font:14px/1.35 var(--ui);color:var(--ink);text-align:left}
+.flash-dot{position:relative;flex:none;width:9px;height:9px;border-radius:50%;background:var(--orange)}
+.flash-dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--orange);opacity:0;animation:flash-ping 2.2s var(--ease) infinite}
+@keyframes flash-ping{0%{transform:scale(.6);opacity:.7}80%,100%{transform:scale(1.7);opacity:0}}
+.flash-in b{font-weight:600}
+.flash-in .btn{height:30px;padding:0 13px;font-size:13px;flex:none}
+.flash-in a.more{color:var(--ink2);font-size:13px;white-space:nowrap;flex:none}
+.flash-x{flex:none;width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--ink2);font:16px/1 var(--ui);cursor:pointer}
+.flash-x:hover{background:var(--field);color:var(--ink)}
+.flash[hidden]{display:none}
+@media (max-width:640px){.flash-in{flex-wrap:wrap;border-radius:18px;padding:12px 12px 12px 16px;row-gap:10px}.flash-in .msg{flex:1 1 calc(100% - 40px);min-width:0}}
+@media (prefers-reduced-motion: reduce){.flash-dot::after{animation:none}}
 </style>
 <script>document.documentElement.classList.add('js')</script>
 </head>
@@ -292,6 +307,16 @@ main:focus{outline:none}
 <main id="top" tabindex="-1">
   <!-- Hero -->
   <div class="hero wrap">
+    <!-- Flash note (temporary): remove this block, its CSS and its script when 2.0.0/2.0.1 are no longer in circulation. -->
+    <aside class="flash" id="flash" data-flash="v202" aria-label="Release notice">
+      <div class="flash-in">
+        <span class="flash-dot" aria-hidden="true"></span>
+        <span class="msg"><b>Markify 2.0.0 and 2.0.1 don’t open.</b> Version 2.0.2 fixes it.</span>
+        <a class="btn btn-accent" href="https://github.com/spaquet/markify/releases/tag/v2.0.2">Get 2.0.2</a>
+        <a class="more" href="known-issues.html">What happened →</a>
+        <button class="flash-x" type="button" aria-label="Dismiss notice">×</button>
+      </div>
+    </aside>
     <div class="chips rv"><span>Markdown editor</span><span>macOS 26</span><span class="plain">Free · source available</span></div>
     <h1 class="rv">One page.<br>Two lenses.</h1>
     <p class="lede rv">Most Markdown editors split the window in two. Markify <strong>keeps a single page</strong>: write it rendered, press <kbd>⌘/</kbd>, and the same text is plain Markdown. Your caret stays put.</p>
@@ -625,6 +650,7 @@ main:focus{outline:none}
       <a href="https://github.com/spaquet/markify/releases">Releases</a>
       <a href="okf.html">Open Knowledge Format</a>
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
+      <a href="known-issues.html">Known issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
       <a href="legal.html">Legal &amp; privacy</a>
     </nav>
@@ -703,6 +729,19 @@ main:focus{outline:none}
   // Scroll reveal.
   const io = new IntersectionObserver((es) => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
   document.querySelectorAll('.rv').forEach(el => io.observe(el));
+})();
+</script>
+<script>
+// Flash note (temporary): remember a dismissal per notice.
+(() => {
+  const flash = document.getElementById('flash');
+  if (!flash) return;
+  const key = 'markify.flash.' + flash.dataset.flash;
+  try { if (localStorage.getItem(key)) flash.hidden = true; } catch {}
+  flash.querySelector('.flash-x').addEventListener('click', () => {
+    flash.hidden = true;
+    try { localStorage.setItem(key, '1'); } catch {}
+  });
 })();
 </script>
 </body>

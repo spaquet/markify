@@ -398,6 +398,7 @@ func webPage(_ page: Page, index: Int) -> String {
           <a href="\(repository)/releases">Releases</a>
           <a href="\(relative("okf.html", from: page.web))">Open Knowledge Format</a>
           <a href="\(repository)/issues">Issues</a>
+          <a href="\(relative("known-issues.html", from: page.web))">Known issues</a>
           <a href="https://github.com/sponsors/spaquet">Sponsor</a>
           <a href="\(relative("legal.html", from: page.web))">Legal &amp; privacy</a>
         </nav>
@@ -425,6 +426,7 @@ let homeModified = lastModified(docs.appendingPathComponent("index.html"))
 var sitemap = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
 sitemap += "<url><loc>\(site)</loc><lastmod>\(homeModified)</lastmod><priority>1.0</priority></url>\n"
 sitemap += "<url><loc>\(site)okf.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("okf.html")))</lastmod><priority>0.8</priority></url>\n"
+sitemap += "<url><loc>\(site)known-issues.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("known-issues.html")))</lastmod><priority>0.5</priority></url>\n"
 for page in pages {
     let loc = page.web == "help/index.html" ? site + "help/" : site + page.web
     sitemap += "<url><loc>\(loc)</loc><lastmod>\(page.lastModified)</lastmod><priority>\(page.slug == "index" || page.schema == "faq" ? "0.8" : "0.6")</priority></url>\n"
