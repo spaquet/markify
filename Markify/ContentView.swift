@@ -147,13 +147,10 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            // The open Contents and Links pane takes the right of the page; the column fits in, and centers on, the rest.
             // Text fills the page between margins that grow with it (5% a side, 16–96pt), unless Settings limits the line width.
-            let paneInset: CGFloat = linksOpen ? 316 : 0
-            let pageWidth = geometry.size.width - paneInset
-            let fill = max(pageWidth - 2 * min(max(pageWidth * 0.05, 16), 96), 280)
+            // The side panes slide over the page and never move the text.
+            let fill = max(geometry.size.width - 2 * min(max(geometry.size.width * 0.05, 16), 96), 280)
             let columnWidth = limitLineWidth ? min(markdownLens ? lineWidth + 20 : lineWidth, fill) : fill
-            let columnMidX = pageWidth / 2
             ZStack(alignment: .topLeading) {
                 page.ignoresSafeArea()
                 NativeEditor(text: $document.text, fileURL: fileURL, columnWidth: columnWidth, markdownLens: markdownLens, findQuery: showFind ? query : "", matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
@@ -183,7 +180,6 @@ struct ContentView: View {
                 })
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.trailing, paneInset)
                 .padding(.top, 56)
 
                 if document.text.isEmpty {
@@ -195,7 +191,6 @@ struct ContentView: View {
                     .padding(.top, 96)
                     .frame(width: columnWidth, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .padding(.trailing, paneInset)
                     .allowsHitTesting(false)
                 }
                 if document.text.isEmpty && !hasTyped {
@@ -223,14 +218,10 @@ struct ContentView: View {
                         .zIndex(2)
                 }
                 if linksOpen {
-                    // Beside the page the pane stays open while you read and edit; only when a narrow window leaves it
-                    // over the text does a click on the page close it.
-                    if columnWidth > pageWidth - 24 {
-                        Color.clear
-                            .contentShape(.rect)
-                            .onTapGesture { toggleLinks() }
-                            .zIndex(1)
-                    }
+                    Color.clear
+                        .contentShape(.rect)
+                        .onTapGesture { toggleLinks() }
+                        .zIndex(1)
                     let model = documentModel
                     let jump: (NSRange) -> Void = { range in (textView as? MarkdownTextView)?.reveal(range) }
                     DocumentPanel(headings: DocumentHeading.extract(from: model), jump: jump) {
@@ -350,7 +341,7 @@ struct ContentView: View {
                         .allowsHitTesting(chromeVisible)
                 }
                 if showFind { findPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56).padding(.trailing, 12).zIndex(4) }
-                if let review, let frame = reviewFrame(review, columnWidth: columnWidth, columnMidX: columnMidX) {
+                if let review, let frame = reviewFrame(review, geometry: geometry, columnWidth: columnWidth) {
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(aiGradient, lineWidth: 1.5)
                         .shadow(color: Color.purple.opacity(colorScheme == .dark ? 0.22 : 0.13), radius: 10)
@@ -359,14 +350,14 @@ struct ContentView: View {
                         .allowsHitTesting(false)
                         .zIndex(4)
                     reviewCapsule(review)
-                        .position(x: columnMidX, y: min(frame.maxY + 27, geometry.size.height - 30))
+                        .position(x: geometry.size.width / 2, y: min(frame.maxY + 27, geometry.size.height - 30))
                         .zIndex(5)
                 }
                 if showComposer {
                     composer
                         .frame(width: columnWidth)
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { composerHeight = $0 }
-                        .position(x: columnMidX,
+                        .position(x: geometry.size.width / 2,
                                   y: min(selectionRect.maxY + 10 + composerHeight / 2, geometry.size.height - composerHeight / 2 - 12))
                         .zIndex(6)
                 }
@@ -1177,7 +1168,7 @@ struct ContentView: View {
     }
 
     /// Frame of a reviewed rewrite in the ZStack, outset 14pt around the column.
-    private func reviewFrame(_ review: AIReview, columnWidth: CGFloat, columnMidX: CGFloat) -> CGRect? {
+    private func reviewFrame(_ review: AIReview, geometry: GeometryProxy, columnWidth: CGFloat) -> CGRect? {
         _ = scrollTick
         guard let textView, let window = textView.window, let content = window.contentView,
               NSMaxRange(review.range) <= (textView.string as NSString).length, review.range.length > 0 else { return nil }
@@ -1185,7 +1176,7 @@ struct ContentView: View {
         let last = window.convertFromScreen(textView.firstRect(forCharacterRange: NSRange(location: NSMaxRange(review.range) - 1, length: 1), actualRange: nil))
         let top = content.bounds.height - first.maxY
         let bottom = content.bounds.height - last.minY
-        let left = columnMidX - columnWidth / 2
+        let left = (geometry.size.width - columnWidth) / 2
         return CGRect(x: left - 14, y: top - 8, width: columnWidth + 28, height: max(bottom - top, 20) + 16)
     }
 
