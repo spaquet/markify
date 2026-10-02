@@ -23,6 +23,8 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -configuration Debug build
 open Markify.xcodeproj
 ```
 
+Build the app into Xcode's default DerivedData: don't pass `-derivedDataPath` for the `Markify` scheme. Xcode registers every `Markify.app` it builds with LaunchServices (no build setting turns this off), and each app copy in a new folder adds another Markify, with its Quick Look extension, to System Settings › General › Login Items & Extensions › Extensions. If a build had to go elsewhere, or duplicates show up, run `scripts/clean-launch-services.sh` (`--dry-run` lists, `--delete` also removes stale `/tmp` builds); it keeps `/Applications/Markify.app` and the default DerivedData Debug app.
+
 ### Testing
 
 ```bash
