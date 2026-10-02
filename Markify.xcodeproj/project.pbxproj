@@ -13,7 +13,7 @@
 		63EF882373BE43B3B75148B0 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = DF6556DC67E646B4AE9187DB /* Sentry */; };
 		76A591142DC953870033A6AC /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 76A591132DC953870033A6AC /* Markdown */; };
 		A1F9C0012DC953870033A6AC /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
-		B10000000000000000000001 /* MarkifyQuickLook.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* MarkifyQuickLook.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B10000000000000000000001 /* MarkifyQuickLook.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* MarkifyQuickLook.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B10000000000000000000003 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
 		B10000000000000000000004 /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
 		B10000000000000000000005 /* Markify/MathSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* Markify/MathSVG.swift */; };
@@ -57,15 +57,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B10000000000000000000011 /* Embed App Extensions */ = {
+		B10000000000000000000011 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B10000000000000000000001 /* MarkifyQuickLook.appex in Embed App Extensions */,
+				B10000000000000000000001 /* MarkifyQuickLook.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		C10000000000000000000008 /* Embed XPC Services */ = {
@@ -242,7 +242,7 @@
 				76A590E32DC952970033A6AC /* Sources */,
 				76A590E42DC952970033A6AC /* Frameworks */,
 				76A590E52DC952970033A6AC /* Resources */,
-				B10000000000000000000011 /* Embed App Extensions */,
+				B10000000000000000000011 /* Embed Foundation Extensions */,
 				C11F8C3E3BB24590AECC1E20 /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
@@ -368,7 +368,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1630;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2710;
 				TargetAttributes = {
 					76A590E62DC952970033A6AC = {
 						CreatedOnToolsVersion = 16.3;
@@ -666,7 +666,7 @@
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 302;
+				CURRENT_PROJECT_VERSION = 303;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -704,7 +704,7 @@
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 302;
+				CURRENT_PROJECT_VERSION = 303;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -811,7 +811,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 302;
+				CURRENT_PROJECT_VERSION = 303;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -834,7 +834,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 302;
+				CURRENT_PROJECT_VERSION = 303;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -855,7 +855,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 302;
+				CURRENT_PROJECT_VERSION = 303;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -878,7 +878,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 302;
+				CURRENT_PROJECT_VERSION = 303;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
