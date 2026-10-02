@@ -36,6 +36,31 @@ import Testing
         #expect(svg.contains("aria-label=\"\\frac{a}{b}\""))
     }
 
+    @Test func mathOutlineNumbersHaveAtMostTwoDecimals() {
+        func number(_ value: Double) -> String { var string = ""; MathSVG.appendNumber(value, to: &string); return string }
+        #expect(number(7) == "7")
+        #expect(number(3.14159) == "3.14")
+        #expect(number(10.1) == "10.1")
+        #expect(number(0.07) == "0.07")
+        #expect(number(-2.5) == "-2.5")
+        #expect(number(-0.004) == "0")
+    }
+
+    /// MARKIFY-5 (#57): a math-heavy export blocked the main thread. The page now builds off it, and outlines are cached.
+    @Test func mathHeavyPageBuildsOffTheMainThread() async {
+        let source = (1...300).map { "Term $x_{\($0)}^2 + \\sqrt{y_{\($0)}}$ and\n\n$$\\int_0^{\($0)} \\frac{a}{b} \\, dx$$\n" }.joined(separator: "\n")
+        let export = context(source)
+        let start = ContinuousClock.now
+        let page = await DocumentExport.page(export, for: .html)
+        let elapsed = ContinuousClock.now - start
+        #expect(page.components(separatedBy: "<svg").count - 1 == 600)
+        #expect(elapsed < .seconds(10), "Math-heavy export took \(elapsed)")
+        let detached = await Task.detached {
+            DocumentExport.render(export, diagrams: [:], pdf: false, remoteImages: true)
+        }.value
+        #expect(detached == page)
+    }
+
     @Test func localImagesAreEmbedded() throws {
         let image = NSImage(size: NSSize(width: 4, height: 4), flipped: false) { rect in NSColor.red.setFill(); rect.fill(); return true }
         let png = NSBitmapImageRep(data: image.tiffRepresentation!)!.representation(using: .png, properties: [:])!
