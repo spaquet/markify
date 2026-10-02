@@ -102,7 +102,7 @@ Choose a shortcut after checking the native Paste and Match Style command and `S
 
 Package a `markify` plugin with `.claude-plugin/plugin.json`, `skills/view/SKILL.md`, and a small launcher under `scripts/`. Expose `/markify:view` to send a requested report or the preceding report to Markify. The skill passes Markdown as data through stdin; it does not interpolate generated content into shell code. If it recreates an earlier response from conversation context, do not claim byte-for-byte transcript extraction.
 
-Resolve `markify` on PATH first, then the installed app's `Contents/MacOS/markify` through Launch Services; support an explicit executable path for nonstandard installations. Fail clearly when the app or `view` command is missing. Use the same discovery convention in later agent packages.
+Resolve `markify` on PATH first, then the installed app's `Contents/Helpers/markify` through Launch Services; support an explicit executable path for nonstandard installations. Fail clearly when the app or `view` command is missing. Use the same discovery convention in later agent packages.
 
 Publish a first-party marketplace catalog at `.claude-plugin/marketplace.json` in a repository containing the plugin. Proposed marketplace name: `markify`. If hosted in this repository, the planned installation is:
 
@@ -119,7 +119,7 @@ Provide an optional automatic mode after the on-demand command works. Current [S
 Without reuse, automatic mode opens a new document per response. Keep it optional and describe that behavior. Manual fallback:
 
 ```sh
-pbpaste | /Applications/Markify.app/Contents/MacOS/markify view - --title 'Claude report'
+pbpaste | /Applications/Markify.app/Contents/Helpers/markify view - --title 'Claude report'
 ```
 
 ## Phase 2 — Codex

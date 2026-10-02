@@ -42,3 +42,8 @@ codesign --verify --deep --strict "$WORK/app/Markify.app"
 APP_BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$WORK/app/Markify.app/Contents/Info.plist")
 [ "$APP_BUILD" = "$FEED_BUILD" ] || { echo "The archive's app is build $APP_BUILD, the feed says $FEED_BUILD" >&2; exit 1; }
 echo "✓ Update archive: valid code signature, build $APP_BUILD, $(lipo -archs "$WORK/app/Markify.app/Contents/MacOS/Markify")"
+otool -L "$WORK/app/Markify.app/Contents/MacOS/Markify" | grep -q 'SwiftUI.framework' \
+    || { echo "Contents/MacOS/Markify is not the app (the CLI replaced it?)" >&2; exit 1; }
+"$WORK/app/Markify.app/Contents/Helpers/markify" --help | grep -q 'markify view' \
+    || { echo "The bundled CLI is missing from Contents/Helpers" >&2; exit 1; }
+echo "✓ Update archive: app executable and bundled CLI"

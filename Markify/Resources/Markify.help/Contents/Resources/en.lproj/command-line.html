@@ -14,9 +14,9 @@
 <main>
 <article>
 <h1 id="command-line">Command line</h1>
-<p>Markify includes a separate <code>markify</code> command for scripts. <code>check</code> and <code>export</code> run without opening an editor window; <code>view</code> opens Markdown in the app. After installing the app, find it at <code>/Applications/Markify.app/Contents/MacOS/markify</code>. If you installed Markify elsewhere, use the matching path inside that app.</p>
+<p>Markify includes a separate <code>markify</code> command for scripts. <code>check</code> and <code>export</code> run without opening an editor window; <code>view</code> opens Markdown in the app. After installing the app, find it at <code>/Applications/Markify.app/Contents/Helpers/markify</code>. If you installed Markify elsewhere, use the matching path inside that app.</p>
 <p>To call it as <code>markify</code> from any folder, link it into a directory on your <code>PATH</code>:</p>
-<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">ln -s /Applications/Markify.app/Contents/MacOS/markify /usr/local/bin/markify
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">ln -s /Applications/Markify.app/Contents/Helpers/markify /usr/local/bin/markify
 markify --help</code></pre>
 <p>If you build from source, run <code>swift build -c release --package-path MarkifyCLI</code>; the executable is in <code>MarkifyCLI/.build/release/markify</code>.</p>
 <h2 id="read-a-report">Read a report</h2>
@@ -29,7 +29,7 @@ pbpaste | markify view - --title 'Agent report' --base &quot;$PWD&quot;</code></
 <pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">markify check path/to/bundle</code></pre>
 <p>The command reads the folder without changing it. Each finding includes its file path, severity and message. It exits with status 0 if there are no errors. Warnings and information are printed but do not fail the command. Errors, unreadable files and invalid paths return a nonzero status.</p>
 <p>For a CI job, add a step such as:</p>
-<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">/Applications/Markify.app/Contents/MacOS/markify check knowledge/</code></pre>
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">/Applications/Markify.app/Contents/Helpers/markify check knowledge/</code></pre>
 <h2 id="export-html">Export HTML</h2>
 <pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">markify export notes/example.md --html --output public/example.html</code></pre>
 <p>The output folder must exist. The command writes a self-contained HTML page, embeds local images, and rewrites links to other files relative to the output page. It accepts <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files. It leaves the source file unchanged and reports read or write failures on stderr with a nonzero status.</p>

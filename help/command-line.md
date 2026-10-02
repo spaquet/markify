@@ -6,12 +6,12 @@ keywords: cli, terminal, command line, markify, check, validation, export, html,
 ---
 # Command line
 
-Markify includes a separate `markify` command for scripts. `check` and `export` run without opening an editor window; `view` opens Markdown in the app. After installing the app, find it at `/Applications/Markify.app/Contents/MacOS/markify`. If you installed Markify elsewhere, use the matching path inside that app.
+Markify includes a separate `markify` command for scripts. `check` and `export` run without opening an editor window; `view` opens Markdown in the app. After installing the app, find it at `/Applications/Markify.app/Contents/Helpers/markify`. If you installed Markify elsewhere, use the matching path inside that app.
 
 To call it as `markify` from any folder, link it into a directory on your `PATH`:
 
 ```sh
-ln -s /Applications/Markify.app/Contents/MacOS/markify /usr/local/bin/markify
+ln -s /Applications/Markify.app/Contents/Helpers/markify /usr/local/bin/markify
 markify --help
 ```
 
@@ -41,7 +41,7 @@ The command reads the folder without changing it. Each finding includes its file
 For a CI job, add a step such as:
 
 ```sh
-/Applications/Markify.app/Contents/MacOS/markify check knowledge/
+/Applications/Markify.app/Contents/Helpers/markify check knowledge/
 ```
 
 ## Export HTML

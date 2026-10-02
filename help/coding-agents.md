@@ -83,8 +83,8 @@ Copy the answer, then choose **File › New from Clipboard** (⌃⌥⌘V). Clipb
 From Terminal:
 
 ```sh
-pbpaste | /Applications/Markify.app/Contents/MacOS/markify view - --title 'Agent report' --base "$PWD"
-/Applications/Markify.app/Contents/MacOS/markify view report.md --title 'Architecture review'
+pbpaste | /Applications/Markify.app/Contents/Helpers/markify view - --title 'Agent report' --base "$PWD"
+/Applications/Markify.app/Contents/Helpers/markify view report.md --title 'Architecture review'
 ```
 
 File input resolves relative resources beside the input file; stdin uses the current directory unless `--base` specifies another existing directory. File input is copied into a new document; the original file is never changed.
@@ -95,6 +95,6 @@ Save beside the referenced project assets, or use absolute paths. Saving into an
 
 Reports are transferred locally through a private cache envelope, limited to 10 MiB including JSON metadata. Markify deletes it after creating the document. Failed transfers remain available temporarily; a later `view` command removes envelopes older than 24 hours. macOS may keep document recovery data. Markify's existing remote-image setting still controls image downloads; no extra AI service is used by this handoff.
 
-If the launcher cannot find Markify, install the app, add its CLI to PATH, or set `MARKIFY_CLI` to the absolute path of `Markify.app/Contents/MacOS/markify` in the agent's environment. An “unsupported view” error means that executable needs updating. Missing or outdated app messages include a GitHub Releases download link. For local source testing, point it to `MarkifyCLI/.build/debug/markify`.
+If the launcher cannot find Markify, install the app, add its CLI to PATH, or set `MARKIFY_CLI` to the absolute path of `Markify.app/Contents/Helpers/markify` in the agent's environment. An “unsupported view” error means that executable needs updating. Missing or outdated app messages include a GitHub Releases download link. For local source testing, point it to `MarkifyCLI/.build/debug/markify`.
 
 Allow the agent's normal permission request to launch the app or write the cache. If denied, use New from Clipboard. A successful command means macOS accepted the launch request; an app-side failure appears in Markify. A missing/already-opened report URL cannot reopen a consumed request: send the report again.
