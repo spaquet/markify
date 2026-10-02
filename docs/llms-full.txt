@@ -439,12 +439,12 @@ URL: https://spaquet.github.io/markify/help/command-line.html
 
 # Command line
 
-Markify includes a separate `markify` command for scripts. `check` and `export` run without opening an editor window; `view` opens Markdown in the app. After installing the app, find it at `/Applications/Markify.app/Contents/MacOS/markify`. If you installed Markify elsewhere, use the matching path inside that app.
+Markify includes a separate `markify` command for scripts. `check` and `export` run without opening an editor window; `view` opens Markdown in the app. After installing the app, find it at `/Applications/Markify.app/Contents/Helpers/markify`. If you installed Markify elsewhere, use the matching path inside that app.
 
 To call it as `markify` from any folder, link it into a directory on your `PATH`:
 
 ```sh
-ln -s /Applications/Markify.app/Contents/MacOS/markify /usr/local/bin/markify
+ln -s /Applications/Markify.app/Contents/Helpers/markify /usr/local/bin/markify
 markify --help
 ```
 
@@ -474,7 +474,7 @@ The command reads the folder without changing it. Each finding includes its file
 For a CI job, add a step such as:
 
 ```sh
-/Applications/Markify.app/Contents/MacOS/markify check knowledge/
+/Applications/Markify.app/Contents/Helpers/markify check knowledge/
 ```
 
 ## Export HTML
@@ -677,8 +677,8 @@ Copy the answer, then choose **File › New from Clipboard** (⌃⌥⌘V). Clipb
 From Terminal:
 
 ```sh
-pbpaste | /Applications/Markify.app/Contents/MacOS/markify view - --title 'Agent report' --base "$PWD"
-/Applications/Markify.app/Contents/MacOS/markify view report.md --title 'Architecture review'
+pbpaste | /Applications/Markify.app/Contents/Helpers/markify view - --title 'Agent report' --base "$PWD"
+/Applications/Markify.app/Contents/Helpers/markify view report.md --title 'Architecture review'
 ```
 
 File input resolves relative resources beside the input file; stdin uses the current directory unless `--base` specifies another existing directory. File input is copied into a new document; the original file is never changed.
@@ -689,7 +689,7 @@ Save beside the referenced project assets, or use absolute paths. Saving into an
 
 Reports are transferred locally through a private cache envelope, limited to 10 MiB including JSON metadata. Markify deletes it after creating the document. Failed transfers remain available temporarily; a later `view` command removes envelopes older than 24 hours. macOS may keep document recovery data. Markify's existing remote-image setting still controls image downloads; no extra AI service is used by this handoff.
 
-If the launcher cannot find Markify, install the app, add its CLI to PATH, or set `MARKIFY_CLI` to the absolute path of `Markify.app/Contents/MacOS/markify` in the agent's environment. An “unsupported view” error means that executable needs updating. Missing or outdated app messages include a GitHub Releases download link. For local source testing, point it to `MarkifyCLI/.build/debug/markify`.
+If the launcher cannot find Markify, install the app, add its CLI to PATH, or set `MARKIFY_CLI` to the absolute path of `Markify.app/Contents/Helpers/markify` in the agent's environment. An “unsupported view” error means that executable needs updating. Missing or outdated app messages include a GitHub Releases download link. For local source testing, point it to `MarkifyCLI/.build/debug/markify`.
 
 Allow the agent's normal permission request to launch the app or write the cache. If denied, use New from Clipboard. A successful command means macOS accepted the launch request; an app-side failure appears in Markify. A missing/already-opened report URL cannot reopen a consumed request: send the report again.
 
@@ -795,7 +795,7 @@ Choose **More (…) › Export › HTML** or **PDF**. The HTML page is self-cont
 
 ### Does Markify collect any data?
 
-No. Markify has no accounts, analytics or tracking. See the privacy section on the [Legal](https://spaquet.github.io/markify/legal.html) page for the few times it connects to the internet.
+Markify has no accounts, usage analytics or tracking, and never sends your documents anywhere. It does send crash reports, and timing data from a sample of sessions, to Sentry so bugs and slowdowns can be fixed; these hold no document text or personal data. See the privacy section on the [Legal](https://spaquet.github.io/markify/legal.html) page for every time it connects to the internet.
 
 ### Is my text sent to an AI service?
 
@@ -843,11 +843,12 @@ Markify is © 2025–2026 Stéphane Paquet. It is distributed under the MIT Lice
 
 ## Privacy
 
-Markify doesn't collect, store or share personal data. It has no accounts, no analytics and no advertising. Your documents stay in the files and folders you choose.
+Markify doesn't collect, store or share personal data. It has no accounts, no usage analytics and no advertising. Your documents stay in the files and folders you choose.
 
 Markify connects to the internet only in these cases:
 
 - **Update checks.** Markify downloads its update feed from GitHub (`github.com/spaquet/markify`) to see whether a new version exists, and downloads the update when you install it. This request includes your IP address and Markify's version, as any web request does, and is subject to [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Turn automatic checks off in **Settings › General › Updates**.
+- **Crash and performance reports.** When Markify crashes, it sends a crash report to [Sentry](https://sentry.io), which hosts Markify's error reports. A report holds the stack trace, Markify's version, and your Mac's model and macOS version; it holds no document text, file names or personal data. Markify also sends timing data for a sample of sessions (about one in ten) so slow operations can be found and fixed. As with any web request, Sentry sees your IP address; Markify doesn't ask it to keep it. Sentry's handling is described in [Sentry's privacy policy](https://sentry.io/privacy/).
 - **Remote images.** When a document contains an image from a web address and **Settings › General › Load remote images** is on, Markify downloads it from that server. Turn the setting off to stop this.
 - **Links you open.** ⌘-clicking a web link opens it in your browser.
 
@@ -869,6 +870,7 @@ Markify is built on the work of others. Thank you to everyone behind these proje
 | [KaTeX fonts](https://github.com/KaTeX/katex-fonts) | Math typefaces, bundled with SwaTex | The KaTeX authors | SIL Open Font License 1.1 |
 | [Mermaid](https://github.com/mermaid-js/mermaid) 12 | Drawing diagrams | Knut Sveidqvist and contributors | MIT, with bundled dependencies under their own licenses |
 | [Sparkle](https://github.com/sparkle-project/Sparkle) | Software updates | Andy Matuschak and the Sparkle Project | MIT, with components under BSD and other licenses |
+| [Sentry Cocoa SDK](https://github.com/getsentry/sentry-cocoa) | Crash and performance reports | Functional Software, Inc. (Sentry) and contributors | MIT |
 | [Yams](https://github.com/jpsim/Yams) | Reading YAML frontmatter | JP Simard and contributors | MIT |
 | [swift-markdown-engine](https://github.com/nodes-app/swift-markdown-engine) | The design pattern behind the editor's layout-fragment drawing (no code is copied) | nodes-app | Apache 2.0 |
 

@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/command-line.html","name":"Command line","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-30","description":"Open agent reports, validate OKF bundles and export Markdown to HTML from Terminal or a script.","headline":"Command line","inLanguage":"en","keywords":"cli, terminal, command line, markify, check, validation, export, html, ci","url":"https://spaquet.github.io/markify/help/command-line.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/command-line.html","name":"Command line","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-02","description":"Open agent reports, validate OKF bundles and export Markdown to HTML from Terminal or a script.","headline":"Command line","inLanguage":"en","keywords":"cli, terminal, command line, markify, check, validation, export, html, ci","url":"https://spaquet.github.io/markify/help/command-line.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -62,9 +62,9 @@
 <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../index.html">Markify</a></li><li><a href="index.html">Help</a></li><li><span aria-current="page">Command line</span></li></ol></nav>
 <article>
 <h1 id="command-line">Command line</h1>
-<p>Markify includes a separate <code>markify</code> command for scripts. <code>check</code> and <code>export</code> run without opening an editor window; <code>view</code> opens Markdown in the app. After installing the app, find it at <code>/Applications/Markify.app/Contents/MacOS/markify</code>. If you installed Markify elsewhere, use the matching path inside that app.</p>
+<p>Markify includes a separate <code>markify</code> command for scripts. <code>check</code> and <code>export</code> run without opening an editor window; <code>view</code> opens Markdown in the app. After installing the app, find it at <code>/Applications/Markify.app/Contents/Helpers/markify</code>. If you installed Markify elsewhere, use the matching path inside that app.</p>
 <p>To call it as <code>markify</code> from any folder, link it into a directory on your <code>PATH</code>:</p>
-<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">ln -s /Applications/Markify.app/Contents/MacOS/markify /usr/local/bin/markify
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">ln -s /Applications/Markify.app/Contents/Helpers/markify /usr/local/bin/markify
 markify --help</code></pre>
 <p>If you build from source, run <code>swift build -c release --package-path MarkifyCLI</code>; the executable is in <code>MarkifyCLI/.build/release/markify</code>.</p>
 <h2 id="read-a-report">Read a report</h2>
@@ -77,13 +77,13 @@ pbpaste | markify view - --title 'Agent report' --base &quot;$PWD&quot;</code></
 <pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">markify check path/to/bundle</code></pre>
 <p>The command reads the folder without changing it. Each finding includes its file path, severity and message. It exits with status 0 if there are no errors. Warnings and information are printed but do not fail the command. Errors, unreadable files and invalid paths return a nonzero status.</p>
 <p>For a CI job, add a step such as:</p>
-<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">/Applications/Markify.app/Contents/MacOS/markify check knowledge/</code></pre>
+<pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">/Applications/Markify.app/Contents/Helpers/markify check knowledge/</code></pre>
 <h2 id="export-html">Export HTML</h2>
 <pre><span class="code-label" aria-hidden="true">sh</span><code class="language-sh">markify export notes/example.md --html --output public/example.html</code></pre>
 <p>The output folder must exist. The command writes a self-contained HTML page, embeds local images, and rewrites links to other files relative to the output page. It accepts <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files. It leaves the source file unchanged and reports read or write failures on stderr with a nonzero status.</p>
 <p>The CLI renders math as LaTeX code and Mermaid fences as code blocks. Use the app's HTML export when you need their SVG rendering or syntax-colored code.</p>
 <p>Run <code>markify --help</code> for the full syntax and exit status. To open a file in the editor from Terminal, use <code>open -a Markify file.md</code>.</p>
-<p class="edit">Updated 2026-09-30 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/command-line.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-02 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/command-line.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="knowledge.html"><span>Previous</span>Knowledge bundles</a><a rel="next" href="settings.html"><span>Next</span>Settings</a></nav>
 </main>
