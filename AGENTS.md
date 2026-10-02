@@ -65,6 +65,7 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 - **Mermaid.swift**: `MermaidRenderer`, one offscreen `WKWebView` running the bundled Mermaid (`Resources/Mermaid`) with no network access. It renders editor images and, for export, SVG (`svg(for:)`).
 - **Export.swift**: `DocumentExport` builds a self-contained HTML page from `MarkdownHTML` (math as outline SVG via `MathSVG`, Mermaid SVG, images as data URIs, relative links rewritten for the destination); `PDFPrinter` prints that page to a paginated PDF with WebKit.
 - **AboutView.swift**: the About window (a `Window` scene replacing the standard panel) with links and credits; the full credits are the Legal help page.
+- **Inspector.swift**: the right pane (`DocumentInspector`): Contents outline and Links list, drawn from the Inspector design. **DocumentOutline.swift** builds headings (with export's anchors), outline rows and the inserted table of contents; **LinkHealth.swift** classifies links and checks them off the main thread (`LocalLinkCheck`, and `WebLinkChecks` with its 24-hour cache); **LinksPanel.swift** keeps link grouping and on-device summaries (`LinkSummarizer`).
 - **Knowledge.swift**: the OKF app layer — link following, log/index writes, the knowledge sidebar section.
 - **Updates.swift**: Sparkle's `SPUStandardUpdaterController` (not started under tests) and the Check for Updates… button. Feed and key are in Info.plist; see RELEASE.md.
 - **Theme.swift**: `EditorTheme` fonts and colors. New York is a system design (`withDesign(.serif)`), not a font name.

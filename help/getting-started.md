@@ -41,10 +41,19 @@ The page takes the whole window. A few controls float on glass above it and fade
 
 - **Library** (sidebar button, ⌃⌘S) shows your open files and library notes. See [Library and find](library.md).
 - **Title**: click the document's name to rename it, move it or browse its versions.
-- **Contents and Links** (right sidebar button) slides in a pane with two tabs. **Contents** lists the document's level 1 and 2 headings, with level 2 headings indented under their section; click one to move to that heading. **Links** lists the document's links; see [Links panel](images-and-links.md#links-panel). The pane slides over the page; click the page, the same button or press Esc to close it. It updates as you edit and remembers the last tab.
+- **Contents and Links** (right sidebar button) slides in a pane with two tabs; see [Contents](#contents) and [Links panel](images-and-links.md#links-panel). The pane slides over the page; click the page, the same button or press Esc to close it. It updates as you edit and remembers the last tab.
 - **Apple Intelligence** (the multicolor symbol) opens writing actions for the whole document. See [Apple Intelligence](intelligence.md).
 - **MD** switches to the Markdown lens (⌘/). See [Two lenses](lenses.md).
 - **More** (…) holds Share, Export, Source (for documents opened from URLs), Knowledge, Find, the word count and Settings.
+
+## Contents
+
+The **Contents** tab outlines the document's headings at every level, with guide lines showing which section each sits in. Click a heading to move the caret to it; it scrolls to the top of the page. Click the triangle beside a heading to fold or unfold its section.
+
+- **H1, H2, H3, All** choose how deep the outline goes. Markify remembers the depth.
+- **Filter headings** shows the headings whose title contains what you type, inside their sections.
+- The heading you're reading is highlighted, and its guide line turns blue. The bar at the bottom shows how far through the document you've scrolled.
+- **Insert Table of Contents** inserts, at the caret, a list of links to the headings shown at the current depth. ⌘-click one of these links to jump to its heading; they also work in exported HTML and PDF. The list doesn't update itself: delete it and insert it again after renaming headings.
 
 ## Start writing
 

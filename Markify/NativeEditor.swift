@@ -1106,6 +1106,76 @@ final class MarkdownTextView: NSTextView {
         scroll.reflectScrolledClipView(clip)
     }
 
+    /// Moves to the heading whose anchor (as export writes it) is `anchor`. Returns false when there is none.
+    @discardableResult
+    func revealAnchor(_ anchor: String) -> Bool {
+        guard let heading = DocumentHeading.extract(from: model).first(where: { $0.anchor == anchor }) else { return false }
+        reveal(NSRange(location: heading.range.location, length: 0))
+        return true
+    }
+
+    /// The source offset at the reading line, a quarter down the page (at most 120pt), and how far through the document
+    /// the page is scrolled, from 0 to 1.
+    var readingPosition: (offset: Int, progress: Double) {
+        guard let scroll = enclosingScrollView, let manager = textLayoutManager, let content = manager.textContentManager else { return (0, 0) }
+        let visible = scroll.contentView.bounds
+        let y = visible.minY + min(120, visible.height * 0.25) - textContainerOrigin.y
+        let offset: Int
+        if let fragment = manager.textLayoutFragment(for: CGPoint(x: 0, y: max(0, y))) {
+            offset = content.offset(from: content.documentRange.location, to: fragment.rangeInElement.location)
+        } else {
+            offset = y <= 0 ? 0 : (string as NSString).length
+        }
+        let scrollable = bounds.height - visible.height
+        return (offset, scrollable > 1 ? min(max(visible.minY / scrollable, 0), 1) : 1)
+    }
+
+    /// Inserts `block` at the caret as its own block, with blank lines around it, as one undo step.
+    func insertBlock(_ block: String) {
+        let text = string as NSString
+        let range = selectedRange()
+        var before = ""
+        if range.location > 0, text.character(at: range.location - 1) != 0x0A { before = "\n\n" }
+        else if range.location > 1, text.character(at: range.location - 2) != 0x0A { before = "\n" }
+        let end = NSMaxRange(range)
+        let after = end < text.length && text.character(at: end) != 0x0A ? "\n\n" : "\n"
+        window?.makeFirstResponder(self)
+        insertText(before + block + after, replacementRange: range)
+    }
+
+    /// Changes a link's destination from `old` to `new` in every link range given (or in its reference definition),
+    /// as one undo step. Returns how many places changed.
+    @discardableResult
+    func replaceLinkDestination(_ old: String, with new: String, in links: [NSRange]) -> Int {
+        let text = string as NSString
+        var targets: [NSRange] = []
+        for link in links where NSMaxRange(link) <= text.length {
+            // The destination is the last copy of it inside the link: `[text](old)`, `<old>`.
+            let found = text.range(of: old, options: .backwards, range: link)
+            if found.location != NSNotFound { targets.append(found); continue }
+            // A reference link: its definition holds the destination.
+            let escaped = NSRegularExpression.escapedPattern(for: old)
+            if let definition = try? NSRegularExpression(pattern: "^ {0,3}\\[[^\\]]+\\]:[ \\t]*<?(\(escaped))>?", options: .anchorsMatchLines),
+               let match = definition.firstMatch(in: string, range: NSRange(location: 0, length: text.length)) {
+                targets.append(match.range(at: 1))
+            }
+        }
+        let unique = Set(targets.map { NSStringFromRange($0) }).map(NSRangeFromString).sorted { $0.location > $1.location }
+        guard !unique.isEmpty, let storage = textStorage else { return 0 }
+        window?.makeFirstResponder(self)
+        breakUndoCoalescing()
+        undoManager?.beginUndoGrouping()
+        var changed = 0
+        for range in unique where shouldChangeText(in: range, replacementString: new) {
+            storage.replaceCharacters(in: range, with: new)
+            didChangeText()
+            changed += 1
+        }
+        undoManager?.setActionName("Fix Link")
+        undoManager?.endUndoGrouping()
+        return changed
+    }
+
     /// The frame of the first line segment of `range`, in this view's coordinates.
     /// `firstRect(forCharacterRange:)` answers only for text inside the viewport, and overlays also sit on text
     /// above or below it, so this asks TextKit 2's layout manager, laying the range out first.
@@ -1764,6 +1834,11 @@ final class MarkdownTextView: NSTextView {
         if event.modifierFlags.contains(.command), followFootnote(at: characterIndexForInsertion(at: point)) { return }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
         if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
+            // A link to a heading in this document moves there.
+            if link.target.hasPrefix("#") {
+                if !revealAnchor(LinkTarget.fragment(link.target) ?? "") { NSSound.beep() }
+                return
+            }
             return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory)
         }
         for item in tasks() {

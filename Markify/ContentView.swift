@@ -88,6 +88,8 @@ struct ContentView: View {
     @State private var reviewTitle = ""
     @State private var lastAIAction = ""
     @State private var scrollTick = 0
+    /// Where the reader is, for the Contents pane: the source offset at the reading line and the scroll fraction.
+    @State private var reading = (offset: 0, progress: 0.0)
     @State private var aiEdit = AIEditGuard()
     @State private var librarySearch = ""
     @State private var libraryFolder: URL?
@@ -223,13 +225,19 @@ struct ContentView: View {
                         .onTapGesture { toggleLinks() }
                         .zIndex(1)
                     let model = documentModel
-                    let jump: (NSRange) -> Void = { range in (textView as? MarkdownTextView)?.reveal(range) }
-                    DocumentPanel(headings: DocumentHeading.extract(from: model), jump: jump) {
-                        LinksPanel(links: DocumentLink.extract(from: model),
-                                   documentURL: fileURL, bundleRoot: bundleRoot, documentText: document.text, baseDirectory: reportBase, jump: jump)
-                    }
+                    let editor = textView as? MarkdownTextView
+                    DocumentInspector(
+                        headings: DocumentHeading.extract(from: model), links: DocumentLink.extract(from: model),
+                        documentURL: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase,
+                        readingOffset: reading.offset, readingProgress: reading.progress, accent: accent,
+                        jump: { editor?.reveal($0) },
+                        insertTableOfContents: { editor?.insertBlock($0) },
+                        fixLink: { occurrences, old, new in editor?.replaceLinkDestination(old, with: new, in: occurrences.map(\.range)) },
+                        follow: { link in Knowledge.follow(link.destination, title: link.text, from: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase) })
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-                    .padding(8)
+                    .padding(12)
+                    .onAppear(perform: updateReading)
+                    .onChange(of: document.text) { _, _ in updateReading() }
                     .ignoresSafeArea(.container, edges: .top)
                     .transition(.move(edge: .trailing))
                     .zIndex(2)
@@ -411,7 +419,9 @@ struct ContentView: View {
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
         .tint(accent)
         .onReceive(NotificationCenter.default.publisher(for: NSView.boundsDidChangeNotification)) { notification in
-            if review != nil, (notification.object as? NSView) === textView?.enclosingScrollView?.contentView { scrollTick += 1 }
+            guard (notification.object as? NSView) === textView?.enclosingScrollView?.contentView else { return }
+            if review != nil { scrollTick += 1 }
+            if linksOpen { updateReading() }
         }
         .onAppear {
             markdownLens = initialLens()
@@ -1699,6 +1709,11 @@ struct ContentView: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { sidebarOpen.toggle() }
         chromeVisible = true
     }
+    private func updateReading() {
+        guard let position = (textView as? MarkdownTextView)?.readingPosition, position != reading else { return }
+        reading = position
+    }
+
     private func toggleLinks() {
         if !linksOpen { sidebarOpen = false }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { linksOpen.toggle() }

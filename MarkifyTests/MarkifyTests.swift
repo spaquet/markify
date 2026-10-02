@@ -31,13 +31,13 @@ struct MarkifyTests {
         ```
         """
         let headings = DocumentHeading.extract(from: MarkdownModel(source))
-        #expect(headings.map(\.title) == ["Before", "Intro with code", "Setext", "Linked part", "Before"])
-        #expect(headings.map(\.level) == [2, 1, 1, 2, 2])
-        #expect(headings.map(\.nested) == [false, false, false, true, true])
-        // Repeated titles stay separate entries, each jumping to its own heading text.
+        #expect(headings.map(\.title) == ["Before", "Intro with code", "Skipped", "Setext", "Linked part", "Before"])
+        #expect(headings.map(\.level) == [2, 1, 3, 1, 2, 2])
+        #expect(headings.map(\.line) == [4, 5, 6, 7, 9, 10])
+        // Repeated titles stay separate entries with export's numbered anchors, each jumping to its own heading text.
+        #expect(headings.map(\.anchor) == ["before", "intro-with-code", "skipped", "setext", "linked-part", "before-1"])
         let ns = source as NSString
-        #expect(Set(headings.map(\.id)).count == headings.count)
-        #expect(headings.map { ns.substring(with: NSRange(location: $0.range.location, length: 5)) } == ["Befor", "Intro", "Setex", "[Link", "Befor"])
+        #expect(headings.map { ns.substring(with: NSRange(location: $0.range.location, length: 5)) } == ["Befor", "Intro", "Skipp", "Setex", "[Link", "Befor"])
         #expect(DocumentHeading.extract(from: MarkdownModel("Just text.\n")).isEmpty)
     }
 
