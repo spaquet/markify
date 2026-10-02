@@ -106,3 +106,44 @@ enum DocumentOutline {
         }.joined(separator: "\n")
     }
 }
+
+/// A table of contents in the document: `<!-- toc -->`, the list Markify keeps in step with the headings, `<!-- /toc -->`.
+struct TableOfContentsBlock: Equatable {
+    /// From the opening comment through the closing one.
+    let range: NSRange
+    let opening: NSRange
+    let closing: NSRange
+    /// The lines between the comments.
+    let body: NSRange
+    let depth: Int
+
+    static func find(in model: MarkdownModel) -> Self? {
+        let source = model.source as NSString
+        // A comment's range without the line break after it.
+        func trimmed(_ range: NSRange) -> NSRange {
+            var length = range.length
+            while length > 0, [10, 13, 32, 9].contains(source.character(at: range.location + length - 1)) { length -= 1 }
+            return NSRange(location: range.location, length: length)
+        }
+        var open: (range: NSRange, depth: Int)?
+        for span in model.spans where span.kind == .htmlBlock {
+            let text = source.substring(with: span.range)
+            if open == nil, let depth = TableOfContentsMarker.depth(ofOpening: text) {
+                open = (trimmed(span.range), depth)
+            } else if let opening = open, TableOfContentsMarker.isClosing(text) {
+                let bodyStart = NSMaxRange(source.lineRange(for: NSRange(location: opening.range.location, length: 0)))
+                let closing = trimmed(span.range)
+                return Self(range: NSRange(location: opening.range.location, length: NSMaxRange(closing) - opening.range.location),
+                            opening: opening.range, closing: closing,
+                            body: NSRange(location: bodyStart, length: max(0, closing.location - bodyStart)), depth: opening.depth)
+            }
+        }
+        return nil
+    }
+
+    /// The whole block for these headings, as inserted and kept up to date.
+    static func text(_ headings: [DocumentHeading], depth: Int) -> String {
+        let list = DocumentOutline.tableOfContents(headings, depth: depth)
+        return TableOfContentsMarker.opening(depth: depth) + "\n" + (list.isEmpty ? "" : list + "\n") + TableOfContentsMarker.closing
+    }
+}

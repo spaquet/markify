@@ -19,6 +19,35 @@ extension NSAttributedString.Key {
     static let markifyTaskAccent = NSAttributedString.Key("MarkifyTaskAccent")
     /// `MarkdownBlockFill` on each line of a code block or callout; the fragment paints its slice of the rounded box.
     static let markifyBlockFill = NSAttributedString.Key("MarkifyBlockFill")
+    /// `MarkdownGuides` on a table of contents line; the fragment draws a vertical line for each level above it.
+    static let markifyGuides = NSAttributedString.Key("MarkifyGuides")
+}
+
+/// Tree guides on an indented table of contents entry: one hairline per enclosing level, the full height of the line,
+/// so consecutive entries join into continuous lines.
+final class MarkdownGuides: NSObject {
+    let count: Int
+    /// Where the top level's text starts, and the indent per level, zoom included.
+    let origin: CGFloat
+    let step: CGFloat
+    let color: NSColor
+
+    init(count: Int, origin: CGFloat, step: CGFloat, color: NSColor) {
+        self.count = count
+        self.origin = origin
+        self.step = step
+        self.color = color
+    }
+
+    /// The x of each guide in the text container: just inside the start of each enclosing level's text.
+    var positions: [CGFloat] { (0..<count).map { origin + CGFloat($0) * step + 4 } }
+
+    override func isEqual(_ object: Any?) -> Bool {
+        guard let other = object as? MarkdownGuides else { return false }
+        return count == other.count && origin == other.origin && step == other.step && color == other.color
+    }
+
+    override var hash: Int { count ^ step.hashValue }
 }
 
 /// A rounded box behind a block's lines. Each line's fragment paints its slice: the first rounds the top corners,
@@ -89,6 +118,12 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
             drawFill(fill, at: point)
         }
         super.draw(at: point, in: context)
+        if let guides = storage.attribute(.markifyGuides, at: range.location, effectiveRange: nil) as? MarkdownGuides {
+            guides.color.setFill()
+            for x in guides.positions {
+                NSRect(x: point.x - layoutFragmentFrame.minX + x, y: point.y, width: 1, height: layoutFragmentFrame.height).fill()
+            }
+        }
         storage.enumerateAttributes(in: range) { attributes, run, _ in
             if let font = attributes[.markifyBullet] as? NSFont, let rect = self.rect(for: run, at: point) {
                 let dot = NSAttributedString(string: "•", attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor])

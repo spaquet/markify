@@ -53,7 +53,9 @@ The **Contents** tab outlines the document's headings at every level, with guide
 - **H1, H2, H3, All** choose how deep the outline goes. Markify remembers the depth.
 - **Filter headings** shows the headings whose title contains what you type, inside their sections.
 - The heading you're reading is highlighted, and its guide line turns blue. The bar at the bottom shows how far through the document you've scrolled.
-- **Insert Table of Contents** inserts, at the caret, a list of links to the headings shown at the current depth. ⌘-click one of these links to jump to its heading; they also work in exported HTML and PDF. The list doesn't update itself: delete it and insert it again after renaming headings.
+- **Insert Table of Contents** adds a Contents card at the caret, listing the headings shown at the current depth. Click an entry to go to its heading. The card keeps itself up to date as you add, rename or remove headings, a moment after you stop typing; **⌘Z** undoes an update. When the document has one, the button reads **Update Table of Contents** and rebuilds it at the current depth.
+
+In the file, the table of contents is an ordinary list of links between two comments, `<!-- toc -->` and `<!-- /toc -->`, so other apps and GitHub show it as a list. The Markdown lens shows that source; exported HTML and PDF show the card.
 
 ## Start writing
 

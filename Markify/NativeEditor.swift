@@ -226,9 +226,18 @@ struct NativeEditor: NSViewRepresentable {
             return (label, source.substring(with: span.content), span)
         }
 
+        // A table of contents Markify keeps is drawn as a Contents card in the Rendered lens; its parts are styled below.
+        let tableOfContents = markdownLens ? nil : TableOfContentsBlock.find(in: model)
+        func inTableOfContents(_ location: Int, body: Bool = false) -> Bool {
+            tableOfContents.map { NSLocationInRange(location, body ? $0.body : $0.range) } ?? false
+        }
+
         // Blocks: fonts and fills that inline styles then build on.
         for span in model.spans {
             switch span.kind {
+            case .htmlBlock where inTableOfContents(span.range.location),
+                 .listItem where inTableOfContents(span.range.location, body: true):
+                continue
             case .heading(let level, _):
                 let size: CGFloat = markdownLens ? 16 : (level == 1 ? 36 : level == 2 ? 22 : 19)
                 storage.addAttribute(.font, value: markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true), range: span.content)
@@ -501,6 +510,48 @@ struct NativeEditor: NSViewRepresentable {
                                           range: NSRange(location: row.start, length: row.end - row.start))
                 }
             }
+            if let toc = tableOfContents {
+                let scale = theme.scale
+                // The opening comment's line holds the card's title, which MarkdownTextView draws in its place.
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(11, weight: .semibold)], range: toc.opening)
+                let title = NSMutableParagraphStyle()
+                title.paragraphSpacing = 6 * scale
+                storage.addAttribute(.paragraphStyle, value: title, range: source.lineRange(for: NSRange(location: toc.opening.location, length: 0)))
+                // The closing comment takes no room.
+                let collapsed = NSMutableParagraphStyle()
+                collapsed.minimumLineHeight = 0.01
+                collapsed.maximumLineHeight = 0.01
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear, .paragraphStyle: collapsed],
+                                      range: source.lineRange(for: NSRange(location: toc.closing.location, length: 0)))
+                // Entries: no bullets, indented by level with a hairline per enclosing level; the top level semibold in ink.
+                let step = 16 * scale
+                let origin = (editor.textContainer?.lineFragmentPadding ?? 0) + 18 * scale
+                func level(_ line: NSRange) -> Int {
+                    var spaces = 0
+                    while spaces < line.length, source.character(at: line.location + spaces) == 32 { spaces += 1 }
+                    return min(spaces / 2, 5)
+                }
+                for span in model.spans {
+                    guard case .listItem(let item) = span.kind, NSLocationInRange(item.marker.location, toc.body) else { continue }
+                    let line = source.lineRange(for: NSRange(location: item.marker.location, length: 0))
+                    var end = NSMaxRange(item.marker)
+                    if end < source.length, [32, 9].contains(source.character(at: end)) { end += 1 }
+                    marker(NSRange(location: line.location, length: end - line.location))
+                    let depth = level(line)
+                    let style = NSMutableParagraphStyle()
+                    style.firstLineHeadIndent = CGFloat(depth) * step
+                    style.headIndent = style.firstLineHeadIndent
+                    style.paragraphSpacing = 3 * scale
+                    storage.addAttribute(.paragraphStyle, value: style, range: line)
+                    if depth > 0 { storage.addAttribute(.markifyGuides, value: MarkdownGuides(count: depth, origin: origin, step: step, color: .separatorColor), range: line) }
+                }
+                for span in model.spans where NSLocationInRange(span.range.location, toc.body) {
+                    guard case .link = span.kind else { continue }
+                    let top = level(source.lineRange(for: span.range)) == 0
+                    storage.addAttributes([.font: top ? theme.ui(15, weight: .semibold) : theme.ui(14), .foregroundColor: top ? primary : secondary], range: span.content)
+                }
+                boxes.append((toc.range, MarkdownBlockFill(color: .codeFill, radius: 14 * scale, padding: NSSize(width: 18, height: 14))))
+            }
             // A box's lines share one rounded fill with padding around the text, as the design's code blocks and callouts.
             for box in boxes {
                 let lines = source.lineRange(for: box.range)
@@ -760,6 +811,7 @@ final class MarkdownTextView: NSTextView {
             MainActor.assumeIsolated {
                 guard let self, let current = self.textStorage, ObjectIdentifier(current) == edited else { return }
                 self.textVersion += 1
+                self.scheduleTableOfContentsUpdate()
             }
         }
     }
@@ -1111,6 +1163,59 @@ final class MarkdownTextView: NSTextView {
     func revealAnchor(_ anchor: String) -> Bool {
         guard let heading = DocumentHeading.extract(from: model).first(where: { $0.anchor == anchor }) else { return false }
         reveal(NSRange(location: heading.range.location, length: 0))
+        return true
+    }
+
+    /// The `#anchor` of the Contents card entry under `point`, in the Rendered lens.
+    func tableOfContentsLink(at point: NSPoint) -> String? {
+        guard rendered, let toc = TableOfContentsBlock.find(in: model) else { return nil }
+        let index = characterIndexForInsertion(at: point)
+        guard NSLocationInRange(index, toc.body) else { return nil }
+        let link = model.spans.first { span in
+            guard case .link = span.kind, NSLocationInRange(index, span.range) || index == NSMaxRange(span.range) else { return false }
+            return textRect(span.content).insetBy(dx: -4, dy: -3).contains(point)
+        }
+        guard let link, case let .link(destination) = link.kind, destination.hasPrefix("#") else { return nil }
+        return destination
+    }
+
+    private var tableOfContentsUpdate: Task<Void, Never>?
+
+    /// Keeps a `<!-- toc -->` block in step with the headings, a moment after typing pauses. Undo and redo don't
+    /// trigger it, so undoing an update sticks until the next edit.
+    private func scheduleTableOfContentsUpdate() {
+        guard undoManager?.isUndoing != true, undoManager?.isRedoing != true else { return }
+        tableOfContentsUpdate?.cancel()
+        tableOfContentsUpdate = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            self?.updateTableOfContents()
+        }
+    }
+
+    /// Rewrites the table of contents for the current headings, as one undo step. Skips the automatic update while the
+    /// caret is inside the block; `depth` (from the pane) also changes how deep it goes. Returns false when there is
+    /// no table of contents or nothing changed.
+    @discardableResult
+    func updateTableOfContents(depth: Int? = nil) -> Bool {
+        guard (string as NSString).range(of: "toc", options: .caseInsensitive).location != NSNotFound else { return false }
+        let model = self.model
+        guard let toc = TableOfContentsBlock.find(in: model), let storage = textStorage else { return false }
+        if depth == nil, selectedRanges.contains(where: { NSIntersectionRange($0.rangeValue, toc.range).length > 0 || NSLocationInRange($0.rangeValue.location, toc.range) }) {
+            return false
+        }
+        let replacement = TableOfContentsBlock.text(DocumentHeading.extract(from: model), depth: depth ?? toc.depth)
+        guard (string as NSString).substring(with: toc.range) != replacement else { return false }
+        let selection = selectedRange()
+        let delta = (replacement as NSString).length - toc.range.length
+        breakUndoCoalescing()
+        guard shouldChangeText(in: toc.range, replacementString: replacement) else { return false }
+        storage.replaceCharacters(in: toc.range, with: replacement)
+        didChangeText()
+        undoManager?.setActionName("Update Table of Contents")
+        if selection.location >= NSMaxRange(toc.range) {
+            setSelectedRange(NSRange(location: selection.location + delta, length: selection.length))
+        }
         return true
     }
 
@@ -1574,6 +1679,13 @@ final class MarkdownTextView: NSTextView {
 
         for span in drawingSpans {
             switch span.kind {
+            case .htmlBlock where rendered && NSLocationInRange(span.range.location, anchorRange):
+                guard let toc = TableOfContentsBlock.find(in: model), toc.opening.location == span.range.location else { continue }
+                let line = rect(NSRange(location: toc.opening.location, length: 1))
+                guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
+                let title = NSAttributedString(string: "CONTENTS", attributes: [
+                    .font: theme.ui(11, weight: .semibold), .kern: 0.7 * theme.scale, .foregroundColor: NSColor.secondaryLabelColor])
+                title.draw(at: NSPoint(x: line.minX, y: line.maxY - title.size().height))
             case .callout(let type, let range):
                 guard NSLocationInRange(range.location, anchorRange) else { continue }
                 let token = rect(range)
@@ -1832,6 +1944,11 @@ final class MarkdownTextView: NSTextView {
             return editFrontmatter(frontmatter, at: hit.frame)
         }
         if event.modifierFlags.contains(.command), followFootnote(at: characterIndexForInsertion(at: point)) { return }
+        // In the Rendered lens, a click on a Contents card entry goes to its heading, as in a book's contents.
+        if rendered, !event.modifierFlags.contains(.shift), let link = tableOfContentsLink(at: point) {
+            if !revealAnchor(LinkTarget.fragment(link) ?? "") { NSSound.beep() }
+            return
+        }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
         if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
             // A link to a heading in this document moves there.

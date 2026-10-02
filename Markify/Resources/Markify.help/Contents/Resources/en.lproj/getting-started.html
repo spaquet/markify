@@ -67,9 +67,10 @@
 </li>
 <li>The heading you're reading is highlighted, and its guide line turns blue. The bar at the bottom shows how far through the document you've scrolled.
 </li>
-<li><strong>Insert Table of Contents</strong> inserts, at the caret, a list of links to the headings shown at the current depth. ⌘-click one of these links to jump to its heading; they also work in exported HTML and PDF. The list doesn't update itself: delete it and insert it again after renaming headings.
+<li><strong>Insert Table of Contents</strong> adds a Contents card at the caret, listing the headings shown at the current depth. Click an entry to go to its heading. The card keeps itself up to date as you add, rename or remove headings, a moment after you stop typing; <strong>⌘Z</strong> undoes an update. When the document has one, the button reads <strong>Update Table of Contents</strong> and rebuilds it at the current depth.
 </li>
 </ul>
+<p>In the file, the table of contents is an ordinary list of links between two comments, <code>&lt;!-- toc --&gt;</code> and <code>&lt;!-- /toc --&gt;</code>, so other apps and GitHub show it as a list. The Markdown lens shows that source; exported HTML and PDF show the card.</p>
 <h2 id="start-writing">Start writing</h2>
 <p>Type as you would in any text editor. Markdown formats as you type: <code># </code> starts a heading, <code>- </code> a list, <code>**bold**</code> turns bold. To see everything you can insert, type <code>/</code> at the start of a line. See <a href="formatting.html">Formatting</a>.</p>
 <h2 id="take-the-tour">Take the tour</h2>

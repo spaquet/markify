@@ -67,7 +67,9 @@ struct DocumentInspector: View {
     let readingProgress: Double
     let accent: Color
     let jump: (NSRange) -> Void
-    let insertTableOfContents: (String) -> Void
+    /// Whether the document already has a table of contents, which the button then updates.
+    let hasTableOfContents: Bool
+    let insertTableOfContents: (_ depth: Int) -> Void
     let fixLink: (_ occurrences: [DocumentLink], _ old: String, _ new: String) -> Void
     let follow: (DocumentLink) -> Void
 
@@ -85,7 +87,7 @@ struct DocumentInspector: View {
             switch tab {
             case .contents:
                 ContentsTab(headings: headings, readingOffset: readingOffset, readingProgress: readingProgress, style: style,
-                            jump: jump, insertTableOfContents: insertTableOfContents)
+                            jump: jump, hasTableOfContents: hasTableOfContents, insertTableOfContents: insertTableOfContents)
             case .links:
                 LinksTab(entries: entries, headings: headings, documentURL: documentURL, style: style,
                          jump: jump, fixLink: fixLink, follow: follow)
@@ -147,7 +149,8 @@ struct ContentsTab: View {
     let readingProgress: Double
     let style: InspectorStyle
     let jump: (NSRange) -> Void
-    let insertTableOfContents: (String) -> Void
+    let hasTableOfContents: Bool
+    let insertTableOfContents: (_ depth: Int) -> Void
 
     @AppStorage("contentsDepth") private var depth = 3
     @State private var query = ""
@@ -299,8 +302,8 @@ struct ContentsTab: View {
                     }
                 }
                 .accessibilityElement().accessibilityLabel("Reading progress").accessibilityValue("\(percent) percent")
-            Button { insertTableOfContents(DocumentOutline.tableOfContents(headings, depth: depth)) } label: {
-                Text("Insert Table of Contents").fontWeight(.medium)
+            Button { insertTableOfContents(depth) } label: {
+                Text(hasTableOfContents ? "Update Table of Contents" : "Insert Table of Contents").fontWeight(.medium)
                     .frame(maxWidth: .infinity).frame(height: 28)
                     .background(style.buttonBackground, in: .capsule)
                     .inspectorRing(style.buttonRing, radius: 14)
@@ -308,7 +311,8 @@ struct ContentsTab: View {
             }
             .buttonStyle(.plain)
             .disabled(headings.isEmpty)
-            .help("Inserts links to the headings shown at this depth at the caret")
+            .help(hasTableOfContents ? "Rebuilds the document's table of contents with the headings shown at this depth"
+                  : "Inserts a table of contents at the caret, with the headings shown at this depth; it then updates itself")
         }
         .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 16)
         .overlay(alignment: .top) { Rectangle().fill(style.hairline).frame(height: 0.5) }

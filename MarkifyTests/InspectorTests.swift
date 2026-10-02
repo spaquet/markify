@@ -164,6 +164,72 @@ struct InspectorTests {
         #expect(editor.string == "Intro text\n\n- [A](#a)\n\nmore")
     }
 
+    @Test func tableOfContentsMarkersAndBlock() {
+        #expect(TableOfContentsMarker.depth(ofOpening: "<!-- toc -->") == 6)
+        #expect(TableOfContentsMarker.depth(ofOpening: "<!--TOC depth=2-->\n") == 2)
+        #expect(TableOfContentsMarker.depth(ofOpening: "<!-- toc depth=9 -->") == nil)
+        #expect(TableOfContentsMarker.depth(ofOpening: "<!-- note -->") == nil)
+        #expect(TableOfContentsMarker.isClosing("<!-- /toc -->\n"))
+        #expect(TableOfContentsMarker.opening(depth: 2) == "<!-- toc depth=2 -->")
+
+        let headings = DocumentHeading.extract(from: MarkdownModel("# A\n## B\n"))
+        let block = TableOfContentsBlock.text(headings, depth: 6)
+        #expect(block == "<!-- toc -->\n- [A](#a)\n  - [B](#b)\n<!-- /toc -->")
+        let source = "Intro\n\n" + block + "\n\n# A\n## B\n"
+        let found = TableOfContentsBlock.find(in: MarkdownModel(source))
+        #expect(found.map { (source as NSString).substring(with: $0.range) } == block)
+        #expect(found.map { (source as NSString).substring(with: $0.body) } == "- [A](#a)\n  - [B](#b)\n")
+        #expect(found?.depth == 6)
+        // Without its closing comment there is no block to keep.
+        #expect(TableOfContentsBlock.find(in: MarkdownModel("<!-- toc -->\n- [A](#a)\n")) == nil)
+    }
+
+    @Test @MainActor func tableOfContentsFollowsTheHeadings() {
+        let source = "<!-- toc -->\n- [Old](#old)\n<!-- /toc -->\n\n# Intro\n\ntext\n\n## Steps\n"
+        let (window, editor) = LayoutFragmentTests.makeEditor(source)
+        _ = window
+        let undo = UndoManager()
+        _ = undo
+        // The caret after the block keeps its place in the text.
+        let text = (source as NSString).range(of: "text").location
+        editor.setSelectedRange(NSRange(location: text, length: 0))
+        #expect(editor.updateTableOfContents())
+        #expect(editor.string.hasPrefix("<!-- toc -->\n- [Intro](#intro)\n  - [Steps](#steps)\n<!-- /toc -->\n\n# Intro"))
+        #expect((editor.string as NSString).substring(with: NSRange(location: editor.selectedRange().location, length: 4)) == "text")
+        #expect(!editor.updateTableOfContents())
+        // Not while the caret is inside it, unless the pane asks.
+        editor.setSelectedRange(NSRange(location: 15, length: 0))
+        editor.insertText("## New\n", replacementRange: NSRange(location: editor.string.count, length: 0))
+        editor.setSelectedRange(NSRange(location: 15, length: 0))
+        #expect(!editor.updateTableOfContents())
+        #expect(editor.updateTableOfContents(depth: 1))
+        #expect(editor.string.hasPrefix("<!-- toc depth=1 -->\n- [Intro](#intro)\n<!-- /toc -->"))
+    }
+
+    @Test func tableOfContentsExportsAsACard() {
+        let html = MarkdownHTML.render("<!-- toc -->\n- [A](#a)\n  - [B](#b)\n<!-- /toc -->\n\n# A\n## B\n").body
+        #expect(html.hasPrefix("<nav class=\"toc\" aria-label=\"Contents\">\n<p class=\"toc-title\">Contents</p>\n<ul>"))
+        #expect(html.contains("</ul>\n</nav>\n"))
+        #expect(!html.contains("<!--"))
+        #expect(MarkdownPage.stylesheet.contains(".toc{"))
+    }
+
+    @Test @MainActor func tableOfContentsDrawsAsACardInTheRenderedLens() {
+        let source = "<!-- toc -->\n- [Intro](#intro)\n  - [Steps](#steps)\n<!-- /toc -->\n\n# Intro\n\n## Steps\n"
+        let (window, editor) = LayoutFragmentTests.makeEditor(source)
+        _ = window
+        let storage = editor.textStorage!
+        let ns = source as NSString
+        #expect(editor.string == source)
+        // The comments don't show; the entries carry no bullets, sit in one rounded box, and nested ones get a guide.
+        #expect(storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor == .clear)
+        #expect(storage.attribute(.markifyBullet, at: ns.range(of: "- [Intro]").location, effectiveRange: nil) == nil)
+        let steps = ns.range(of: "Steps").location
+        #expect(storage.attribute(.markifyBlockFill, at: steps, effectiveRange: nil) != nil)
+        #expect((storage.attribute(.markifyGuides, at: steps, effectiveRange: nil) as? MarkdownGuides)?.count == 1)
+        #expect((storage.attribute(.font, at: ns.range(of: "Intro").location, effectiveRange: nil) as? NSFont)?.fontDescriptor.symbolicTraits.contains(.bold) == true)
+    }
+
     @Test @MainActor func anchorsRevealTheirHeading() {
         let (window, editor) = LayoutFragmentTests.makeEditor("# Top\n\ntext\n\n## Next part\n\nmore\n")
         _ = window

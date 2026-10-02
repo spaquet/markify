@@ -47,6 +47,7 @@ public struct MarkdownHTML {
         let document = Document(parsing: prepared, options: .disableSmartOpts)
         renderer.lines = prepared.components(separatedBy: "\n")
         var body = renderer.blocks(document.children)
+        if renderer.tableOfContentsOpen { body += "</nav>\n" }
         body += renderer.footnoteSection()
         return Result(body: body, firstHeading: renderer.firstHeading)
     }
@@ -85,6 +86,8 @@ private struct Renderer {
     let options: MarkdownHTML.Options
     var items: [Item] = []
     var firstHeading: String?
+    /// Inside a `<!-- toc -->` … `<!-- /toc -->` card.
+    var tableOfContentsOpen = false
     /// The prepared source's lines, for telling loose lists from tight ones.
     var lines: [String] = []
     private var headingIDs: [String: Int] = [:]
@@ -184,6 +187,16 @@ private struct Renderer {
         case is ThematicBreak:
             return "<hr>\n"
         case let html as HTMLBlock:
+            // Markify's table of contents comments wrap the list in a Contents card.
+            if TableOfContentsMarker.depth(ofOpening: html.rawHTML) != nil, !tableOfContentsOpen {
+                tableOfContentsOpen = true
+                return "<nav class=\"toc\" aria-label=\"Contents\">\n<p class=\"toc-title\">Contents</p>\n"
+            }
+            if TableOfContentsMarker.isClosing(html.rawHTML) {
+                guard tableOfContentsOpen else { return "" }
+                tableOfContentsOpen = false
+                return "</nav>\n"
+            }
             return rawHTML(html.rawHTML)
         case let list as OrderedList:
             let start = list.startIndex != 1 ? " start=\"\(list.startIndex)\"" : ""

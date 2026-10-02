@@ -231,7 +231,12 @@ struct ContentView: View {
                         documentURL: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase,
                         readingOffset: reading.offset, readingProgress: reading.progress, accent: accent,
                         jump: { editor?.reveal($0) },
-                        insertTableOfContents: { editor?.insertBlock($0) },
+                        hasTableOfContents: TableOfContentsBlock.find(in: model) != nil,
+                        insertTableOfContents: { depth in
+                            guard let editor else { return }
+                            if TableOfContentsBlock.find(in: editor.model) != nil { editor.updateTableOfContents(depth: depth) }
+                            else { editor.insertBlock(TableOfContentsBlock.text(DocumentHeading.extract(from: editor.model), depth: depth)) }
+                        },
                         fixLink: { occurrences, old, new in editor?.replaceLinkDestination(old, with: new, in: occurrences.map(\.range)) },
                         follow: { link in Knowledge.follow(link.destination, title: link.text, from: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase) })
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
