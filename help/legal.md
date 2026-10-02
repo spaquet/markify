@@ -16,11 +16,12 @@ Markify is © 2025–2026 Stéphane Paquet. It is distributed under the MIT Lice
 
 ## Privacy
 
-Markify doesn't collect, store or share personal data. It has no accounts, no analytics and no advertising. Your documents stay in the files and folders you choose.
+Markify doesn't collect, store or share personal data. It has no accounts, no usage analytics and no advertising. Your documents stay in the files and folders you choose.
 
 Markify connects to the internet only in these cases:
 
 - **Update checks.** Markify downloads its update feed from GitHub (`github.com/spaquet/markify`) to see whether a new version exists, and downloads the update when you install it. This request includes your IP address and Markify's version, as any web request does, and is subject to [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Turn automatic checks off in **Settings › General › Updates**.
+- **Crash and performance reports.** When Markify crashes, it sends a crash report to [Sentry](https://sentry.io), which hosts Markify's error reports. A report holds the stack trace, Markify's version, and your Mac's model and macOS version; it holds no document text, file names or personal data. Markify also sends timing data for a sample of sessions (about one in ten) so slow operations can be found and fixed. As with any web request, Sentry sees your IP address; Markify doesn't ask it to keep it. Sentry's handling is described in [Sentry's privacy policy](https://sentry.io/privacy/).
 - **Remote images.** When a document contains an image from a web address and **Settings › General › Load remote images** is on, Markify downloads it from that server. Turn the setting off to stop this.
 - **Links you open.** ⌘-clicking a web link opens it in your browser.
 
@@ -42,6 +43,7 @@ Markify is built on the work of others. Thank you to everyone behind these proje
 | [KaTeX fonts](https://github.com/KaTeX/katex-fonts) | Math typefaces, bundled with SwaTex | The KaTeX authors | SIL Open Font License 1.1 |
 | [Mermaid](https://github.com/mermaid-js/mermaid) 12 | Drawing diagrams | Knut Sveidqvist and contributors | MIT, with bundled dependencies under their own licenses |
 | [Sparkle](https://github.com/sparkle-project/Sparkle) | Software updates | Andy Matuschak and the Sparkle Project | MIT, with components under BSD and other licenses |
+| [Sentry Cocoa SDK](https://github.com/getsentry/sentry-cocoa) | Crash and performance reports | Functional Software, Inc. (Sentry) and contributors | MIT |
 | [Yams](https://github.com/jpsim/Yams) | Reading YAML frontmatter | JP Simard and contributors | MIT |
 | [swift-markdown-engine](https://github.com/nodes-app/swift-markdown-engine) | The design pattern behind the editor's layout-fragment drawing (no code is copied) | nodes-app | Apache 2.0 |
 
