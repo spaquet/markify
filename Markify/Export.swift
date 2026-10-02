@@ -31,12 +31,21 @@ import WebKit
             if diagrams[key] == nil, let svg = await MermaidRenderer.shared.svg(for: code) { diagrams[key] = svg }
         }
         let remote = UserDefaults.standard.object(forKey: "loadRemoteImages") as? Bool ?? true
-        return MarkdownPage.html(shared(context),
+        let pdf = format == .pdf
+        // Math outlines, code colors and embedded images take a while on long documents; the main thread stays free.
+        return await Task.detached(priority: .userInitiated) {
+            render(context, diagrams: diagrams, pdf: pdf, remoteImages: remote)
+        }.value
+    }
+
+    /// The page from already-rendered diagrams, on any thread.
+    nonisolated static func render(_ context: Context, diagrams: [String: String], pdf: Bool, remoteImages: Bool) -> String {
+        MarkdownPage.html(shared(context),
             math: { latex, display in MathSVG.render(latex, display: display) },
             diagram: { language, code in
                 language.lowercased() == "mermaid" ? diagrams[code.trimmingCharacters(in: .whitespacesAndNewlines)] : nil
             },
-            highlight: { code, _ in highlighted(code) }, pdf: format == .pdf, remoteImages: remote)
+            highlight: { code, _ in highlighted(code) }, pdf: pdf, remoteImages: remoteImages)
     }
 
     static func writeHTML(_ context: Context) async throws {
@@ -51,16 +60,16 @@ import WebKit
     // MARK: Images and links
 
     /// A local image as a data URI, so the page stands alone; remote and data sources stay as written.
-    static func imageSource(_ source: String, context: Context) -> String {
+    nonisolated static func imageSource(_ source: String, context: Context) -> String {
         MarkdownPage.imageSource(source, context: shared(context))
     }
 
     /// Relative and bundle-absolute links rewritten to reach the same file from where the export lands.
-    static func linkTarget(_ destination: String, context: Context) -> String {
+    nonisolated static func linkTarget(_ destination: String, context: Context) -> String {
         MarkdownPage.linkTarget(destination, context: shared(context))
     }
 
-    private static func shared(_ context: Context) -> MarkdownPage.Context {
+    nonisolated private static func shared(_ context: Context) -> MarkdownPage.Context {
         .init(source: context.source, documentURL: context.documentURL, bundleRoot: context.bundleRoot,
               destination: context.destination, fallbackTitle: context.fallbackTitle, baseDirectory: context.baseDirectory)
     }
@@ -68,7 +77,7 @@ import WebKit
     // MARK: Code
 
     /// Code with the editor's token colors as spans; a later token wins where they overlap, as in the editor.
-    static func highlighted(_ code: String) -> String {
+    nonisolated static func highlighted(_ code: String) -> String {
         let units = Array(code.utf16)
         var kinds = [CodeToken?](repeating: nil, count: units.count)
         for (range, kind) in CodeToken.tokens(in: code) {
