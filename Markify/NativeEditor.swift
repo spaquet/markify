@@ -142,6 +142,18 @@ struct NativeEditor: NSViewRepresentable {
 
     func style(_ editor: NSTextView) {
         guard let storage = editor.textStorage else { return }
+        // HTML blocks are imported through WebKit, which spins the run loop: an image or diagram arriving then
+        // asks for a restyle in the middle of this pass. It runs once this pass is done instead of inside it.
+        let styling = editor as? MarkdownTextView
+        if let styling, styling.isStyling { styling.restyleAfterStyling = true; return }
+        styling?.isStyling = true
+        defer {
+            styling?.isStyling = false
+            if styling?.restyleAfterStyling == true {
+                styling?.restyleAfterStyling = false
+                DispatchQueue.main.async { [weak styling] in styling?.restyle?() }
+            }
+        }
         let source = editor.string as NSString
         let whole = NSRange(location: 0, length: source.length)
         let primary = NSColor.labelColor
@@ -724,6 +736,9 @@ final class MarkdownTextView: NSTextView {
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     /// Restyles the text, for results that arrive later, such as a rendered diagram.
     var restyle: (() -> Void)?
+    /// True during a style pass; a restyle asked for meanwhile sets `restyleAfterStyling` and runs after it.
+    var isStyling = false
+    var restyleAfterStyling = false
     /// Local images by URL; `nil` for a file that could not be read.
     private var imageCache: [URL: NSImage?] = [:]
 
@@ -1118,6 +1133,8 @@ final class MarkdownTextView: NSTextView {
         let height: CGFloat
     }
     var htmlBlocks: [Int: HTMLBlockRender] = [:]
+    /// Rendered HTML blocks by width, accent and final HTML (images inlined), so unchanged blocks skip WebKit.
+    private var htmlRenderCache: [String: HTMLBlockRender] = [:]
     var inlineHTMLImages: [Int: (path: String, width: CGFloat, font: NSFont)] = [:]
 
     static func htmlAttribute(_ name: String, in html: String) -> String? {
@@ -1134,8 +1151,9 @@ final class MarkdownTextView: NSTextView {
             guard let path = Self.htmlAttribute("src", in: tag) else { continue }
             let replacement: String
             switch image(for: path) {
-            case .image(let image) where ["http", "https"].contains(Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory).scheme?.lowercased() ?? ""):
-                replacement = image.tiffRepresentation.map { "data:image/tiff;base64," + $0.base64EncodedString() } ?? ""
+            case .image where ["http", "https"].contains(Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory).scheme?.lowercased() ?? ""):
+                // The downloaded bytes, not a TIFF of the decoded image: a screenshot as TIFF is megabytes of HTML.
+                replacement = RemoteImages.shared.dataURI(of: Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)) ?? ""
             case .image:
                 let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
                 if let data = try? Data(contentsOf: url),
@@ -1151,7 +1169,11 @@ final class MarkdownTextView: NSTextView {
             let updated = tag.replacingOccurrences(of: path, with: replacement)
             html.replaceCharacters(in: match.range, with: updated)
         }
-        guard let parsed = try? NSAttributedString(data: Data((html as String).utf8), options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil),
+        // Importing HTML goes through WebKit and is slow; a restyle reuses every block whose HTML, images included, is unchanged.
+        let key = "\(width)|\(theme.accent)|\(html)"
+        if let cached = htmlRenderCache[key] { return cached }
+        guard let parsed = try? NSAttributedString(data: Data((html as String).utf8), options: [.documentType: NSAttributedString.DocumentType.html,
+                                                                                               .characterEncoding: String.Encoding.utf8.rawValue], documentAttributes: nil),
               parsed.length > 0 else { return nil }
         let text = NSMutableAttributedString(attributedString: parsed)
         let all = NSRange(location: 0, length: text.length)
@@ -1161,7 +1183,10 @@ final class MarkdownTextView: NSTextView {
         for range in links { text.addAttribute(.foregroundColor, value: theme.accent, range: range) }
         let size = text.size()
         let scale = min(1, width / max(size.width, 1))
-        return HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
+        let render = HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
+        if htmlRenderCache.count >= 64 { htmlRenderCache.removeAll() }
+        htmlRenderCache[key] = render
+        return render
     }
 
     /// Where each decoration is drawn from, sorted: the character whose layout fragment draws it.
@@ -1292,7 +1317,7 @@ final class MarkdownTextView: NSTextView {
             let remote = resolved
             let host = remote.host() ?? path
             guard loadRemoteImages else { return .placeholder("Remote image — \(host)") }
-            switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.remoteImageLoaded() }) {
+            switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.scheduleRemoteRestyle() }) {
             case .loaded(let image): return .image(image)
             case .loading: return .placeholder("Loading image — \(host)")
             case .failed: return .placeholder("Image unavailable — \(host)")
@@ -1312,6 +1337,19 @@ final class MarkdownTextView: NSTextView {
         // Fragments draw images; restyling lays them out again with the loaded image.
         restyle?()
         if let previewSpan { showImagePreview(for: previewSpan, force: true) }
+    }
+
+    private var remoteRestyleScheduled = false
+    /// Every style pass asks again for each image still loading, so one arrival can carry many callbacks,
+    /// and several images arrive together: they share one restyle on the next turn of the run loop.
+    private func scheduleRemoteRestyle() {
+        guard !remoteRestyleScheduled else { return }
+        remoteRestyleScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            remoteRestyleScheduled = false
+            remoteImageLoaded()
+        }
     }
 
     static let diagramPadding: CGFloat = 16
@@ -1913,6 +1951,10 @@ final class MarkdownTextView: NSTextView {
     enum State { case loading, loaded(NSImage), failed }
     private var states: [URL: State] = [:]
     private var waiting: [URL: [() -> Void]] = [:]
+    /// Each loaded image's bytes as a data URI, for HTML blocks.
+    private var dataURIs: [URL: String] = [:]
+
+    func dataURI(of url: URL) -> String? { dataURIs[url] }
 
     /// The image's state, starting a download on first request; `onChange` runs once when it settles.
     func state(of url: URL, onChange: @escaping () -> Void) -> State {
@@ -1926,6 +1968,10 @@ final class MarkdownTextView: NSTextView {
             let response = try? await URLSession.shared.data(from: url)
             let ok = (response?.1 as? HTTPURLResponse).map { (200..<300).contains($0.statusCode) } ?? true
             states[url] = ok ? response.flatMap { NSImage(data: $0.0) }.map { .loaded($0) } ?? .failed : .failed
+            if case .loaded = states[url], let response {
+                let mime = response.1.mimeType.flatMap { $0.hasPrefix("image/") ? $0 : nil } ?? "application/octet-stream"
+                dataURIs[url] = "data:\(mime);base64," + response.0.base64EncodedString()
+            }
             waiting.removeValue(forKey: url)?.forEach { $0() }
         }
         return .loading

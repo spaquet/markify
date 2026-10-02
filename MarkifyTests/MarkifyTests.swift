@@ -531,6 +531,25 @@ struct MarkifyTests {
         #expect(editor.string == source)
     }
 
+    @Test @MainActor func htmlBlocksDecodeUTF8AndRestylesWaitForTheCurrentPass() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        let source = "<p align=\"center\">Markify — one page</p>\n"
+        editor.string = source
+        let native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false,
+            findQuery: "", matchCase: false, selectedRange: .constant(NSRange(location: 0, length: 0)),
+            textView: .constant(editor), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+        native.style(editor)
+        #expect(editor.htmlBlocks[0]?.text.string.contains("Markify — one page") == true)
+        // A restyle asked for while a pass runs (WebKit's HTML import spins the run loop) waits for it.
+        editor.isStyling = true
+        editor.htmlBlocks = [:]
+        native.style(editor)
+        #expect(editor.htmlBlocks.isEmpty)
+        #expect(editor.restyleAfterStyling)
+        editor.isStyling = false
+        #expect(editor.string == source)
+    }
+
     @Test @MainActor func systemWritingToolsOnlyReportsRetainedBodyEdits() {
         let original = "---\ntype: note\n---\nOriginal body"
         let editor = MarkdownTextView(usingTextLayoutManager: true)
