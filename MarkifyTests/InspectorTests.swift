@@ -228,6 +228,21 @@ struct InspectorTests {
         #expect(storage.attribute(.markifyBlockFill, at: steps, effectiveRange: nil) != nil)
         #expect((storage.attribute(.markifyGuides, at: steps, effectiveRange: nil) as? MarkdownGuides)?.count == 1)
         #expect((storage.attribute(.font, at: ns.range(of: "Intro").location, effectiveRange: nil) as? NSFont)?.fontDescriptor.symbolicTraits.contains(.bold) == true)
+        // The title is drawn by the opening line's own fragment, which TextKit may draw off the main thread.
+        #expect((storage.attribute(.markifyTitle, at: 0, effectiveRange: nil) as? NSAttributedString)?.string == "CONTENTS")
+    }
+
+    @Test @MainActor func tableOfContentsUpdatesInTheBackgroundAfterTypingPauses() async throws {
+        let source = "<!-- toc -->\n- [Intro](#intro)\n<!-- /toc -->\n\n# Intro\n"
+        let (window, editor) = LayoutFragmentTests.makeEditor(source)
+        _ = window
+        editor.setSelectedRange(NSRange(location: (source as NSString).length, length: 0))
+        editor.insertText("\n## Added\n", replacementRange: editor.selectedRange())
+        // Not at once: the scan waits for a pause, then runs off the main thread.
+        #expect(!editor.string.contains("(#added)"))
+        for _ in 0..<40 where !editor.string.contains("(#added)") { try await Task.sleep(for: .milliseconds(100)) }
+        #expect(editor.string.hasPrefix("<!-- toc -->\n- [Intro](#intro)\n  - [Added](#added)\n<!-- /toc -->"))
+        #expect(editor.string.hasSuffix("## Added\n"))
     }
 
     @Test @MainActor func anchorsRevealTheirHeading() {

@@ -21,6 +21,9 @@ extension NSAttributedString.Key {
     static let markifyBlockFill = NSAttributedString.Key("MarkifyBlockFill")
     /// `MarkdownGuides` on a table of contents line; the fragment draws a vertical line for each level above it.
     static let markifyGuides = NSAttributedString.Key("MarkifyGuides")
+    /// `NSAttributedString` on the first character of hidden text; the fragment draws it at that text's start, on its
+    /// line's baseline, as a card's title (the table of contents' "CONTENTS").
+    static let markifyTitle = NSAttributedString.Key("MarkifyTitle")
 }
 
 /// Tree guides on an indented table of contents entry: one hairline per enclosing level, the full height of the line,
@@ -125,6 +128,9 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
             }
         }
         storage.enumerateAttributes(in: range) { attributes, run, _ in
+            if let title = attributes[.markifyTitle] as? NSAttributedString, let rect = self.rect(for: run, at: point) {
+                title.draw(at: NSPoint(x: rect.minX, y: rect.maxY - title.size().height))
+            }
             if let font = attributes[.markifyBullet] as? NSFont, let rect = self.rect(for: run, at: point) {
                 let dot = NSAttributedString(string: "•", attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor])
                 let size = dot.size()

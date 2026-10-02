@@ -140,8 +140,12 @@ struct NativeEditor: NSViewRepresentable {
         context.coordinator.lastCurrentMatch = currentMatch
     }
 
-    func style(_ editor: NSTextView) {
-        guard let storage = editor.textStorage else { return }
+    /// Styles both lenses from the model. `incremental` (typing) styles a copy and applies only the attributes that
+    /// changed: resetting the whole storage makes TextKit 2 discard the layout of every line, and the lines above the
+    /// page fall back to estimated heights, so the visible text blanks and jumps on each keystroke.
+    func style(_ editor: NSTextView, incremental: Bool = false) {
+        guard let live = editor.textStorage else { return }
+        let storage = incremental ? NSTextStorage(attributedString: live) : live
         // HTML blocks are imported through WebKit, which spins the run loop: an image or diagram arriving then
         // asks for a restyle in the middle of this pass. It runs once this pass is done instead of inside it.
         let styling = editor as? MarkdownTextView
@@ -512,8 +516,11 @@ struct NativeEditor: NSViewRepresentable {
             }
             if let toc = tableOfContents {
                 let scale = theme.scale
-                // The opening comment's line holds the card's title, which MarkdownTextView draws in its place.
+                // The opening comment's line holds the card's title, which the line's fragment draws in its place.
                 storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(11, weight: .semibold)], range: toc.opening)
+                storage.addAttribute(.markifyTitle, value: NSAttributedString(string: "CONTENTS", attributes: [
+                    .font: theme.ui(11, weight: .semibold), .kern: 0.7 * scale, .foregroundColor: NSColor.secondaryLabelColor]),
+                                     range: NSRange(location: toc.opening.location, length: 1))
                 let title = NSMutableParagraphStyle()
                 title.paragraphSpacing = 6 * scale
                 storage.addAttribute(.paragraphStyle, value: title, range: source.lineRange(for: NSRange(location: toc.opening.location, length: 0)))
@@ -631,11 +638,30 @@ struct NativeEditor: NSViewRepresentable {
             }
         }
         storage.endEditing()
+        if storage !== live { Self.applyChangedAttributes(from: storage, to: live) }
         updateTypingFont(editor)
         if let editor = editor as? MarkdownTextView {
             editor.forgetImages()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
+    }
+
+    /// Copies `styled`'s attributes onto `live` only where they differ, so TextKit keeps the layout of unchanged text.
+    static func applyChangedAttributes(from styled: NSAttributedString, to live: NSTextStorage) {
+        let length = min(styled.length, live.length)
+        var location = 0
+        live.beginEditing()
+        while location < length {
+            var new = NSRange(), old = NSRange()
+            let attributes = styled.attributes(at: location, effectiveRange: &new)
+            let current = live.attributes(at: location, effectiveRange: &old)
+            let end = min(NSMaxRange(new), NSMaxRange(old), length)
+            if !(attributes as NSDictionary).isEqual(to: current) {
+                live.setAttributes(attributes, range: NSRange(location: location, length: end - location))
+            }
+            location = end
+        }
+        live.endEditing()
     }
 
     /// Plain-text NSTextView sizes its caret from the typing font, which must follow our styled text.
@@ -717,7 +743,7 @@ struct NativeEditor: NSViewRepresentable {
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             if slash?.range.location != dismissedSlashLocation { dismissedSlashLocation = nil }
             parent.onSlash(dismissedSlashLocation == nil ? slash?.query : nil)
-            parent.style(editor)
+            parent.style(editor, incremental: true)
         }
         func textViewWritingToolsWillBegin(_ textView: NSTextView) {
             writingToolsOriginalBody = FrontmatterBlock.body(of: textView.string)
@@ -739,7 +765,7 @@ struct NativeEditor: NSViewRepresentable {
             parent.onSlash(slash?.range.location == dismissedSlashLocation ? nil : slash?.query)
             // Moving into a typeset formula shows its LaTeX; moving out typesets it again.
             if let markdown = editor as? MarkdownTextView, markdown.rendered, markdown.editedFormula != markdown.styledEditedFormula {
-                parent.style(editor)
+                parent.style(editor, incremental: true)
             }
             parent.updateTypingFont(editor)
             if let window = editor.window {
@@ -1181,15 +1207,27 @@ final class MarkdownTextView: NSTextView {
 
     private var tableOfContentsUpdate: Task<Void, Never>?
 
-    /// Keeps a `<!-- toc -->` block in step with the headings, a moment after typing pauses. Undo and redo don't
+    /// Keeps a `<!-- toc -->` block in step with the headings, a moment after typing pauses. The document is scanned
+    /// off the main thread; the new list is applied only if the text hasn't changed since. Undo and redo don't
     /// trigger it, so undoing an update sticks until the next edit.
     private func scheduleTableOfContentsUpdate() {
         guard undoManager?.isUndoing != true, undoManager?.isRedoing != true else { return }
         tableOfContentsUpdate?.cancel()
+        let version = textVersion
+        let source = string
+        let mdx = Self.isMDX(documentURL)
         tableOfContentsUpdate = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(800))
             guard !Task.isCancelled else { return }
-            self?.updateTableOfContents()
+            let change = await Task.detached(priority: .utility) { () -> (range: NSRange, text: String)? in
+                guard (source as NSString).range(of: "toc", options: .caseInsensitive).location != NSNotFound else { return nil }
+                let model = MarkdownModel(source, mdx: mdx)
+                guard let toc = TableOfContentsBlock.find(in: model) else { return nil }
+                let text = TableOfContentsBlock.text(DocumentHeading.extract(from: model), depth: toc.depth)
+                return (source as NSString).substring(with: toc.range) == text ? nil : (toc.range, text)
+            }.value
+            guard let self, !Task.isCancelled, self.textVersion == version, let change else { return }
+            self.replaceTableOfContents(change.range, with: change.text, automatic: true)
         }
     }
 
@@ -1200,20 +1238,28 @@ final class MarkdownTextView: NSTextView {
     func updateTableOfContents(depth: Int? = nil) -> Bool {
         guard (string as NSString).range(of: "toc", options: .caseInsensitive).location != NSNotFound else { return false }
         let model = self.model
-        guard let toc = TableOfContentsBlock.find(in: model), let storage = textStorage else { return false }
-        if depth == nil, selectedRanges.contains(where: { NSIntersectionRange($0.rangeValue, toc.range).length > 0 || NSLocationInRange($0.rangeValue.location, toc.range) }) {
-            return false
-        }
+        guard let toc = TableOfContentsBlock.find(in: model) else { return false }
         let replacement = TableOfContentsBlock.text(DocumentHeading.extract(from: model), depth: depth ?? toc.depth)
         guard (string as NSString).substring(with: toc.range) != replacement else { return false }
+        return replaceTableOfContents(toc.range, with: replacement, automatic: depth == nil)
+    }
+
+    /// Swaps in a new table of contents as one undo step, keeping the caret on its text. An automatic update leaves
+    /// the block alone while the caret or selection is in it.
+    @discardableResult
+    private func replaceTableOfContents(_ range: NSRange, with replacement: String, automatic: Bool) -> Bool {
+        guard let storage = textStorage, NSMaxRange(range) <= storage.length else { return false }
+        if automatic, selectedRanges.contains(where: { NSIntersectionRange($0.rangeValue, range).length > 0 || NSLocationInRange($0.rangeValue.location, range) }) {
+            return false
+        }
         let selection = selectedRange()
-        let delta = (replacement as NSString).length - toc.range.length
+        let delta = (replacement as NSString).length - range.length
         breakUndoCoalescing()
-        guard shouldChangeText(in: toc.range, replacementString: replacement) else { return false }
-        storage.replaceCharacters(in: toc.range, with: replacement)
+        guard shouldChangeText(in: range, replacementString: replacement) else { return false }
+        storage.replaceCharacters(in: range, with: replacement)
         didChangeText()
         undoManager?.setActionName("Update Table of Contents")
-        if selection.location >= NSMaxRange(toc.range) {
+        if selection.location >= NSMaxRange(range) {
             setSelectedRange(NSRange(location: selection.location + delta, length: selection.length))
         }
         return true
@@ -1679,13 +1725,6 @@ final class MarkdownTextView: NSTextView {
 
         for span in drawingSpans {
             switch span.kind {
-            case .htmlBlock where rendered && NSLocationInRange(span.range.location, anchorRange):
-                guard let toc = TableOfContentsBlock.find(in: model), toc.opening.location == span.range.location else { continue }
-                let line = rect(NSRange(location: toc.opening.location, length: 1))
-                guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
-                let title = NSAttributedString(string: "CONTENTS", attributes: [
-                    .font: theme.ui(11, weight: .semibold), .kern: 0.7 * theme.scale, .foregroundColor: NSColor.secondaryLabelColor])
-                title.draw(at: NSPoint(x: line.minX, y: line.maxY - title.size().height))
             case .callout(let type, let range):
                 guard NSLocationInRange(range.location, anchorRange) else { continue }
                 let token = rect(range)
@@ -2651,3 +2690,4 @@ struct InlineFormula {
         context.restoreGState()
     }
 }
+

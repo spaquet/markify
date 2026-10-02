@@ -11,15 +11,19 @@ public enum TableOfContentsMarker {
     /// The depth an opening comment asks for, or nil when `text` isn't one.
     public static func depth(ofOpening text: String) -> Int? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let regex = try? NSRegularExpression(pattern: #"^<!--\s*toc(?:\s+depth\s*=\s*([1-6]))?\s*-->$"#, options: .caseInsensitive),
-              let match = regex.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)) else { return nil }
+        guard trimmed.hasPrefix("<!--"),
+              let match = openingPattern.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)) else { return nil }
         let depth = match.range(at: 1)
         return depth.location == NSNotFound ? allLevels : Int((trimmed as NSString).substring(with: depth)) ?? allLevels
     }
 
     public static func isClosing(_ text: String) -> Bool {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).range(of: #"^<!--\s*/toc\s*-->$"#, options: [.regularExpression, .caseInsensitive]) != nil
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("<!--") && closingPattern.firstMatch(in: trimmed, range: NSRange(location: 0, length: (trimmed as NSString).length)) != nil
     }
+
+    private static let openingPattern = try! NSRegularExpression(pattern: #"^<!--\s*toc(?:\s+depth\s*=\s*([1-6]))?\s*-->$"#, options: .caseInsensitive)
+    private static let closingPattern = try! NSRegularExpression(pattern: #"^<!--\s*/toc\s*-->$"#, options: .caseInsensitive)
 
     public static func opening(depth: Int) -> String {
         depth >= allLevels ? "<!-- toc -->" : "<!-- toc depth=\(depth) -->"
