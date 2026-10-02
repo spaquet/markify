@@ -13,11 +13,6 @@ Demand below is a directional estimate from features and roadmaps of comparable 
 | 7 | Exchange documents with Word users | HTML and PDF export work; DOCX import and export do not. | Medium if users regularly hand drafts to Word users. |
 | 8 | Focus or typewriter mode | Controls can fade while typing; text outside the current line or paragraph is not dimmed, and the caret is not centered. | Medium-low for long-form writing. |
 
-## Suggested next steps
-
-1. Full-text library search.
-2. Table of contents in the existing right pane.
-3. Wiki-link compatibility for ordinary folders, if Obsidian migration is a target.
 
 ## Market references
 
