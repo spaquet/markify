@@ -34,11 +34,28 @@ The web location remains in use for the current document session, including afte
 
 ### Links panel
 
-Click the right sidebar button in the toolbar to list destinations in the order they first appear. Repeated links to the same resolved destination share one entry, even when their labels differ. Each entry lists its source line numbers, which update as you edit. Click a line number to jump to that occurrence, click the title to jump to the first occurrence, or choose **Open destination** to follow the link. Multiple mentions on one line list that line once. The panel shows an empty message when the document has no links.
+Click the right sidebar button in the toolbar, then **Links** at the top of the pane. Links are grouped into **In this document** (links to a heading, such as `#method`), **Files** and **Web**, in the order they first appear. Mail, phone and app links (`mailto:`, `tel:`, `slack://`) aren't listed. Repeated links to the same destination share one row, marked ×2, ×3 and so on, even when their labels differ. The chips at the top show all links, one group, or only broken ones.
 
-Expand **Summary** on a link to see a saved summary or request one with Apple Intelligence. For websites, **Fetch and summarize** contacts the site only when you click it. Local `.md`, `.markdown` and `.mdx` files use their readable text; websites must return a text or HTML page. Other destinations remain in the list without a summary. The panel shows progress or an error if a destination cannot be read, and explains when Apple Intelligence is unavailable.
+Each row shows the line of the first occurrence. Point at a row to see its actions:
 
-Summaries are saved by Markify outside your Markdown file. Local summaries show when their target changed and can be refreshed. Web summaries show their generation date and stay as saved until you choose **Refresh summary**.
+- **↩ Go to line** moves to the link in the document. With repeated links, each click goes to the next occurrence; clicking the row does the same.
+- **↗ Open** opens the file in Markify or the page in your browser.
+- **✦ Summarize** shows a summary from Apple Intelligence under the row (see below).
+- **✎ Fix link…** appears on broken links (see below).
+
+⌘-click a link to a heading in the document to jump to it. A link such as `notes.md#setup` opens `notes.md` at that heading.
+
+#### Broken links
+
+Markify checks links in the background while the pane is open and marks broken ones in red with the reason: **No such heading**, **File not found**, or for web pages **Not found (404)**, **Server not found**, **Timed out** and similar. Links to headings and files are checked as you type. Web links are checked when the pane opens and after you stop typing; each result is kept for 24 hours, even after you quit, so the same page isn't asked again. Clicking a link, in the pane or ⌘-clicking it in the document, checks it again at once, so a page that came back or went away shows its current state. **Check Links** at the bottom checks every link again now; the line beside it shows how many are broken and when they were checked. Pages that need a login count as working. Markify never marks a link broken when your Mac is offline.
+
+**✎ Fix link…** shows the destination in an editable field with suggestions: the closest headings for a link to a heading, or similar Markdown files in the same folder for a missing file. Choose a suggestion or type a destination, then **Replace**. Every occurrence of that link changes, including a reference definition (`[label]: path`), and one **Undo** puts them all back.
+
+#### Summaries
+
+**✦** opens a card under the link. If no summary is saved, Apple Intelligence writes one on your Mac; for websites, Markify downloads the page only when you choose ✦. Local `.md`, `.markdown` and `.mdx` files use their readable text; websites must return a text or HTML page. ✦ doesn't appear for other destinations or when Apple Intelligence is unavailable. The card shows progress, or an error with **Try Again**.
+
+Summaries are saved by Markify outside your Markdown file. The card shows when a summary was generated, notes **Source changed** when a local file changed since, and offers **Refresh**.
 
 Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.
 

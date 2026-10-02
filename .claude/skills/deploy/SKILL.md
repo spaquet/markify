@@ -50,6 +50,8 @@ swift scripts/verify-update-signature.swift "$(/usr/libexec/PlistBuddy -c 'Print
 
 A mismatch means the secret may be stale too: ask, then rerun `scripts/setup-sparkle-keys.sh`. Never replace a key that has shipped without the user's explicit go-ahead: installed copies only accept updates signed with the key they shipped with.
 
+Also check `gh secret list | grep SENTRY_DSN`: a tag build fails without it. If it is missing, stop and point the user to RELEASE.md › Crash Reporting (Sentry); never paste a DSN into the repository.
+
 ## 4. Help, tour and website pages
 
 The help is written once in `help/*.md` and built into the app's Help Book (`Markify/Resources/Markify.help`) and the website (`docs/help/`, `docs/faq.html`, `docs/legal.html`, `sitemap.xml`, `robots.txt`, `llms.txt`, `llms-full.txt`). A release must ship help that matches it.

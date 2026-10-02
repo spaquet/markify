@@ -140,8 +140,12 @@ struct NativeEditor: NSViewRepresentable {
         context.coordinator.lastCurrentMatch = currentMatch
     }
 
-    func style(_ editor: NSTextView) {
-        guard let storage = editor.textStorage else { return }
+    /// Styles both lenses from the model. `incremental` (typing) styles a copy and applies only the attributes that
+    /// changed: resetting the whole storage makes TextKit 2 discard the layout of every line, and the lines above the
+    /// page fall back to estimated heights, so the visible text blanks and jumps on each keystroke.
+    func style(_ editor: NSTextView, incremental: Bool = false) {
+        guard let live = editor.textStorage else { return }
+        let storage = incremental ? NSTextStorage(attributedString: live) : live
         // HTML blocks are imported through WebKit, which spins the run loop: an image or diagram arriving then
         // asks for a restyle in the middle of this pass. It runs once this pass is done instead of inside it.
         let styling = editor as? MarkdownTextView
@@ -226,9 +230,18 @@ struct NativeEditor: NSViewRepresentable {
             return (label, source.substring(with: span.content), span)
         }
 
+        // A table of contents Markify keeps is drawn as a Contents card in the Rendered lens; its parts are styled below.
+        let tableOfContents = markdownLens ? nil : TableOfContentsBlock.find(in: model)
+        func inTableOfContents(_ location: Int, body: Bool = false) -> Bool {
+            tableOfContents.map { NSLocationInRange(location, body ? $0.body : $0.range) } ?? false
+        }
+
         // Blocks: fonts and fills that inline styles then build on.
         for span in model.spans {
             switch span.kind {
+            case .htmlBlock where inTableOfContents(span.range.location),
+                 .listItem where inTableOfContents(span.range.location, body: true):
+                continue
             case .heading(let level, _):
                 let size: CGFloat = markdownLens ? 16 : (level == 1 ? 36 : level == 2 ? 22 : 19)
                 storage.addAttribute(.font, value: markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true), range: span.content)
@@ -501,6 +514,51 @@ struct NativeEditor: NSViewRepresentable {
                                           range: NSRange(location: row.start, length: row.end - row.start))
                 }
             }
+            if let toc = tableOfContents {
+                let scale = theme.scale
+                // The opening comment's line holds the card's title, which the line's fragment draws in its place.
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(11, weight: .semibold)], range: toc.opening)
+                storage.addAttribute(.markifyTitle, value: NSAttributedString(string: "CONTENTS", attributes: [
+                    .font: theme.ui(11, weight: .semibold), .kern: 0.7 * scale, .foregroundColor: NSColor.secondaryLabelColor]),
+                                     range: NSRange(location: toc.opening.location, length: 1))
+                let title = NSMutableParagraphStyle()
+                title.paragraphSpacing = 6 * scale
+                storage.addAttribute(.paragraphStyle, value: title, range: source.lineRange(for: NSRange(location: toc.opening.location, length: 0)))
+                // The closing comment takes no room.
+                let collapsed = NSMutableParagraphStyle()
+                collapsed.minimumLineHeight = 0.01
+                collapsed.maximumLineHeight = 0.01
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear, .paragraphStyle: collapsed],
+                                      range: source.lineRange(for: NSRange(location: toc.closing.location, length: 0)))
+                // Entries: no bullets, indented by level with a hairline per enclosing level; the top level semibold in ink.
+                let step = 16 * scale
+                let origin = (editor.textContainer?.lineFragmentPadding ?? 0) + 18 * scale
+                func level(_ line: NSRange) -> Int {
+                    var spaces = 0
+                    while spaces < line.length, source.character(at: line.location + spaces) == 32 { spaces += 1 }
+                    return min(spaces / 2, 5)
+                }
+                for span in model.spans {
+                    guard case .listItem(let item) = span.kind, NSLocationInRange(item.marker.location, toc.body) else { continue }
+                    let line = source.lineRange(for: NSRange(location: item.marker.location, length: 0))
+                    var end = NSMaxRange(item.marker)
+                    if end < source.length, [32, 9].contains(source.character(at: end)) { end += 1 }
+                    marker(NSRange(location: line.location, length: end - line.location))
+                    let depth = level(line)
+                    let style = NSMutableParagraphStyle()
+                    style.firstLineHeadIndent = CGFloat(depth) * step
+                    style.headIndent = style.firstLineHeadIndent
+                    style.paragraphSpacing = 3 * scale
+                    storage.addAttribute(.paragraphStyle, value: style, range: line)
+                    if depth > 0 { storage.addAttribute(.markifyGuides, value: MarkdownGuides(count: depth, origin: origin, step: step, color: .separatorColor), range: line) }
+                }
+                for span in model.spans where NSLocationInRange(span.range.location, toc.body) {
+                    guard case .link = span.kind else { continue }
+                    let top = level(source.lineRange(for: span.range)) == 0
+                    storage.addAttributes([.font: top ? theme.ui(15, weight: .semibold) : theme.ui(14), .foregroundColor: top ? primary : secondary], range: span.content)
+                }
+                boxes.append((toc.range, MarkdownBlockFill(color: .codeFill, radius: 14 * scale, padding: NSSize(width: 18, height: 14))))
+            }
             // A box's lines share one rounded fill with padding around the text, as the design's code blocks and callouts.
             for box in boxes {
                 let lines = source.lineRange(for: box.range)
@@ -580,11 +638,30 @@ struct NativeEditor: NSViewRepresentable {
             }
         }
         storage.endEditing()
+        if storage !== live { Self.applyChangedAttributes(from: storage, to: live) }
         updateTypingFont(editor)
         if let editor = editor as? MarkdownTextView {
             editor.forgetImages()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
+    }
+
+    /// Copies `styled`'s attributes onto `live` only where they differ, so TextKit keeps the layout of unchanged text.
+    static func applyChangedAttributes(from styled: NSAttributedString, to live: NSTextStorage) {
+        let length = min(styled.length, live.length)
+        var location = 0
+        live.beginEditing()
+        while location < length {
+            var new = NSRange(), old = NSRange()
+            let attributes = styled.attributes(at: location, effectiveRange: &new)
+            let current = live.attributes(at: location, effectiveRange: &old)
+            let end = min(NSMaxRange(new), NSMaxRange(old), length)
+            if !(attributes as NSDictionary).isEqual(to: current) {
+                live.setAttributes(attributes, range: NSRange(location: location, length: end - location))
+            }
+            location = end
+        }
+        live.endEditing()
     }
 
     /// Plain-text NSTextView sizes its caret from the typing font, which must follow our styled text.
@@ -666,7 +743,7 @@ struct NativeEditor: NSViewRepresentable {
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             if slash?.range.location != dismissedSlashLocation { dismissedSlashLocation = nil }
             parent.onSlash(dismissedSlashLocation == nil ? slash?.query : nil)
-            parent.style(editor)
+            parent.style(editor, incremental: true)
         }
         func textViewWritingToolsWillBegin(_ textView: NSTextView) {
             writingToolsOriginalBody = FrontmatterBlock.body(of: textView.string)
@@ -688,7 +765,7 @@ struct NativeEditor: NSViewRepresentable {
             parent.onSlash(slash?.range.location == dismissedSlashLocation ? nil : slash?.query)
             // Moving into a typeset formula shows its LaTeX; moving out typesets it again.
             if let markdown = editor as? MarkdownTextView, markdown.rendered, markdown.editedFormula != markdown.styledEditedFormula {
-                parent.style(editor)
+                parent.style(editor, incremental: true)
             }
             parent.updateTypingFont(editor)
             if let window = editor.window {
@@ -760,6 +837,7 @@ final class MarkdownTextView: NSTextView {
             MainActor.assumeIsolated {
                 guard let self, let current = self.textStorage, ObjectIdentifier(current) == edited else { return }
                 self.textVersion += 1
+                self.scheduleTableOfContentsUpdate()
             }
         }
     }
@@ -1090,6 +1168,163 @@ final class MarkdownTextView: NSTextView {
         super.setFrameSize(newSize)
         // A new width rewraps the text above a table, moving its rows.
         if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTables() } }
+    }
+
+    /// Selects `range` and scrolls its first line near the top of the page, even when it is already on screen,
+    /// so a jump from the Contents or Links pane always lands in the same place.
+    func reveal(_ range: NSRange) {
+        setSelectedRange(range)
+        window?.makeFirstResponder(self)
+        guard let scroll = enclosingScrollView else { return scrollRangeToVisible(range) }
+        let clip = scroll.contentView
+        let top = convert(textRect(range), to: clip).minY - 24
+        var bounds = clip.bounds
+        bounds.origin.y = max(0, top)
+        clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
+        scroll.reflectScrolledClipView(clip)
+    }
+
+    /// Moves to the heading whose anchor (as export writes it) is `anchor`. Returns false when there is none.
+    @discardableResult
+    func revealAnchor(_ anchor: String) -> Bool {
+        guard let heading = DocumentHeading.extract(from: model).first(where: { $0.anchor == anchor }) else { return false }
+        reveal(NSRange(location: heading.range.location, length: 0))
+        return true
+    }
+
+    /// The `#anchor` of the Contents card entry under `point`, in the Rendered lens.
+    func tableOfContentsLink(at point: NSPoint) -> String? {
+        guard rendered, let toc = TableOfContentsBlock.find(in: model) else { return nil }
+        let index = characterIndexForInsertion(at: point)
+        guard NSLocationInRange(index, toc.body) else { return nil }
+        let link = model.spans.first { span in
+            guard case .link = span.kind, NSLocationInRange(index, span.range) || index == NSMaxRange(span.range) else { return false }
+            return textRect(span.content).insetBy(dx: -4, dy: -3).contains(point)
+        }
+        guard let link, case let .link(destination) = link.kind, destination.hasPrefix("#") else { return nil }
+        return destination
+    }
+
+    private var tableOfContentsUpdate: Task<Void, Never>?
+
+    /// Keeps a `<!-- toc -->` block in step with the headings, a moment after typing pauses. The document is scanned
+    /// off the main thread; the new list is applied only if the text hasn't changed since. Undo and redo don't
+    /// trigger it, so undoing an update sticks until the next edit.
+    private func scheduleTableOfContentsUpdate() {
+        guard undoManager?.isUndoing != true, undoManager?.isRedoing != true else { return }
+        tableOfContentsUpdate?.cancel()
+        let version = textVersion
+        let source = string
+        let mdx = Self.isMDX(documentURL)
+        tableOfContentsUpdate = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            let change = await Task.detached(priority: .utility) { () -> (range: NSRange, text: String)? in
+                guard (source as NSString).range(of: "toc", options: .caseInsensitive).location != NSNotFound else { return nil }
+                let model = MarkdownModel(source, mdx: mdx)
+                guard let toc = TableOfContentsBlock.find(in: model) else { return nil }
+                let text = TableOfContentsBlock.text(DocumentHeading.extract(from: model), depth: toc.depth)
+                return (source as NSString).substring(with: toc.range) == text ? nil : (toc.range, text)
+            }.value
+            guard let self, !Task.isCancelled, self.textVersion == version, let change else { return }
+            self.replaceTableOfContents(change.range, with: change.text, automatic: true)
+        }
+    }
+
+    /// Rewrites the table of contents for the current headings, as one undo step. Skips the automatic update while the
+    /// caret is inside the block; `depth` (from the pane) also changes how deep it goes. Returns false when there is
+    /// no table of contents or nothing changed.
+    @discardableResult
+    func updateTableOfContents(depth: Int? = nil) -> Bool {
+        guard (string as NSString).range(of: "toc", options: .caseInsensitive).location != NSNotFound else { return false }
+        let model = self.model
+        guard let toc = TableOfContentsBlock.find(in: model) else { return false }
+        let replacement = TableOfContentsBlock.text(DocumentHeading.extract(from: model), depth: depth ?? toc.depth)
+        guard (string as NSString).substring(with: toc.range) != replacement else { return false }
+        return replaceTableOfContents(toc.range, with: replacement, automatic: depth == nil)
+    }
+
+    /// Swaps in a new table of contents as one undo step, keeping the caret on its text. An automatic update leaves
+    /// the block alone while the caret or selection is in it.
+    @discardableResult
+    private func replaceTableOfContents(_ range: NSRange, with replacement: String, automatic: Bool) -> Bool {
+        guard let storage = textStorage, NSMaxRange(range) <= storage.length else { return false }
+        if automatic, selectedRanges.contains(where: { NSIntersectionRange($0.rangeValue, range).length > 0 || NSLocationInRange($0.rangeValue.location, range) }) {
+            return false
+        }
+        let selection = selectedRange()
+        let delta = (replacement as NSString).length - range.length
+        breakUndoCoalescing()
+        guard shouldChangeText(in: range, replacementString: replacement) else { return false }
+        storage.replaceCharacters(in: range, with: replacement)
+        didChangeText()
+        undoManager?.setActionName("Update Table of Contents")
+        if selection.location >= NSMaxRange(range) {
+            setSelectedRange(NSRange(location: selection.location + delta, length: selection.length))
+        }
+        return true
+    }
+
+    /// The source offset at the reading line, a quarter down the page (at most 120pt), and how far through the document
+    /// the page is scrolled, from 0 to 1.
+    var readingPosition: (offset: Int, progress: Double) {
+        guard let scroll = enclosingScrollView, let manager = textLayoutManager, let content = manager.textContentManager else { return (0, 0) }
+        let visible = scroll.contentView.bounds
+        let y = visible.minY + min(120, visible.height * 0.25) - textContainerOrigin.y
+        let offset: Int
+        if let fragment = manager.textLayoutFragment(for: CGPoint(x: 0, y: max(0, y))) {
+            offset = content.offset(from: content.documentRange.location, to: fragment.rangeInElement.location)
+        } else {
+            offset = y <= 0 ? 0 : (string as NSString).length
+        }
+        let scrollable = bounds.height - visible.height
+        return (offset, scrollable > 1 ? min(max(visible.minY / scrollable, 0), 1) : 1)
+    }
+
+    /// Inserts `block` at the caret as its own block, with blank lines around it, as one undo step.
+    func insertBlock(_ block: String) {
+        let text = string as NSString
+        let range = selectedRange()
+        var before = ""
+        if range.location > 0, text.character(at: range.location - 1) != 0x0A { before = "\n\n" }
+        else if range.location > 1, text.character(at: range.location - 2) != 0x0A { before = "\n" }
+        let end = NSMaxRange(range)
+        let after = end < text.length && text.character(at: end) != 0x0A ? "\n\n" : "\n"
+        window?.makeFirstResponder(self)
+        insertText(before + block + after, replacementRange: range)
+    }
+
+    /// Changes a link's destination from `old` to `new` in every link range given (or in its reference definition),
+    /// as one undo step. Returns how many places changed.
+    @discardableResult
+    func replaceLinkDestination(_ old: String, with new: String, in links: [NSRange]) -> Int {
+        let text = string as NSString
+        var targets: [NSRange] = []
+        for link in links where NSMaxRange(link) <= text.length {
+            // The destination is the last copy of it inside the link: `[text](old)`, `<old>`.
+            let found = text.range(of: old, options: .backwards, range: link)
+            if found.location != NSNotFound { targets.append(found); continue }
+            // A reference link: its definition holds the destination.
+            let escaped = NSRegularExpression.escapedPattern(for: old)
+            if let definition = try? NSRegularExpression(pattern: "^ {0,3}\\[[^\\]]+\\]:[ \\t]*<?(\(escaped))>?", options: .anchorsMatchLines),
+               let match = definition.firstMatch(in: string, range: NSRange(location: 0, length: text.length)) {
+                targets.append(match.range(at: 1))
+            }
+        }
+        let unique = Set(targets.map { NSStringFromRange($0) }).map(NSRangeFromString).sorted { $0.location > $1.location }
+        guard !unique.isEmpty, let storage = textStorage else { return 0 }
+        window?.makeFirstResponder(self)
+        breakUndoCoalescing()
+        undoManager?.beginUndoGrouping()
+        var changed = 0
+        for range in unique where shouldChangeText(in: range, replacementString: new) {
+            storage.replaceCharacters(in: range, with: new)
+            didChangeText()
+            changed += 1
+        }
+        undoManager?.setActionName("Fix Link")
+        undoManager?.endUndoGrouping()
+        return changed
     }
 
     /// The frame of the first line segment of `range`, in this view's coordinates.
@@ -1748,8 +1983,18 @@ final class MarkdownTextView: NSTextView {
             return editFrontmatter(frontmatter, at: hit.frame)
         }
         if event.modifierFlags.contains(.command), followFootnote(at: characterIndexForInsertion(at: point)) { return }
+        // In the Rendered lens, a click on a Contents card entry goes to its heading, as in a book's contents.
+        if rendered, !event.modifierFlags.contains(.shift), let link = tableOfContentsLink(at: point) {
+            if !revealAnchor(LinkTarget.fragment(link) ?? "") { NSSound.beep() }
+            return
+        }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
         if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
+            // A link to a heading in this document moves there.
+            if link.target.hasPrefix("#") {
+                if !revealAnchor(LinkTarget.fragment(link.target) ?? "") { NSSound.beep() }
+                return
+            }
             return Knowledge.follow(link.target, title: link.text, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory)
         }
         for item in tasks() {
@@ -2445,3 +2690,4 @@ struct InlineFormula {
         context.restoreGState()
     }
 }
+

@@ -100,4 +100,4 @@ Yes. Markify uses the standard Mac text view, so VoiceOver reads and edits the d
 
 ### Can I make the text bigger?
 
-Yes. Press ⌘= and ⌘- to zoom, ⌘0 to return to actual size, and change the fonts and line width in **Settings › Editor**.
+Yes. Press ⌘= and ⌘- to zoom, ⌘0 to return to actual size, and change the fonts, or limit the line width, in **Settings › Editor**.

@@ -13,6 +13,34 @@ struct MarkifyTests {
         #expect(links.map(\.range.location) == links.map(\.range.location).sorted())
     }
 
+    @Test func contentsListsLevelOneAndTwoHeadingsInSourceOrder() {
+        let source = """
+        ---
+        title: Front
+        ---
+        ## Before
+        # Intro *with* `code`
+        ### Skipped
+        Setext
+        ======
+        ## [Linked](a.md) <b>part</b>
+        ## Before
+
+        ```
+        # not a heading
+        ```
+        """
+        let headings = DocumentHeading.extract(from: MarkdownModel(source))
+        #expect(headings.map(\.title) == ["Before", "Intro with code", "Skipped", "Setext", "Linked part", "Before"])
+        #expect(headings.map(\.level) == [2, 1, 3, 1, 2, 2])
+        #expect(headings.map(\.line) == [4, 5, 6, 7, 9, 10])
+        // Repeated titles stay separate entries with export's numbered anchors, each jumping to its own heading text.
+        #expect(headings.map(\.anchor) == ["before", "intro-with-code", "skipped", "setext", "linked-part", "before-1"])
+        let ns = source as NSString
+        #expect(headings.map { ns.substring(with: NSRange(location: $0.range.location, length: 5)) } == ["Befor", "Intro", "Skipp", "Setex", "[Link", "Befor"])
+        #expect(DocumentHeading.extract(from: MarkdownModel("Just text.\n")).isEmpty)
+    }
+
     @Test @MainActor func linkSummaryCacheSurvivesReloadAndDetectsTargetChanges() throws {
         let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
         defer { try? FileManager.default.removeItem(at: location) }

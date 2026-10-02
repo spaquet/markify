@@ -65,13 +65,13 @@ struct KnowledgeState: Sendable {
     static func follow(_ target: String, title: String?, from document: URL?, bundleRoot: URL?, baseDirectory: URL? = nil) {
         if let baseDirectory, !baseDirectory.isFileURL,
            let remote = URL(string: target, relativeTo: baseDirectory)?.absoluteURL {
-            NSWorkspace.shared.open(remote); return
+            openWeb(remote); return
         }
         guard let url = OKFLinks.resolve(target, from: document, bundleRoot: bundleRoot, baseDirectory: baseDirectory) else {
-            if let web = URL(string: target), web.scheme != nil { NSWorkspace.shared.open(web) }
+            if let web = URL(string: target), web.scheme != nil { openWeb(web) }
             return
         }
-        guard url.isFileURL else { NSWorkspace.shared.open(url); return }
+        guard url.isFileURL else { openWeb(url); return }
         let manager = FileManager.default
         let folder = url.deletingLastPathComponent().path
         // Offer creation when the containing folder is readable or does not exist yet.
@@ -82,7 +82,7 @@ struct KnowledgeState: Sendable {
                 let index = url.appendingPathComponent("index.md")
                 if manager.fileExists(atPath: index.path) { open(index) } else { NSWorkspace.shared.open(url) }
             } else if ["md", "mdx", "markdown"].contains(url.pathExtension.lowercased()) {
-                open(url)
+                open(url, anchor: LinkTarget.fragment(target))
             } else {
                 NSWorkspace.shared.open(url)
             }
@@ -96,9 +96,26 @@ struct KnowledgeState: Sendable {
         }
     }
 
-    static func open(_ url: URL) {
+    /// Opens a web link with the system, and checks it again so the Links pane shows whether it works now.
+    private static func openWeb(_ url: URL) {
+        NSWorkspace.shared.open(url)
+        if ["http", "https"].contains(url.scheme?.lowercased() ?? "") { Task { await WebLinkChecks.shared.check([url], force: true) } }
+    }
+
+    /// Opens a Markdown document, then moves to the heading named by `anchor` once its editor is up.
+    static func open(_ url: URL, anchor: String? = nil) {
         NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, error in
-            if let error { Task { @MainActor in NSApp.presentError(error) } }
+            Task { @MainActor in
+                if let error { NSApp.presentError(error); return }
+                guard let anchor else { return }
+                for _ in 0..<40 {
+                    if let editor = MarkdownTextView.openEditors.allObjects.first(where: { $0.documentURL?.standardizedFileURL == url.standardizedFileURL && $0.window != nil }) {
+                        if !editor.revealAnchor(anchor) { NSSound.beep() }
+                        return
+                    }
+                    try? await Task.sleep(for: .milliseconds(50))
+                }
+            }
         }
     }
 

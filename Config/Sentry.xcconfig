@@ -1,0 +1,10 @@
+// Sentry settings for the Markify app target. The DSN is never committed.
+//
+// Local builds: copy Sentry.local.xcconfig.example to Sentry.local.xcconfig (git-ignored)
+// and paste the DSN there. Release builds in CI pass SENTRY_DSN on the xcodebuild
+// command line from the SENTRY_DSN GitHub secret, which overrides this file.
+// With no DSN, the app does not start Sentry.
+
+SENTRY_DSN =
+
+#include? "Sentry.local.xcconfig"

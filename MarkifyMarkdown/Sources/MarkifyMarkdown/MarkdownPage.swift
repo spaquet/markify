@@ -169,6 +169,14 @@ public enum MarkdownPage {
     .callout-tip{--c:var(--tip)}.callout-warning{--c:var(--warning)}.callout-important{--c:var(--important)}
     .callout>:last-child{margin-bottom:0}
     .callout-title{font:600 .78em -apple-system,system-ui,sans-serif;color:var(--c);margin-bottom:.4em}
+    .toc{margin:0 0 1.5em;padding:.95em 1.15em;border-radius:14px;background:var(--code);font:15px/1.5 -apple-system,system-ui,sans-serif}
+    .toc-title{margin:0 0 .45em;font:600 11px -apple-system,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+    .toc ul{list-style:none;margin:0;padding:0}
+    .toc li{margin:.15em 0}
+    .toc ul ul{margin:.15em 0 0 .3em;padding-left:.95em;border-left:1px solid var(--rule);font-size:14px}
+    .toc a{text-decoration:none;color:var(--ink2)}
+    .toc>ul>li>a{color:var(--ink);font-weight:600}
+    .toc a:hover{color:var(--accent)}
     ul,ol{padding-left:1.6em}
     li>ul,li>ol{margin:.25em 0 0}
     li{margin:.2em 0}
@@ -195,7 +203,7 @@ public enum MarkdownPage {
       main{max-width:none;padding:0}
       *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       h1,h2,h3,h4,h5,h6{break-after:avoid}
-      pre,blockquote,.callout,figure,.math.display,tr,img{break-inside:avoid}
+      pre,blockquote,.callout,.toc,figure,.math.display,tr,img{break-inside:avoid}
       pre{white-space:pre-wrap}
       a{color:inherit;text-decoration-color:var(--rule)}
       figure.diagram svg{padding:0}

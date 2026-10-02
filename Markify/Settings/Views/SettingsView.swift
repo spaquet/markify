@@ -16,6 +16,7 @@ struct SettingsView: View {
     @AppStorage("proseFont") private var proseFont = "New York"
     @AppStorage("markdownFont") private var markdownFont = "SF Mono"
     @AppStorage("lineWidth") private var lineWidth = 640.0
+    @AppStorage("limitLineWidth") private var limitLineWidth = false
     @AppStorage("fadeToolbar") private var fadeToolbar = true
     @AppStorage("showWordCount") private var showWordCount = true
     @AppStorage("appearance") private var appearance = "Auto"
@@ -190,14 +191,16 @@ struct SettingsView: View {
                     Text("SF Mono").tag("SF Mono")
                     Text("Menlo").tag("Menlo")
                 }
+                Toggle("Limit line width", isOn: $limitLineWidth)
                 LabeledContent("Line width") {
                     HStack {
                         Text("Narrow").font(.caption).foregroundStyle(.secondary)
-                        Slider(value: $lineWidth, in: 560...860, step: 10).frame(width: 220)
+                        Slider(value: $lineWidth, in: 560...1200, step: 10).frame(width: 220)
                         Text("Wide").font(.caption).foregroundStyle(.secondary)
                         Text("\(Int(lineWidth)) pt").monospacedDigit().frame(width: 52, alignment: .trailing)
                     }
                 }
+                .disabled(!limitLineWidth)
             }
             Section("Window") {
                 Toggle("Fade toolbar while typing", isOn: $fadeToolbar)

@@ -248,10 +248,17 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 struct MarkifyApp: App {
     init() {
         // Crash reports and a sample of performance traces go to Sentry; the privacy section of the Legal help page
-        // says so. Tests launch the app as their host and report nothing.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+        // says so. Tests launch the app as their host and report nothing. The DSN comes from the SENTRY_DSN build
+        // setting (Config/Sentry.xcconfig); builds without one report nothing.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+           let dsn = Bundle.main.object(forInfoDictionaryKey: "SentryDSN") as? String, !dsn.isEmpty {
             SentrySDK.start { options in
-                options.dsn = "https://fbdd9c6d0f2d750f333f4dc1a8900d28@o4512186860306432.ingest.us.sentry.io/4512186867843072"
+                options.dsn = dsn
+                #if DEBUG
+                options.environment = "development"
+                #else
+                options.environment = "production"
+                #endif
                 // No IP address or other personal data.
                 options.sendDefaultPii = false
                 options.tracesSampleRate = 0.1

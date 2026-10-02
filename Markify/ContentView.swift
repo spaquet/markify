@@ -18,6 +18,7 @@ struct ContentView: View {
     @AppStorage("libraryBookmark") private var libraryBookmark = Data()
     @AppStorage("fadeToolbar") private var fadeToolbar = true
     @AppStorage("lineWidth") private var lineWidth = 640.0
+    @AppStorage("limitLineWidth") private var limitLineWidth = false
     @AppStorage("rememberLens") private var rememberLens = true
     @AppStorage("lastLens") private var lastLens = "Rendered"
     @AppStorage("newDocumentLocation") private var newDocumentLocation = "Ask each time"
@@ -87,6 +88,8 @@ struct ContentView: View {
     @State private var reviewTitle = ""
     @State private var lastAIAction = ""
     @State private var scrollTick = 0
+    /// Where the reader is, for the Contents pane: the source offset at the reading line and the scroll fraction.
+    @State private var reading = (offset: 0, progress: 0.0)
     @State private var aiEdit = AIEditGuard()
     @State private var librarySearch = ""
     @State private var libraryFolder: URL?
@@ -139,16 +142,17 @@ struct ContentView: View {
     /// The document's OKF reading, when its frontmatter has a `type`.
     private var concept: OKFConcept? { conceptCache.concept(in: document.text) }
     private var aiAvailability: SystemLanguageModel.Availability { SystemLanguageModel.default.availability }
-    private var documentLinks: [DocumentLink] {
-        let model: MarkdownModel
-        if let editor = textView as? MarkdownTextView, editor.model.source == document.text { model = editor.model }
-        else { model = MarkdownModel(document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx") }
-        return DocumentLink.extract(from: model)
+    private var documentModel: MarkdownModel {
+        if let editor = textView as? MarkdownTextView, editor.model.source == document.text { return editor.model }
+        return MarkdownModel(document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx")
     }
 
     var body: some View {
         GeometryReader { geometry in
-            let columnWidth = min(markdownLens ? lineWidth + 20 : lineWidth, max(geometry.size.width - 48, 280))
+            // Text fills the page between margins that grow with it (5% a side, 16–96pt), unless Settings limits the line width.
+            // The side panes slide over the page and never move the text.
+            let fill = max(geometry.size.width - 2 * min(max(geometry.size.width * 0.05, 16), 96), 280)
+            let columnWidth = limitLineWidth ? min(markdownLens ? lineWidth + 20 : lineWidth, fill) : fill
             ZStack(alignment: .topLeading) {
                 page.ignoresSafeArea()
                 NativeEditor(text: $document.text, fileURL: fileURL, columnWidth: columnWidth, markdownLens: markdownLens, findQuery: showFind ? query : "", matchCase: matchCase, selectedRange: $selectedRange, textView: $textView, onType: {
@@ -187,7 +191,7 @@ struct ContentView: View {
                     }
                     .foregroundStyle(.tertiary)
                     .padding(.top, 96)
-                    .frame(width: min(lineWidth, geometry.size.width - 48), alignment: .leading)
+                    .frame(width: columnWidth, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .top)
                     .allowsHitTesting(false)
                 }
@@ -220,14 +224,25 @@ struct ContentView: View {
                         .contentShape(.rect)
                         .onTapGesture { toggleLinks() }
                         .zIndex(1)
-                    LinksPanel(links: documentLinks,
-                               documentURL: fileURL, bundleRoot: bundleRoot, documentText: document.text, baseDirectory: reportBase) { range in
-                        textView?.setSelectedRange(range)
-                        textView?.scrollRangeToVisible(range)
-                        textView?.window?.makeFirstResponder(textView)
-                    }
+                    let model = documentModel
+                    let editor = textView as? MarkdownTextView
+                    DocumentInspector(
+                        headings: DocumentHeading.extract(from: model), links: DocumentLink.extract(from: model),
+                        documentURL: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase,
+                        readingOffset: reading.offset, readingProgress: reading.progress, accent: accent,
+                        jump: { editor?.reveal($0) },
+                        hasTableOfContents: TableOfContentsBlock.find(in: model) != nil,
+                        insertTableOfContents: { depth in
+                            guard let editor else { return }
+                            if TableOfContentsBlock.find(in: editor.model) != nil { editor.updateTableOfContents(depth: depth) }
+                            else { editor.insertBlock(TableOfContentsBlock.text(DocumentHeading.extract(from: editor.model), depth: depth)) }
+                        },
+                        fixLink: { occurrences, old, new in editor?.replaceLinkDestination(old, with: new, in: occurrences.map(\.range)) },
+                        follow: { link in Knowledge.follow(link.destination, title: link.text, from: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase) })
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-                    .padding(8)
+                    .padding(12)
+                    .onAppear(perform: updateReading)
+                    .onChange(of: document.text) { _, _ in updateReading() }
                     .ignoresSafeArea(.container, edges: .top)
                     .transition(.move(edge: .trailing))
                     .zIndex(2)
@@ -270,7 +285,8 @@ struct ContentView: View {
                                     .contentShape(.circle)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel(linksOpen ? "Hide Links" : "Show Links")
+                            .help("Contents and Links")
+                            .accessibilityLabel(linksOpen ? "Hide Contents and Links" : "Show Contents and Links")
                             if aiAvailability != .unavailable(.deviceNotEligible) {
                                 Button { showAI.toggle(); showWritingMenu = false } label: { Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).frame(width: 30, height: 30).contentShape(.circle) }
                                     .buttonStyle(.plain)
@@ -408,7 +424,9 @@ struct ContentView: View {
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
         .tint(accent)
         .onReceive(NotificationCenter.default.publisher(for: NSView.boundsDidChangeNotification)) { notification in
-            if review != nil, (notification.object as? NSView) === textView?.enclosingScrollView?.contentView { scrollTick += 1 }
+            guard (notification.object as? NSView) === textView?.enclosingScrollView?.contentView else { return }
+            if review != nil { scrollTick += 1 }
+            if linksOpen { updateReading() }
         }
         .onAppear {
             markdownLens = initialLens()
@@ -1696,6 +1714,11 @@ struct ContentView: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { sidebarOpen.toggle() }
         chromeVisible = true
     }
+    private func updateReading() {
+        guard let position = (textView as? MarkdownTextView)?.readingPosition, position != reading else { return }
+        reading = position
+    }
+
     private func toggleLinks() {
         if !linksOpen { sidebarOpen = false }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32)) { linksOpen.toggle() }
