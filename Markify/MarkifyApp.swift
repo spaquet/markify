@@ -1,6 +1,5 @@
 import SwiftUI
 import Sentry
-
 import AppKit
 import CryptoKit
 import MarkifyMarkdown
@@ -248,32 +247,20 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct MarkifyApp: App {
     init() {
-        SentrySDK.start { options in
-            options.dsn = "https://fbdd9c6d0f2d750f333f4dc1a8900d28@o4512186860306432.ingest.us.sentry.io/4512186867843072"
-
-            // Adds IP for users.
-            // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
-            options.sendDefaultPii = true
-
-            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-            // We recommend adjusting this value in production.
-            options.tracesSampleRate = 1.0
-
-            // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
-            options.configureProfiling = {
-                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
-                $0.lifecycle = .trace
+        // Crash reports and a sample of performance traces go to Sentry; the privacy section of the Legal help page
+        // says so. Tests launch the app as their host and report nothing.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            SentrySDK.start { options in
+                options.dsn = "https://fbdd9c6d0f2d750f333f4dc1a8900d28@o4512186860306432.ingest.us.sentry.io/4512186867843072"
+                // No IP address or other personal data.
+                options.sendDefaultPii = false
+                options.tracesSampleRate = 0.1
+                options.configureProfiling = {
+                    $0.sessionSampleRate = 0.1
+                    $0.lifecycle = .trace
+                }
             }
-
-            // Uncomment the following lines to add more data to your events
-            // options.attachScreenshot = true // This adds a screenshot to the error events
-            // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
-            
-            // Enable experimental logging features
-            // options.experimental.enableLogs = true
         }
-        // Remove the next line after confirming that your Sentry integration is working.
-        SentrySDK.capture(message: "This app uses Sentry! :)")
     }
     @NSApplicationDelegateAdaptor(MarkifyAppDelegate.self) private var appDelegate
 
