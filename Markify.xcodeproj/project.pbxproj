@@ -22,6 +22,7 @@
 		C10000000000000000000001 /* PreviewImages.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* PreviewImages.xpc */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C10000000000000000000003 /* QuickLook/PreviewImageProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000004 /* QuickLook/PreviewImageProtocol.swift */; };
 		C10000000000000000000005 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
+		63EF882373BE43B3B75148B0 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = DF6556DC67E646B4AE9187DB /* Sentry */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -154,6 +155,7 @@
 				0AF0C0012E80000000000001 /* OKFKit in Frameworks */,
 				0AF0C0042E80000000000004 /* MarkifyMarkdown in Frameworks */,
 				5B0C0A012E90000000000001 /* Sparkle in Frameworks */,
+				63EF882373BE43B3B75148B0 /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,6 +241,7 @@
 				76A590E42DC952970033A6AC /* Frameworks */,
 				76A590E52DC952970033A6AC /* Resources */,
 				B10000000000000000000011 /* Embed App Extensions */,
+				C11F8C3E3BB24590AECC1E20 /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
@@ -255,6 +258,7 @@
 				0AF0C0032E80000000000003 /* OKFKit */,
 				0AF0C0062E80000000000006 /* MarkifyMarkdown */,
 				5B0C0A022E90000000000002 /* Sparkle */,
+				DF6556DC67E646B4AE9187DB /* Sentry */,
 			);
 			productName = Markify;
 			productReference = 76A590E72DC952970033A6AC /* Markify.app */;
@@ -395,6 +399,7 @@
 				5B0C0A032E90000000000003 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				0AF0C0022E80000000000002 /* XCLocalSwiftPackageReference "OKFKit" */,
 				0AF0C0052E80000000000005 /* XCLocalSwiftPackageReference "MarkifyMarkdown" */,
+				FE0627625B13417FAF64231B /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 76A590E82DC952970033A6AC /* Products */;
@@ -664,6 +669,8 @@
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_USER_SCRIPT_SANDBOXING = "NO";
 			};
 			name = Debug;
 		};
@@ -699,6 +706,8 @@
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_USER_SCRIPT_SANDBOXING = "NO";
 			};
 			name = Release;
 		};
@@ -961,6 +970,14 @@
 				minimumVersion = 0.5.0;
 			};
 		};
+		FE0627625B13417FAF64231B /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa/";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -987,7 +1004,41 @@
 			package = A1F9C0032DC953870033A6AC /* XCRemoteSwiftPackageReference "SwaTex" */;
 			productName = SwaTexRender;
 		};
+		DF6556DC67E646B4AE9187DB /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FE0627625B13417FAF64231B /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
+		};
 /* End XCSwiftPackageProductDependency section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C11F8C3E3BB24590AECC1E20 /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script is responsible for uploading debug symbols and source context for Sentry.
+if which sentry-cli >/dev/null; then
+  export SENTRY_ORG=markify-ax
+  export SENTRY_PROJECT=markify
+  ERROR=$(sentry-cli debug-files upload --include-sources \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)
+  if [ ! $? -eq 0 ]; then
+    echo \"warning: sentry-cli - $ERROR\"
+  fi
+else
+  echo \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"
+fi
+";
+			name = "Upload Debug Symbols to Sentry";
+		};
+/* End PBXShellScriptBuildPhase section */
 	};
 	rootObject = 76A590DF2DC952970033A6AC /* Project object */;
 }
