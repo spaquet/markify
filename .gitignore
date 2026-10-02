@@ -77,3 +77,6 @@ Thumbs.db
 marketing/
 
 .sentryclirc
+
+# Local Sentry DSN (see Config/Sentry.xcconfig)
+Config/Sentry.local.xcconfig

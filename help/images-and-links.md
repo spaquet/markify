@@ -34,7 +34,7 @@ The web location remains in use for the current document session, including afte
 
 ### Links panel
 
-Click the right sidebar button in the toolbar to list destinations in the order they first appear. Repeated links to the same resolved destination share one entry, even when their labels differ. Each entry lists its source line numbers, which update as you edit. Click a line number to jump to that occurrence, click the title to jump to the first occurrence, or choose **Open destination** to follow the link. Multiple mentions on one line list that line once. The panel shows an empty message when the document has no links.
+Click the right sidebar button in the toolbar, then **Links** at the top of the pane, to list destinations in the order they first appear. Repeated links to the same resolved destination share one entry, even when their labels differ. Each entry lists its source line numbers, which update as you edit. Click a line number to jump to that occurrence, click the title to jump to the first occurrence, or choose **Open destination** to follow the link. Multiple mentions on one line list that line once. The panel shows an empty message when the document has no links.
 
 Expand **Summary** on a link to see a saved summary or request one with Apple Intelligence. For websites, **Fetch and summarize** contacts the site only when you click it. Local `.md`, `.markdown` and `.mdx` files use their readable text; websites must return a text or HTML page. Other destinations remain in the list without a summary. The panel shows progress or an error if a destination cannot be read, and explains when Apple Intelligence is unavailable.
 

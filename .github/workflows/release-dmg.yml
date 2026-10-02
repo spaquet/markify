@@ -55,8 +55,16 @@ jobs:
             -project Markify.xcodeproj \
             -scheme Markify
 
+      # Crash reports go to Sentry only when the SENTRY_DSN repository secret is
+      # set. A tagged release fails without it; a manual build only warns.
       - name: Build Markify for ${{ matrix.archs }}
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
+          if [ -z "$SENTRY_DSN" ]; then
+            if [ "$GITHUB_REF_TYPE" = tag ]; then echo "::error::The SENTRY_DSN secret is not set."; exit 1; fi
+            echo "::warning::The SENTRY_DSN secret is not set; this build reports no crashes."
+          fi
           xcodebuild \
             -project Markify.xcodeproj \
             -scheme Markify \
@@ -68,6 +76,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_STYLE=Manual \
+            SENTRY_DSN="$SENTRY_DSN" \
             clean build
 
       - name: Build and bundle markify CLI

@@ -148,8 +148,7 @@ struct LinksPanel: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Links").font(.headline)
+        Group {
             if links.isEmpty {
                 ContentUnavailableView("No links", systemImage: "link", description: Text("Links in this document appear here."))
                     .frame(maxHeight: .infinity)
@@ -161,9 +160,6 @@ struct LinksPanel: View {
                 }.scrollIndicators(.never)
             }
         }
-        .padding(.horizontal, 14).padding(.top, 54).padding(.bottom, 12)
-        .frame(width: 300).frame(maxHeight: .infinity)
-        .chromeGlass(in: .rect(cornerRadius: 20))
         .task { checkLocalStaleness() }
         .onChange(of: links) { _, _ in checkLocalStaleness() }
     }

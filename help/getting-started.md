@@ -41,6 +41,7 @@ The page takes the whole window. A few controls float on glass above it and fade
 
 - **Library** (sidebar button, ⌃⌘S) shows your open files and library notes. See [Library and find](library.md).
 - **Title**: click the document's name to rename it, move it or browse its versions.
+- **Contents and Links** (right sidebar button) slides in a pane with two tabs. **Contents** lists the document's level 1 and 2 headings, with level 2 headings indented under their section; click one to move to that heading. **Links** lists the document's links; see [Links panel](images-and-links.md#links-panel). The text moves beside the pane so none of it is hidden, and the pane stays open while you read and edit; close it with the same button or Esc. It updates as you edit and remembers the last tab.
 - **Apple Intelligence** (the multicolor symbol) opens writing actions for the whole document. See [Apple Intelligence](intelligence.md).
 - **MD** switches to the Markdown lens (⌘/). See [Two lenses](lenses.md).
 - **More** (…) holds Share, Export, Source (for documents opened from URLs), Knowledge, Find, the word count and Settings.

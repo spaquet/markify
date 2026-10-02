@@ -48,6 +48,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>SentryDSN</key>
+	<string>$(SENTRY_DSN)</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUEnableInstallerLauncherService</key>

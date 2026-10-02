@@ -22,7 +22,8 @@ Choose **Markify › Settings…** (⌘,).
 ## Editor
 
 - **Open documents in** the Rendered lens, the Markdown lens or the last one used, and optionally remember the lens per document.
-- **Prose font** (New York or SF Pro), **Markdown font** (SF Mono or Menlo) and **Line width**.
+- **Prose font** (New York or SF Pro) and **Markdown font** (SF Mono or Menlo).
+- **Limit line width**: text normally fills the window, with margins that grow as the window widens. Turn this on to keep lines no wider than **Line width** (560–1200 pt) however wide the window is.
 - **Fade toolbar while typing** and **Show word count**.
 
 ## Appearance

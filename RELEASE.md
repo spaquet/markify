@@ -26,6 +26,35 @@ CI builds aren't signed with a Developer ID. The workflow signs each app ad hoc 
 
 Run `bash scripts/check-preview-images.sh` to verify the image helper from a signed, sandboxed extension client without any folder grants. It checks the release signing order and the README's local images as well as Markdown, HTML and SVG image references.
 
+## Crash Reporting (Sentry)
+
+Markify sends crash reports and a sample of performance traces to Sentry. The DSN is not in the repository: the app reads it from the `SentryDSN` Info.plist key, which is filled from the `SENTRY_DSN` build setting ([`Config/Sentry.xcconfig`](Config/Sentry.xcconfig)). A build without a DSN starts no Sentry at all, and tests never report.
+
+Events carry an environment so testing doesn't mix with what users hit:
+
+| Build | Environment |
+| --- | --- |
+| Debug (running from Xcode) | `development` |
+| Release (CI DMGs, Sparkle updates) | `production` |
+
+In Sentry, pick the environment in the filter at the top of Issues or Performance, or add `environment:production` to a search. For an alert that should only fire for users, add the condition "The event's environment is production".
+
+### One-time setup
+
+1. **Get the DSN.** In Sentry, open **Settings › Projects › markify › Client Keys (DSN)**. To replace a DSN that was committed before, click **Generate New Key**, copy the new DSN, then disable (or delete) the old key so builds that still carry it stop reporting.
+2. **Store it as a GitHub secret.** On GitHub, open the repository's **Settings › Secrets and variables › Actions › New repository secret**, name it `SENTRY_DSN` and paste the DSN. Or from the repository folder:
+
+   ```bash
+   gh secret set SENTRY_DSN
+   # paste the DSN, then press Return
+   gh secret list | grep SENTRY_DSN
+   ```
+
+   The release workflow passes it to `xcodebuild` as `SENTRY_DSN=…`. A tag build fails when the secret is missing, so a release never ships without crash reports; a manual run only warns.
+3. **Report from local builds (optional).** Copy `Config/Sentry.local.xcconfig.example` to `Config/Sentry.local.xcconfig` (git-ignored) and put the DSN in it. xcconfig files treat `//` as a comment, so write `https:/$()/` for `https://`. Without that file, local builds report nothing.
+
+To check, build Debug with the local file, run the app, and confirm with `/usr/libexec/PlistBuddy -c 'Print :SentryDSN' <path>/Markify.app/Contents/Info.plist` that the DSN is in the bundle; an event from it appears under `development`.
+
 ## How to Create a Release
 
 In Claude Code, `/deploy` runs these steps: it asks for the version and build, checks the Sparkle key, updates and rebuilds the help, bumps and tags, watches the workflow, checks the published release, and then updates the website. The skill is in `.claude/skills/deploy/SKILL.md`. By hand:

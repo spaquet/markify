@@ -1092,6 +1092,20 @@ final class MarkdownTextView: NSTextView {
         if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTables() } }
     }
 
+    /// Selects `range` and scrolls its first line near the top of the page, even when it is already on screen,
+    /// so a jump from the Contents or Links pane always lands in the same place.
+    func reveal(_ range: NSRange) {
+        setSelectedRange(range)
+        window?.makeFirstResponder(self)
+        guard let scroll = enclosingScrollView else { return scrollRangeToVisible(range) }
+        let clip = scroll.contentView
+        let top = convert(textRect(range), to: clip).minY - 24
+        var bounds = clip.bounds
+        bounds.origin.y = max(0, top)
+        clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
+        scroll.reflectScrolledClipView(clip)
+    }
+
     /// The frame of the first line segment of `range`, in this view's coordinates.
     /// `firstRect(forCharacterRange:)` answers only for text inside the viewport, and overlays also sit on text
     /// above or below it, so this asks TextKit 2's layout manager, laying the range out first.
