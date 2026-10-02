@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:1240px;height:820px;position:relative;border-radius:20px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;font-size:13px;background:{{ t.winBg }};box-shadow:{{ t.winShadow }}">
+<div style="position:absolute;left:0;top:0;right:380px;height:60px;padding:0 16px;display:flex;align-items:center;gap:14px">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+<div style="margin-left:10px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}"><svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.3" style="color:{{ t.text }}"><rect x=".7" y=".7" width="14.6" height="12.6" rx="3"></rect><path d="M5.5 .7v12.6"></path></svg></div>
+<div style="height:34px;padding:0 15px;border-radius:999px;display:flex;align-items:center;font-weight:600;color:{{ t.text }};background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}">FEATURE_REQUESTS</div>
+</div>
+<div style="position:absolute;left:110px;top:84px;width:700px;display:flex;flex-direction:column;gap:22px;font-family:'New York','Iowan Old Style',Georgia,serif;color:{{ t.body }}">
+<div style="font-size:44px;font-weight:700;letter-spacing:-.01em;color:{{ t.text }}">Feature requests</div>
+<p style="margin:0;font-size:19px;line-height:1.65;text-wrap:pretty">Demand below is a directional estimate from features and complaints in comparable Markdown editors. Current support is based on <span style="color:{{ t.accent }}">FEATURES.md</span> and the <span style="color:{{ t.accent }}">user guide</span>; see <span style="color:{{ t.accent }}">Market references</span> for sources.</p>
+<div style="font-size:26px;font-weight:700;color:{{ t.text }}">Ranked requests</div>
+<div style="font-size:20px;font-weight:600;color:{{ t.text }}">4. Table of contents</div>
+<p style="margin:0;font-size:19px;line-height:1.65;text-wrap:pretty;padding:2px 8px;margin-left:-8px;border-radius:6px;background:{{ t.readBg }}">Long documents need a live outline. Today the right panel lists headings, but there is no way to insert a table of contents into the document itself, and links to missing headings fail silently.</p>
+<div style="font-size:20px;font-weight:600;color:{{ t.text }}">5. Capture web pages</div>
+<p style="margin:0;font-size:19px;line-height:1.65;text-wrap:pretty">Open URL reads remote Markdown files only. Users expect a clipper that turns any article into clean Markdown, as the <span style="color:{{ t.accent }}">Obsidian Web Clipper</span> does.</p>
+</div>
+<div style="position:absolute;top:12px;right:12px;bottom:12px;width:356px;border-radius:24px;display:flex;flex-direction:column;background:{{ t.glass }};backdrop-filter:blur(30px) saturate(1.7);-webkit-backdrop-filter:blur(30px) saturate(1.7);box-shadow:{{ t.glassShadow }}">
+<div style="height:48px;padding:0 10px;display:flex;align-items:center;justify-content:flex-end">
+<div style="height:34px;padding:0 6px;border-radius:999px;display:flex;align-items:center;gap:2px;background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}">
+<span style="width:32px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:{{ t.accentSoft }}"><svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.3" style="color:{{ t.accent }}"><rect x=".7" y=".7" width="14.6" height="12.6" rx="3"></rect><path d="M10.5 .7v12.6"></path></svg></span>
+<span style="width:32px;height:28px;display:flex;align-items:center;justify-content:center;color:{{ t.text }}">✦</span>
+<span style="width:32px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{{ t.text }}">MD</span>
+<span style="width:32px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;color:{{ t.text }}">•••</span>
+</div>
+</div>
+<div style="padding:6px 14px 0">
+<div style="height:32px;padding:2px;border-radius:999px;display:grid;grid-template-columns:1fr 1fr;box-sizing:border-box;background:{{ t.segBg }};box-shadow:{{ t.segRing }}">
+<sc-for list="{{ tabs }}" as="b" hint-placeholder-count="2">
+<div onClick="{{ b.onClick }}" style="border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:{{ b.weight }};cursor:default;color:{{ b.color }};background:{{ b.bg }};box-shadow:{{ b.shadow }};transition:background .18s ease">{{ b.label }}<span style="font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;color:{{ b.countColor }}">{{ b.count }}</span></div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{ isContents }}" hint-placeholder-val="{{ true }}">
+<div style="padding:12px 14px 6px;display:flex;align-items:center;gap:8px">
+<div style="flex:1;height:28px;padding:0 9px;border-radius:8px;display:flex;align-items:center;gap:6px;background:{{ t.fieldBg }};box-shadow:{{ t.fieldRing }}"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" style="color:{{ t.muted }};flex:none"><circle cx="5" cy="5" r="3.8"></circle><path d="M8 8l3 3" stroke-linecap="round"></path></svg><input value="{{ q }}" onChange="{{ onQ }}" placeholder="Filter headings" style="flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-size:12.5px;color:{{ t.text }}"></input></div>
+<div title="Heading depth" style="height:28px;padding:2px;border-radius:8px;display:flex;box-sizing:border-box;background:{{ t.segBg }};box-shadow:{{ t.segRing }}">
+<sc-for list="{{ depths }}" as="d" hint-placeholder-count="4"><span onClick="{{ d.onClick }}" style="min-width:26px;padding:0 4px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;cursor:default;color:{{ d.color }};background:{{ d.bg }};box-shadow:{{ d.shadow }}">{{ d.label }}</span></sc-for>
+</div>
+</div>
+<div style="flex:1;min-height:0;overflow:auto;padding:4px 8px 8px">
+<sc-for list="{{ outline }}" as="o" hint-placeholder-count="10">
+<div onClick="{{ o.onClick }}" style="height:30px;padding-right:8px;border-radius:8px;display:flex;align-items:center;cursor:default;background:{{ o.bg }}" style-hover="background:{{ o.hoverBg }}">
+<sc-for list="{{ o.guides }}" as="g" hint-placeholder-count="0"><span style="width:16px;height:30px;flex:none;box-sizing:border-box;border-right:{{ g.line }}"></span></sc-for>
+<span onClick="{{ o.onToggle }}" style="width:20px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;font-size:9px;color:{{ o.chevColor }};transform:{{ o.chevRot }};transition:transform .18s ease">{{ o.chev }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:{{ o.size }};font-weight:{{ o.weight }};color:{{ o.color }}">{{ o.text }}</span>
+<span style="flex:none;font:11px ui-monospace,'SF Mono',Menlo,monospace;color:{{ t.faint }}">{{ o.meta }}</span>
+</div>
+</sc-for>
+<sc-if value="{{ noMatch }}" hint-placeholder-val="{{ false }}"><div style="padding:24px 12px;text-align:center;font-size:12.5px;color:{{ t.muted }}">No headings match “{{ q }}”</div></sc-if>
+</div>
+<div style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;border-top:{{ t.hair }}">
+<div style="display:flex;align-items:center;gap:10px;font-size:11.5px;color:{{ t.muted }}"><span style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Reading <span style="color:{{ t.text }};font-weight:500">{{ activeTitle }}</span></span><span style="font-variant-numeric:tabular-nums">{{ progressLabel }}</span></div>
+<div style="height:3px;border-radius:2px;background:{{ t.track }}"><div style="height:3px;border-radius:2px;width:{{ progress }};background:{{ t.accent }};transition:width .3s ease"></div></div>
+<div style="display:flex;gap:8px"><span style="flex:1;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:500;cursor:default;color:{{ t.text }};background:{{ t.btnBg }};box-shadow:{{ t.btnRing }}">Insert Table of Contents</span></div>
+</div>
+</sc-if>
+<sc-if value="{{ isLinks }}" hint-placeholder-val="{{ false }}">
+<div style="padding:12px 14px 6px;display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ chips }}" as="c" hint-placeholder-count="5"><span onClick="{{ c.onClick }}" style="height:24px;padding:0 9px;border-radius:999px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;cursor:default;color:{{ c.color }};background:{{ c.bg }};box-shadow:{{ c.ring }}"><span style="width:6px;height:6px;border-radius:50%;display:{{ c.dot }};background:{{ t.red }}"></span>{{ c.label }}<span style="font-size:11px;font-variant-numeric:tabular-nums;color:{{ c.countColor }}">{{ c.count }}</span></span></sc-for>
+</div>
+<div style="flex:1;min-height:0;overflow:auto;padding:2px 8px 8px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ groups }}" as="gr" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column">
+<div style="padding:8px 8px 4px;font-size:11px;font-weight:600;color:{{ t.muted }}">{{ gr.title }}</div>
+<sc-for list="{{ gr.items }}" as="l" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column">
+<div onMouseEnter="{{ l.onEnter }}" onMouseLeave="{{ l.onLeave }}" style="min-height:44px;padding:6px 8px;border-radius:10px;display:flex;align-items:center;gap:10px;cursor:default;background:{{ l.bg }}">
+<span style="width:28px;height:28px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{{ l.iconColor }};background:{{ l.iconBg }};box-shadow:{{ t.tileRing }}">{{ l.glyph }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+<div style="display:flex;align-items:center;gap:6px;min-width:0"><span style="min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500;color:{{ t.text }}">{{ l.title }}</span><sc-if value="{{ l.multi }}" hint-placeholder-val="{{ false }}"><span style="flex:none;font-size:11px;color:{{ t.muted }}">×{{ l.count }}</span></sc-if></div>
+<span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:11.5px ui-monospace,'SF Mono',Menlo,monospace;color:{{ l.destColor }}">{{ l.dest }}</span>
+</div>
+<sc-if value="{{ l.showMeta }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ l.broken }}" hint-placeholder-val="{{ false }}"><span style="flex:none;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:600;color:{{ t.red }};background:{{ t.redSoft }}">{{ l.reason }}</span></sc-if>
+<span style="flex:none;font:11px ui-monospace,'SF Mono',Menlo,monospace;color:{{ t.faint }}">L{{ l.line }}</span>
+</sc-if>
+<sc-if value="{{ l.showActions }}" hint-placeholder-val="{{ false }}">
+<div style="flex:none;display:flex;gap:2px">
+<sc-for list="{{ l.actions }}" as="a" hint-placeholder-count="3"><span title="{{ a.tip }}" onClick="{{ a.onClick }}" style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:default;color:{{ a.color }};background:{{ a.bg }}" style-hover="background:{{ t.btnBg }}">{{ a.glyph }}</span></sc-for>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ l.showSummary }}" hint-placeholder-val="{{ false }}">
+<div style="margin:2px 8px 6px 46px;padding:10px 12px;border-radius:12px;border:1px solid transparent;display:flex;flex-direction:column;gap:6px;background:linear-gradient({{ t.sumBg }},{{ t.sumBg }}) padding-box,linear-gradient(120deg,#ff9f0a,#ff375f,#bf5af2,#0a84ff) border-box">
+<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:{{ t.muted }}"><span style="color:#bf5af2">✦</span>Summary<span style="flex:1"></span><span style="font-weight:500">On-device</span></div>
+<div style="font-size:12.5px;line-height:1.5;text-wrap:pretty;color:{{ t.text }}">{{ l.summary }}</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="padding:12px 16px 16px;display:flex;align-items:center;gap:10px;border-top:{{ t.hair }}">
+<span style="flex:1;font-size:11.5px;line-height:1.4;color:{{ t.muted }}">{{ checkLabel }}</span>
+<span onClick="{{ check }}" style="height:28px;padding:0 14px;border-radius:999px;display:flex;align-items:center;font-weight:500;cursor:default;color:{{ t.text }};background:{{ t.btnBg }};box-shadow:{{ t.btnRing }}">{{ checkBtn }}</span>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:820},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;contents&quot;,&quot;links&quot;],&quot;default&quot;:&quot;contents&quot;,&quot;tsType&quot;:&quot;'contents'|'links'&quot;}}">
+const OUT = [
+  [1, 'Feature requests', 1], [2, 'Method', 5], [2, 'Ranked requests', 11], [3, '1. Access notes on iPhone and iPad', 13], [3, '2. Search all library documents', 17],
+  [3, '3. Link and navigate across documents', 21], [3, '4. Table of contents', 25], [3, '5. Capture web pages', 29], [2, 'Market references', 34],
+  [3, 'Obsidian', 36], [4, 'Web Clipper', 40], [3, 'iA Writer', 44], [3, 'Bear', 48], [2, 'Open questions', 53]
+];
+const TOTAL = 60;
+const LINKS = [
+  { id: 'a1', type: 'doc', title: 'Market references', dest: '#market-references', line: 3 },
+  { id: 'a2', type: 'doc', title: 'Roadmap', dest: '#roadmap', line: 12, broken: 'No such heading' },
+  { id: 'f1', type: 'file', title: 'FEATURES.md', dest: 'FEATURES.md', line: 3, sum: 'The feature list for Markify 1.0, grouped by editor, library, export and Apple Intelligence. Marks each item as shipped, in progress or planned.' },
+  { id: 'f2', type: 'file', title: 'user guide', dest: 'help/index.md', line: 3, sum: 'Entry page of the user guide: getting started, keyboard shortcuts, and links to the sections on tables, export and Writing Tools.' },
+  { id: 'f3', type: 'file', title: 'sync notes', dest: 'help/sync.md', line: 30, broken: 'File not found' },
+  { id: 'w1', type: 'web', title: 'Obsidian roadmap', dest: 'obsidian.md/roadmap', line: 19, glyph: 'O', sum: 'A public roadmap of planned and recently shipped Obsidian features, organised by area. Useful for comparing sync and mobile priorities.' },
+  { id: 'w2', type: 'web', title: 'Obsidian Web Clipper', dest: 'obsidian.md/help/web-clipper', line: 20, count: 2, glyph: 'O', sum: 'Help page for a browser extension that saves web pages as Markdown notes, with templates for metadata and highlights.' },
+  { id: 'w3', type: 'web', title: 'iA Writer features', dest: 'ia.net/writer/support/basics/features', line: 21, glyph: 'iA', sum: 'Overview of iA Writer’s editing features, including focus mode, syntax highlighting, content blocks and export templates.' },
+  { id: 'w4', type: 'web', title: 'Bear help', dest: 'bear.app/faq', line: 22, glyph: 'B', sum: 'FAQ for the Bear notes app covering tags, linking between notes, sync and export formats.' }
+];
+const T = {
+  dark: { winBg: '#1e1e20', winShadow: '0 30px 80px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.6),inset 0 0 0 .5px rgba(255,255,255,.12)', chromeBg: 'rgba(255,255,255,.08)', chromeRing: 'inset 0 0 0 .5px rgba(255,255,255,.12)', text: '#f5f5f7', body: '#e5e5ea', muted: '#98989d', faint: '#6e6e73', accent: '#0a84ff', accentText: '#409cff', accentSoft: 'rgba(10,132,255,.18)', readBg: 'rgba(10,132,255,.08)',
+    glass: 'rgba(44,44,48,.74)', glassShadow: '0 20px 50px rgba(0,0,0,.45),0 0 0 .5px rgba(0,0,0,.5),inset 0 0 0 .5px rgba(255,255,255,.14),inset 0 .5px 0 rgba(255,255,255,.2)', segBg: 'rgba(0,0,0,.22)', segRing: 'inset 0 0 0 .5px rgba(255,255,255,.08)', segOn: 'rgba(255,255,255,.16)', segOnShadow: '0 1px 2px rgba(0,0,0,.3),inset 0 .5px 0 rgba(255,255,255,.15)',
+    fieldBg: 'rgba(0,0,0,.22)', fieldRing: 'inset 0 0 0 .5px rgba(255,255,255,.1)', hover: 'rgba(255,255,255,.06)', guide: '1px solid rgba(255,255,255,.1)', guideOn: '1px solid #0a84ff', hair: '.5px solid rgba(255,255,255,.08)', track: 'rgba(255,255,255,.1)', btnBg: 'rgba(255,255,255,.1)', btnRing: 'inset 0 0 0 .5px rgba(255,255,255,.1)',
+    tile: 'rgba(255,255,255,.08)', tileRing: 'inset 0 0 0 .5px rgba(255,255,255,.1)', red: '#ff6961', redSoft: 'rgba(255,69,58,.16)', sumBg: '#2c2c30' },
+  light: { winBg: '#ffffff', winShadow: '0 30px 80px rgba(40,30,60,.18),0 0 0 .5px rgba(0,0,0,.16)', chromeBg: 'rgba(0,0,0,.045)', chromeRing: 'inset 0 0 0 .5px rgba(0,0,0,.1)', text: '#1d1d1f', body: '#1d1d1f', muted: '#6e6e73', faint: '#aeaeb2', accent: '#007aff', accentText: '#0066d6', accentSoft: 'rgba(0,122,255,.12)', readBg: 'rgba(0,122,255,.06)',
+    glass: 'rgba(246,246,248,.8)', glassShadow: '0 20px 50px rgba(40,30,60,.16),0 0 0 .5px rgba(0,0,0,.12),inset 0 .5px 0 #fff', segBg: 'rgba(0,0,0,.05)', segRing: 'inset 0 0 0 .5px rgba(0,0,0,.06)', segOn: '#ffffff', segOnShadow: '0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.06)',
+    fieldBg: '#ffffff', fieldRing: 'inset 0 0 0 .5px rgba(0,0,0,.12)', hover: 'rgba(0,0,0,.04)', guide: '1px solid rgba(0,0,0,.1)', guideOn: '1px solid #007aff', hair: '.5px solid rgba(0,0,0,.08)', track: 'rgba(0,0,0,.08)', btnBg: 'rgba(0,0,0,.05)', btnRing: 'inset 0 0 0 .5px rgba(0,0,0,.08)',
+    tile: '#ffffff', tileRing: 'inset 0 0 0 .5px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.05)', red: '#d70015', redSoft: 'rgba(255,59,48,.1)', sumBg: '#ffffff' }
+};
+class Component extends DCLogic {
+  state = { tab: null, active: 6, depth: 3, collapsed: {}, q: '', filter: 'all', hover: null, sum: null, checked: '2 min ago', checking: false };
+  componentWillUnmount() { clearTimeout(this.ct); }
+  renderVals() {
+    const t = T[this.props.theme === 'light' ? 'light' : 'dark'];
+    const s = this.state, tab = s.tab || this.props.tab || 'contents';
+    const broken = LINKS.filter(l => l.broken).length;
+    // outline
+    const q = s.q.trim().toLowerCase(), vis = [];
+    const keep = new Set();
+    if (q) OUT.forEach((o, i) => { if (o[1].toLowerCase().includes(q)) { keep.add(i); let lv = o[0]; for (let j = i - 1; j >= 0; j--) if (OUT[j][0] < lv) { keep.add(j); lv = OUT[j][0]; } } });
+    let hideBelow = 99;
+    OUT.forEach((o, i) => {
+      const [lv] = o;
+      if (lv <= hideBelow) hideBelow = 99;
+      if (lv > hideBelow) return;
+      if (lv > s.depth) return;
+      if (q && !keep.has(i)) return;
+      const hasKids = OUT[i + 1] && OUT[i + 1][0] > lv && OUT[i + 1][0] <= s.depth;
+      if (hasKids && s.collapsed[i] && !q) hideBelow = lv;
+      vis.push(i);
+    });
+    const activeAnc = new Set(); { let lv = OUT[s.active][0]; for (let j = s.active - 1; j >= 0; j--) if (OUT[j][0] < lv) { activeAnc.add(j); lv = OUT[j][0]; } }
+    const outline = vis.map(i => {
+      const [lv, text, line] = OUT[i], on = i === s.active;
+      const hasKids = OUT[i + 1] && OUT[i + 1][0] > lv && OUT[i + 1][0] <= s.depth;
+      const col = !!s.collapsed[i] && !q;
+      return {
+        text, meta: on ? 'L' + line : '', onClick: () => this.setState({ active: i }),
+        onToggle: hasKids ? e => { e.stopPropagation(); this.setState({ collapsed: Object.assign({}, s.collapsed, { [i]: !s.collapsed[i] }) }); } : undefined,
+        guides: Array.from({ length: lv - 1 }, (_, k) => ({ line: k === lv - 2 && (on || activeAnc.has(i)) ? t.guideOn : t.guide })),
+        chev: hasKids ? '▶' : '', chevRot: col ? 'rotate(0deg)' : 'rotate(90deg)', chevColor: t.muted,
+        size: lv === 1 ? '13.5px' : lv === 2 ? '13px' : '12.5px', weight: lv === 1 ? 700 : lv === 2 ? 600 : 400,
+        color: on ? t.accentText : activeAnc.has(i) || lv < 3 ? t.text : t.muted,
+        bg: on ? t.accentSoft : 'transparent', hoverBg: on ? t.accentSoft : t.hover
+      };
+    });
+    const pct = Math.round(OUT[s.active][2] / TOTAL * 100);
+    // links
+    const counts = { all: LINKS.length, doc: LINKS.filter(l => l.type === 'doc').length, file: LINKS.filter(l => l.type === 'file').length, web: LINKS.filter(l => l.type === 'web').length, broken };
+    const chips = [['all', 'All'], ['doc', 'Document'], ['file', 'Files'], ['web', 'Web'], ['broken', 'Broken']].map(([id, label]) => {
+      const on = s.filter === id;
+      return { label, count: counts[id], dot: id === 'broken' ? 'block' : 'none', onClick: () => this.setState({ filter: id, sum: null }),
+        color: on ? '#fff' : t.text, bg: on ? t.accent : t.btnBg, ring: on ? 'none' : t.btnRing, countColor: on ? 'rgba(255,255,255,.75)' : t.muted };
+    });
+    const shown = LINKS.filter(l => s.filter === 'all' || (s.filter === 'broken' ? l.broken : l.type === s.filter));
+    const groups = [['doc', 'In this document'], ['file', 'Files'], ['web', 'Web']].map(([type, title]) => ({
+      title, items: shown.filter(l => l.type === type).map(l => {
+        const hov = s.hover === l.id, open = s.sum === l.id;
+        const acts = [{ glyph: '↩', tip: 'Go to line ' + l.line, onClick: () => {} }];
+        if (l.broken) acts.push({ glyph: '✎', tip: 'Fix link…', onClick: () => {} });
+        else {
+          if (type !== 'doc') acts.push({ glyph: '↗', tip: type === 'web' ? 'Open in browser' : 'Open file', onClick: () => {} });
+          if (l.sum) acts.push({ glyph: '✦', tip: 'Summarize', onClick: () => this.setState({ sum: open ? null : l.id }), active: open });
+        }
+        return {
+          title: l.title, dest: l.dest, line: l.line, count: l.count, multi: (l.count || 1) > 1, broken: !!l.broken, reason: l.broken,
+          glyph: type === 'doc' ? '#' : type === 'file' ? '▤' : l.glyph,
+          iconBg: l.broken ? t.redSoft : t.tile, iconColor: l.broken ? t.red : type === 'doc' ? t.accentText : t.text,
+          destColor: l.broken ? t.red : t.muted,
+          bg: hov || open ? t.hover : 'transparent',
+          onEnter: () => this.setState({ hover: l.id }), onLeave: () => this.setState({ hover: null }),
+          showMeta: !hov, showActions: hov, showSummary: open, summary: l.sum,
+          actions: acts.map(a => Object.assign({}, a, { color: a.glyph === '✦' ? '#bf5af2' : a.glyph === '✎' ? t.red : t.text, bg: a.active ? t.btnBg : 'transparent' }))
+        };
+      })
+    })).filter(g => g.items.length);
+    return {
+      t, isContents: tab === 'contents', isLinks: tab === 'links',
+      tabs: [['contents', 'Contents', OUT.length], ['links', 'Links', LINKS.length]].map(([id, label, count]) => {
+        const on = tab === id;
+        return { label, count, onClick: () => this.setState({ tab: id }), weight: on ? 600 : 500, color: t.text, bg: on ? t.segOn : 'transparent', shadow: on ? t.segOnShadow : 'none', countColor: t.muted };
+      }),
+      q: s.q, onQ: e => this.setState({ q: e.target.value }), noMatch: q && vis.length === 0,
+      depths: [[1, 'H1'], [2, 'H2'], [3, 'H3'], [6, 'All']].map(([d, label]) => {
+        const on = s.depth === d;
+        return { label, onClick: () => this.setState({ depth: d }), color: on ? t.text : t.muted, bg: on ? t.segOn : 'transparent', shadow: on ? t.segOnShadow : 'none' };
+      }),
+      outline, activeTitle: OUT[s.active][1], progress: pct + '%', progressLabel: pct + '%',
+      chips, groups,
+      checkLabel: s.checking ? 'Checking 9 links…' : `${broken} broken · checked ${s.checked}`,
+      checkBtn: s.checking ? 'Checking…' : 'Check Links',
+      check: () => { if (s.checking) return; this.setState({ checking: true }); this.ct = setTimeout(() => this.setState({ checking: false, checked: 'just now' }), 1400); }
+    };
+  }
+}
+</script>
+</body>
+</html>

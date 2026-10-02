@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#efede9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}a{color:#0a84ff;text-decoration:none}a:hover{color:#409cff}</style></helmet>
+<section id="2" style="padding:48px 48px 0;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:1000px">
+<div style="display:flex;align-items:center;gap:10px"><a href="#2a" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">2a</a><span style="font-size:17px;font-weight:600;color:#1d1d1f">Tables — cell preview card</span></div>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#6e6e73;text-wrap:pretty">Rows keep a fixed height, so nothing moves. Hovering a row highlights it. Hovering a cell whose text is cut off brings up a floating glass card in place, showing the column name and the full text. Cells that already fit show no card. Compare with <a href="#1a">1a</a>, where the row itself grows.</p>
+</div>
+<div id="2a" style="width:1000px;border-radius:20px;overflow:hidden;background:#1e1e20;box-shadow:0 30px 80px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.6),inset 0 0 0 .5px rgba(255,255,255,.12)">
+<div style="height:60px;padding:0 16px;display:flex;align-items:center;gap:14px">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+<div style="margin-left:10px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)"><svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="#e5e5ea" stroke-width="1.3"><rect x=".7" y=".7" width="14.6" height="12.6" rx="3"></rect><path d="M5.5 .7v12.6"></path></svg></div>
+<div style="height:34px;padding:0 15px;border-radius:999px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#f5f5f7;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)">FEATURE_REQUESTS</div>
+<div style="flex:1"></div>
+<div style="height:34px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:16px;font-size:12px;font-weight:700;color:#e5e5ea;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)"><span>✦</span><span>MD</span><span>•••</span></div>
+</div>
+<div style="padding:8px 120px 40px;display:flex;flex-direction:column;gap:28px">
+<p style="margin:0;font-family:'New York','Iowan Old Style',Georgia,serif;font-size:19px;line-height:1.65;color:#e5e5ea;text-wrap:pretty">Requests are drawn from public feedback on comparable Markdown editors, not a survey of Markify users. Rows are ordered by estimated demand; priority reflects Markify's Mac-first, plain-file design. Current support is based on <a href="#2a">FEATURES.md</a> and the <a href="#2a">user guide</a>.</p>
+<div ref="{{ wrapRef }}" onMouseLeave="{{ leave2 }}" style="position:relative">
+<div style="border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14);font-size:14px;color:#e5e5ea">
+<div style="display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);background:rgba(255,255,255,.045);border-bottom:.5px solid rgba(255,255,255,.12)">
+<sc-for list="{{ headers }}" as="h" hint-placeholder-count="4"><div style="padding:11px 14px;font-size:12.5px;font-weight:600;color:#98989d;text-align:{{ h.align }}">{{ h.label }}</div></sc-for>
+</div>
+<sc-for list="{{ rows2 }}" as="r" hint-placeholder-count="8">
+<div style="position:relative;display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);border-top:{{ r.border }};background:{{ r.bg }};transition:background .15s ease">
+<span style="position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:#0a84ff;opacity:{{ r.barOpacity }};transition:opacity .15s ease"></span>
+<sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="4">
+<div onMouseEnter="{{ c.onEnter }}" style="padding:11px 14px;display:flex;justify-content:{{ c.justify }};min-width:0">
+<div style="min-width:0;overflow:hidden;line-height:21px;white-space:nowrap;text-overflow:ellipsis;color:{{ c.color }};font-variant-numeric:tabular-nums;font-weight:{{ c.weight }};padding:{{ c.pad }};border-radius:6px;background:{{ c.pill }}">{{ c.text }}</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="position:absolute;z-index:5;pointer-events:none;left:{{ pop.left }};top:{{ pop.top }};width:{{ pop.width }};opacity:{{ pop.opacity }};transform:{{ pop.transform }};transform-origin:top left;transition:opacity .16s ease,transform .2s cubic-bezier(.3,.7,.2,1);padding:10px 14px 12px;border-radius:12px;background:rgba(58,58,62,.82);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 0 .5px rgba(0,0,0,.5),inset 0 0 0 .5px rgba(255,255,255,.18),inset 0 .5px 0 rgba(255,255,255,.22);display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#98989d"><span style="padding:1px 6px;border-radius:5px;background:#0a84ff;color:#fff;font-variant-numeric:tabular-nums">{{ pop.rank }}</span><span>{{ pop.col }}</span></div>
+<div style="font-size:14px;line-height:21px;color:#f5f5f7;text-wrap:pretty">{{ pop.text }}</div>
+</div>
+</div>
+<div style="font-family:'New York','Iowan Old Style',Georgia,serif;font-size:30px;font-weight:700;color:#f5f5f7">Market references</div>
+</div>
+</div>
+</section>
+<section id="1" style="padding:48px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:1000px">
+<div style="display:flex;align-items:center;gap:10px"><a href="#1a" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">1a</a><span style="font-size:17px;font-weight:600;color:#1d1d1f">Tables — hover to expand</span></div>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#6e6e73;text-wrap:pretty">At rest, each cell shows one line and ends in an ellipsis if the text is cut off. Hovering a row (after a 120 ms pause, so moving the pointer across the table doesn't flicker) highlights it and grows it so every cell's full text wraps into view. Narrow columns such as numbers are sized to their content. Tweaks: expand the whole row or only the hovered cell.</p>
+</div>
+<div id="1a" style="width:1000px;border-radius:20px;overflow:hidden;background:#1e1e20;box-shadow:0 30px 80px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.6),inset 0 0 0 .5px rgba(255,255,255,.12)">
+<div style="height:60px;padding:0 16px;display:flex;align-items:center;gap:14px">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+<div style="margin-left:10px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)"><svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="#e5e5ea" stroke-width="1.3"><rect x=".7" y=".7" width="14.6" height="12.6" rx="3"></rect><path d="M5.5 .7v12.6"></path></svg></div>
+<div style="height:34px;padding:0 15px;border-radius:999px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#f5f5f7;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)">FEATURE_REQUESTS</div>
+<div style="flex:1"></div>
+<div style="height:34px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:16px;font-size:12px;font-weight:700;color:#e5e5ea;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)"><span>✦</span><span>MD</span><span>•••</span></div>
+</div>
+<div style="padding:8px 120px 40px;display:flex;flex-direction:column;gap:28px">
+<p style="margin:0;font-family:'New York','Iowan Old Style',Georgia,serif;font-size:19px;line-height:1.65;color:#e5e5ea;text-wrap:pretty">Requests are drawn from public feedback on comparable Markdown editors, not a survey of Markify users. Rows are ordered by estimated demand; priority reflects Markify's Mac-first, plain-file design. Current support is based on <a href="#1a">FEATURES.md</a> and the <a href="#1a">user guide</a>.</p>
+<div onMouseLeave="{{ leaveTable }}" style="border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14);font-size:14px;color:#e5e5ea">
+<div style="display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);background:rgba(255,255,255,.045);border-bottom:.5px solid rgba(255,255,255,.12)">
+<sc-for list="{{ headers }}" as="h" hint-placeholder-count="4"><div style="padding:11px 14px;font-size:12.5px;font-weight:600;color:#98989d;text-align:{{ h.align }}">{{ h.label }}</div></sc-for>
+</div>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+<div onMouseEnter="{{ r.onEnter }}" style="position:relative;display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) minmax(0,1.25fr);border-top:{{ r.border }};background:{{ r.bg }};transition:background .18s ease">
+<span style="position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:#0a84ff;opacity:{{ r.barOpacity }};transition:opacity .18s ease"></span>
+<sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="4">
+<div onMouseEnter="{{ c.onEnter }}" style="padding:11px 14px;display:flex;justify-content:{{ c.justify }};align-items:flex-start;background:{{ c.bg }};transition:background .18s ease">
+<div style="max-height:{{ c.maxH }};overflow:hidden;line-height:21px;white-space:{{ c.ws }};text-overflow:ellipsis;text-wrap-style:pretty;color:{{ c.color }};font-variant-numeric:tabular-nums;font-weight:{{ c.weight }};padding:{{ c.pad }};border-radius:6px;background:{{ c.pill }};transition:max-height .28s cubic-bezier(.3,.7,.2,1),color .18s ease">{{ c.text }}</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="font-family:'New York','Iowan Old Style',Georgia,serif;font-size:30px;font-weight:700;color:#f5f5f7">Market references</div>
+</div>
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;expand&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Whole row&quot;,&quot;Hovered cell only&quot;],&quot;default&quot;:&quot;Whole row&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const HEAD = ['#', 'Request', 'Current support', 'Priority'];
+const ROWS = [
+  ['1', 'Access notes on iPhone and iPad', 'Files work in iCloud Drive, but there is no iOS app yet', 'Strategic: pursue a companion iOS app once the Mac editor is stable'],
+  ['2', 'Search all library documents', 'Library search matches file names only', 'Highest near-term: full-text search with Spotlight indexing'],
+  ['3', 'Link and navigate across documents', 'Markdown links open, but there is no [[wiki-link]] syntax', 'High if supporting note-taking; keep links plain-file compatible'],
+  ['4', 'Table of contents', 'The right Links panel lists headings', 'High: add a **Table of contents** block that updates live'],
+  ['5', 'Capture web pages as Markdown', 'Open URL reads remote .md files only', 'Medium: start with a Share extension that converts the current page'],
+  ['6', 'Share and edit with others', 'Users can share files through iCloud', 'Low for now: revisit after sync conflicts are handled'],
+  ['7', 'Exchange formats', 'HTML and PDF export', 'Medium if users ask for DOCX; import via Pandoc'],
+  ['8', 'Focus or typewriter mode', 'Controls can fade while typing', 'Medium-low for v1: typewriter scrolling only']
+];
+class Component extends DCLogic {
+  state = { row: null, col: null };
+  componentWillUnmount() { clearTimeout(this.t); }
+  hover(row, col) {
+    clearTimeout(this.t);
+    if (this.state.row === row) { this.setState({ col }); return; }
+    this.t = setTimeout(() => this.setState({ row, col }), this.state.row === null ? 120 : 60);
+  }
+  wrapRef = React.createRef();
+  hover2(ri, ci, el) {
+    clearTimeout(this.t2);
+    const w = this.wrapRef.current; if (!w) return;
+    const txt = el.firstChild, clipped = txt && txt.scrollWidth > txt.clientWidth + 1;
+    const wr = w.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const next = { r2: ri, c2: ci, pop: clipped ? { x: r.left - wr.left + 2, y: r.top - wr.top - 2, w: Math.max(r.width + 40, 300), max: wr.width } : null };
+    if (this.state.pop || !clipped) this.setState(next);
+    else { this.setState({ r2: ri, c2: ci }); this.t2 = setTimeout(() => this.setState(next), 250); }
+  }
+  renderVals() {
+    const { row, col, r2, c2, pop } = this.state;
+    const cellMode = (this.props.expand ?? 'Whole row') === 'Hovered cell only';
+    const pw = pop ? Math.min(pop.w, pop.max) : 300, pl = pop ? Math.min(pop.x, pop.max - pw) : 0;
+    return {
+      wrapRef: this.wrapRef,
+      leave2: () => { clearTimeout(this.t2); this.setState({ r2: null, c2: null, pop: null }); },
+      pop: { left: pl + 'px', top: (pop ? pop.y : 0) + 'px', width: pw + 'px', opacity: pop ? 1 : 0, transform: pop ? 'scale(1)' : 'scale(.97) translateY(-2px)',
+        rank: r2 != null ? '#' + ROWS[r2][0] : '', col: c2 != null ? HEAD[c2] : '', text: r2 != null && c2 != null ? ROWS[r2][c2] : '' },
+      rows2: ROWS.map((cells, ri) => {
+        const on = r2 === ri;
+        return {
+          border: ri ? '.5px solid rgba(255,255,255,.08)' : '0',
+          bg: on ? 'rgba(10,132,255,.1)' : ri % 2 ? 'rgba(255,255,255,.02)' : 'transparent',
+          barOpacity: on ? 1 : 0,
+          cells: cells.map((t, ci) => ({
+            text: t, onEnter: e => this.hover2(ri, ci, e.currentTarget),
+            justify: ci ? 'flex-start' : 'center',
+            color: ci === 0 ? (on ? '#fff' : '#98989d') : on ? '#f5f5f7' : '#e5e5ea',
+            weight: ci === 0 && on ? 600 : 400, pad: ci === 0 ? '0 7px' : '0', pill: ci === 0 && on ? '#0a84ff' : 'transparent'
+          }))
+        };
+      }),
+      headers: HEAD.map((h, i) => ({ label: h, align: i ? 'left' : 'center' })),
+      leaveTable: () => { clearTimeout(this.t); this.setState({ row: null, col: null }); },
+      rows: ROWS.map((cells, ri) => {
+        const on = row === ri;
+        return {
+          onEnter: () => this.hover(ri, this.state.col),
+          border: ri ? '.5px solid rgba(255,255,255,.08)' : '0',
+          bg: on ? 'rgba(10,132,255,.1)' : ri % 2 ? 'rgba(255,255,255,.02)' : 'transparent',
+          barOpacity: on ? 1 : 0,
+          cells: cells.map((t, ci) => {
+            const open = on && (!cellMode || col === ci);
+            const rank = ci === 0;
+            return {
+              text: t, onEnter: () => this.hover(ri, ci),
+              justify: rank ? 'center' : 'flex-start',
+              bg: on && col === ci && ci > 0 ? 'rgba(255,255,255,.04)' : 'transparent',
+              maxH: open ? '240px' : '21px', ws: open ? 'normal' : 'nowrap',
+              color: rank ? (on ? '#fff' : '#98989d') : on ? '#f5f5f7' : '#e5e5ea',
+              weight: rank && on ? 600 : 400,
+              pad: rank ? '0 7px' : '0', pill: rank && on ? '#0a84ff' : 'transparent'
+            };
+          })
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

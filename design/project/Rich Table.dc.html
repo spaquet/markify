@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:1100px;border-radius:20px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;background:{{ t.winBg }};box-shadow:{{ t.winShadow }}">
+<div style="height:60px;padding:0 16px;display:flex;align-items:center;gap:14px">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+<div style="margin-left:10px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}"><svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.3" style="color:{{ t.chromeText }}"><rect x=".7" y=".7" width="14.6" height="12.6" rx="3"></rect><path d="M5.5 .7v12.6"></path></svg></div>
+<div style="height:34px;padding:0 15px;border-radius:999px;display:flex;align-items:center;font-size:13px;font-weight:600;color:{{ t.chromeText }};background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}">RELEASE_PLAN</div>
+<div style="flex:1"></div>
+<div style="height:34px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:16px;font-size:12px;font-weight:700;color:{{ t.chromeText }};background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}"><span>✦</span><span>MD</span><span>•••</span></div>
+</div>
+<div style="padding:8px 50px 44px;display:flex;flex-direction:column;gap:26px">
+<p style="margin:0;font-family:'New York','Iowan Old Style',Georgia,serif;font-size:19px;line-height:1.65;color:{{ t.body }};text-wrap:pretty">Each feature lists its mockup, the user flow and implementation notes. Diagrams are written in Mermaid inside the cell, so the table stays plain Markdown.</p>
+<div ref="{{ wrapRef }}" onMouseLeave="{{ leave }}" style="position:relative">
+<div style="border-radius:12px;overflow:hidden;font-size:14px;box-shadow:{{ t.tableRing }}">
+<div style="display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1.4fr);background:{{ t.headBg }};border-bottom:{{ t.headBorder }}">
+<sc-for list="{{ headers }}" as="h" hint-placeholder-count="5"><div style="padding:11px 14px;font-size:12.5px;font-weight:600;color:{{ h.color }};text-align:{{ h.align }}">{{ h.label }}</div></sc-for>
+</div>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+<div onMouseEnter="{{ r.onEnter }}" style="position:relative;display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1.4fr);border-top:{{ r.border }};background:{{ r.bg }};transition:background .16s ease">
+<span style="position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:{{ r.accent }};opacity:{{ r.bar }};transition:opacity .16s ease"></span>
+<sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+<div onMouseEnter="{{ c.onEnter }}" style="padding:11px 14px;min-width:0;display:flex;justify-content:{{ c.justify }};background:{{ c.bg }};transition:background .16s ease">
+<div style="min-width:0;width:{{ c.w }};max-height:{{ c.maxH }};overflow:hidden;transition:max-height .32s cubic-bezier(.3,.7,.2,1)">
+<sc-if value="{{ c.isRank }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;line-height:21px;padding:0 7px;border-radius:6px;font-variant-numeric:tabular-nums;font-weight:{{ c.weight }};color:{{ c.color }};background:{{ c.pill }}">{{ c.text }}</span></sc-if>
+<sc-if value="{{ c.isText }}" hint-placeholder-val="{{ false }}"><div data-clip="1" style="line-height:21px;white-space:{{ c.ws }};overflow:hidden;text-overflow:ellipsis;text-wrap-style:pretty;color:{{ c.color }}"><sc-for list="{{ c.segs }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isLink }}" hint-placeholder-val="{{ false }}"><a href="#" style="color:{{ g.color }};text-decoration:none" style-hover="text-decoration:underline">{{ g.text }}</a></sc-if><sc-if value="{{ g.isPlain }}" hint-placeholder-val="{{ true }}"><span style="font-weight:{{ g.weight }};font-family:{{ g.font }};font-size:{{ g.size }};background:{{ g.bg }};padding:{{ g.pad }};border-radius:4px">{{ g.text }}</span></sc-if></sc-for></div></sc-if>
+<sc-if value="{{ c.isImage }}" hint-placeholder-val="{{ false }}">
+<div style="display:{{ c.dMini }};align-items:center;gap:8px;height:21px;min-width:0"><span style="width:34px;height:21px;flex:none;border-radius:4px;background:{{ c.ph }};box-shadow:{{ c.phRing }}"></span><span style="min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:12px ui-monospace,Menlo,monospace;color:{{ c.muted }}">{{ c.file }}</span></div>
+<div style="display:{{ c.dFull }};flex-direction:column;gap:6px"><div style="aspect-ratio:16/10;border-radius:8px;background:{{ c.ph }};box-shadow:{{ c.phRing }};display:flex;align-items:center;justify-content:center;font:11px ui-monospace,Menlo,monospace;color:{{ c.muted }}">{{ c.file }}</div><span style="font-size:12px;line-height:1.4;color:{{ c.muted }}">{{ c.alt }}</span></div>
+</sc-if>
+<sc-if value="{{ c.isDiagram }}" hint-placeholder-val="{{ false }}">
+<div style="display:{{ c.dMini }};align-items:center;gap:8px;height:21px;min-width:0"><span style="flex:none;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap;background:{{ c.badgeBg }};color:{{ c.badgeColor }}">◇ {{ c.kind }}</span><span style="min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:{{ c.color }}">{{ c.summary }}</span></div>
+<div style="display:{{ c.dFull }};flex-direction:column;gap:6px"><span style="align-self:flex-start;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap;background:{{ c.badgeBg }};color:{{ c.badgeColor }}">◇ {{ c.kind }}</span>{{ c.svg }}</div>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="position:absolute;z-index:5;left:{{ pop.left }};top:{{ pop.top }};bottom:{{ pop.bottom }};width:{{ pop.width }};opacity:{{ pop.opacity }};pointer-events:{{ pop.pe }};transform:{{ pop.transform }};transform-origin:{{ pop.origin }};transition:opacity .16s ease,transform .2s cubic-bezier(.3,.7,.2,1);padding:10px 14px 14px;border-radius:14px;box-sizing:border-box;background:{{ t.cardBg }};backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);box-shadow:{{ t.cardShadow }};display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:{{ t.muted }}"><span style="padding:1px 6px;border-radius:5px;color:#fff;font-variant-numeric:tabular-nums;background:{{ t.accent }}">{{ pop.rank }}</span><span>{{ pop.col }}</span><span style="flex:1"></span><span>{{ pop.meta }}</span></div>
+<sc-if value="{{ pop.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:14px;line-height:21px;text-wrap:pretty;color:{{ t.textOn }}"><sc-for list="{{ pop.segs }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isLink }}" hint-placeholder-val="{{ false }}"><a href="#" style="color:{{ g.color }};text-decoration:none" style-hover="text-decoration:underline">{{ g.text }}</a></sc-if><sc-if value="{{ g.isPlain }}" hint-placeholder-val="{{ true }}"><span style="font-weight:{{ g.weight }};font-family:{{ g.font }};font-size:{{ g.size }};background:{{ g.bg }};padding:{{ g.pad }};border-radius:4px">{{ g.text }}</span></sc-if></sc-for></div></sc-if>
+<sc-if value="{{ pop.isImage }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:6px"><div style="aspect-ratio:16/10;border-radius:8px;display:flex;align-items:center;justify-content:center;font:11px ui-monospace,Menlo,monospace;color:{{ t.muted }};background:{{ t.ph }};box-shadow:{{ t.phRing }}">{{ pop.file }}</div><span style="font-size:12px;line-height:1.4;color:{{ t.muted }}">{{ pop.alt }}</span></div></sc-if>
+<sc-if value="{{ pop.isDiagram }}" hint-placeholder-val="{{ false }}">{{ pop.svg }}</sc-if>
+</div>
+</div>
+<div style="font-family:'New York','Iowan Old Style',Georgia,serif;font-size:30px;font-weight:700;color:{{ t.heading }}">Open questions</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:820},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;expand&quot;,&quot;card&quot;],&quot;default&quot;:&quot;expand&quot;,&quot;tsType&quot;:&quot;'expand'|'card'&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;}}">
+const HEAD = ['#', 'Feature', 'Mockup', 'Flow', 'Notes'];
+const ROWS = [
+  { f: '**Open from URL** for files and repositories', img: ['open-url-sheet.png', 'Sheet with File / Repository cards and the Access group'],
+    d: { kind: 'flowchart', sum: 'Paste URL → Parse host → Public? → Open', code: 'flowchart TD\n  A[Paste URL] --> B[Parse host]\n  B --> C{Public?}\n  C -->|yes| D[Open]\n  C -->|no| E[Sign in] --> D' },
+    n: 'GitHub, GitLab and any HTTPS host. Tokens are stored in the Keychain — see [AUTH.md](#) and [RFC 6750](#).' },
+  { f: '**Table hover** with expanding rows', img: ['table-hover.png', 'Hovered row tinted, with the blue bar and rank pill'],
+    d: { kind: 'flowchart', sum: 'Pointer enters → wait 120 ms → Expand row', code: 'flowchart TD\n  A[Pointer enters] --> B[Wait 120 ms]\n  B --> C[Expand row]\n  C --> D[Pointer leaves] --> E[Collapse]' },
+    n: 'Rows grow to fit wrapped text; `⌥` + hover pins a row open. Tracked in [#214](#).' },
+  { f: '**Writing Tools** in the format bar', img: ['writing-tools.png', 'Format bar with ✦ menu open over a selection'],
+    d: { kind: 'sequence', sum: 'User → Editor → Model → Suggestions', code: 'sequenceDiagram\n  participant U as User\n  participant E as Editor\n  participant M as Model\n  U->>E: Select text\n  E->>M: Proofread\n  M-->>E: Suggestions\n  E-->>U: Inline marks' },
+    n: 'On-device only via **Apple Intelligence**. Hidden when unavailable. Spec in [README §7](#).' },
+  { f: '**Export** to HTML, PDF and DOCX', img: ['export-sheet.png', 'Export sheet with format picker and page preview'],
+    d: { kind: 'flowchart', sum: 'Markdown → HTML → PDF / DOCX', code: 'flowchart TD\n  A[Markdown] --> B[HTML]\n  B --> C[PDF]\n  B --> D[DOCX]' },
+    n: 'PDF uses `WKWebView.createPDF`; DOCX goes through [Pandoc](#) when it is installed.' },
+  { f: '**Library search** across all documents', img: ['library-search.png', 'Sidebar search field with highlighted matches'],
+    d: { kind: 'flowchart', sum: 'Query → Spotlight index → Ranked results', code: 'flowchart TD\n  A[Query] --> B[Spotlight index]\n  B --> C[Rank by recency]\n  C --> D[Results]' },
+    n: 'Full-text via `CSSearchableIndex`; falls back to file names. See [Search spec](#).' }
+];
+const THEMES = {
+  dark: { winBg: '#1e1e20', winShadow: '0 30px 80px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.6),inset 0 0 0 .5px rgba(255,255,255,.12)', chromeBg: 'rgba(255,255,255,.08)', chromeRing: 'inset 0 0 0 .5px rgba(255,255,255,.12)', chromeText: '#f5f5f7', body: '#e5e5ea', heading: '#f5f5f7', tableRing: 'inset 0 0 0 .5px rgba(255,255,255,.14)', headBg: 'rgba(255,255,255,.045)', headBorder: '.5px solid rgba(255,255,255,.12)', rowBorder: '.5px solid rgba(255,255,255,.08)', stripe: 'rgba(255,255,255,.02)', hover: 'rgba(10,132,255,.1)', cellHover: 'rgba(255,255,255,.04)', accent: '#0a84ff', link: '#409cff', text: '#e5e5ea', textOn: '#f5f5f7', muted: '#98989d', codeBg: 'rgba(255,255,255,.1)', badgeBg: 'rgba(191,90,242,.18)', badgeColor: '#d4a5f7', ph: 'repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 6px,rgba(255,255,255,.025) 6px 12px)', phRing: 'inset 0 0 0 .5px rgba(255,255,255,.14)', cardBg: 'rgba(52,52,56,.84)', cardShadow: '0 18px 44px rgba(0,0,0,.5),0 0 0 .5px rgba(0,0,0,.5),inset 0 0 0 .5px rgba(255,255,255,.16),inset 0 .5px 0 rgba(255,255,255,.22)',
+    mm: { primaryColor: '#2c2c30', primaryTextColor: '#f5f5f7', primaryBorderColor: '#5a5a60', lineColor: '#8e8e93', secondaryColor: '#2c2c30', tertiaryColor: '#2c2c30', actorBkg: '#2c2c30', actorBorder: '#5a5a60', actorTextColor: '#f5f5f7', signalColor: '#c7c7cc', signalTextColor: '#e5e5ea', noteBkgColor: '#3a3a3e', edgeLabelBackground: '#1e1e20' } },
+  light: { winBg: '#ffffff', winShadow: '0 30px 80px rgba(40,30,60,.18),0 0 0 .5px rgba(0,0,0,.16)', chromeBg: 'rgba(0,0,0,.045)', chromeRing: 'inset 0 0 0 .5px rgba(0,0,0,.1)', chromeText: '#1d1d1f', body: '#1d1d1f', heading: '#1d1d1f', tableRing: 'inset 0 0 0 .5px rgba(0,0,0,.12)', headBg: 'rgba(0,0,0,.03)', headBorder: '.5px solid rgba(0,0,0,.1)', rowBorder: '.5px solid rgba(0,0,0,.07)', stripe: 'rgba(0,0,0,.015)', hover: 'rgba(0,122,255,.08)', cellHover: 'rgba(0,0,0,.03)', accent: '#007aff', link: '#0066d6', text: '#1d1d1f', textOn: '#1d1d1f', muted: '#6e6e73', codeBg: 'rgba(0,0,0,.06)', badgeBg: 'rgba(175,82,222,.12)', badgeColor: '#8e3cc0', ph: 'repeating-linear-gradient(135deg,rgba(0,0,0,.05) 0 6px,rgba(0,0,0,.02) 6px 12px)', phRing: 'inset 0 0 0 .5px rgba(0,0,0,.1)', cardBg: 'rgba(255,255,255,.88)', cardShadow: '0 18px 44px rgba(40,30,60,.2),0 0 0 .5px rgba(0,0,0,.12),inset 0 .5px 0 #fff',
+    mm: { primaryColor: '#ffffff', primaryTextColor: '#1d1d1f', primaryBorderColor: '#c7c7cc', lineColor: '#8e8e93', secondaryColor: '#f5f5f7', tertiaryColor: '#f5f5f7', actorBkg: '#ffffff', actorBorder: '#c7c7cc', actorTextColor: '#1d1d1f', signalColor: '#6e6e73', signalTextColor: '#1d1d1f', noteBkgColor: '#f5f5f7', edgeLabelBackground: '#ffffff' } }
+};
+function segs(md, t) {
+  const out = [], re = /\*\*(.+?)\*\*|`(.+?)`|\[(.+?)\]\((.+?)\)/g;
+  let i = 0, m;
+  const plain = (text, o = {}) => out.push(Object.assign({ text, isPlain: true, isLink: false, weight: 400, font: 'inherit', size: 'inherit', bg: 'transparent', pad: '0' }, o));
+  while ((m = re.exec(md))) {
+    if (m.index > i) plain(md.slice(i, m.index));
+    if (m[1]) plain(m[1], { weight: 600 });
+    else if (m[2]) plain(m[2], { font: "ui-monospace,'SF Mono',Menlo,monospace", size: '12.5px', bg: t.codeBg, pad: '1px 5px' });
+    else out.push({ text: m[3], isLink: true, isPlain: false, color: t.link });
+    i = re.lastIndex;
+  }
+  if (i < md.length) plain(md.slice(i));
+  return out;
+}
+class Component extends DCLogic {
+  state = { row: null, col: null, pop: null, svgs: {} };
+  wrapRef = React.createRef();
+  componentDidMount() {
+    const theme = this.props.theme === 'light' ? 'light' : 'dark', tid = Math.random().toString(36).slice(2, 7);
+    window.__mmq = (window.__mmq || Promise.resolve()).then(async () => {
+      try {
+        const mm = (await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs')).default;
+        mm.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'loose', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif', themeVariables: Object.assign({ fontSize: '13px', background: 'transparent' }, THEMES[theme].mm), flowchart: { curve: 'basis', padding: 10 }, sequence: { actorMargin: 18, width: 110, boxMargin: 6, mirrorActors: false } });
+        const svgs = {};
+        for (let i = 0; i < ROWS.length; i++) svgs[i] = (await mm.render(`mm-${theme}-${tid}-${i}`, ROWS[i].d.code)).svg.replace(/width="100%"/, '').replace(/style="max-width:\s*([\d.]+)px;?"/, (m, w) => `style="width:${w}px;max-width:none;flex:none"`);
+        if (!this.dead) this.setState({ svgs });
+      } catch (e) { console.warn('mermaid', e); }
+    });
+  }
+  componentWillUnmount() { this.dead = true; clearTimeout(this.t); }
+  diagram(i, t, max) {
+    const s = this.state.svgs[i];
+    if (!s) return React.createElement('div', { style: { fontSize: 12, color: t.muted, padding: '8px 0' } }, 'Rendering diagram…');
+    return React.createElement('div', { style: { width: '100%', maxHeight: max, overflow: 'auto', display: 'flex', justifyContent: 'safe center', paddingBottom: 4 }, dangerouslySetInnerHTML: { __html: s } });
+  }
+  hoverExpand(ri) {
+    clearTimeout(this.t);
+    if (this.state.row === ri) return;
+    this.t = setTimeout(() => this.setState({ row: ri }), this.state.row === null ? 120 : 60);
+  }
+  hoverCard(ri, ci, el) {
+    clearTimeout(this.t);
+    const w = this.wrapRef.current; if (!w) return;
+    const clipEl = el.querySelector('[data-clip]');
+    const rich = ci === 2 || ci === 3;
+    const show = rich || (clipEl && clipEl.scrollWidth > clipEl.clientWidth + 1);
+    if (!show) { this.setState({ row: ri, col: ci, pop: null }); return; }
+    const wr = w.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const width = Math.min(rich ? 440 : Math.max(r.width + 40, 320), wr.width);
+    const est = ci === 2 ? 340 : ci === 3 ? 420 : 140;
+    const flip = r.top - wr.top + est > wr.height + 70;
+    const pop = { x: Math.min(r.left - wr.left + 2, wr.width - width), y: r.top - wr.top - 2, b: wr.bottom - r.bottom - 2, width, flip };
+    if (this.state.pop) this.setState({ row: ri, col: ci, pop });
+    else { this.setState({ row: ri, col: ci }); this.t = setTimeout(() => this.setState({ pop }), 250); }
+  }
+  renderVals() {
+    const t = THEMES[this.props.theme === 'light' ? 'light' : 'dark'];
+    const card = this.props.mode === 'card';
+    const { row, col, pop } = this.state;
+    const p = pop && row != null ? pop : null;
+    let popVals = { left: '0px', top: '0px', bottom: 'auto', width: '320px', opacity: 0, pe: 'none', transform: 'scale(.97)', origin: 'top left', rank: '', col: '', meta: '', isText: false, isImage: false, isDiagram: false, segs: [] };
+    if (p) {
+      const R = ROWS[row];
+      popVals = { left: p.x + 'px', top: p.flip ? 'auto' : p.y + 'px', bottom: p.flip ? p.b + 'px' : 'auto', width: p.width + 'px', opacity: 1, pe: 'auto', transform: 'scale(1)', origin: p.flip ? 'bottom left' : 'top left',
+        rank: '#' + (row + 1), col: HEAD[col], meta: col === 3 ? 'Mermaid · ' + R.d.kind : col === 2 ? 'Image' : '',
+        isText: col === 1 || col === 4, isImage: col === 2, isDiagram: col === 3,
+        segs: col === 1 ? segs(R.f, t) : col === 4 ? segs(R.n, t) : [], file: R.img[0], alt: R.img[1], svg: col === 3 ? this.diagram(row, t, 420) : null };
+    }
+    return {
+      t, wrapRef: this.wrapRef, pop: popVals,
+      leave: () => { clearTimeout(this.t); this.setState({ row: null, col: null, pop: null }); },
+      headers: HEAD.map((h, i) => ({ label: h, align: i ? 'left' : 'center', color: t.muted })),
+      rows: ROWS.map((R, ri) => {
+        const on = row === ri, open = on && !card;
+        const base = { justify: 'flex-start', w: '100%', maxH: open ? '600px' : '21px', color: on ? t.textOn : t.text, muted: t.muted, isRank: false, isText: false, isImage: false, isDiagram: false, dMini: open ? 'none' : 'flex', dFull: open ? 'flex' : 'none', ws: open ? 'normal' : 'nowrap' };
+        const cells = [
+          { isRank: true, text: String(ri + 1), justify: 'center', w: 'auto', color: on ? '#fff' : t.muted, pill: on ? t.accent : 'transparent', weight: on ? 600 : 400 },
+          { isText: true, segs: segs(R.f, t) },
+          { isImage: true, file: R.img[0], alt: R.img[1], ph: t.ph, phRing: t.phRing },
+          { isDiagram: true, kind: R.d.kind, summary: R.d.sum, badgeBg: t.badgeBg, badgeColor: t.badgeColor, svg: open ? this.diagram(ri, t, 520) : null },
+          { isText: true, segs: segs(R.n, t) }
+        ];
+        return {
+          onEnter: () => { if (!card) this.hoverExpand(ri); },
+          border: ri ? t.rowBorder : '0', accent: t.accent,
+          bg: on ? t.hover : ri % 2 ? t.stripe : 'transparent', bar: on ? 1 : 0,
+          cells: cells.map((c, ci) => Object.assign({}, base, c, {
+            bg: card && on && col === ci && ci > 0 ? t.cellHover : 'transparent',
+            onEnter: card ? e => this.hoverCard(ri, ci, e.currentTarget) : undefined
+          }))
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

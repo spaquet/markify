@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#efede9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}a{color:#0a84ff;text-decoration:none}a:hover{color:#409cff}</style></helmet>
+<section id="3" style="padding:48px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:1100px">
+<span style="font-size:17px;font-weight:600;color:#1d1d1f">Rich tables — images, Mermaid, links</span>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#6e6e73;text-wrap:pretty">At rest, each cell shows a one-line summary: a thumbnail and filename for images, a diagram-type badge plus its steps for Mermaid, and text that keeps its links, bold and inline code. In 3a/3b the hovered row grows to show the full image and the rendered diagram. In 3c/3d rows keep their height and a glass card shows the cell; you can click links inside the card. Image and diagram cells always open a card; text cells only when cut off. Near the bottom of the table the card opens upward.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:40px">
+<div id="3a" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#3a" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">3a</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Expand row · Dark</span></div><dc-import name="Rich Table" mode="expand" theme="dark" hint-size="1100px,820px"></dc-import></div>
+<div id="3b" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#3b" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">3b</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Expand row · Light</span></div><dc-import name="Rich Table" mode="expand" theme="light" hint-size="1100px,820px"></dc-import></div>
+<div id="3c" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#3c" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">3c</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Preview card · Dark</span></div><dc-import name="Rich Table" mode="card" theme="dark" hint-size="1100px,820px"></dc-import></div>
+<div id="3d" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#3d" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">3d</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Preview card · Light</span></div><dc-import name="Rich Table" mode="card" theme="light" hint-size="1100px,820px"></dc-import></div>
+</div>
+</section>
+</x-dc>
+</body>
+</html>
