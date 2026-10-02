@@ -78,5 +78,6 @@ marketing/
 
 .sentryclirc
 
-# Local Sentry DSN (see Config/Sentry.xcconfig)
+# Sentry build settings are tracked; the local DSN is not (see Config/Sentry.xcconfig)
+!Config/Sentry.xcconfig
 Config/Sentry.local.xcconfig
