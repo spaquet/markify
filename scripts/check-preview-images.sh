@@ -48,7 +48,7 @@ import Foundation
         let readme = URL(fileURLWithPath: CommandLine.arguments[2])
         let projectImages = await PreviewImageClient.images(for: readme)
         precondition(projectImages.count == 10, "README images missing: \(projectImages.keys)")
-        precondition(projectImages["docs/images/social-preview.jpg"]?.hasPrefix("data:image/jpeg;base64,") == true)
+        precondition(projectImages["docs/images/og-image.jpg"]?.hasPrefix("data:image/jpeg;base64,") == true)
         precondition(projectImages["docs/images/screens/1a.webp"]?.hasPrefix("data:image/webp;base64,") == true)
         let unsupported = await PreviewImageClient.images(for: fixture.deletingPathExtension().appendingPathExtension("txt"))
         precondition(unsupported.isEmpty)

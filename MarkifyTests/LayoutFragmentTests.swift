@@ -90,7 +90,7 @@ import Testing
     }
 
     @Test(arguments: ["", "Intro\n\n"]) func blockImageDrawsFromDocumentFolder(prefix: String) throws {
-        let source = prefix + "![Hero](docs/images/social-preview.jpg)\n"
+        let source = prefix + "![Hero](docs/images/og-image.jpg)\n"
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let (window, editor) = Self.makeEditor(source, fileURL: root.appendingPathComponent("README.md"))
         _ = window
@@ -102,7 +102,7 @@ import Testing
     @Test func htmlBlockDrawsLocalImageWithoutChangingSource() throws {
         let source = """
         <p align="center">
-          <a href="https://spaquet.github.io/markify/"><img src="docs/images/social-preview.jpg" alt="Markify — One page, two lenses" width="100%"></a>
+          <a href="https://spaquet.github.io/markify/"><img src="docs/images/og-image.jpg" alt="Markify — One page, two lenses" width="100%"></a>
         </p>
 
         # <img src="docs/images/app-icon.png" alt="" width="36" align="top"> Markify
