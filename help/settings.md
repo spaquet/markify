@@ -1,6 +1,6 @@
 ---
 title: Settings
-description: Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.
+description: Change where documents are saved, the default lens, fonts, appearance, Spotlight search, Apple Intelligence options and keyboard shortcuts.
 order: 10
 keywords: settings, preferences, font, theme, dark mode, line width, accent, shortcuts, library location
 ---
@@ -29,6 +29,21 @@ Choose **Markify › Settings…** (⌘,).
 ## Appearance
 
 Theme (light, dark or system), page color, code colors, the glass style of the floating controls, the accent color, and the status capsule.
+
+## Search
+
+- **Rebuild Index** deletes and recreates Markify’s donated Spotlight entries in the background. **Cancel** stops the current indexing job; rebuild again to finish it.
+- **Indexed folders** lists the Library, granted projects and OKF bundles with their status. Select a row and click **−** to remove that root from search, or **+** to grant a folder. Files shared with another indexed root stay searchable there. **Grant Access…** renews an expired folder grant by asking you to select the same folder.
+- **File types** enables `.md`, `.markdown` and `.mdx`, all on by default.
+- **Index OKF frontmatter** adds title, description, type and tags to search and enables type/tag filtering.
+- **Index headings as context** adds section context to literal results. Heading text remains searchable as part of the note when this is off.
+- **Skip folders named** accepts comma-separated folder names, applied recursively inside every indexed root. The defaults are `.git`, `node_modules`, and `_build`; hidden files, packages and symlinks are skipped too.
+- **Default scope** chooses Current Library, Current OKF bundle or All Folders. Outside a bundle, Current OKF bundle falls back to the Library.
+- **Include related results** allows Spotlight’s semantic matching when available. Results with no exact or metadata match open at the top of the note.
+- **System Spotlight** explains that donated notes may also appear outside Markify for this Mac account. **Spotlight Settings…** opens macOS’s controls; Markify has no separate app-only visibility toggle.
+- **Delete Search Index…** removes Markify’s entries and pauses indexing until you choose Rebuild Index. It does not delete notes or remove macOS’s independent filesystem entries.
+
+The named index stays on this Mac. Markify reports submission progress; Spotlight may continue processing notes after submission finishes.
 
 ## Intelligence
 

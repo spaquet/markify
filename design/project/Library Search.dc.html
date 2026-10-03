@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#efede9;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}a{color:#0a84ff;text-decoration:none}a:hover{color:#409cff}input::placeholder{color:#8e8e93}</style></helmet>
+<section id="5" style="padding:48px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:1240px">
+<span style="font-size:17px;font-weight:600;color:#1d1d1f">Library search — built on Spotlight</span>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#6e6e73;text-wrap:pretty">One field, one scope picker. Markify donates one Spotlight item per note and asks Spotlight for matches; it never ranks or embeds anything itself. Results are grouped by where they live (Library, project, OKF bundle), and every row shows its relative path, so two README files are never confused. Exact matches show the line with the words highlighted and open at that line. <b style="color:#1d1d1f;font-weight:600">Related</b> results contain none of your words, so they open at the top of the note and never pretend to have a match location. The footer always says whether the index is finished, so “nothing found” and “not indexed yet” look different.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:40px">
+<div id="5a" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5a" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5a</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Results · scoped to the current Library (default). Type in the field, click Type / Tag to filter OKF notes.</span></div><dc-import name="Library" theme="dark" state="results" scope="lib" hint-size="1240px,820px"></dc-import></div>
+<div id="5b" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5b" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5b</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Scope menu · Library, selected folder, projects, OKF bundles, all folders</span></div><dc-import name="Library" theme="dark" state="results" scope="lib" menu-open="{{ true }}" hint-size="1240px,820px"></dc-import></div>
+<div id="5c" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5c" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5c</a><span style="font-size:13px;font-weight:500;color:#6e6e73">All folders · Light. Same-name notes told apart by root and path.</span></div><dc-import name="Library" theme="light" state="results" scope="all" hint-size="1240px,820px"></dc-import></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:1240px;padding-top:12px">
+<span style="font-size:15px;font-weight:600;color:#1d1d1f">States</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:28px">
+<div id="5d" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5d" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5d</a><span style="font-size:13px;font-weight:500;color:#6e6e73">No query · recents</span></div><dc-import name="Library" theme="dark" state="browse" panel-only="{{ true }}" hint-size="380px,820px"></dc-import></div>
+<div id="5e" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5e" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5e</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Indexing · partial results</span></div><dc-import name="Library" theme="dark" state="indexing" scope="all" panel-only="{{ true }}" hint-size="380px,820px"></dc-import></div>
+<div id="5f" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5f" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5f</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Nothing yet · still indexing</span></div><dc-import name="Library" theme="dark" state="pending" scope="docs" panel-only="{{ true }}" hint-size="380px,820px"></dc-import></div>
+<div id="5g" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5g" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5g</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Nothing found · index complete</span></div><dc-import name="Library" theme="dark" state="empty" scope="lib" panel-only="{{ true }}" hint-size="380px,820px"></dc-import></div>
+<div id="5h" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5h" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5h</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Folder access expired</span></div><dc-import name="Library" theme="dark" state="denied" scope="all" panel-only="{{ true }}" hint-size="380px,820px"></dc-import></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px;max-width:1240px;padding-top:12px">
+<span style="font-size:15px;font-weight:600;color:#1d1d1f">Settings → Search</span>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#6e6e73;text-wrap:pretty;max-width:820px">A new tab between Appearance and Intelligence. It lists every folder Markify donates to Spotlight, with its own status, and states plainly that donated notes can also appear in system Spotlight. No model or embedding settings.</p>
+</div>
+<div id="5i" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:8px"><a href="#5i" style="padding:2px 8px;border-radius:6px;background:#1d1d1f;color:#fff;font:600 12px ui-monospace,Menlo,monospace">5i</a><span style="font-size:13px;font-weight:500;color:#6e6e73">Search settings · Light. Toggles are live.</span></div>
+<div style="padding:36px;border-radius:20px;background:radial-gradient(circle at 18% 22%,#f2d8c6 0,transparent 48%),radial-gradient(circle at 82% 28%,#c8d7f2 0,transparent 52%),radial-gradient(circle at 55% 95%,#d4e7d6 0,transparent 55%),#e8e5ee;width:780px">
+<div style="position:relative;width:780px;border-radius:26px;background:#f5f4f2;overflow:hidden;box-shadow:0 30px 80px rgba(40,30,60,.28),0 0 0 .5px rgba(0,0,0,.18);color:#1d1d1f;font-size:13px">
+<div style="position:absolute;top:22px;left:22px;display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+<div style="padding:16px 0 10px;display:flex;flex-direction:column;align-items:center;gap:10px">
+<div style="font-weight:600">Search</div>
+<div style="padding:4px;display:flex;gap:2px;border-radius:999px;background:rgba(255,255,255,.62);box-shadow:0 0 0 .5px rgba(0,0,0,.09),0 6px 20px rgba(0,0,0,.08),inset 0 1px 0 #fff">
+<div style="width:80px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:14px;color:#6e6e73"><span style="height:20px;font-size:16px;line-height:20px">◎</span><span style="font-size:11px">General</span></div>
+<div style="width:80px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:14px;color:#6e6e73"><span style="height:20px;font-size:16px;line-height:20px">¶</span><span style="font-size:11px">Editor</span></div>
+<div style="width:80px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:14px;color:#6e6e73"><span style="height:20px;font-size:16px;line-height:20px">◐</span><span style="font-size:11px">Appearance</span></div>
+<div style="width:80px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:14px;background:rgba(10,100,214,.12);color:#0a64d6"><span style="height:20px;font-size:16px;line-height:20px">⌕</span><span style="font-size:11px;font-weight:600">Search</span></div>
+<div style="width:80px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:14px;color:#6e6e73"><span style="height:20px;font-size:16px;line-height:20px">✦</span><span style="font-size:11px">Intelligence</span></div>
+<div style="width:80px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:14px;color:#6e6e73"><span style="height:20px;font-size:16px;line-height:20px">⌘</span><span style="font-size:11px">Shortcuts</span></div>
+</div>
+</div>
+<div style="padding:8px 28px 28px;display:flex;flex-direction:column;gap:18px">
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08);padding:14px;display:flex;align-items:center;gap:12px">
+<span style="width:36px;height:36px;flex:none;border-radius:10px;background:linear-gradient(180deg,#8e8e93,#636366);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.5"><circle cx="5" cy="5" r="3.6"></circle><path d="M7.8 7.8l3 3" stroke-linecap="round"></path></svg></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-weight:600">{{ indexTitle }}</span><span style="font-size:11.5px;color:#6e6e73">{{ indexSub }}</span>
+<sc-if value="{{ rebuilding }}" hint-placeholder-val="{{ false }}"><div style="margin-top:5px;height:3px;border-radius:2px;background:rgba(0,0,0,.08)"><div style="height:3px;border-radius:2px;width:{{ rebuildPct }};background:#0a84ff;transition:width .25s linear"></div></div></sc-if>
+</div>
+<span onClick="{{ rebuild }}" style="padding:4px 12px;border-radius:7px;background:rgba(0,0,0,.05);cursor:default">{{ rebuildLabel }}</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;display:flex;justify-content:space-between;font-size:11.5px;color:#6e6e73"><span style="font-weight:600">Indexed folders</span><span>Search can only reach folders you’ve granted.</span></div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<sc-for list="{{ folders }}" as="f" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:{{ f.border }}">
+<span style="width:28px;height:28px;flex:none;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{{ f.glyphColor }};background:{{ f.glyphBg }}">{{ f.glyph }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:center;gap:7px"><span style="font-weight:500">{{ f.name }}</span><span style="padding:0 6px;border-radius:999px;font-size:10.5px;font-weight:600;line-height:16px;color:#6e6e73;background:rgba(0,0,0,.05)">{{ f.kind }}</span></span><span style="font:11px ui-monospace,'SF Mono',Menlo,monospace;color:#6e6e73;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ f.path }}</span></div>
+<span style="flex:none;display:flex;align-items:center;gap:6px;font-size:11.5px;color:{{ f.statusColor }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ f.dot }}"></span>{{ f.status }}</span>
+<sc-if value="{{ f.needsAccess }}" hint-placeholder-val="{{ false }}"><span style="flex:none;padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05)">Grant Access…</span></sc-if>
+</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:2px;padding:6px 8px;border-top:1px solid rgba(0,0,0,.07)"><span style="width:26px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px">+</span><span style="width:1px;height:14px;background:rgba(0,0,0,.1)"></span><span style="width:26px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#aeaeb2">−</span><span style="flex:1"></span><span style="font-size:11.5px;color:#6e6e73;padding-right:6px">Removing a folder deletes its notes from the index, not from disk.</span></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">What gets indexed</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>File types</span><div style="display:flex;gap:14px">
+<sc-for list="{{ exts }}" as="x" hint-placeholder-count="3"><span onClick="{{ x.onClick }}" style="display:flex;align-items:center;gap:6px;cursor:default"><span style="width:14px;height:14px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;background:{{ x.bg }};box-shadow:{{ x.ring }}">{{ x.check }}</span><span style="font:12px ui-monospace,'SF Mono',Menlo,monospace">{{ x.label }}</span></span></sc-for>
+</div></div>
+<sc-for list="{{ toggles1 }}" as="g" hint-placeholder-count="2">
+<div onClick="{{ g.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07);cursor:default"><div style="display:flex;flex-direction:column;gap:2px"><span>{{ g.label }}</span><span style="font-size:11.5px;color:#6e6e73;text-wrap:pretty">{{ g.sub }}</span></div><span style="width:38px;height:22px;flex:none;border-radius:999px;position:relative;background:{{ g.bg }};transition:background .2s"><span style="position:absolute;top:2px;left:{{ g.knob }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s"></span></span></div>
+</sc-for>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><div style="display:flex;flex-direction:column;gap:2px"><span>Skip folders named</span><span style="font-size:11.5px;color:#6e6e73">Comma-separated. Applies inside every indexed folder.</span></div><span style="flex:none;width:220px;padding:4px 8px;border-radius:6px;background:#fff;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.2);font:12px ui-monospace,'SF Mono',Menlo,monospace">.git, node_modules, _build</span></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">Searching</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px"><span>Default scope</span><span style="padding:3px 10px;border-radius:7px;background:rgba(0,0,0,.05);display:flex;gap:6px">Current Library <span style="color:#6e6e73">⌃</span></span></div>
+<sc-for list="{{ toggles2 }}" as="g" hint-placeholder-count="1">
+<div onClick="{{ g.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07);cursor:default"><div style="display:flex;flex-direction:column;gap:2px"><span>{{ g.label }}</span><span style="font-size:11.5px;color:#6e6e73;text-wrap:pretty">{{ g.sub }}</span></div><span style="width:38px;height:22px;flex:none;border-radius:999px;position:relative;background:{{ g.bg }};transition:background .2s"><span style="position:absolute;top:2px;left:{{ g.knob }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s"></span></span></div>
+</sc-for>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:6px"><div style="padding:0 12px;font-size:11.5px;font-weight:600;color:#6e6e73">System Spotlight</div>
+<div style="background:#fff;border-radius:12px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)">
+<sc-for list="{{ toggles3 }}" as="g" hint-placeholder-count="1">
+<div onClick="{{ g.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 14px;cursor:default"><div style="display:flex;flex-direction:column;gap:2px"><span>{{ g.label }}</span><span style="font-size:11.5px;color:#6e6e73;text-wrap:pretty">{{ g.sub }}</span></div><span style="width:38px;height:22px;flex:none;border-radius:999px;position:relative;background:{{ g.bg }};transition:background .2s"><span style="position:absolute;top:2px;left:{{ g.knob }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s"></span></span></div>
+</sc-for>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 14px;border-top:1px solid rgba(0,0,0,.07)"><span style="font-size:11.5px;color:#6e6e73">Spotlight categories and privacy are managed by macOS.</span><span style="flex:none;padding:4px 12px;border-radius:7px;background:rgba(0,0,0,.05)">Spotlight Settings…</span></div>
+</div></div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:0 12px"><span style="font-size:11.5px;color:#6e6e73">Removes everything Markify added to Spotlight. Your files are not touched.</span><span style="padding:4px 12px;border-radius:7px;background:rgba(0,0,0,.05);color:#d70015">Delete Search Index…</span></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { md: true, markdown: true, mdx: true, okf: true, headings: true, related: true, system: true, pct: null };
+  componentWillUnmount() { clearInterval(this.iv); }
+  tog(key, label, sub) {
+    const on = this.state[key];
+    return { label, sub, bg: on ? '#34c759' : 'rgba(0,0,0,.12)', knob: on ? '18px' : '2px', onClick: () => this.setState({ [key]: !on }) };
+  }
+  renderVals() {
+    const s = this.state, reb = s.pct !== null;
+    const F = [
+      ['▤', 'Markify Library', 'Library', '~/Documents/Markify', '1,128 notes', '#34c759', '#6e6e73'],
+      ['◆', 'Product Knowledge', 'OKF bundle', '~/Documents/Markify/Product Knowledge', '60 concepts', '#34c759', '#6e6e73'],
+      ['{ }', 'markify-docs', 'Project', '~/Developer/markify/docs', 'Indexing 41 of 96', '#0a84ff', '#0a64d6'],
+      ['{ }', 'website', 'Project', '~/Developer/markify-site/content', 'Access expired', '#ff9500', '#c93400']
+    ];
+    return {
+      indexTitle: reb ? 'Rebuilding search index…' : 'Spotlight index is up to date',
+      indexSub: reb ? `${Math.round(s.pct * 12.84).toLocaleString()} of 1,284 notes · you can keep searching meanwhile` : '1,284 notes in 4 folders · updated 2 min ago · stored on this Mac',
+      rebuilding: reb, rebuildPct: (s.pct || 0) + '%', rebuildLabel: reb ? 'Cancel' : 'Rebuild Index',
+      rebuild: () => {
+        clearInterval(this.iv);
+        if (reb) return this.setState({ pct: null });
+        this.setState({ pct: 0 });
+        this.iv = setInterval(() => this.setState(st => { const p = (st.pct || 0) + 4; if (p >= 100) { clearInterval(this.iv); return { pct: null }; } return { pct: p }; }), 120);
+      },
+      folders: F.map(([glyph, name, kind, path, status, dot, statusColor], i) => ({
+        glyph, name, kind, path, status, dot, statusColor, needsAccess: status === 'Access expired',
+        glyphColor: kind === 'OKF bundle' ? '#8944ab' : '#3a3a3c', glyphBg: kind === 'OKF bundle' ? 'rgba(175,82,222,.12)' : 'rgba(0,0,0,.05)',
+        border: i ? '1px solid rgba(0,0,0,.07)' : 'none'
+      })),
+      exts: [['md', '.md'], ['markdown', '.markdown'], ['mdx', '.mdx']].map(([k, label]) => ({ label, check: s[k] ? '✓' : '', bg: s[k] ? '#0a84ff' : '#fff', ring: s[k] ? 'none' : 'inset 0 0 0 1px rgba(0,0,0,.25)', onClick: () => this.setState({ [k]: !s[k] }) })),
+      toggles1: [
+        this.tog('okf', 'Index OKF frontmatter', 'Title, description, type and tags become searchable and filterable.'),
+        this.tog('headings', 'Index headings as context', 'Lets results show which section a match is in.')
+      ],
+      toggles2: [this.tog('related', 'Include related results', 'Notes that match the meaning but not the exact words. Requires macOS 15; open at the top of the note.')],
+      toggles3: [this.tog('system', 'Show notes in Spotlight', 'Notes can appear in Spotlight outside Markify, for anyone signed in to this Mac account. Choosing one opens it in Markify.')]
+    };
+  }
+}
+</script>
+</body>
+</html>

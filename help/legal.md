@@ -16,6 +16,8 @@ Markify is © 2025–2026 Stéphane Paquet. It is distributed under the MIT Lice
 
 ## Privacy
 
+**Library search** donates the contents and selected metadata of notes in configured folders to Apple Core Spotlight. The index stays on this Mac and may also surface notes in system Spotlight for this Mac account. Markify does not upload this index or create an embedding service. Manage granted roots and delete Markify’s donated index in **Settings › Search**. Deleting it pauses indexing until you rebuild and leaves your source files and macOS’s independent filesystem entries unchanged.
+
 Markify doesn't collect, store or share personal data. It has no accounts, no usage analytics and no advertising. Your documents stay in the files and folders you choose.
 
 Markify connects to the internet only in these cases:

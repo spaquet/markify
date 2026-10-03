@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Use the library sidebar to reach open files and notes, and find and replace text in a document.">
+<meta name="description" content="Search note contents with Spotlight, browse folders and knowledge bundles, and find and replace text in a document.">
 <meta name="keywords" content="library, sidebar, notes, folder, search, find, replace">
 <title>Library and find</title>
 <link rel="stylesheet" href="help.css">
@@ -23,7 +23,12 @@
 </li>
 </ul>
 <p>To use an existing notes folder, choose <strong>File › Open Folder…</strong> and select it. You can also choose the folder under <strong>Markify › Settings… › General › Library location</strong>. Open the Library with <strong>⌃⌘S</strong>. The sidebar shows subfolders, including empty ones; click <strong>+</strong> beside a folder to create a document there. Notes from subfolders show their folder path below the title.</p>
-<p>Type in the search field to filter by title, folder path or text preview. Click a note to open it; drag it into the page to link to it. Reopen the sidebar to pick up files added outside Markify.</p>
+<h3 id="search-across-notes">Search across notes</h3>
+<p>Press <strong>⇧⌘F</strong> to open the Library and focus <strong>Search notes</strong>. Markify uses Apple Spotlight to search the full text of <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> notes, including subfolders; titles and relative folder paths are searchable too. The default scope is your current Library. The <strong>In</strong> menu narrows the search to a folder, a granted project folder, or an OKF bundle, or expands it to <strong>All Folders</strong>. Use <strong>Add Folder…</strong> to grant another folder without changing your Library.</p>
+<p>Spotlight ranks the results. They are grouped by Library, project or knowledge bundle, with relative paths to distinguish notes with the same name. <strong>Type</strong> and <strong>Tag</strong> filter indexed OKF frontmatter. Literal matches show highlighted context, a line number and, when enabled, the section heading. Click a result to open it and select the first occurrence in the current source. A title or path match opens normally. <strong>Related</strong> means Spotlight returned a result without a literal or metadata match; it opens at the top and has no invented line number. Related matching depends on Spotlight’s capabilities and processing on your Mac.</p>
+<p>The footer reports indexing progress and folder access problems. Markify scans and submits notes in the background, so you can keep editing. Submission to Spotlight and Spotlight’s processing are separate: newly submitted notes may take time to appear. An empty result while indexing is labelled <strong>Still indexing</strong>. Use <strong>Refresh</strong> in the Library menu to retry a search after submission. Folder changes made outside Markify trigger refreshes while the app runs; reopening the pane also refreshes. Removed or moved notes are removed from Markify’s donated entries.</p>
+<p>If a folder’s access expires, its results are hidden. Choose <strong>Grant Access…</strong> and select that same folder. Manage indexing, excluded folders and search defaults in <a href="settings.html">Settings › Search</a>.</p>
+<p>With no query, browse open files and Library notes or reuse a recent search. Drag a note into the page to link to it.</p>
 <p>The Library overlays the page, with window controls above search. Choose <strong>New Document</strong> at the bottom, or press <strong>⌘N</strong>, to create a document.</p>
 <p>In an Open Knowledge Format bundle, the sidebar also groups concepts by folder, type or tag. See <a href="knowledge.html">Knowledge bundles</a>.</p>
 <h2 id="find-and-replace">Find and replace</h2>

@@ -111,7 +111,7 @@ struct MarkifyTests {
         #expect(pasteboard.string(forType: .string) == text)
     }
 
-    @Test func libraryListsSupportedFilesInSubfolders() throws {
+    @Test func libraryListsSupportedFilesInSubfolders() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let nested = root.appendingPathComponent("Projects/Notes")
@@ -120,10 +120,14 @@ struct MarkifyTests {
         for path in ["home.md", "Projects/plan.markdown", "Projects/Notes/page.mdx", "Projects/Notes/skip.txt", ".hidden.md"] {
             try "# Note".write(to: root.appendingPathComponent(path), atomically: true, encoding: .utf8)
         }
-        let contents = LibraryNote.scan(in: root)
-        #expect(Set(contents.files.map(\.lastPathComponent)) == ["home.md", "plan.markdown", "page.mdx"])
-        #expect(Set(contents.folders.map(\.lastPathComponent)) == ["Projects", "Notes", "Empty"])
+        let domain = "markifylibrarytest" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        let worker = SpotlightWorker(name: domain, domain: domain, persistenceKey: nil)
+        let contents = try await worker.refresh(folders: [SearchFolder(path: root.path, bookmark: Data(), kind: "Library")],
+                                                options: SearchOptions(), rebuild: true) { _ in }
+        #expect(Set(contents.notes.map { $0.url.lastPathComponent }) == ["home.md", "plan.markdown", "page.mdx"])
+        #expect(Set(contents.subfolders.map(\.lastPathComponent)) == ["Projects", "Notes", "Empty"])
         #expect(LibraryNote.path(of: nested, in: root) == "Projects/Notes")
+        try await worker.delete()
     }
 
     @Test @MainActor func lensStylingPreservesMarkdownSource() {
