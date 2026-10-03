@@ -342,7 +342,17 @@ Press **⌃⌘S** or click the sidebar button to slide the library over the page
 
 To use an existing notes folder, choose **File › Open Folder…** and select it. You can also choose the folder under **Markify › Settings… › General › Library location**. Open the Library with **⌃⌘S**. The sidebar shows subfolders, including empty ones; click **+** beside a folder to create a document there. Notes from subfolders show their folder path below the title.
 
-Type in the search field to filter by title, folder path or text preview. Click a note to open it; drag it into the page to link to it. Reopen the sidebar to pick up files added outside Markify.
+### Search across notes
+
+Press **⇧⌘F** to open the Library and focus **Search notes**. Markify uses Apple Spotlight to search the full text of `.md`, `.markdown` and `.mdx` notes, including subfolders; titles and relative folder paths are searchable too. The default scope is your current Library. The **In** menu narrows the search to a folder, a granted project folder, or an OKF bundle, or expands it to **All Folders**. Use **Add Folder…** to grant another folder without changing your Library.
+
+Spotlight ranks the results. They are grouped by Library, project or knowledge bundle, with relative paths to distinguish notes with the same name. **Type** and **Tag** filter indexed OKF frontmatter. Literal matches show highlighted context, a line number and, when enabled, the section heading. Click a result to open it and select the first occurrence in the current source. A title or path match opens normally. **Related** means Spotlight returned a result without a literal or metadata match; it opens at the top and has no invented line number. Related matching depends on Spotlight’s capabilities and processing on your Mac.
+
+The footer reports indexing progress and folder access problems. Markify scans and submits notes in the background, so you can keep editing. Submission to Spotlight and Spotlight’s processing are separate: newly submitted notes may take time to appear. An empty result while indexing is labelled **Still indexing**. Use **Refresh** in the Library menu to retry a search after submission. Folder changes made outside Markify trigger refreshes while the app runs; reopening the pane also refreshes. Removed or moved notes are removed from Markify’s donated entries.
+
+If a folder’s access expires, its results are hidden. Choose **Grant Access…** and select that same folder. Manage indexing, excluded folders and search defaults in [Settings › Search](https://spaquet.github.io/markify/help/settings.html).
+
+With no query, browse open files and Library notes or reuse a recent search. Drag a note into the page to link to it.
 
 The Library overlays the page, with window controls above search. Choose **New Document** at the bottom, or press **⌘N**, to create a document.
 
@@ -548,6 +558,21 @@ Choose **Markify › Settings…** (⌘,).
 
 Theme (light, dark or system), page color, code colors, the glass style of the floating controls, the accent color, and the status capsule.
 
+## Search
+
+- **Rebuild Index** deletes and recreates Markify’s donated Spotlight entries in the background. **Cancel** stops the current indexing job; rebuild again to finish it.
+- **Indexed folders** lists the Library, granted projects and OKF bundles with their status. Select a row and click **−** to remove that root from search, or **+** to grant a folder. Files shared with another indexed root stay searchable there. **Grant Access…** renews an expired folder grant by asking you to select the same folder.
+- **File types** enables `.md`, `.markdown` and `.mdx`, all on by default.
+- **Index OKF frontmatter** adds title, description, type and tags to search and enables type/tag filtering.
+- **Index headings as context** adds section context to literal results. Heading text remains searchable as part of the note when this is off.
+- **Skip folders named** accepts comma-separated folder names, applied recursively inside every indexed root. The defaults are `.git`, `node_modules`, and `_build`; hidden files, packages and symlinks are skipped too.
+- **Default scope** chooses Current Library, Current OKF bundle or All Folders. Outside a bundle, Current OKF bundle falls back to the Library.
+- **Include related results** allows Spotlight’s semantic matching when available. Results with no exact or metadata match open at the top of the note.
+- **System Spotlight** explains that donated notes may also appear outside Markify for this Mac account. **Spotlight Settings…** opens macOS’s controls; Markify has no separate app-only visibility toggle.
+- **Delete Search Index…** removes Markify’s entries and pauses indexing until you choose Rebuild Index. It does not delete notes or remove macOS’s independent filesystem entries.
+
+The named index stays on this Mac. Markify reports submission progress; Spotlight may continue processing notes after submission finishes.
+
 ## Intelligence
 
 Turn Writing Tools in the format bar, generating at the caret, and title and tag suggestions on or off, and choose the default tone. See [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.html).
@@ -572,6 +597,7 @@ Double-click a shortcut and press the new combination. Assigning a combination a
 | --- | --- |
 | ⌘/ | Toggle the Markdown lens |
 | ⌃⌘S | Show or hide the library |
+| ⇧⌘F | Search across Library notes |
 | / | Insert a block (at the start of a line) |
 | ⌘F | Find |
 | ⌥⌘F | Find and replace |
@@ -872,6 +898,8 @@ Markify is © 2025–2026 Stéphane Paquet. It is distributed under the MIT Lice
 <div id="license-text" class="license"></div>
 
 ## Privacy
+
+**Library search** donates the contents and selected metadata of notes in configured folders to Apple Core Spotlight. The index stays on this Mac and may also surface notes in system Spotlight for this Mac account. Markify does not upload this index or create an embedding service. Manage granted roots and delete Markify’s donated index in **Settings › Search**. Deleting it pauses indexing until you rebuild and leaves your source files and macOS’s independent filesystem entries unchanged.
 
 Markify doesn't collect, store or share personal data. It has no accounts, no usage analytics and no advertising. Your documents stay in the files and folders you choose.
 

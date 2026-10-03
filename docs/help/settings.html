@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Settings — Markify Help</title>
-<meta name="description" content="Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.">
+<meta name="description" content="Change where documents are saved, the default lens, fonts, appearance, Spotlight search, Apple Intelligence options and keyboard shortcuts.">
 <meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
 <script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
@@ -13,8 +13,8 @@
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://spaquet.github.io/markify/help/settings.html">
 <meta property="og:title" content="Settings — Markify Help">
-<meta property="og:description" content="Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.">
-<meta property="og:image" content="https://spaquet.github.io/markify/images/social-preview.jpg">
+<meta property="og:description" content="Change where documents are saved, the default lens, fonts, appearance, Spotlight search, Apple Intelligence options and keyboard shortcuts.">
+<meta property="og:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
 <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/settings.html","name":"Settings","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-02","description":"Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.","headline":"Settings","inLanguage":"en","keywords":"settings, preferences, font, theme, dark mode, line width, accent, shortcuts, library location","url":"https://spaquet.github.io/markify/help/settings.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/settings.html","name":"Settings","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-02","description":"Change where documents are saved, the default lens, fonts, appearance, Spotlight search, Apple Intelligence options and keyboard shortcuts.","headline":"Settings","inLanguage":"en","keywords":"settings, preferences, font, theme, dark mode, line width, accent, shortcuts, library location","url":"https://spaquet.github.io/markify/help/settings.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -98,6 +98,30 @@
 </ul>
 <h2 id="appearance">Appearance</h2>
 <p>Theme (light, dark or system), page color, code colors, the glass style of the floating controls, the accent color, and the status capsule.</p>
+<h2 id="search">Search</h2>
+<ul>
+<li><strong>Rebuild Index</strong> deletes and recreates Markify’s donated Spotlight entries in the background. <strong>Cancel</strong> stops the current indexing job; rebuild again to finish it.
+</li>
+<li><strong>Indexed folders</strong> lists the Library, granted projects and OKF bundles with their status. Select a row and click <strong>−</strong> to remove that root from search, or <strong>+</strong> to grant a folder. Files shared with another indexed root stay searchable there. <strong>Grant Access…</strong> renews an expired folder grant by asking you to select the same folder.
+</li>
+<li><strong>File types</strong> enables <code>.md</code>, <code>.markdown</code> and <code>.mdx</code>, all on by default.
+</li>
+<li><strong>Index OKF frontmatter</strong> adds title, description, type and tags to search and enables type/tag filtering.
+</li>
+<li><strong>Index headings as context</strong> adds section context to literal results. Heading text remains searchable as part of the note when this is off.
+</li>
+<li><strong>Skip folders named</strong> accepts comma-separated folder names, applied recursively inside every indexed root. The defaults are <code>.git</code>, <code>node_modules</code>, and <code>_build</code>; hidden files, packages and symlinks are skipped too.
+</li>
+<li><strong>Default scope</strong> chooses Current Library, Current OKF bundle or All Folders. Outside a bundle, Current OKF bundle falls back to the Library.
+</li>
+<li><strong>Include related results</strong> allows Spotlight’s semantic matching when available. Results with no exact or metadata match open at the top of the note.
+</li>
+<li><strong>System Spotlight</strong> explains that donated notes may also appear outside Markify for this Mac account. <strong>Spotlight Settings…</strong> opens macOS’s controls; Markify has no separate app-only visibility toggle.
+</li>
+<li><strong>Delete Search Index…</strong> removes Markify’s entries and pauses indexing until you choose Rebuild Index. It does not delete notes or remove macOS’s independent filesystem entries.
+</li>
+</ul>
+<p>The named index stays on this Mac. Markify reports submission progress; Spotlight may continue processing notes after submission finishes.</p>
 <h2 id="intelligence">Intelligence</h2>
 <p>Turn Writing Tools in the format bar, generating at the caret, and title and tag suggestions on or off, and choose the default tone. See <a href="intelligence.html">Apple Intelligence</a>.</p>
 <h2 id="shortcuts">Shortcuts</h2>
