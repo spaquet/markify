@@ -282,7 +282,7 @@ func webPage(_ page: Page, index: Int) -> String {
     <meta property="og:title" content="\(MarkdownHTML.escape(docTitle))">
     <meta property="og:description" content="\(MarkdownHTML.escape(page.description))">
     <meta property="og:image" content="\(site)images/social-preview.jpg">
-    <meta property="og:image:alt" content="Markify logo and One page, two lenses tagline">
+    <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" type="image/png" sizes="64x64" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/favicon.png?v=2">
     <link rel="apple-touch-icon" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/app-icon.png?v=2">
