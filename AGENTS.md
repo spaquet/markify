@@ -73,7 +73,7 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 
 ### Help and website
 
-`help/*.md` is the single source of the user guide. `scripts/build-help.sh` runs `Tools/HelpBuilder` (which renders with `MarkdownHTML`) to write the app's Apple Help Book (`Markify/Resources/Markify.help`, indexed with `hiutil`; it opens in Tips) and the website's `docs/help/`, `docs/faq.html` and `docs/legal.html` (frontmatter `web:`), plus `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`. Page links are written as `other.md`, screenshots as `screens/<file>` from `docs/images/screens`, and `markify://welcome` opens the tour. The Help menu opens pages by anchor (the file name): `HelpBook.open("shortcuts")`. `docs/index.html` and `docs/okf.html` are hand-written.
+`help/*.md` is the single source of the user guide. `scripts/build-help.sh` runs `Tools/HelpBuilder` (which renders with `MarkdownHTML`) to write the app's Apple Help Book (`Markify/Resources/Markify.help`, indexed with `hiutil`; it opens in Tips) and the website's `docs/help/`, `docs/faq.html` and `docs/legal.html` (frontmatter `web:`), plus `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`. Page links are written as `other.md`, screenshots as `screens/<file>` from `docs/images/screens`, and `markify://welcome` opens the tour. The Help menu opens pages by anchor (the file name): `HelpBook.open("shortcuts")`. `docs/index.html`, `docs/compare.html`, `docs/known-issues.html` and `docs/okf.html` are hand-written; the first three share `docs/assets/site.css`, and every page (generated ones too) loads `docs/assets/site.js` for the System/Light/Dark appearance switch, scroll reveals and the download button that picks Apple silicon or Intel.
 
 ### Key Design Patterns
 

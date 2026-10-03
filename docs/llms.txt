@@ -31,5 +31,6 @@
 
 ## Optional
 
+- [Markify compared with other Markdown editors](https://spaquet.github.io/markify/compare.html): Features side by side with Typora, Obsidian, iA Writer and Bear.
 - [Open Knowledge Format in Markify](https://spaquet.github.io/markify/okf.html): How Markify reads, browses and maintains OKF knowledge bundles.
 - [Full help as one Markdown file](https://spaquet.github.io/markify/llms-full.txt)

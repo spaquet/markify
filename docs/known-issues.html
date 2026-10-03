@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markify — Known issues</title>
 <meta name="description" content="Known issues in Markify releases: which versions are affected, which are safe, and how to fix them.">
-<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://spaquet.github.io/markify/known-issues.html">
 <meta property="og:site_name" content="Markify">
 <meta property="og:locale" content="en_US">
@@ -28,195 +28,111 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Known issues in Markify","description":"Known issues in Markify releases: which versions are affected, which are safe, and how to fix them.","url":"https://spaquet.github.io/markify/known-issues.html","inLanguage":"en","about":{"@type":"SoftwareApplication","name":"Markify","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Markify","item":"https://spaquet.github.io/markify/"},{"@type":"ListItem","position":2,"name":"Known issues","item":"https://spaquet.github.io/markify/known-issues.html"}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
+<link rel="stylesheet" href="assets/site.css?v=3">
 <style>
-:root{
-  --page:#FCFBF9; --page2:#F4F2EE; --ink:#1D1D1F; --ink2:#5E5E63; --ink3:#B3B3B8;
-  --rule:rgba(0,0,0,.09); --field:rgba(0,0,0,.05);
-  --accent:#0A64D6; --accentSoft:rgba(10,100,214,.13); --callout:rgba(10,100,214,.07);
-  --green:#248A3D; --greenSoft:rgba(36,138,61,.13); --orange:#C75300; --orangeSoft:rgba(255,149,0,.15); --red:#D70015; --redSoft:rgba(255,59,48,.13);
-  --code:#F3F1ED; --kw:#AD3DA4; --typ:#3F6E74; --str:#C41A16; --com:#8A8F96;
-  --ai:linear-gradient(90deg,#FF9F0A,#FF375F,#BF5AF2,#0A84FF);
-  --glass:rgba(255,255,255,.62);
-  --glassEdge:0 0 0 .5px rgba(0,0,0,.09),0 6px 20px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.95);
-  --shot:0 0 0 .5px rgba(0,0,0,.14),0 30px 80px -20px rgba(40,30,60,.28),0 12px 30px -12px rgba(40,30,60,.18);
-  --desk:radial-gradient(circle at 18% 22%,#f2d8c6 0,transparent 48%),radial-gradient(circle at 82% 28%,#c8d7f2 0,transparent 52%),radial-gradient(circle at 55% 95%,#d4e7d6 0,transparent 55%),#e8e5ee;
-  --prose:ui-serif,"New York","Newsreader","Iowan Old Style",Georgia,serif;
-  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,system-ui,sans-serif;
-  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
-  --ease:cubic-bezier(.2,.8,.2,1);
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --page:#1E1E20; --page2:#18181A; --ink:#F2F2F7; --ink2:#A1A1A6; --ink3:#5C5C61;
-    --rule:rgba(255,255,255,.12); --field:rgba(255,255,255,.08);
-    --accent:#3D8BFF; --accentSoft:rgba(61,139,255,.22); --callout:rgba(61,139,255,.14);
-    --green:#30D158; --greenSoft:rgba(48,209,88,.16); --orange:#FF9F0A; --orangeSoft:rgba(255,159,10,.18); --red:#FF453A; --redSoft:rgba(255,69,58,.18);
-    --code:#2A2A2D; --kw:#FF7AB2; --typ:#78C2B3; --str:#D9C97C; --com:#7F8C98;
-    --glass:rgba(62,62,70,.55);
-    --glassEdge:0 0 0 .5px rgba(255,255,255,.14),0 6px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);
-    --shot:0 0 0 .5px rgba(255,255,255,.14),0 30px 80px -20px rgba(0,0,0,.7),0 12px 30px -12px rgba(0,0,0,.5);
-    --desk:radial-gradient(circle at 18% 22%,#3a2c2a 0,transparent 48%),radial-gradient(circle at 82% 28%,#22304a 0,transparent 52%),radial-gradient(circle at 55% 95%,#223226 0,transparent 55%),#1a1a1d;
-  }
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:var(--page);color:var(--ink);font:16px/1.6 var(--ui);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:3px}
-::selection{background:var(--accentSoft)}
-code{font:.88em var(--mono);background:var(--field);padding:1px 6px;border-radius:6px}
-kbd{font:600 .8em var(--ui);padding:2px 8px;border-radius:6px;background:var(--field);box-shadow:inset 0 -1px 0 var(--rule);color:var(--ink);white-space:nowrap}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
-.glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:var(--glassEdge)}
-.ai-text{background:var(--ai);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero{position:relative;padding:164px 0 24px;text-align:center;overflow:hidden;isolation:isolate}
+.aurora{position:absolute;inset:-30% -20% 0;z-index:-1;pointer-events:none}
+.aurora i{position:absolute;width:44vw;height:44vw;max-width:640px;max-height:640px;border-radius:50%;filter:blur(80px);opacity:.6;animation:float 24s var(--ease) infinite alternate}
+.aurora i:nth-child(1){left:12%;top:0;background:var(--glowA)}
+.aurora i:nth-child(2){right:10%;top:-10%;background:var(--glowB);animation-delay:-9s}
+@keyframes float{50%{transform:translate3d(6%,5%,0) scale(1.1)}100%{transform:translate3d(-4%,-3%,0) scale(.95)}}
+.hero h1{font-size:clamp(56px,9vw,128px);margin-bottom:24px}
+.hero h1 em{color:var(--ink2)}
+.hero p.lede{font-size:clamp(17px,1.9vw,21px);color:var(--ink2);max-width:640px;margin:0 auto 40px;text-wrap:pretty}
+.hero p.lede strong{color:var(--ink);font-weight:600}
 
-/* Nav */
-.nav{position:sticky;top:12px;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:1120px;margin:12px auto 0;padding:0 12px}
-.cap{display:flex;align-items:center;gap:2px;height:44px;padding:4px;border-radius:999px}
-.brand{display:flex;align-items:center;gap:10px;padding:0 14px 0 6px;font:600 15px var(--ui);color:var(--ink)}
-.brand:hover{text-decoration:none}
-.brand img{width:30px;height:30px;border-radius:8px}
-.cap a.link{padding:0 14px;height:36px;display:flex;align-items:center;border-radius:999px;font-size:14px;color:var(--ink);transition:background .2s}
-.cap a.link:hover{background:var(--field);text-decoration:none}
-.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:999px;font:600 14px var(--ui);border:0;cursor:pointer;transition:transform .2s var(--ease),background .2s,filter .2s}
-.btn:hover{text-decoration:none;transform:translateY(-1px)}
-.btn-accent{background:var(--accent);color:#fff}
-.btn-accent:hover{filter:brightness(1.08)}
-.btn-field{background:var(--field);color:var(--ink)}
-.btn-lg{height:46px;padding:0 22px;font-size:15px}
-@media (max-width:760px){.nav .cap .hide-s{display:none}}
+/* One neutral palette: status reads from the icon and the words, not from color. */
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-width:880px;margin:0 auto;border:1px solid var(--line);border-radius:22px;background:var(--surface);overflow:hidden}
+.summary div{display:flex;gap:14px;align-items:flex-start;padding:20px 22px;text-align:left}
+.summary div+div{border-left:1px solid var(--line)}
+.summary svg{flex:none;width:22px;height:22px;margin-top:2px;color:var(--ink2)}
+.summary b{display:block;font:600 12px var(--ui);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.summary span{font-size:16px;color:var(--ink)}
+.summary .use svg{color:var(--ink)}
+.summary .use span{font-weight:600}
+@media (max-width:760px){.summary{grid-template-columns:minmax(0,1fr)}.summary div+div{border-left:0;border-top:1px solid var(--line)}}
 
-/* Hero */
-.hero{padding:88px 0 24px;text-align:center}
-.chips{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:22px;font:500 12.5px var(--ui);color:var(--ink2)}
-.chips span{padding:4px 11px;border-radius:999px;background:var(--field)}
-h1,h2,h3{font-family:var(--prose);letter-spacing:-.01em;text-wrap:balance}
-.hero h1{font-size:clamp(40px,6.4vw,72px);line-height:1.04;font-weight:700;margin-bottom:22px}
-.hero p.lede{font:clamp(18px,2.1vw,22px)/1.55 var(--prose);color:var(--ink2);max-width:680px;margin:0 auto 32px;text-wrap:pretty}
-.hero p.lede strong{color:var(--ink)}
-.ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-
-/* Sections */
-section{padding:104px 0}
-.eyebrow{font:600 12px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-.head{max-width:680px;margin-bottom:48px}
-.head.center{margin-left:auto;margin-right:auto;text-align:center}
-.head h2{font-size:clamp(30px,4.4vw,48px);line-height:1.1;font-weight:700;margin-bottom:16px}
-.head p{font:19px/1.6 var(--prose);color:var(--ink2);text-wrap:pretty}
-.alt{background:var(--page2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
-
-/* Status summary */
-.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:880px;margin:8px auto 0}
-.summary div{padding:18px 20px;border-radius:18px;background:var(--field);text-align:left}
-.summary b{display:block;font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
-.summary span{font:17px/1.4 var(--prose);color:var(--ink)}
-.summary .ok{background:var(--greenSoft)}.summary .ok b{color:var(--green)}
-.summary .bad{background:var(--redSoft)}.summary .bad b{color:var(--red)}
-.summary .fix{background:var(--accentSoft)}.summary .fix b{color:var(--accent)}
-@media (max-width:760px){.summary{grid-template-columns:minmax(0,1fr)}}
-
-/* Issue card */
-.issue{max-width:880px;margin:0 auto;border-radius:24px;background:var(--page);border:1px solid var(--rule);box-shadow:0 18px 50px -30px rgba(40,30,60,.35);overflow:hidden}
-.issue-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:22px 28px;border-bottom:1px solid var(--rule);background:var(--page2)}
-.issue-top h2{flex:1 1 320px;font-size:clamp(22px,2.6vw,28px);line-height:1.2}
-.tag{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font:600 12.5px var(--ui);white-space:nowrap}
-.tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.tag.fixed{background:var(--greenSoft);color:var(--green)}
-.tag.bad{background:var(--redSoft);color:var(--red)}
-.tag.ok{background:var(--greenSoft);color:var(--green)}
-.tag.new{background:var(--accentSoft);color:var(--accent)}
-.tag.plain{background:var(--field);color:var(--ink2)}
-.tag.plain::before{display:none}
-.issue-body{padding:30px 28px 34px;display:grid;gap:34px}
-.issue-body h3{font-size:21px;margin-bottom:10px}
-.issue-body p{font:17px/1.65 var(--prose);color:var(--ink2);text-wrap:pretty}
+.issue{max-width:880px;margin:0 auto;border-radius:28px;background:var(--surface);border:1px solid var(--line);box-shadow:0 30px 60px -40px rgba(0,0,0,.35);overflow:hidden}
+.issue-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:26px 30px;border-bottom:1px solid var(--line)}
+.issue-top h2{flex:1 1 320px;font:400 clamp(28px,3.4vw,38px)/1.08 var(--display);letter-spacing:-.01em}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:4px 11px 4px 8px;border-radius:999px;font:600 12.5px var(--ui);white-space:nowrap;background:var(--field);color:var(--ink2)}
+.tag svg{width:14px;height:14px}
+.tag.fixed{background:var(--ink);color:var(--bg)}
+.tag.bad{color:var(--ink)}
+.tag.plain{padding-left:11px}
+a.tag:hover{color:var(--ink)}
+.issue-body{padding:32px 30px 36px;display:grid;gap:36px}
+.issue-body h3{font:600 17px var(--ui);margin-bottom:10px}
+.issue-body p{font-size:16px;line-height:1.7;color:var(--ink2);text-wrap:pretty}
 .issue-body p+p{margin-top:12px}
 .issue-body p strong{color:var(--ink)}
-
-/* Versions table */
 .versions{width:100%;border-collapse:collapse;font-size:14.5px}
-.versions th,.versions td{padding:12px 14px;border-top:1px solid var(--rule);text-align:left;vertical-align:middle}
-.versions thead th{border-top:0;font:600 12px var(--ui);letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);background:var(--field)}
-.versions td:first-child{font:600 14px var(--mono);white-space:nowrap}
+.versions th,.versions td{padding:13px 16px;border-top:1px solid var(--line);text-align:left;vertical-align:middle}
+.versions thead th{border-top:0;font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.versions td:first-child{font:600 14px var(--mono);white-space:nowrap;color:var(--ink)}
 .versions td.date{color:var(--ink2);white-space:nowrap}
 .versions td:last-child{color:var(--ink2)}
-.versions tr.hl td{background:var(--callout)}
-.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:16px}
-
-/* Steps */
-.steps{list-style:none;counter-reset:s;display:grid;gap:12px}
-.steps li{counter-increment:s;position:relative;padding:14px 18px 14px 58px;border-radius:16px;background:var(--field);font-size:15px;color:var(--ink2)}
-.steps li::before{content:counter(s);position:absolute;left:16px;top:13px;width:28px;height:28px;border-radius:50%;background:#0A64D6;color:#fff;font:700 14px/28px var(--ui);text-align:center}
+.versions tr.hl td{background:var(--field)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:18px}
+.steps{list-style:none;counter-reset:s;display:grid;gap:10px}
+.steps li{counter-increment:s;position:relative;padding:15px 18px 15px 60px;border-radius:16px;border:1px solid var(--line);font-size:15px;color:var(--ink2)}
+.steps li::before{content:counter(s);position:absolute;left:16px;top:13px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);font:600 13px/28px var(--mono);text-align:center}
 .steps li b{color:var(--ink);font-weight:600}
-pre.src{margin-top:12px;font:13px/1.7 var(--mono);background:var(--code);color:var(--ink);padding:14px 18px;border-radius:12px;overflow-x:auto;border:1px solid var(--rule)}
-pre.src .c{color:var(--com)}
-
-/* Links */
-.links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.links a{display:block;padding:16px 18px;border-radius:16px;border:1px solid var(--rule);color:var(--ink);transition:transform .2s var(--ease),border-color .2s}
-.links a:hover{text-decoration:none;transform:translateY(-2px);border-color:var(--accent)}
-.links small{display:block;font:600 11.5px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+pre.src{margin-top:12px;font:13px/1.7 var(--mono);background:var(--surface2);color:var(--ink);padding:14px 18px;border-radius:14px;overflow-x:auto;border:1px solid var(--line)}
+.links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.links a{display:block;padding:16px 18px;border-radius:16px;border:1px solid var(--line);color:var(--ink);transition:transform .4s var(--spring),border-color .25s,background .25s}
+.links a:hover{transform:translateY(-3px);border-color:var(--line2);background:var(--surface2)}
+.links small{display:block;font:600 11.5px var(--ui);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
 .links span{font-size:14.5px;color:var(--ink2)}
 @media (max-width:760px){.links{grid-template-columns:minmax(0,1fr)}.issue-top,.issue-body{padding-left:20px;padding-right:20px}}
 .empty{max-width:880px;margin:28px auto 0;text-align:center;font-size:14.5px;color:var(--ink2)}
-
-footer{border-top:1px solid var(--rule);padding:34px 0 48px;font-size:13.5px;color:var(--ink2)}
-footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-footer nav{display:flex;gap:20px;flex-wrap:wrap}
-footer a{color:var(--ink2)}
-
-.js .rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
-.js .rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.js .rv{opacity:1;transform:none;transition:none}}
-@media (max-width:560px){.wrap{padding:0 16px}section{padding:76px 0}.hero{padding-top:56px}.nav{padding:0 8px}.cap a.link{padding:0 10px}.win .body{padding:20px}}
-
-/* Accessibility */
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.btn:focus-visible,.cap a:focus-visible,.toggle button:focus-visible,.ai-tabs button:focus-visible{outline-offset:3px}
-main p a:not(.btn),main li a:not(.btn),footer a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
-.skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 16px;border-radius:10px;background:#0A64D6;color:#fff;font-weight:600}
-.skip:focus{top:12px}
-main:focus{outline:none}
-/* White text needs the deeper blue in both appearances. */
-.btn-accent,.toggle button[aria-pressed="true"]{background:#0A64D6}
-.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.empty a{color:var(--ink)}
 </style>
-<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
 <a class="skip" href="#top">Skip to content</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="ok" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.6 2.5L16 9.5"/></g></symbol>
+  <symbol id="no" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></g></symbol>
+  <symbol id="dash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12h7"/></g></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></symbol>
+  <symbol id="moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></symbol>
+</defs></svg>
 
 <nav class="nav" aria-label="Main">
   <div class="cap glass">
     <a class="brand" href="./" aria-label="Markify home"><img src="images/app-icon.png?v=2" alt="">Markify</a>
     <a class="link hide-s" href="#versions">Versions</a>
     <a class="link hide-s" href="#fix">Fix</a>
+    <a class="link hide-s" href="okf.html">OKF</a>
+    <a class="link hide-s" href="help/">Help</a>
   </div>
   <div class="cap glass">
-    <a class="link hide-s" href="help/">Help</a>
-    <a class="btn btn-accent" href="./#download">Download</a>
+    <button class="theme-btn" type="button" aria-label="Switch appearance"><svg class="moon" aria-hidden="true"><use href="#moon"/></svg><svg class="sun" aria-hidden="true"><use href="#sun"/></svg></button>
+    <a class="btn btn-ink" href="./#download">Download</a>
   </div>
 </nav>
 
 <main id="top" tabindex="-1">
-  <div class="hero wrap">
-    <div class="chips rv"><span>Release status</span><span>Updated October 2, 2026</span></div>
-    <h1 class="rv">Known issues</h1>
+  <div class="hero"><div class="aurora" aria-hidden="true"><i></i><i></i></div><div class="wrap">
+    <p class="eyebrow rv">Release status · Updated October 2, 2026</p>
+    <h1 class="display rv">Known <em>issues.</em></h1>
     <p class="lede rv">When a Markify release has a problem, it is listed here with <strong>the versions it affects</strong>, the version that fixes it and what to do.</p>
     <div class="summary rv">
-      <div class="fix"><b>Use</b><span>Markify 2.0.2 or later</span></div>
-      <div class="bad"><b>Don’t use</b><span>2.0.0 and 2.0.1</span></div>
-      <div class="ok"><b>Not affected</b><span>1.90 and earlier</span></div>
+      <div class="use"><svg aria-hidden="true"><use href="#ok"/></svg><span><b>Use</b>Markify 2.0.2 or later</span></div>
+      <div><svg aria-hidden="true"><use href="#no"/></svg><span><b>Don’t use</b>2.0.0 and 2.0.1</span></div>
+      <div><svg aria-hidden="true"><use href="#dash"/></svg><span><b>Not affected</b>1.90 and earlier</span></div>
     </div>
-  </div>
+  </div></div>
 
   <section id="issue-49" style="padding-top:56px">
     <div class="wrap">
       <article class="issue rv">
         <header class="issue-top">
           <h2>Markify 2.0.0 and 2.0.1 don’t open</h2>
-          <span class="tag fixed">Fixed in 2.0.2</span>
+          <span class="tag fixed"><svg aria-hidden="true"><use href="#ok"/></svg>Fixed in 2.0.2</span>
           <a class="tag plain" href="https://github.com/spaquet/markify/issues/49">Issue #49</a>
         </header>
         <div class="issue-body">
@@ -235,11 +151,11 @@ main:focus{outline:none}
               <table class="versions">
                 <thead><tr><th>Version</th><th>Released</th><th>Status</th><th>Notes</th></tr></thead>
                 <tbody>
-                  <tr class="hl"><td>2.0.2</td><td class="date">Oct 2, 2026</td><td><span class="tag new">Fix</span></td><td>The app opens. The command-line tool moved to <code>Contents/Helpers/markify</code>.</td></tr>
-                  <tr><td>2.0.1</td><td class="date">Oct 2, 2026</td><td><span class="tag bad">Affected</span></td><td>Doesn’t open. Replace it with 2.0.2.</td></tr>
-                  <tr><td>2.0.0</td><td class="date">Oct 1, 2026</td><td><span class="tag bad">Affected</span></td><td>Doesn’t open. Replace it with 2.0.2.</td></tr>
-                  <tr><td>1.90</td><td class="date">Sep 29, 2026</td><td><span class="tag ok">Works</span></td><td>No command-line tool. Updating to 2.0.2 in the app is safe.</td></tr>
-                  <tr><td>Earlier</td><td class="date">—</td><td><span class="tag ok">Works</span></td><td>Not affected.</td></tr>
+                  <tr class="hl"><td>2.0.2</td><td class="date">Oct 2, 2026</td><td><span class="tag fixed"><svg aria-hidden="true"><use href="#ok"/></svg>Fix</span></td><td>The app opens. The command-line tool moved to <code>Contents/Helpers/markify</code>.</td></tr>
+                  <tr><td>2.0.1</td><td class="date">Oct 2, 2026</td><td><span class="tag bad"><svg aria-hidden="true"><use href="#no"/></svg>Affected</span></td><td>Doesn’t open. Replace it with 2.0.2.</td></tr>
+                  <tr><td>2.0.0</td><td class="date">Oct 1, 2026</td><td><span class="tag bad"><svg aria-hidden="true"><use href="#no"/></svg>Affected</span></td><td>Doesn’t open. Replace it with 2.0.2.</td></tr>
+                  <tr><td>1.90</td><td class="date">Sep 29, 2026</td><td><span class="tag"><svg aria-hidden="true"><use href="#dash"/></svg>Works</span></td><td>No command-line tool. Updating to 2.0.2 in the app is safe.</td></tr>
+                  <tr><td>Earlier</td><td class="date">—</td><td><span class="tag"><svg aria-hidden="true"><use href="#dash"/></svg>Works</span></td><td>Not affected.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -276,26 +192,23 @@ main:focus{outline:none}
 
 <footer>
   <div class="wrap">
-    <span>© 2026 Markify · by <a href="https://github.com/spaquet">Stéphane Paquet</a></span>
-    <nav aria-label="Footer">
-      <a href="./">Home</a>
-      <a href="help/">Help</a>
-      <a href="faq.html">FAQ</a>
-      <a href="https://github.com/spaquet/markify">Source</a>
-      <a href="https://github.com/spaquet/markify/releases">Releases</a>
-      <a href="https://github.com/spaquet/markify/issues">Issues</a>
-      <a href="known-issues.html">Known issues</a>
-      <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="legal.html">Legal &amp; privacy</a>
+    <div class="who">
+      <a class="brand" href="./"><img src="images/app-icon.png?v=2" alt="">Markify</a>
+      <span>Markdown, without the markup.<br>© 2026 · by <a href="https://github.com/spaquet">Stéphane Paquet</a></span>
+      <div class="seg" role="group" aria-label="Appearance">
+        <button type="button" data-theme-set="system" aria-pressed="true">System</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <nav class="cols" aria-label="Footer">
+      <div><h4>Product</h4><ul><li><a href="./#download">Download</a></li><li><a href="compare.html">Compare</a></li><li><a href="okf.html">Open Knowledge Format</a></li><li><a href="https://github.com/spaquet/markify/releases">Releases</a></li></ul></div>
+      <div><h4>Help</h4><ul><li><a href="help/">User guide</a></li><li><a href="faq.html">FAQ</a></li><li><a href="known-issues.html">Known issues</a></li><li><a href="https://github.com/spaquet/markify/issues">Report an issue</a></li></ul></div>
+      <div><h4>Project</h4><ul><li><a href="https://github.com/spaquet/markify">Source</a></li><li><a href="https://github.com/sponsors/spaquet">Sponsor</a></li><li><a href="legal.html">Legal &amp; privacy</a></li><li><a href="llms.txt">llms.txt</a></li></ul></div>
     </nav>
   </div>
 </footer>
 
-<script>
-(() => {
-  const io = new IntersectionObserver((es) => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
-  document.querySelectorAll('.rv').forEach(el => io.observe(el));
-})();
-</script>
+<script src="assets/site.js?v=3" defer></script>
 </body>
 </html>

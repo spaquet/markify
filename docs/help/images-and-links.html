@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Images and links — Markify Help</title>
 <meta name="description" content="Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.">
-<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
+<script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
 <link rel="canonical" href="https://spaquet.github.io/markify/help/images-and-links.html">
 <meta property="og:site_name" content="Markify">
 <meta property="og:type" content="article">
@@ -23,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/images-and-links.html","name":"Images and links","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-01","description":"Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.","headline":"Images and links","inLanguage":"en","keywords":"image, picture, paste, drag, assets, remote images, link, note link, command click","url":"https://spaquet.github.io/markify/help/images-and-links.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/images-and-links.html","name":"Images and links","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-02","description":"Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.","headline":"Images and links","inLanguage":"en","keywords":"image, picture, paste, drag, assets, remote images, link, note link, command click","url":"https://spaquet.github.io/markify/help/images-and-links.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -32,7 +33,9 @@
     <a class="brand" href="../index.html"><img src="../images/app-icon.png?v=2" alt="" width="30" height="30">Markify</a>
     <a class="link" href="index.html" aria-current="true">Help</a>
     <a class="link hide-s" href="../faq.html">FAQ</a>
-    <a class="link hide-s" href="../okf.html">Knowledge</a>
+    <a class="link hide-s" href="../compare.html">Compare</a>
+    <a class="link hide-s" href="../okf.html">OKF</a>
+    <button class="theme-btn" type="button" aria-label="Switch appearance"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></svg></button>
     <a class="btn btn-accent" href="../index.html#download">Download</a>
   </nav>
 </header>
@@ -88,14 +91,30 @@
 <p>When you <a href="getting-started.html#open-a-url">open a URL</a>, relative image paths and links resolve against the fetched document’s web location. <strong>⌘-click</strong> opens these resolved web links in your browser; remote images follow <strong>Load remote images</strong>. Local image URLs are not loaded in a web document.</p>
 <p>The web location remains in use for the current document session, including after saving locally. Reopening the saved copy resolves relative paths against its local folder. Use <strong>More (…) › Source</strong> to open the original page in your browser or copy its URL while that document session is open.</p>
 <h3 id="links-panel">Links panel</h3>
-<p>Click the right sidebar button in the toolbar to list destinations in the order they first appear. Repeated links to the same resolved destination share one entry, even when their labels differ. Each entry lists its source line numbers, which update as you edit. Click a line number to jump to that occurrence, click the title to jump to the first occurrence, or choose <strong>Open destination</strong> to follow the link. Multiple mentions on one line list that line once. The panel shows an empty message when the document has no links.</p>
-<p>Expand <strong>Summary</strong> on a link to see a saved summary or request one with Apple Intelligence. For websites, <strong>Fetch and summarize</strong> contacts the site only when you click it. Local <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files use their readable text; websites must return a text or HTML page. Other destinations remain in the list without a summary. The panel shows progress or an error if a destination cannot be read, and explains when Apple Intelligence is unavailable.</p>
-<p>Summaries are saved by Markify outside your Markdown file. Local summaries show when their target changed and can be refreshed. Web summaries show their generation date and stay as saved until you choose <strong>Refresh summary</strong>.</p>
+<p>Click the right sidebar button in the toolbar, then <strong>Links</strong> at the top of the pane. Links are grouped into <strong>In this document</strong> (links to a heading, such as <code>#method</code>), <strong>Files</strong> and <strong>Web</strong>, in the order they first appear. Mail, phone and app links (<code>mailto:</code>, <code>tel:</code>, <code>slack://</code>) aren't listed. Repeated links to the same destination share one row, marked ×2, ×3 and so on, even when their labels differ. The chips at the top show all links, one group, or only broken ones.</p>
+<p>Each row shows the line of the first occurrence. Point at a row to see its actions:</p>
+<ul>
+<li><strong>↩ Go to line</strong> moves to the link in the document. With repeated links, each click goes to the next occurrence; clicking the row does the same.
+</li>
+<li><strong>↗ Open</strong> opens the file in Markify or the page in your browser.
+</li>
+<li><strong>✦ Summarize</strong> shows a summary from Apple Intelligence under the row (see below).
+</li>
+<li><strong>✎ Fix link…</strong> appears on broken links (see below).
+</li>
+</ul>
+<p>⌘-click a link to a heading in the document to jump to it. A link such as <code>notes.md#setup</code> opens <code>notes.md</code> at that heading.</p>
+<h4 id="broken-links">Broken links</h4>
+<p>Markify checks links in the background while the pane is open and marks broken ones in red with the reason: <strong>No such heading</strong>, <strong>File not found</strong>, or for web pages <strong>Not found (404)</strong>, <strong>Server not found</strong>, <strong>Timed out</strong> and similar. Links to headings and files are checked as you type. Web links are checked when the pane opens and after you stop typing; each result is kept for 24 hours, even after you quit, so the same page isn't asked again. Clicking a link, in the pane or ⌘-clicking it in the document, checks it again at once, so a page that came back or went away shows its current state. <strong>Check Links</strong> at the bottom checks every link again now; the line beside it shows how many are broken and when they were checked. Pages that need a login count as working. Markify never marks a link broken when your Mac is offline.</p>
+<p><strong>✎ Fix link…</strong> shows the destination in an editable field with suggestions: the closest headings for a link to a heading, or similar Markdown files in the same folder for a missing file. Choose a suggestion or type a destination, then <strong>Replace</strong>. Every occurrence of that link changes, including a reference definition (<code>[label]: path</code>), and one <strong>Undo</strong> puts them all back.</p>
+<h4 id="summaries">Summaries</h4>
+<p><strong>✦</strong> opens a card under the link. If no summary is saved, Apple Intelligence writes one on your Mac; for websites, Markify downloads the page only when you choose ✦. Local <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files use their readable text; websites must return a text or HTML page. ✦ doesn't appear for other destinations or when Apple Intelligence is unavailable. The card shows progress, or an error with <strong>Try Again</strong>.</p>
+<p>Summaries are saved by Markify outside your Markdown file. The card shows when a summary was generated, notes <strong>Source changed</strong> when a local file changed since, and offers <strong>Refresh</strong>.</p>
 <p>Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.</p>
 <h3 id="links-in-finder-previews">Links in Finder previews</h3>
 <p>Press Space on a Markdown file in Finder to preview it. Click a local <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> link to open the linked file in Markify. Relative paths, including <code>../</code> and percent-encoded filenames, resolve beside the previewed file. A missing or inaccessible destination produces a selectable message at the bottom of the preview. Links to other local file types are not opened by this preview.</p>
 <p>HTTPS links open in your browser; in-document anchors stay inside the preview. Links to a section of another Markdown file open that document without jumping to its section. No folder permission step is added.</p>
-<p class="edit">Updated 2026-10-01 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/images-and-links.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-02 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/images-and-links.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="markdown.html"><span>Previous</span>Markdown support</a><a rel="next" href="library.html"><span>Next</span>Library and find</a></nav>
 </main>
@@ -106,6 +125,7 @@
     <nav aria-label="Footer">
       <a href="index.html">Help</a>
       <a href="../faq.html">FAQ</a>
+      <a href="../compare.html">Compare</a>
       <a href="https://github.com/spaquet/markify">Source</a>
       <a href="https://github.com/spaquet/markify/releases">Releases</a>
       <a href="../okf.html">Open Knowledge Format</a>
@@ -116,5 +136,6 @@
     </nav>
   </div>
 </footer>
+<script src="../assets/site.js?v=3" defer></script>
 </body>
 </html>
