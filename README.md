@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://spaquet.github.io/markify/"><img src="docs/images/social-preview.jpg" alt="Markify — One page, two lenses" width="100%"></a>
+  <a href="https://spaquet.github.io/markify/"><img src="docs/images/og-image.jpg" alt="Markify — One page, two lenses" width="100%"></a>
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@ A quiet Markdown editor for macOS 26. Write on one rendered page, press <kbd>⌘
 - **Format bar**: Select text to get a floating glass bar for block style, bold, italic, strikethrough, code and links.
 - **Slash menu**: Type `/` to insert tables, task lists, code blocks, callouts, math, images, footnotes or frontmatter. Each row shows its Markdown shortcut.
 - **GitHub-Flavored Markdown and more**: Tables, task lists, callouts (`> [!NOTE]`), `$…$` / `$$…$$` math, footnotes and YAML frontmatter.
-- **Library**: A glass sidebar (<kbd>⌃⌘S</kbd>) lists open files and library notes, including subfolders. Open any notes folder as your library.
+- **Library**: A glass sidebar (<kbd>⌃⌘S</kbd>) lists open files and library notes, including subfolders. Open any notes folder as your library. Search full note contents with Apple Spotlight (<kbd>⇧⌘F</kbd>), scope results to projects and knowledge bundles, and jump to highlighted matches.
 - **Focus**: The toolbar fades while you type and comes back when you move the pointer.
 - **Apple Intelligence, on-device only**: Writing Tools, proofread, rewrite, generate at the caret (<kbd>⌘↩</kbd>) and whole-document actions. Nothing leaves your Mac.
 - **Plain files**: Documents are ordinary `.md` files with system autosave, versions and Recents.

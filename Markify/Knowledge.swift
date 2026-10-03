@@ -103,14 +103,21 @@ struct KnowledgeState: Sendable {
     }
 
     /// Opens a Markdown document, then moves to the heading named by `anchor` once its editor is up.
-    static func open(_ url: URL, anchor: String? = nil) {
+    static func open(_ url: URL, anchor: String? = nil, search: String? = nil, related: Bool = false) {
         NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { _, _, error in
             Task { @MainActor in
                 if let error { NSApp.presentError(error); return }
-                guard let anchor else { return }
+                guard anchor != nil || search != nil else { return }
                 for _ in 0..<40 {
                     if let editor = MarkdownTextView.openEditors.allObjects.first(where: { $0.documentURL?.standardizedFileURL == url.standardizedFileURL && $0.window != nil }) {
-                        if !editor.revealAnchor(anchor) { NSSound.beep() }
+                        if let anchor {
+                            if !editor.revealAnchor(anchor) { NSSound.beep() }
+                        } else if let search {
+                            let range = related ? NSRange(location: 0, length: 0) : SearchMatch.literalRanges(in: editor.string, query: search).first ?? NSRange(location: 0, length: 0)
+                            editor.setSelectedRange(range)
+                            editor.scrollRangeToVisible(range)
+                            editor.window?.makeFirstResponder(editor)
+                        }
                         return
                     }
                     try? await Task.sleep(for: .milliseconds(50))

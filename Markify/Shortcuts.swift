@@ -17,6 +17,7 @@ enum Shortcuts {
     static let actions: [Action] = [
         .init(id: "toggleMarkdown", title: "Toggle Markdown", section: "Editor", key: "cmd /"),
         .init(id: "library", title: "Library", section: "Editor", key: "ctrl cmd s"),
+        .init(id: "searchLibrary", title: "Search Library", section: "Editor", key: "shift cmd f"),
         .init(id: "find", title: "Find", section: "Editor", key: "cmd f"),
         .init(id: "replace", title: "Replace", section: "Editor", key: "opt cmd f"),
         .init(id: "findNext", title: "Find Next", section: "Editor", key: "cmd g"),

@@ -48,6 +48,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>com.apple.corespotlightitem</string>
+	</array>
 	<key>SentryDSN</key>
 	<string>$(SENTRY_DSN)</string>
 	<key>SUEnableAutomaticChecks</key>

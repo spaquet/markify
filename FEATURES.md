@@ -35,7 +35,7 @@ This is an inventory of features in the current Markify source tree. See the [us
 - Optionally load remote images. Open web links in the browser and Markdown file links in Markify with ⌘-click.
 - Drag notes from Finder or the library into a document to insert relative links.
 - Open the right Links panel to browse each resolved destination once, with source line numbers that update as you edit. Jump to an occurrence, open its destination, and request an Apple Intelligence summary of a local Markdown file or web page. Summaries and error messages support partial selection and copying. Summaries persist outside the document and show when a local target changes.
-- Open a folder into the Library sidebar; browse its subfolders and all `.md`, `.markdown` and `.mdx` notes, create a document in any subfolder, and filter by title, folder path or text preview.
+- Open a folder into the Library sidebar; browse its subfolders and all `.md`, `.markdown` and `.mdx` notes, create a document in any subfolder, and search full note contents, titles and paths with Apple Spotlight. Scope search to a folder, project, OKF bundle or all granted roots; filter by OKF type/tag, preview highlighted literal matches and jump to their source location. Background indexing follows external file changes; Settings › Search manages roots, file types, exclusions and rebuilding.
 - Share the original Markdown file through the macOS share sheet.
 
 ## Open Knowledge Format (OKF)

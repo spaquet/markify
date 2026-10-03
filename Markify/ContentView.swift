@@ -91,7 +91,6 @@ struct ContentView: View {
     /// Where the reader is, for the Contents pane: the source offset at the reading line and the scroll fraction.
     @State private var reading = (offset: 0, progress: 0.0)
     @State private var aiEdit = AIEditGuard()
-    @State private var librarySearch = ""
     @State private var libraryFolder: URL?
     @State private var librarySubfolders: [URL] = []
     @State private var libraryNotes: [LibraryNote] = []
@@ -214,7 +213,7 @@ struct ContentView: View {
                         .onTapGesture { toggleSidebar() }
                         .zIndex(1)
                     sidebar
-                        .padding(8)
+                        .padding(12)
                         .ignoresSafeArea(.container, edges: .top)
                         .transition(.move(edge: .leading))
                         .zIndex(2)
@@ -275,7 +274,7 @@ struct ContentView: View {
                             .buttonStyle(.plain)
                             .menuIndicator(.hidden)
                             .chromeGlass(in: .capsule)
-                            .offset(x: sidebarOpen ? 148 : 0)
+                            .offset(x: sidebarOpen ? 244 : 0)
                         Spacer()
                         HStack(spacing: 3) {
                             Button { toggleLinks() } label: {
@@ -466,6 +465,7 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: MarkifyAppDelegate.libraryFolderOpened)) { notification in
             if notification.object as? NSWindow === textView?.window { sidebarOpen = true }
         }
+        .onChange(of: LibrarySearch.shared.revision) { _, _ in updateLibraryBrowse() }
         .onChange(of: libraryBookmark) { _, _ in loadLibrary() }
         .onChange(of: selectedRange) { _, range in
             formatBarTask?.cancel()
@@ -480,6 +480,12 @@ struct ContentView: View {
         }
         .background {
             Button("Toggle Markdown") { toggleLens() }.keyboardShortcut(shortcut("toggleMarkdown")).hidden()
+            Button("Search Library") {
+                sidebarOpen = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    NotificationCenter.default.post(name: .focusLibrarySearch, object: textView?.window)
+                }
+            }.keyboardShortcut(shortcut("searchLibrary")).hidden()
             Button("Toggle Library") { toggleSidebar() }.keyboardShortcut(shortcut("library")).hidden()
             Button("Find") { openFind(.find) }.keyboardShortcut(shortcut("find")).hidden()
             Button("Replace") { openFind(.replace) }.keyboardShortcut(shortcut("replace")).hidden()
@@ -513,14 +519,15 @@ struct ContentView: View {
     }
 
     private var sidebar: some View {
+        LibrarySearchPanel(library: libraryFolder, currentBundle: bundleRoot, currentFile: fileURL,
+                           browse: AnyView(libraryBrowse), close: toggleSidebar)
+    }
+
+    private var libraryBrowse: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextField("Search", text: $librarySearch)
-            ScrollView {
             VStack(alignment: .leading, spacing: 8) {
             Text("Open Files").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-            ForEach(NSDocumentController.shared.documents.compactMap(\.fileURL).filter {
-                librarySearch.isEmpty || $0.lastPathComponent.localizedCaseInsensitiveContains(librarySearch)
-            }.prefix(8), id: \.self) { url in
+            ForEach(NSDocumentController.shared.documents.compactMap(\.fileURL).prefix(8), id: \.self) { url in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(url.lastPathComponent).font(.system(size: 13, weight: url == fileURL ? .semibold : .regular))
                     Text(url.deletingLastPathComponent().path).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
@@ -529,13 +536,11 @@ struct ContentView: View {
             }
             if concept != nil || knowledge != nil {
                 KnowledgeSection(state: knowledge, fileURL: fileURL, concept: concept, text: document.text,
-                                 issues: Knowledge.issues(text: document.text, fileURL: fileURL, root: bundleRoot), search: librarySearch, open: open)
+                                 issues: Knowledge.issues(text: document.text, fileURL: fileURL, root: bundleRoot), search: "", open: open)
             }
             Text("Library").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.top, 12)
             if let libraryFolder {
-                ForEach(librarySubfolders.filter {
-                    librarySearch.isEmpty || LibraryNote.path(of: $0, in: libraryFolder).localizedCaseInsensitiveContains(librarySearch)
-                }, id: \.self) { folder in
+                ForEach(librarySubfolders, id: \.self) { folder in
                     HStack(spacing: 7) {
                         Image(systemName: "folder").foregroundStyle(.secondary)
                         Text(LibraryNote.path(of: folder, in: libraryFolder))
@@ -547,9 +552,7 @@ struct ContentView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(7)
                 }
-                ForEach(libraryNotes.filter {
-                    librarySearch.isEmpty || $0.title.localizedCaseInsensitiveContains(librarySearch) || $0.preview.localizedCaseInsensitiveContains(librarySearch) || $0.folder.localizedCaseInsensitiveContains(librarySearch)
-                }) { note in
+                ForEach(libraryNotes) { note in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(note.title).font(.system(size: 13))
                         Text(note.folder.isEmpty ? note.preview : note.preview.isEmpty ? note.folder : "\(note.folder) · \(note.preview)")
@@ -560,8 +563,6 @@ struct ContentView: View {
             }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .scrollIndicators(.never)
             Button { NSDocumentController.shared.newDocument(nil) } label: {
                 HStack {
                     Text("New Document")
@@ -575,9 +576,6 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 12).padding(.top, 54).padding(.bottom, 12)
-        .frame(width: 260).frame(maxHeight: .infinity)
-        .chromeGlass(in: .rect(cornerRadius: 20))
     }
 
     private func open(_ url: URL) {
@@ -606,6 +604,7 @@ struct ContentView: View {
     private func refreshKnowledge() {
         let root = Knowledge.root(for: fileURL, text: document.text, boundary: libraryFolder)
         bundleRoot = root
+        if let root { LibrarySearch.shared.includeBundle(root) }
         if stampedBody == nil { stampedBody = FrontmatterBlock.body(of: document.text) }
         if root != watchedRoot {
             watchedRoot = root
@@ -621,16 +620,18 @@ struct ContentView: View {
     }
 
     private func refreshLibrary() {
+        LibrarySearch.shared.start()
+        LibrarySearch.shared.refresh()
+        updateLibraryBrowse()
+    }
+
+    private func updateLibraryBrowse() {
         guard let libraryFolder else { librarySubfolders = []; libraryNotes = []; return }
-        let contents = LibraryNote.scan(in: libraryFolder)
-        librarySubfolders = contents.folders
-        libraryNotes = contents.files.compactMap { url in
-            guard let source = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-            let lines = FrontmatterBlock.body(of: source).split(separator: "\n", omittingEmptySubsequences: true)
-            let description = FrontmatterBlock.locate(in: source).flatMap { try? OKFConcept(yaml: $0.yaml) }?.description
-            let preview = description ?? lines.first { !$0.hasPrefix("#") && !$0.hasPrefix("---") }.map(String.init) ?? ""
-            let folder = LibraryNote.path(of: url.deletingLastPathComponent(), in: libraryFolder)
-            return LibraryNote(url: url, title: MarkdownTextView.noteTitle(source, url: url), preview: preview, folder: folder)
+        let snapshot = LibrarySearch.shared.snapshot
+        librarySubfolders = snapshot.subfolders.filter { SearchNote.contains(libraryFolder, $0) }
+        libraryNotes = snapshot.notes.filter { $0.roots.contains(SearchNote.identifier(libraryFolder)) }.map { note in
+            LibraryNote(url: note.url, title: note.title, preview: note.description,
+                        folder: LibraryNote.path(of: note.url.deletingLastPathComponent(), in: libraryFolder))
         }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
@@ -2041,34 +2042,25 @@ struct LibraryNote: Identifiable {
     var id: URL { url }
 
     static func path(of url: URL, in root: URL) -> String {
-        url.pathComponents.dropFirst(root.pathComponents.count).joined(separator: "/")
+        url.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+            .dropFirst(root.standardizedFileURL.resolvingSymlinksInPath().pathComponents.count).joined(separator: "/")
     }
+}
 
-    static func scan(in folder: URL) -> (folders: [URL], files: [URL]) {
-        let enumerator = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey],
-                                                        options: [.skipsHiddenFiles, .skipsPackageDescendants])
-        var folders: [URL] = []
-        var files: [URL] = []
-        while let url = enumerator?.nextObject() as? URL {
-            if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
-                folders.append(url)
-                continue
-            }
-            guard ["md", "markdown", "mdx"].contains(url.pathExtension.lowercased()),
-                  (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
-            files.append(url)
-        }
-        return (folders.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }, files)
-    }
+private final class DocumentWindowView: NSView {
+    let fileRefresh = DocumentFileRefresh()
 }
 
 private struct WindowConfiguration: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
-        let view = NSView()
+        let view = DocumentWindowView()
         DispatchQueue.main.async {
             guard let window = view.window else { return }
             if let document = NSDocumentController.shared.document(for: window),
                MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
+            if let document = NSDocumentController.shared.document(for: window) {
+                view.fileRefresh.watch(document)
+            }
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.title = ""
@@ -2083,6 +2075,9 @@ private struct WindowConfiguration: NSViewRepresentable {
         DispatchQueue.main.async {
             if let window = nsView.window, let document = NSDocumentController.shared.document(for: window),
                MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
+            if let window = nsView.window, let document = NSDocumentController.shared.document(for: window) {
+                (nsView as? DocumentWindowView)?.fileRefresh.watch(document)
+            }
             nsView.window?.titleVisibility = .hidden
             nsView.window?.titlebarAppearsTransparent = true
             nsView.window?.title = ""

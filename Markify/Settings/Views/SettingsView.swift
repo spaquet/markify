@@ -3,6 +3,10 @@ import AppKit
 import FoundationModels
 import UniformTypeIdentifiers
 
+@MainActor enum SettingsDestination {
+    static var search = false
+}
+
 struct SettingsView: View {
     @AppStorage("newDocumentLocation") private var newDocumentLocation = "Ask each time"
     @AppStorage("libraryBookmark") private var libraryBookmark = Data()
@@ -39,7 +43,7 @@ struct SettingsView: View {
     @State private var checksForUpdates = Updates.updater.automaticallyChecksForUpdates
     @State private var installsUpdates = Updates.updater.automaticallyDownloadsUpdates
 
-    private enum Tab { case general, editor, appearance, intelligence, shortcuts }
+    private enum Tab { case general, editor, appearance, search, intelligence, shortcuts }
     private var accent: Color { AccentChoice.color(accentColor) }
 
     var body: some View {
@@ -47,13 +51,19 @@ struct SettingsView: View {
             general.tabItem { Label("General", systemImage: "gearshape") }.tag(Tab.general)
             editor.tabItem { Label("Editor", systemImage: "character.cursor.ibeam") }.tag(Tab.editor)
             appearanceTab.tabItem { Label("Appearance", systemImage: "circle.lefthalf.filled") }.tag(Tab.appearance)
+            SearchSettingsView().tabItem { Label("Search", systemImage: "magnifyingglass") }.tag(Tab.search)
             intelligence.tabItem { Label("Intelligence", systemImage: "apple.intelligence") }.tag(Tab.intelligence)
             shortcuts.tabItem { Label("Shortcuts", systemImage: "keyboard") }.tag(Tab.shortcuts)
         }
         .frame(width: 780, height: 520)
         .tint(accent)
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
-        .onAppear { selectedTab = .general; refreshDefaultApp() }
+        .onAppear {
+            selectedTab = SettingsDestination.search ? .search : .general
+            SettingsDestination.search = false
+            refreshDefaultApp(); LibrarySearch.shared.start()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSearchSettings)) { _ in selectedTab = .search }
         .onDisappear { selectedTab = .general; stopRecording() }
     }
 
@@ -138,9 +148,7 @@ struct SettingsView: View {
 
     private var librarySummary: String {
         guard let url = libraryURL else { return "~/Documents/Markify" }
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        let count = LibraryNote.scan(in: url).files.count
+        let count = LibrarySearch.shared.snapshot.notes.filter { $0.roots.contains(SearchNote.identifier(url)) }.count
         let path = (url.path as NSString).abbreviatingWithTildeInPath
         return "\(path) · \(count) \(count == 1 ? "note" : "notes")"
     }

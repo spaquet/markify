@@ -1,5 +1,6 @@
 import SwiftUI
 import Sentry
+import CoreSpotlight
 import AppKit
 import CryptoKit
 import MarkifyMarkdown
@@ -21,6 +22,30 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     private var ready = false
     private var pendingURLs: [URL] = []
     private var openedReports: Set<UUID> = []
+
+    func application(_ application: NSApplication, continue userActivity: NSUserActivity,
+                     restorationHandler: @escaping ([any NSUserActivityRestoring]) -> Void) -> Bool {
+        guard userActivity.activityType == CSSearchableItemActionType,
+              let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String else { return false }
+        Task { @MainActor in
+            let search = LibrarySearch.shared
+            search.start()
+            // Yield so the queued initial indexing task can publish its pending state.
+            await Task.yield()
+            for _ in 0..<1200 {
+                if let note = search.snapshot.notes.first(where: { $0.id == identifier }) { Knowledge.open(note.url); return }
+                if !search.indexing {
+                    let alert = NSAlert()
+                    alert.messageText = "This note is no longer available to Markify."
+                    alert.informativeText = "Its folder may have been removed or need access. Check Settings › Search."
+                    alert.runModal()
+                    break
+                }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+        }
+        return true
+    }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // markify:// links, used by the help to open the Welcome tour. A URL handler leaves document opening alone.
@@ -78,6 +103,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         if let running = runningInstance { return handOff(to: running) }
         BundleAccess.restore()
+        if !Self.isTesting { LibrarySearch.shared.start() }
         _ = Updates.controller
         // Registered up front so Help menu items that open a page by anchor work on their first use.
         NSHelpManager.shared.registerBooks(in: .main)

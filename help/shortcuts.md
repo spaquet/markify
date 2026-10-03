@@ -16,6 +16,7 @@ Double-click a shortcut and press the new combination. Assigning a combination a
 | --- | --- |
 | ⌘/ | Toggle the Markdown lens |
 | ⌃⌘S | Show or hide the library |
+| ⇧⌘F | Search across Library notes |
 | / | Insert a block (at the start of a line) |
 | ⌘F | Find |
 | ⌥⌘F | Find and replace |

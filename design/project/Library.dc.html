@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:{{ winW }};height:820px;position:relative;border-radius:20px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;font-size:13px;color:{{ t.text }};background:{{ t.winBg }};box-shadow:{{ t.winShadow }}">
+<sc-if value="{{ showDoc }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:380px;top:0;right:0;height:60px;padding:0 16px;display:flex;align-items:center;gap:14px">
+<div style="height:34px;padding:0 15px;border-radius:999px;display:flex;align-items:center;font-weight:600;background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}">FEATURE_REQUESTS</div>
+</div>
+<div style="position:absolute;left:460px;top:84px;width:700px;display:flex;flex-direction:column;gap:22px;font-family:'New York','Iowan Old Style',Georgia,serif;color:{{ t.body }}">
+<div style="font-size:44px;font-weight:700;letter-spacing:-.01em;color:{{ t.text }}">Feature requests</div>
+<p style="margin:0;font-size:19px;line-height:1.65;text-wrap:pretty">Demand below is a directional estimate from features and complaints in comparable Markdown editors. Current support is based on <span style="color:{{ t.accent }}">FEATURES.md</span> and the <span style="color:{{ t.accent }}">user guide</span>.</p>
+<div style="font-size:20px;font-weight:600;color:{{ t.text }}">4. Table of contents</div>
+<p style="margin:0;font-size:19px;line-height:1.65;text-wrap:pretty">Long documents need a live outline. Today the right panel lists headings, but there is no way to insert a <span style="border-radius:3px;background:{{ t.hlOn }};box-shadow:0 0 0 2px {{ t.hlOn }}">table of contents</span> into the document itself, and links to missing headings fail silently.</p>
+<div style="font-size:20px;font-weight:600;color:{{ t.text }}">5. Capture web pages</div>
+<p style="margin:0;font-size:19px;line-height:1.65;text-wrap:pretty">Open URL reads remote Markdown files only. Users expect a clipper that turns any article into clean Markdown.</p>
+</div>
+</sc-if>
+
+<div style="position:absolute;top:12px;left:12px;bottom:12px;width:356px;border-radius:24px;display:flex;flex-direction:column;background:{{ t.glass }};backdrop-filter:blur(30px) saturate(1.7);-webkit-backdrop-filter:blur(30px) saturate(1.7);box-shadow:{{ t.glassShadow }}">
+<div style="height:48px;padding:0 10px 0 16px;display:flex;align-items:center;gap:8px">
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840"></span></div>
+<span style="flex:1"></span>
+<div style="height:34px;padding:0 6px;border-radius:999px;display:flex;align-items:center;gap:2px;background:{{ t.chromeBg }};box-shadow:{{ t.chromeRing }}">
+<span title="Hide library  ⌃⌘S" style="width:32px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:{{ t.accentSoft }}"><svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.3" style="color:{{ t.accent }}"><rect x=".7" y=".7" width="14.6" height="12.6" rx="3"></rect><path d="M5.5 .7v12.6"></path></svg></span>
+<span title="New note  ⌘N" style="width:32px;height:28px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:300">+</span>
+<span style="width:32px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700">•••</span>
+</div>
+</div>
+<div style="padding:0 18px 6px;font-weight:700;font-size:15px">Library</div>
+
+<div style="padding:4px 14px 0;display:flex;flex-direction:column;gap:8px">
+<div style="height:34px;padding:0 10px;border-radius:10px;display:flex;align-items:center;gap:8px;background:{{ t.fieldBg }};box-shadow:{{ t.fieldFocus }}">
+<svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" style="color:{{ t.muted }};flex:none"><circle cx="5" cy="5" r="3.8"></circle><path d="M8 8l3 3" stroke-linecap="round"></path></svg>
+<input value="{{ q }}" onChange="{{ onQ }}" placeholder="Search notes" style="flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-size:13.5px;color:{{ t.text }}"></input>
+<sc-if value="{{ hasQ }}" hint-placeholder-val="{{ true }}"><span onClick="{{ clearQ }}" style="width:16px;height:16px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;cursor:default;color:{{ t.winBg }};background:{{ t.faint }}">✕</span></sc-if>
+<span style="flex:none;font-size:11px;color:{{ t.faint }}">⇧⌘F</span>
+</div>
+<div style="position:relative;display:flex;align-items:center;gap:6px">
+<span onClick="{{ toggleMenu }}" style="height:26px;padding:0 8px 0 9px;border-radius:999px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:default;min-width:0;color:{{ t.text }};background:{{ scopeBg }};box-shadow:{{ t.btnRing }}"><span style="font-size:11px;color:{{ t.muted }};font-weight:500">In</span><span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ scopeLabel }}</span><span style="font-size:8px;color:{{ t.muted }}">▼</span></span>
+<span onClick="{{ cycleType }}" style="height:26px;padding:0 9px;border-radius:999px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;cursor:default;white-space:nowrap;color:{{ typeColor }};background:{{ typeBg }};box-shadow:{{ t.btnRing }}">{{ typeLabel }}<span style="font-size:8px;opacity:.7">▼</span></span>
+<span onClick="{{ cycleTag }}" style="height:26px;padding:0 9px;border-radius:999px;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;cursor:default;white-space:nowrap;color:{{ tagColor }};background:{{ tagBg }};box-shadow:{{ t.btnRing }}">{{ tagLabel }}<span style="font-size:8px;opacity:.7">▼</span></span>
+
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;top:32px;left:0;width:290px;padding:6px;border-radius:14px;display:flex;flex-direction:column;gap:1px;z-index:10;background:{{ t.menuBg }};backdrop-filter:blur(30px) saturate(1.8);-webkit-backdrop-filter:blur(30px) saturate(1.8);box-shadow:{{ t.popShadow }}">
+<sc-for list="{{ scopeMenu }}" as="m" hint-placeholder-count="6">
+<sc-if value="{{ m.isHead }}" hint-placeholder-val="{{ false }}"><div style="padding:8px 10px 3px;font-size:11px;font-weight:600;color:{{ t.muted }}">{{ m.label }}</div></sc-if>
+<sc-if value="{{ m.isSep }}" hint-placeholder-val="{{ false }}"><div style="height:1px;margin:4px 8px;background:{{ t.rule }}"></div></sc-if>
+<sc-if value="{{ m.isItem }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ m.onClick }}" style="height:30px;padding:0 8px;border-radius:7px;display:flex;align-items:center;gap:8px;cursor:default;color:{{ m.color }};background:{{ m.bg }}" style-hover="background:{{ t.accent }};color:#fff">
+<span style="width:12px;flex:none;font-size:11px;font-weight:700">{{ m.check }}</span>
+<span style="width:20px;height:20px;flex:none;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;background:{{ t.tile }};box-shadow:{{ t.tileRing }};color:{{ t.text }}">{{ m.glyph }}</span>
+<span style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ m.label }}</span>
+<span style="flex:none;font-size:11.5px;opacity:.65;font-variant-numeric:tabular-nums">{{ m.meta }}</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+
+<sc-if value="{{ showIndexBanner }}" hint-placeholder-val="{{ false }}">
+<div style="margin:10px 14px 0;padding:9px 11px;border-radius:10px;display:flex;flex-direction:column;gap:7px;background:{{ t.tile }};box-shadow:{{ t.tileRing }}">
+<div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="display:flex">{{ spinner }}</span><span style="flex:1;line-height:1.35"><b style="font-weight:600">Indexing markify-docs</b> — more results may appear.</span><span style="font-size:11px;color:{{ t.muted }};font-variant-numeric:tabular-nums">41 of 96</span></div>
+<div style="height:3px;border-radius:2px;background:{{ t.track }}"><div style="width:43%;height:3px;border-radius:2px;background:{{ t.accent }}"></div></div>
+</div>
+</sc-if>
+
+<div style="flex:1;min-height:0;overflow:auto;padding:6px 8px 8px">
+<sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
+<div style="padding:10px 8px 4px;font-size:11px;font-weight:600;color:{{ t.muted }}">Recent searches</div>
+<sc-for list="{{ recents }}" as="rc" hint-placeholder-count="3">
+<div onClick="{{ rc.onClick }}" style="height:30px;padding:0 8px;border-radius:8px;display:flex;align-items:center;gap:9px;cursor:default" style-hover="background:{{ t.hover }}"><span style="width:16px;text-align:center;color:{{ t.faint }};font-size:12px">↺</span><span style="flex:1">{{ rc.q }}</span><span style="font-size:11.5px;color:{{ t.muted }}">{{ rc.scope }}</span></div>
+</sc-for>
+<div style="padding:14px 8px 4px;font-size:11px;font-weight:600;color:{{ t.muted }}">Recently opened</div>
+<sc-for list="{{ recentNotes }}" as="rn" hint-placeholder-count="4">
+<div style="padding:6px 8px;border-radius:10px;display:flex;align-items:center;gap:10px;cursor:default;background:{{ rn.bg }}" style-hover="background:{{ t.hover }}">
+<span style="width:28px;height:28px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:{{ t.tile }};box-shadow:{{ t.tileRing }};color:{{ rn.glyphColor }}">{{ rn.glyph }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ rn.title }}</span><span style="font:11px ui-monospace,'SF Mono',Menlo,monospace;color:{{ t.muted }};overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ rn.path }}</span></div>
+<span style="font-size:11px;color:{{ t.faint }}">{{ rn.when }}</span>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 8px 2px;font-size:11.5px;color:{{ t.muted }}">{{ countLabel }}</div>
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column">
+<div style="padding:12px 8px 4px;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:{{ t.muted }}"><span style="color:{{ t.text }}">{{ g.name }}</span><span style="padding:0 6px;border-radius:999px;font-size:10.5px;font-weight:600;line-height:16px;color:{{ g.kindColor }};background:{{ g.kindBg }}">{{ g.kind }}</span><span style="flex:1"></span><span style="font-variant-numeric:tabular-nums">{{ g.count }}</span></div>
+<sc-if value="{{ g.denied }}" hint-placeholder-val="{{ false }}">
+<div style="margin:2px 0 4px;padding:10px 11px;border-radius:10px;display:flex;align-items:center;gap:10px;background:{{ t.amberSoft }}">
+<span style="width:28px;height:28px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:{{ t.amber }};background:{{ t.tile }}">!</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:12px;line-height:1.35"><span style="font-weight:600">Access to this folder expired</span><span style="color:{{ t.muted }}">Its notes stay hidden until you grant access again.</span></div>
+<span style="flex:none;height:26px;padding:0 10px;border-radius:999px;display:flex;align-items:center;font-size:12px;font-weight:500;cursor:default;background:{{ t.btnBg }};box-shadow:{{ t.btnRing }}">Grant…</span>
+</div>
+</sc-if>
+<sc-for list="{{ g.items }}" as="r" hint-placeholder-count="2">
+<div onClick="{{ r.onClick }}" style="padding:8px;border-radius:10px;display:flex;gap:10px;cursor:default;background:{{ r.bg }}" style-hover="background:{{ r.hoverBg }}">
+<span style="width:28px;height:28px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{{ r.glyphColor }};background:{{ t.tile }};box-shadow:{{ t.tileRing }}">{{ r.glyph }}</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<div style="display:flex;align-items:baseline;gap:8px;min-width:0"><span style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600">{{ r.title }}</span><span title="{{ r.metaTip }}" style="flex:none;padding:0 6px;border-radius:999px;font:11px ui-monospace,'SF Mono',Menlo,monospace;line-height:17px;color:{{ r.metaColor }};background:{{ r.metaBg }}">{{ r.meta }}</span></div>
+<span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:11px ui-monospace,'SF Mono',Menlo,monospace;color:{{ t.muted }}">{{ r.path }}</span>
+<sc-if value="{{ r.literal }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;line-height:1.45;color:{{ t.body }};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.pre }}<span style="border-radius:3px;color:{{ t.text }};background:{{ t.hl }};box-shadow:0 0 0 1.5px {{ t.hl }}">{{ r.hit }}</span>{{ r.post }}</div></sc-if>
+<sc-if value="{{ r.semantic }}" hint-placeholder-val="{{ false }}"><div style="font-size:12.5px;line-height:1.45;color:{{ t.muted }};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.desc }}</div></sc-if>
+<sc-if value="{{ r.hasOkf }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:4px;padding-top:1px"><span style="padding:0 6px;border-radius:5px;font-size:11px;font-weight:600;line-height:17px;color:{{ t.okf }};background:{{ t.okfSoft }}">{{ r.type }}</span><sc-for list="{{ r.tags }}" as="tg" hint-placeholder-count="2"><span style="padding:0 6px;border-radius:5px;font-size:11px;line-height:17px;color:{{ t.muted }};background:{{ t.btnBg }}">#{{ tg }}</span></sc-for></div></sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ isPending }}" hint-placeholder-val="{{ false }}">
+<div style="padding:64px 28px 0;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+<span style="display:flex">{{ spinnerLg }}</span>
+<span style="font-weight:600;font-size:13.5px">Still indexing</span>
+<span style="font-size:12.5px;line-height:1.5;color:{{ t.muted }};text-wrap:pretty">No matches for “{{ q }}” yet, but 55 notes in markify-docs haven’t been indexed. Results appear here as they’re added.</span>
+</div>
+</sc-if>
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:64px 28px 0;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+<svg width="30" height="30" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width=".8" style="color:{{ t.faint }}"><circle cx="5" cy="5" r="3.8"></circle><path d="M8 8l3 3" stroke-linecap="round"></path></svg>
+<span style="font-weight:600;font-size:13.5px">No results in {{ scopeLabel }}</span>
+<span style="font-size:12.5px;line-height:1.5;color:{{ t.muted }};text-wrap:pretty">All 1,188 notes are indexed. Nothing mentions “{{ q }}”.</span>
+<span onClick="{{ searchAll }}" style="margin-top:6px;height:28px;padding:0 14px;border-radius:999px;display:flex;align-items:center;font-weight:500;cursor:default;background:{{ t.btnBg }};box-shadow:{{ t.btnRing }}">Search All Folders</span>
+</div>
+</sc-if>
+</div>
+
+<div style="padding:11px 16px 14px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:{{ t.muted }};border-top:{{ t.hair }}">
+<span style="width:7px;height:7px;flex:none;border-radius:50%;background:{{ statusDot }}"></span>
+<span style="flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ statusLabel }}</span>
+<span style="flex:none;color:{{ t.faint }}">{{ statusHint }}</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:820},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;results&quot;,&quot;browse&quot;,&quot;indexing&quot;,&quot;pending&quot;,&quot;empty&quot;,&quot;denied&quot;],&quot;default&quot;:&quot;results&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scope&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;lib&quot;,&quot;folder&quot;,&quot;docs&quot;,&quot;okf&quot;,&quot;all&quot;],&quot;default&quot;:&quot;lib&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;menuOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;panelOnly&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;query&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const R = [
+  { id: 'r1', root: 'lib', folder: 'Research/', title: 'Feature requests', text: 'Long documents need a live outline. There is no way to insert a table of contents into the document itself, and links to missing headings fail silently.', line: 25, n: 2 },
+  { id: 'r2', root: 'okf', folder: 'Product Knowledge/concepts/', title: 'Outline', semantic: true, desc: 'A live, nested list of a document’s headings that follows the reader’s position.', type: 'Concept', tags: ['navigation', 'editor'] },
+  { id: 'r3', root: 'docs', folder: 'guides/editor/', title: 'Inspector panel', text: 'A progress bar sits at the bottom with an Insert Table of Contents button.', line: 14, n: 1 },
+  { id: 'r4', root: 'lib', folder: 'Planning/2026/', title: 'Q4 Planning', text: '| Ship table of contents insertion | Mai | Nov 14 |', line: 8, n: 1 },
+  { id: 'r5', root: 'okf', folder: 'Product Knowledge/reference/', title: 'Heading anchors', text: 'Slugs used by a table of contents and by #links between notes.', line: 6, n: 3, type: 'Reference', tags: ['links'] },
+  { id: 'r6', root: 'docs', folder: '', title: 'README', text: 'See the table of contents below for setup, building and release steps.', line: 3, n: 1 },
+  { id: 'r7', root: 'lib', folder: 'Archive/2024/', title: 'README', text: 'Old library table of contents — superseded by the Inspector.', line: 2, n: 1 }
+];
+const ROOTS = { lib: ['Markify Library', 'Library'], okf: ['Product Knowledge', 'OKF bundle'], docs: ['markify-docs', 'Project'] };
+const SCOPES = {
+  lib: { label: 'Markify Library', test: r => r.root !== 'docs' },
+  folder: { label: 'Research', test: r => r.folder.startsWith('Research/') },
+  docs: { label: 'markify-docs', test: r => r.root === 'docs' },
+  okf: { label: 'Product Knowledge', test: r => r.root === 'okf' },
+  all: { label: 'All Folders', test: () => true }
+};
+const T = {
+  dark: { winBg: '#1e1e20', winShadow: '0 30px 80px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.6),inset 0 0 0 .5px rgba(255,255,255,.12)', chromeBg: 'rgba(255,255,255,.08)', chromeRing: 'inset 0 0 0 .5px rgba(255,255,255,.12)', text: '#f5f5f7', body: '#d1d1d6', muted: '#98989d', faint: '#6e6e73', accent: '#0a84ff', accentText: '#409cff', accentSoft: 'rgba(10,132,255,.18)',
+    glass: 'rgba(44,44,48,.74)', glassShadow: '0 20px 50px rgba(0,0,0,.45),0 0 0 .5px rgba(0,0,0,.5),inset 0 0 0 .5px rgba(255,255,255,.14),inset 0 .5px 0 rgba(255,255,255,.2)', menuBg: 'rgba(52,52,56,.92)', popShadow: '0 18px 44px rgba(0,0,0,.5),0 0 0 .5px rgba(0,0,0,.6),inset 0 0 0 .5px rgba(255,255,255,.14)', rule: 'rgba(255,255,255,.1)',
+    fieldBg: 'rgba(0,0,0,.22)', fieldFocus: 'inset 0 0 0 .5px rgba(255,255,255,.1),0 0 0 3px rgba(10,132,255,.45)', hover: 'rgba(255,255,255,.06)', sel: 'rgba(10,132,255,.22)', hair: '.5px solid rgba(255,255,255,.08)', track: 'rgba(255,255,255,.1)', btnBg: 'rgba(255,255,255,.1)', btnRing: 'inset 0 0 0 .5px rgba(255,255,255,.1)',
+    tile: 'rgba(255,255,255,.08)', tileRing: 'inset 0 0 0 .5px rgba(255,255,255,.1)', hl: 'rgba(255,214,10,.3)', hlOn: 'rgba(255,214,10,.42)', okf: '#d0a8ff', okfSoft: 'rgba(191,90,242,.2)', amber: '#ffb340', amberSoft: 'rgba(255,159,10,.14)', green: '#30d158' },
+  light: { winBg: '#ffffff', winShadow: '0 30px 80px rgba(40,30,60,.18),0 0 0 .5px rgba(0,0,0,.16)', chromeBg: 'rgba(0,0,0,.045)', chromeRing: 'inset 0 0 0 .5px rgba(0,0,0,.1)', text: '#1d1d1f', body: '#3a3a3c', muted: '#6e6e73', faint: '#aeaeb2', accent: '#007aff', accentText: '#0066d6', accentSoft: 'rgba(0,122,255,.12)',
+    glass: 'rgba(246,246,248,.8)', glassShadow: '0 20px 50px rgba(40,30,60,.16),0 0 0 .5px rgba(0,0,0,.12),inset 0 .5px 0 #fff', menuBg: 'rgba(250,250,252,.94)', popShadow: '0 18px 44px rgba(40,30,60,.22),0 0 0 .5px rgba(0,0,0,.14)', rule: 'rgba(0,0,0,.08)',
+    fieldBg: '#ffffff', fieldFocus: 'inset 0 0 0 .5px rgba(0,0,0,.12),0 0 0 3px rgba(0,122,255,.35)', hover: 'rgba(0,0,0,.04)', sel: 'rgba(0,122,255,.12)', hair: '.5px solid rgba(0,0,0,.08)', track: 'rgba(0,0,0,.08)', btnBg: 'rgba(0,0,0,.05)', btnRing: 'inset 0 0 0 .5px rgba(0,0,0,.08)',
+    tile: '#ffffff', tileRing: 'inset 0 0 0 .5px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.05)', hl: 'rgba(255,204,0,.38)', hlOn: 'rgba(255,204,0,.5)', okf: '#8944ab', okfSoft: 'rgba(175,82,222,.12)', amber: '#c93400', amberSoft: 'rgba(255,149,0,.12)', green: '#28a745' }
+};
+const TYPES = [null, 'Concept', 'Reference'], TAGS = [null, 'navigation', 'links', 'editor'];
+class Component extends DCLogic {
+  state = {};
+  spin(size, t) {
+    return React.createElement('span', { style: { width: size, height: size, borderRadius: '50%', border: `${size > 20 ? 2.5 : 1.8}px solid ${t.track}`, borderTopColor: t.accent, animation: 'libspin .8s linear infinite', display: 'inline-block', boxSizing: 'border-box' } },
+      React.createElement('style', null, '@keyframes libspin{to{transform:rotate(360deg)}}'));
+  }
+  renderVals() {
+    const p = this.props, s = this.state;
+    const t = T[p.theme === 'light' ? 'light' : 'dark'];
+    const mode = p.state || 'results';
+    const q = s.q !== undefined ? s.q : (p.query ?? (mode === 'browse' ? '' : mode === 'empty' || mode === 'pending' ? 'kanban board' : 'table of contents'));
+    const scope = s.scope || p.scope || 'lib';
+    const menuOpen = s.menu !== undefined ? s.menu : !!p.menuOpen;
+    const typeF = TYPES[s.ti || 0], tagF = TAGS[s.gi || 0];
+    const ql = q.trim().toLowerCase();
+    const sel = s.sel || 'r1';
+    let hits = [];
+    if (ql && mode !== 'empty' && mode !== 'pending') {
+      R.forEach(r => {
+        if (!SCOPES[scope].test(r)) return;
+        if (typeF && r.type !== typeF) return;
+        if (tagF && !(r.tags || []).includes(tagF)) return;
+        if (mode === 'denied' && r.root === 'docs') return;
+        if (mode === 'indexing' && r.id === 'r6') return;
+        let o = null;
+        if (r.semantic) { if (ql.length > 3) o = { semantic: true }; }
+        else {
+          const i = r.text.toLowerCase().indexOf(ql);
+          if (i >= 0) {
+            const st = Math.max(0, i - 34), pre = (st > 0 ? '…' : '') + r.text.slice(st, i).replace(/^\S*\s/, st > 0 ? '' : '$&');
+            o = { literal: true, pre, hit: r.text.slice(i, i + ql.length), post: r.text.slice(i + ql.length) };
+          } else if (r.title.toLowerCase().includes(ql)) o = { literal: true, pre: r.text, hit: '', post: '' };
+        }
+        if (o) hits.push(Object.assign({}, r, o));
+      });
+    }
+    const order = scope === 'folder' ? ['lib'] : ['lib', 'okf', 'docs'];
+    const groups = order.map(root => {
+      const items = hits.filter(r => r.root === root);
+      const denied = mode === 'denied' && root === 'docs' && (scope === 'all' || scope === 'docs');
+      if (!items.length && !denied) return null;
+      const [name, kind] = scope === 'folder' ? ['Research', 'Folder'] : ROOTS[root];
+      return {
+        name, kind, denied, count: denied ? '—' : items.length,
+        kindColor: root === 'okf' ? t.okf : t.muted, kindBg: root === 'okf' ? t.okfSoft : t.btnBg,
+        items: items.map(r => {
+          const on = sel === r.id;
+          return {
+            title: r.title, path: (root === 'docs' ? 'markify-docs/' : '') + (r.folder || '') + r.title + '.md',
+            literal: !!r.literal, semantic: !!r.semantic, pre: r.pre, hit: r.hit, post: r.post, desc: r.desc,
+            hasOkf: !!r.type, type: r.type, tags: r.tags || [],
+            glyph: r.type ? '◆' : '¶', glyphColor: r.type ? t.okf : t.muted,
+            meta: r.semantic ? 'Related' : r.n > 1 ? `L${r.line} · ${r.n}×` : `L${r.line}`,
+            metaTip: r.semantic ? 'No exact words — opens at the top of the note' : `Opens at line ${r.line}`,
+            metaColor: r.semantic ? t.okf : t.faint, metaBg: r.semantic ? t.okfSoft : 'transparent',
+            bg: on ? t.sel : 'transparent', hoverBg: on ? t.sel : t.hover,
+            onClick: () => this.setState({ sel: r.id })
+          };
+        })
+      };
+    }).filter(Boolean);
+    const total = hits.length;
+    const mk = (id, glyph, meta) => {
+      const on = scope === id;
+      return { isItem: true, label: SCOPES[id].label + (id === 'folder' ? '/' : ''), glyph, meta, check: on ? '✓' : '', color: t.text, bg: 'transparent', onClick: () => this.setState({ scope: id, menu: false }) };
+    };
+    const scopeMenu = [
+      { isHead: true, label: 'Library' }, mk('lib', '▤', '1,188'), mk('folder', '⌂', '84'),
+      { isHead: true, label: 'Projects' }, mk('docs', '{ }', '96'),
+      { isHead: true, label: 'OKF bundles' }, mk('okf', '◆', '60'),
+      { isSep: true }, mk('all', '∗', '1,284'),
+      { isSep: true }, { isItem: true, label: 'Add Folder…', glyph: '+', meta: '', check: '', color: t.text, bg: 'transparent', onClick: () => this.setState({ menu: false }) }
+    ];
+    const statuses = {
+      indexing: [t.accent, 'Indexing · 1,229 of 1,284 notes', ''],
+      pending: [t.accent, 'Indexing · 1,229 of 1,284 notes', ''],
+      denied: [t.amber, '1 folder needs access · 1,188 notes searchable', 'Settings…']
+    };
+    const [statusDot, statusLabel, statusHint] = statuses[mode] || [t.green, 'Spotlight · 1,284 notes indexed', 'Updated 2 min ago'];
+    return {
+      t, winW: p.panelOnly ? '380px' : '1240px', showDoc: !p.panelOnly,
+      q, hasQ: !!q, onQ: e => this.setState({ q: e.target.value }), clearQ: () => this.setState({ q: '' }),
+      menuOpen, toggleMenu: () => this.setState({ menu: !menuOpen }), scopeMenu,
+      scopeLabel: SCOPES[scope].label, scopeBg: menuOpen ? t.accentSoft : t.btnBg,
+      typeLabel: typeF || 'Type', typeColor: typeF ? '#fff' : t.text, typeBg: typeF ? t.accent : t.btnBg, cycleType: () => this.setState({ ti: ((s.ti || 0) + 1) % TYPES.length }),
+      tagLabel: tagF ? '#' + tagF : 'Tag', tagColor: tagF ? '#fff' : t.text, tagBg: tagF ? t.accent : t.btnBg, cycleTag: () => this.setState({ gi: ((s.gi || 0) + 1) % TAGS.length }),
+      isBrowse: !ql, hasResults: !!ql && (total > 0 || groups.length > 0), isPending: !!ql && mode === 'pending', isEmpty: !!ql && total === 0 && mode !== 'pending' && !groups.length,
+      showIndexBanner: mode === 'indexing' && !!ql,
+      countLabel: `${total} ${total === 1 ? 'note' : 'notes'} · ranked by Spotlight`, groups,
+      recents: [['table of contents', 'Library'], ['release checklist', 'markify-docs'], ['heading anchors', 'Product Knowledge']].map(([rq, sc]) => ({ q: rq, scope: sc, onClick: () => this.setState({ q: rq }) })),
+      recentNotes: [['Feature requests', 'Research/', '¶', 'Now'], ['Release Notes 2.0', 'Planning/', '¶', '1h'], ['Outline', 'Product Knowledge/concepts/', '◆', 'Yesterday'], ['Inspector panel', 'markify-docs/guides/editor/', '¶', 'Mon']].map(([title, path, glyph, when], i) => ({ title, path, glyph, when, glyphColor: glyph === '◆' ? t.okf : t.muted, bg: i === 0 ? t.sel : 'transparent' })),
+      searchAll: () => this.setState({ scope: 'all' }),
+      spinner: this.spin(13, t), spinnerLg: this.spin(26, t),
+      statusDot, statusLabel, statusHint
+    };
+  }
+}
+</script>
+</body>
+</html>
