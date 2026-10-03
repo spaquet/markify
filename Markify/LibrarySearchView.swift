@@ -89,6 +89,20 @@ struct LibrarySearchPanel: View {
         if service.options.defaultScope == "bundle", let currentBundle { return SearchNote.identifier(currentBundle) }
         return library.map(SearchNote.identifier) ?? "all"
     }
+    private var scopedNotes: [SearchNote] {
+        service.snapshot.notes.filter { selectedScope == "all" || $0.scopes.contains(selectedScope) }
+    }
+    private var types: [String] {
+        Array(Set(scopedNotes.compactMap(\.type).filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })).sorted()
+    }
+    private var tags: [String] {
+        Array(Set(scopedNotes.flatMap(\.tags).filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })).sorted()
+    }
+    private var filterHelp: String {
+        if !service.options.metadata { return "Enable Index OKF frontmatter in Settings › Search to filter by type and tag." }
+        if service.indexing { return "OKF type and tag choices appear as notes in this scope are indexed." }
+        return "Filters use OKF frontmatter: type (for example Concept or Reference) and tags. No values have been indexed in this scope."
+    }
     private var request: String { "\(query)\u{0}\(selectedScope)\u{0}\(type)\u{0}\(tag)\u{0}\(service.revision)" }
     private var scopeName: String {
         if selectedScope == "all" { return "All Folders" }
@@ -145,18 +159,28 @@ struct LibrarySearchPanel: View {
                     Divider()
                     Button("Add Folder…") { service.chooseFolder() }
                 } label: { Text("In \(scopeName)").lineLimit(1) }
-                Menu(type.isEmpty ? "Type" : type) {
-                    Button("All Types") { type = "" }
-                    ForEach(Array(Set(service.snapshot.notes.compactMap(\.type))).sorted(), id: \.self) { value in
-                        Button(value) { type = value }
+                Menu {
+                    Picker("Type", selection: $type) {
+                        Text("All Types").tag("")
+                        ForEach(types, id: \.self) { value in Text(value).tag(value) }
                     }
-                }
-                Menu(tag.isEmpty ? "Tag" : "#\(tag)") {
-                    Button("All Tags") { tag = "" }
-                    ForEach(Array(Set(service.snapshot.notes.flatMap(\.tags))).sorted(), id: \.self) { value in
-                        Button(value) { tag = value }
+                } label: { Text(type.isEmpty ? "Type" : type) }
+                .disabled(types.isEmpty && type.isEmpty)
+                .help(types.isEmpty ? filterHelp : "Filter by OKF frontmatter type, such as Concept or Reference.")
+                .padding(.horizontal, 7).padding(.vertical, 4)
+                .foregroundStyle(type.isEmpty ? Color.primary : .white)
+                .background(type.isEmpty ? Color.primary.opacity(0.06) : Color.accentColor, in: .capsule)
+                Menu {
+                    Picker("Tag", selection: $tag) {
+                        Text("All Tags").tag("")
+                        ForEach(tags, id: \.self) { value in Text(value).tag(value) }
                     }
-                }
+                } label: { Text(tag.isEmpty ? "Tag" : "#\(tag)") }
+                .disabled(tags.isEmpty && tag.isEmpty)
+                .help(tags.isEmpty ? filterHelp : "Filter by an indexed OKF frontmatter tag.")
+                .padding(.horizontal, 7).padding(.vertical, 4)
+                .foregroundStyle(tag.isEmpty ? Color.primary : .white)
+                .background(tag.isEmpty ? Color.primary.opacity(0.06) : Color.accentColor, in: .capsule)
             }.font(.system(size: 12)).menuStyle(.borderlessButton)
             if service.indexing {
                 HStack {
@@ -226,6 +250,7 @@ struct LibrarySearchPanel: View {
             guard !Task.isCancelled else { return }
             session.search(query, scope: selectedScope, type: type, tag: tag, service: service)
         }
+        .onChange(of: selectedScope) { _, _ in type = ""; tag = "" }
         .onAppear { service.start() }
         .onDisappear { session.cancel() }
         .onReceive(NotificationCenter.default.publisher(for: .focusLibrarySearch)) { notification in
