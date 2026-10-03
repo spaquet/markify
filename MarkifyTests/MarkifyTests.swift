@@ -6,6 +6,33 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test @MainActor func externalFileRefreshReloadsCleanDocumentsAndPreservesEdits() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("original".utf8).write(to: url)
+        let document = RefreshTestDocument()
+        document.fileURL = url
+        document.fileType = "net.daringfireball.markdown"
+        var searchRefreshes = 0
+        let refresh = DocumentFileRefresh { searchRefreshes += 1 }
+        refresh.watch(document)
+        refresh.refresh()
+        #expect(document.reloads == 0)
+        #expect(searchRefreshes == 0)
+        try Data("external".utf8).write(to: url, options: .atomic)
+        refresh.refresh()
+        #expect(document.text == "external")
+        #expect(document.reloads == 1)
+        #expect(searchRefreshes == 1)
+        document.text = "local edits"
+        document.updateChangeCount(.changeDone)
+        try Data("another external edit".utf8).write(to: url)
+        refresh.refresh()
+        #expect(document.text == "local edits")
+        #expect(document.reloads == 1)
+        #expect(searchRefreshes == 2)
+    }
+
     @Test func linksPanelUsesMarkdownLinksInSourceOrder() {
         let source = "[first](a.md) [again][one] <https://example.com> ![image](skip.png)\n\n[one]: a.md\n"
         let links = DocumentLink.extract(from: MarkdownModel(source))
@@ -722,5 +749,18 @@ struct MarkifyTests {
         let issues = Knowledge.issues(text: "---\ntype: Metric\n---\nSee [orders](/orders.md) and [later](/later.md).", fileURL: file, root: root)
         #expect(issues.map(\.message) == ["Links to /later.md, which does not exist yet."])
         #expect(Knowledge.issues(text: "No frontmatter", fileURL: file, root: root).first?.severity == .error)
+    }
+}
+
+@MainActor private final class RefreshTestDocument: NSDocument {
+    var text = "original"
+    var reloads = 0
+    override func fileWrapper(ofType typeName: String) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(text.utf8))
+    }
+    override func revert(toContentsOf url: URL, ofType typeName: String) throws {
+        text = try String(contentsOf: url, encoding: .utf8)
+        reloads += 1
+        updateChangeCount(.changeCleared)
     }
 }

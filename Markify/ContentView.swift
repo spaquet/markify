@@ -2047,13 +2047,20 @@ struct LibraryNote: Identifiable {
     }
 }
 
+private final class DocumentWindowView: NSView {
+    let fileRefresh = DocumentFileRefresh()
+}
+
 private struct WindowConfiguration: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
-        let view = NSView()
+        let view = DocumentWindowView()
         DispatchQueue.main.async {
             guard let window = view.window else { return }
             if let document = NSDocumentController.shared.document(for: window),
                MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
+            if let document = NSDocumentController.shared.document(for: window) {
+                view.fileRefresh.watch(document)
+            }
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.title = ""
@@ -2068,6 +2075,9 @@ private struct WindowConfiguration: NSViewRepresentable {
         DispatchQueue.main.async {
             if let window = nsView.window, let document = NSDocumentController.shared.document(for: window),
                MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
+            if let window = nsView.window, let document = NSDocumentController.shared.document(for: window) {
+                (nsView as? DocumentWindowView)?.fileRefresh.watch(document)
+            }
             nsView.window?.titleVisibility = .hidden
             nsView.window?.titlebarAppearsTransparent = true
             nsView.window?.title = ""

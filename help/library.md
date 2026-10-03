@@ -31,6 +31,10 @@ The Library overlays the page, with window controls above search. Choose **New D
 
 In an Open Knowledge Format bundle, the sidebar also groups concepts by folder, type or tag. See [Knowledge bundles](knowledge.md).
 
+### Changes from other apps
+
+When an open file changes on disk, Markify reloads its contents if the document has no unsaved edits. Unsaved local edits are preserved. Changes also request a search index refresh for notes in configured search folders; Spotlight may take time to show the new content.
+
 ## Find and replace
 
 | Shortcut | Action |
