@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Legal — Markify Help</title>
 <meta name="description" content="Markify's license, privacy statement, and the third-party software, fonts and specifications it uses.">
-<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
+<script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
 <link rel="canonical" href="https://spaquet.github.io/markify/legal.html">
 <meta property="og:site_name" content="Markify">
 <meta property="og:type" content="article">
@@ -32,7 +33,9 @@
     <a class="brand" href="index.html"><img src="images/app-icon.png?v=2" alt="" width="30" height="30">Markify</a>
     <a class="link" href="help/index.html">Help</a>
     <a class="link hide-s" href="faq.html">FAQ</a>
-    <a class="link hide-s" href="okf.html">Knowledge</a>
+    <a class="link hide-s" href="compare.html">Compare</a>
+    <a class="link hide-s" href="okf.html">OKF</a>
+    <button class="theme-btn" type="button" aria-label="Switch appearance"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></svg></button>
     <a class="btn btn-accent" href="index.html#download">Download</a>
   </nav>
 </header>
@@ -76,6 +79,10 @@
 <li><strong>Remote images.</strong> When a document contains an image from a web address and <strong>Settings › General › Load remote images</strong> is on, Markify downloads it from that server. Turn the setting off to stop this.
 </li>
 <li><strong>Links you open.</strong> ⌘-clicking a web link opens it in your browser.
+</li>
+<li><strong>Link checks.</strong> While the Contents and Links pane is open, Markify asks each web link in the document whether the page still exists (a <code>HEAD</code> request, or a one-byte <code>GET</code> when the server refuses <code>HEAD</code>), so broken links can be marked. Each site sees your IP address, as with any web request; nothing about your document is sent. Results are kept on your Mac for 24 hours, and a link is checked again when you click it or choose <strong>Check Links</strong>.
+</li>
+<li><strong>Link summaries.</strong> Choosing ✦ on a web link in the Links pane downloads that page so Apple Intelligence can summarize it on your Mac.
 </li>
 </ul>
 <p><strong>Apple Intelligence</strong> features run on your Mac through Apple's on-device model and system Writing Tools; Markify sends no text to cloud services. Apple's handling of Apple Intelligence is described in <a rel="noopener" href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>.</p>
@@ -137,6 +144,7 @@
     <nav aria-label="Footer">
       <a href="help/index.html">Help</a>
       <a href="faq.html">FAQ</a>
+      <a href="compare.html">Compare</a>
       <a href="https://github.com/spaquet/markify">Source</a>
       <a href="https://github.com/spaquet/markify/releases">Releases</a>
       <a href="okf.html">Open Knowledge Format</a>
@@ -147,6 +155,7 @@
     </nav>
   </div>
 </footer>
+<script src="assets/site.js?v=3" defer></script>
 <script>
 (() => {
   const box = document.getElementById('license-text');

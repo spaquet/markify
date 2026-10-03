@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markify vs Typora, Obsidian, iA Writer and Bear — Markdown editors compared</title>
+<meta name="description" content="How Markify compares with Typora, Obsidian, iA Writer and Bear: rendered editing, plain files, native Mac app, math, Mermaid, GitHub and GitLab files, on-device AI, coding agents and price.">
+<meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://spaquet.github.io/markify/compare.html">
+<meta property="og:site_name" content="Markify">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://spaquet.github.io/markify/compare.html">
+<meta property="og:title" content="Markify compared with other Markdown editors">
+<meta property="og:description" content="Rendered editing, plain files and a native Mac app, plus GitHub files, on-device AI and coding-agent reports. Free.">
+<meta property="og:image" content="https://spaquet.github.io/markify/images/social-preview.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Markify logo and One page, two lenses tagline">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Markify compared with other Markdown editors">
+<meta name="twitter:description" content="Rendered editing, plain files and a native Mac app, plus GitHub files, on-device AI and coding-agent reports. Free.">
+<meta name="twitter:image" content="https://spaquet.github.io/markify/images/social-preview.jpg">
+<link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
+<link rel="icon" type="image/svg+xml" href="images/logo.svg?v=2">
+<link rel="apple-touch-icon" href="images/app-icon.png?v=2">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Markify compared with other Markdown editors","description":"How Markify compares with Typora, Obsidian, iA Writer and Bear.","url":"https://spaquet.github.io/markify/compare.html","dateModified":"2026-10-03","inLanguage":"en","about":{"@type":"SoftwareApplication","name":"Markify","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Markify","item":"https://spaquet.github.io/markify/"},{"@type":"ListItem","position":2,"name":"Compare","item":"https://spaquet.github.io/markify/compare.html"}]}]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
+<link rel="stylesheet" href="assets/site.css?v=3">
+<style>
+.hero{position:relative;padding:164px 0 56px;text-align:center;overflow:hidden;isolation:isolate}
+.aurora{position:absolute;inset:-20% -20% 10%;z-index:-1;pointer-events:none}
+.aurora i{position:absolute;width:48vw;height:48vw;max-width:700px;max-height:700px;border-radius:50%;filter:blur(80px);opacity:.7;animation:float 24s var(--ease) infinite alternate}
+.aurora i:nth-child(1){left:10%;top:0;background:var(--glowA)}
+.aurora i:nth-child(2){right:8%;top:-10%;background:var(--glowB);animation-delay:-9s}
+@keyframes float{50%{transform:translate3d(6%,5%,0) scale(1.1)}100%{transform:translate3d(-4%,-3%,0) scale(.95)}}
+.hero h1{font-size:clamp(52px,8.4vw,120px);margin-bottom:24px}
+.hero h1 em{color:var(--ink2)}
+.hero p{font-size:clamp(17px,1.9vw,21px);color:var(--ink2);max-width:660px;margin:0 auto;text-wrap:pretty}
+
+/* Standouts */
+.stand{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.stand article{padding:28px 26px;border-radius:24px;background:var(--surface);border:1px solid var(--line);transition:transform .5s var(--spring)}
+.stand article:hover{transform:translateY(-4px)}
+.stand .n{font:500 12.5px var(--mono);color:var(--ink3);display:block;margin-bottom:36px}
+.stand h3{font:400 28px/1.05 var(--display);letter-spacing:-.01em;margin-bottom:10px}
+.stand p{font-size:14.5px;color:var(--ink2)}
+@media (max-width:980px){.stand{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.stand{grid-template-columns:1fr}}
+
+/* Table */
+.tools{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.tools .seg button{height:34px;padding:0 15px;font-size:13.5px}
+.legend{display:flex;gap:18px;font-size:13.5px;color:var(--ink2);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.tablewrap{overflow-x:auto;border-radius:24px;border:1px solid var(--line);background:var(--surface);-webkit-overflow-scrolling:touch}
+table.cmp{width:100%;min-width:860px;border-collapse:separate;border-spacing:0;font-size:14.5px}
+.cmp th,.cmp td{padding:16px 18px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+.cmp thead th{border-top:0;position:sticky;top:0;background:var(--surface);z-index:1;font:600 14px var(--ui);vertical-align:bottom}
+.cmp thead th small{display:block;font:500 12px var(--ui);color:var(--ink3);margin-top:2px}
+.cmp tbody th{font-weight:500;color:var(--ink);width:28%}
+.cmp tbody th small{display:block;font-size:13px;color:var(--ink2);font-weight:400;margin-top:3px;text-wrap:pretty}
+.cmp td{color:var(--ink2);width:14.4%}
+.cmp .me{background:var(--field)}
+.cmp thead .me{background:var(--surface2)}
+.cmp thead th.me{color:var(--ink)}
+.cmp thead th.me img{width:26px;height:26px;border-radius:7px;margin-bottom:8px}
+.cmp tr.group th{padding-top:26px;font:600 12px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);background:var(--surface)}
+.cmp tr.group td{background:var(--surface)}
+.cmp tr.group .me{background:var(--field)}
+.cmp tbody tr:not(.group){transition:background .25s}
+.cmp tbody tr:not(.group):hover td,.cmp tbody tr:not(.group):hover th{background:var(--surface2)}
+.cmp tbody tr:not(.group):hover td.me{background:var(--line)}
+.y,.n,.p{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;line-height:1.35}
+.y{color:var(--ink)}
+.y::before,.n::before,.p::before{content:"";flex:none;width:18px;height:18px;border-radius:50%}
+.y::before{background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round' d='M19 7 10 16l-4-4'/%3E%3C/svg%3E") center/12px no-repeat}
+[data-resolved="dark"] .y::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%230C0C0E' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round' d='M19 7 10 16l-4-4'/%3E%3C/svg%3E")}
+.p::before{border:1.5px solid var(--ink2);background:linear-gradient(90deg,var(--ink2) 50%,transparent 50%)}
+.n{color:var(--ink3)}
+.n::before{border:1.5px solid var(--line2)}
+.cmp td small{display:block;font-size:12.5px;color:var(--ink3);margin-top:4px;padding-left:25px}
+.js .only-lead tbody tr:not(.lead){display:none}
+.note{margin-top:18px;font-size:13.5px;color:var(--ink2);max-width:860px}
+
+/* Honest section */
+.honest{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.honest div{padding:24px 26px;border-radius:22px;border:1px solid var(--line)}
+.honest h3{font:600 16px var(--ui);margin-bottom:6px}
+.honest p{font-size:14.5px;color:var(--ink2)}
+@media (max-width:760px){.honest{grid-template-columns:1fr}}
+
+.cta{text-align:center}
+.cta h2{font-size:clamp(46px,6.4vw,88px);margin-bottom:22px}
+.cta h2 em{color:var(--ink2)}
+.cta p{color:var(--ink2);margin:16px auto 0;font-size:14px}
+.cta p a{color:var(--ink)}
+.ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<a class="skip" href="#top">Skip to content</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></symbol>
+  <symbol id="moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></symbol>
+</defs></svg>
+
+<nav class="nav" aria-label="Main">
+  <div class="cap glass">
+    <a class="brand" href="./" aria-label="Markify home"><img src="images/app-icon.png?v=2" alt="">Markify</a>
+    <a class="link hide-s" href="./#why">Why</a>
+    <a class="link hide-s" href="./#use-cases">Use cases</a>
+    <a class="link hide-s" href="./#features">Features</a>
+    <a class="link hide-s" href="compare.html" aria-current="page">Compare</a>
+    <a class="link hide-s" href="okf.html">OKF</a>
+    <a class="link hide-s" href="help/">Help</a>
+  </div>
+  <div class="cap glass">
+    <button class="theme-btn" type="button" aria-label="Switch appearance"><svg class="moon" aria-hidden="true"><use href="#moon"/></svg><svg class="sun" aria-hidden="true"><use href="#sun"/></svg></button>
+    <a class="btn btn-ink" href="./#download">Download</a>
+  </div>
+</nav>
+
+<main id="top" tabindex="-1">
+  <header class="hero">
+    <div class="aurora" aria-hidden="true"><i></i><i></i></div>
+    <div class="wrap">
+      <p class="eyebrow rv">Compare</p>
+      <h1 class="display rv">How Markify <em>stands out.</em></h1>
+      <p class="rv">Plenty of good Markdown editors exist. Here is where Markify matches them, where it goes further, and when another app is the better choice.</p>
+    </div>
+  </header>
+
+  <section style="padding-top:40px">
+    <div class="wrap">
+      <div class="stand stagger">
+        <article class="rv"><span class="n">01</span><h3>Rendered, and still a file.</h3><p>Write on the finished page while the document stays a plain <code>.md</code> file wherever you keep it. No vault, no database, no import.</p></article>
+        <article class="rv"><span class="n">02</span><h3>Markdown from anywhere.</h3><p>Open a file from any HTTPS link, or browse a GitHub or GitLab repository, private ones included, without cloning it.</p></article>
+        <article class="rv"><span class="n">03</span><h3>AI that stays home.</h3><p>Proofread, rewrite, generate and summarize links with Apple’s on-device model, built into the editor rather than bolted on.</p></article>
+        <article class="rv"><span class="n">04</span><h3>Made for your agents.</h3><p>A command-line tool and plugins for Claude Code, Codex and OpenCode put long answers on a real page.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="table">
+    <div class="wrap">
+      <div class="head rv">
+        <p class="eyebrow">Side by side</p>
+        <h2>Feature by feature.</h2>
+        <p>Built-in features only; plugins and third-party add-ons are left out. Compiled from each app’s public documentation in October 2026.</p>
+      </div>
+      <div class="tools rv">
+        <div class="seg" role="group" aria-label="Rows to show">
+          <button type="button" data-rows="all" aria-pressed="true">All features</button>
+          <button type="button" data-rows="lead" aria-pressed="false">Where Markify leads</button>
+        </div>
+        <div class="legend" aria-hidden="true"><span class="y">Yes</span><span class="p">Partly</span><span class="n">No</span></div>
+      </div>
+      <div class="tablewrap rv" id="tablewrap">
+        <table class="cmp" id="cmpTable">
+          <caption class="visually-hidden">Markify compared with Typora, Obsidian, iA Writer and Bear</caption>
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col" class="me"><img src="images/app-icon.png?v=2" alt=""><br>Markify</th>
+              <th scope="col">Typora</th>
+              <th scope="col">Obsidian</th>
+              <th scope="col">iA Writer</th>
+              <th scope="col">Bear</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="group"><th scope="rowgroup" colspan="6">Writing</th></tr>
+            <tr><th scope="row">Edit on the rendered page<small>Formatting shows as you type, without a second preview pane</small></th>
+              <td class="me"><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span><small>Live Preview</small></td><td><span class="n">No</span><small>Separate preview</small></td><td><span class="y">Yes</span></td></tr>
+            <tr><th scope="row">Raw Markdown view<small>See and edit the source in the same window</small></th>
+              <td class="me"><span class="y">Yes</span><small>⌘/ keeps the caret</small></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="p">Partly</span><small>Option to show markup</small></td></tr>
+            <tr><th scope="row">LaTeX math in the editor</th>
+              <td class="me"><span class="y">Yes</span><small>Native, no web view</small></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="p">Partly</span><small>In preview</small></td><td><span class="y">Yes</span></td></tr>
+            <tr><th scope="row">Mermaid diagrams</th>
+              <td class="me"><span class="y">Yes</span><small>Offline</small></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="y">Yes</span></td></tr>
+                        <tr><th scope="row">Document outline</th>
+              <td class="me"><span class="y">Yes</span><small>With table of contents</small></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td></tr>
+            <tr class="lead"><th scope="row">Link checker<small>List every link and flag the ones that don’t resolve</small></th>
+              <td class="me"><span class="y">Yes</span><small>Local and web</small></td><td><span class="n">No</span></td><td><span class="p">Partly</span><small>Unresolved notes</small></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+
+            <tr class="group"><th scope="rowgroup" colspan="6">Files</th></tr>
+            <tr><th scope="row">Notes are plain <code>.md</code> files<small>Stored where you choose, readable by any app</small></th>
+              <td class="me"><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span><small>In a vault folder</small></td><td><span class="y">Yes</span></td><td><span class="n">No</span><small>App database, exports Markdown</small></td></tr>
+            <tr class="lead"><th scope="row">Open Markdown from a URL</th>
+              <td class="me"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+            <tr class="lead"><th scope="row">Browse a GitHub or GitLab repository<small>Without cloning, private ones with a token</small></th>
+              <td class="me"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+                                    <tr><th scope="row">Export</th>
+              <td class="me"><span class="y">HTML, PDF</span></td><td><span class="y">PDF, Word and more</span></td><td><span class="p">PDF</span></td><td><span class="y">PDF, Word, HTML</span></td><td><span class="y">PDF, Word, HTML</span></td></tr>
+
+            <tr class="group"><th scope="rowgroup" colspan="6">Intelligence and automation</th></tr>
+            <tr class="lead"><th scope="row">On-device AI in the editor<small>Proofread, rewrite and generate without a cloud service</small></th>
+              <td class="me"><span class="y">Yes</span><small>Apple Intelligence</small></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span><small>Tracks AI authorship</small></td><td><span class="n">No</span></td></tr>
+            <tr><th scope="row">Command-line tool</th>
+              <td class="me"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+            <tr class="lead"><th scope="row">Coding-agent plugins<small>Claude Code, Codex, OpenCode</small></th>
+              <td class="me"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="p">Partly</span><small>Through its CLI</small></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+
+            <tr class="group"><th scope="rowgroup" colspan="6">The app</th></tr>
+            <tr><th scope="row">Native Mac app<small>Built with Apple’s own frameworks rather than web technology</small></th>
+              <td class="me"><span class="y">Yes</span><small>SwiftUI, TextKit 2</small></td><td><span class="n">No</span><small>Web-based editor</small></td><td><span class="n">No</span><small>Electron</small></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td></tr>
+            <tr><th scope="row">Platforms</th>
+              <td class="me">Mac</td><td>Mac, Windows, Linux</td><td>Mac, Windows, Linux, iOS, Android</td><td>Mac, Windows, iOS</td><td>Mac, iOS</td></tr>
+            <tr class="lead"><th scope="row">Price</th>
+              <td class="me"><b style="color:var(--ink)">Free</b><small style="padding:0">Including at work</small></td><td>$14.99 once</td><td>Free; paid Sync and Publish</td><td>Paid</td><td>Free; Pro subscription for sync</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note rv">Every app here changes often. If something is out of date, <a href="https://github.com/spaquet/markify/issues/new">tell us on GitHub</a> and we’ll fix it. Product names belong to their owners; Markify isn’t affiliated with them.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="head rv">
+        <p class="eyebrow">Fair is fair</p>
+        <h2>When another app <em>is the better pick.</em></h2>
+        <p>Markify is a focused Mac editor. If one of these matters most to you, look elsewhere, or use Markify alongside it: it opens the same files.</p>
+      </div>
+      <div class="honest stagger">
+        <div class="rv"><h3>You write on your phone too</h3><p>Markify is Mac only. Obsidian, iA Writer and Bear have mobile apps; Markify works with whatever syncs your files, but you’ll need another editor on iOS.</p></div>
+        <div class="rv"><h3>You rely on a plugin ecosystem</h3><p>Obsidian’s community plugins and themes go far beyond any single app. Markify has no plugin system.</p></div>
+        <div class="rv"><h3>Your notes use wiki links</h3><p>Markify reads standard Markdown links. <code>[[Wiki links]]</code>, embeds and graph views are Obsidian territory.</p></div>
+        <div class="rv"><h3>You hand drafts to Word users</h3><p>Typora, iA Writer and Bear export Word documents. Markify exports HTML and PDF.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band cta">
+    <div class="wrap">
+      <h2 class="display rv">See it on <em>your own files.</em></h2>
+      <div class="ctas rv">
+        <a class="btn btn-ink btn-xl" data-dl href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg" download>
+          <svg aria-hidden="true"><use href="#down"/></svg>
+          <span class="lbl"><span data-dl-name>Download for Mac</span><small data-dl-sub data-version="v2.0.2">Apple silicon · v2.0.2</small></span>
+        </a>
+      </div>
+      <p class="rv">Free · macOS 26 Tahoe · <span data-dl-other-label>Have an Intel Mac?</span> <a data-dl-alt href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg" download>Download for Intel</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="who">
+      <a class="brand" href="./"><img src="images/app-icon.png?v=2" alt="">Markify</a>
+      <span>Markdown, without the markup.<br>© 2026 · by <a href="https://github.com/spaquet">Stéphane Paquet</a></span>
+      <div class="seg" role="group" aria-label="Appearance">
+        <button type="button" data-theme-set="system" aria-pressed="true">System</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <nav class="cols" aria-label="Footer">
+      <div><h4>Product</h4><ul><li><a href="./#download">Download</a></li><li><a href="compare.html">Compare</a></li><li><a href="okf.html">Open Knowledge Format</a></li><li><a href="https://github.com/spaquet/markify/releases">Releases</a></li></ul></div>
+      <div><h4>Help</h4><ul><li><a href="help/">User guide</a></li><li><a href="faq.html">FAQ</a></li><li><a href="known-issues.html">Known issues</a></li><li><a href="https://github.com/spaquet/markify/issues">Report an issue</a></li></ul></div>
+      <div><h4>Project</h4><ul><li><a href="https://github.com/spaquet/markify">Source</a></li><li><a href="https://github.com/sponsors/spaquet">Sponsor</a></li><li><a href="legal.html">Legal &amp; privacy</a></li><li><a href="llms.txt">llms.txt</a></li></ul></div>
+    </nav>
+  </div>
+</footer>
+
+<script src="assets/site.js?v=3" defer></script>
+<script>
+(() => {
+  const table = document.getElementById('cmpTable');
+  document.querySelectorAll('[data-rows]').forEach(b => b.addEventListener('click', () => {
+    table.classList.toggle('only-lead', b.dataset.rows === 'lead');
+    document.querySelectorAll('[data-rows]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+})();
+</script>
+</body>
+</html>

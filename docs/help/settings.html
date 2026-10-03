@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Settings — Markify Help</title>
 <meta name="description" content="Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.">
-<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
+<script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
 <link rel="canonical" href="https://spaquet.github.io/markify/help/settings.html">
 <meta property="og:site_name" content="Markify">
 <meta property="og:type" content="article">
@@ -23,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/settings.html","name":"Settings","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-01","description":"Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.","headline":"Settings","inLanguage":"en","keywords":"settings, preferences, font, theme, dark mode, line width, accent, shortcuts, library location","url":"https://spaquet.github.io/markify/help/settings.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/settings.html","name":"Settings","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-02","description":"Change where documents are saved, the default lens, fonts, appearance, Apple Intelligence options and keyboard shortcuts.","headline":"Settings","inLanguage":"en","keywords":"settings, preferences, font, theme, dark mode, line width, accent, shortcuts, library location","url":"https://spaquet.github.io/markify/help/settings.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -32,7 +33,9 @@
     <a class="brand" href="../index.html"><img src="../images/app-icon.png?v=2" alt="" width="30" height="30">Markify</a>
     <a class="link" href="index.html" aria-current="true">Help</a>
     <a class="link hide-s" href="../faq.html">FAQ</a>
-    <a class="link hide-s" href="../okf.html">Knowledge</a>
+    <a class="link hide-s" href="../compare.html">Compare</a>
+    <a class="link hide-s" href="../okf.html">OKF</a>
+    <button class="theme-btn" type="button" aria-label="Switch appearance"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></svg></button>
     <a class="btn btn-accent" href="../index.html#download">Download</a>
   </nav>
 </header>
@@ -86,7 +89,9 @@
 <ul>
 <li><strong>Open documents in</strong> the Rendered lens, the Markdown lens or the last one used, and optionally remember the lens per document.
 </li>
-<li><strong>Prose font</strong> (New York or SF Pro), <strong>Markdown font</strong> (SF Mono or Menlo) and <strong>Line width</strong>.
+<li><strong>Prose font</strong> (New York or SF Pro) and <strong>Markdown font</strong> (SF Mono or Menlo).
+</li>
+<li><strong>Limit line width</strong>: text normally fills the window, with margins that grow as the window widens. Turn this on to keep lines no wider than <strong>Line width</strong> (560–1200 pt) however wide the window is.
 </li>
 <li><strong>Fade toolbar while typing</strong> and <strong>Show word count</strong>.
 </li>
@@ -97,7 +102,7 @@
 <p>Turn Writing Tools in the format bar, generating at the caret, and title and tag suggestions on or off, and choose the default tone. See <a href="intelligence.html">Apple Intelligence</a>.</p>
 <h2 id="shortcuts">Shortcuts</h2>
 <p>Double-click a shortcut to record a new one. See <a href="shortcuts.html">Keyboard shortcuts</a>.</p>
-<p class="edit">Updated 2026-10-01 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/settings.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-02 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/settings.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="command-line.html"><span>Previous</span>Command line</a><a rel="next" href="shortcuts.html"><span>Next</span>Keyboard shortcuts</a></nav>
 </main>
@@ -108,6 +113,7 @@
     <nav aria-label="Footer">
       <a href="index.html">Help</a>
       <a href="../faq.html">FAQ</a>
+      <a href="../compare.html">Compare</a>
       <a href="https://github.com/spaquet/markify">Source</a>
       <a href="https://github.com/spaquet/markify/releases">Releases</a>
       <a href="../okf.html">Open Knowledge Format</a>
@@ -118,5 +124,6 @@
     </nav>
   </div>
 </footer>
+<script src="../assets/site.js?v=3" defer></script>
 </body>
 </html>

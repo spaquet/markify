@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markify — Open Knowledge Format</title>
 <meta name="description" content="Markify reads, browses and edits Open Knowledge Format (OKF) bundles: folders of Markdown concepts with YAML frontmatter that AI agents use as curated context.">
-<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://spaquet.github.io/markify/okf.html">
 <meta property="og:site_name" content="Markify">
 <meta property="og:locale" content="en_US">
@@ -28,261 +28,227 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"TechArticle","headline":"Open Knowledge Format in Markify","description":"How Markify reads, browses and edits Open Knowledge Format (OKF) bundles of Markdown concepts.","url":"https://spaquet.github.io/markify/okf.html","inLanguage":"en","about":[{"@type":"SoftwareApplication","name":"Markify","url":"https://spaquet.github.io/markify/"},{"@type":"CreativeWork","name":"Open Knowledge Format","url":"https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md","publisher":{"@type":"Organization","name":"Google Cloud"}}],"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Markify","item":"https://spaquet.github.io/markify/"},{"@type":"ListItem","position":2,"name":"Open Knowledge Format","item":"https://spaquet.github.io/markify/okf.html"}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
+<link rel="stylesheet" href="assets/site.css?v=3">
 <style>
-:root{
-  --page:#FCFBF9; --page2:#F4F2EE; --ink:#1D1D1F; --ink2:#5E5E63; --ink3:#B3B3B8;
-  --rule:rgba(0,0,0,.09); --field:rgba(0,0,0,.05);
-  --accent:#0A64D6; --accentSoft:rgba(10,100,214,.13); --callout:rgba(10,100,214,.07);
-  --green:#248A3D; --greenSoft:rgba(36,138,61,.13); --orange:#C75300; --orangeSoft:rgba(255,149,0,.15); --red:#D70015; --redSoft:rgba(255,59,48,.13);
-  --code:#F3F1ED; --kw:#AD3DA4; --typ:#3F6E74; --str:#C41A16; --com:#8A8F96;
-  --ai:linear-gradient(90deg,#FF9F0A,#FF375F,#BF5AF2,#0A84FF);
-  --glass:rgba(255,255,255,.62);
-  --glassEdge:0 0 0 .5px rgba(0,0,0,.09),0 6px 20px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.95);
-  --shot:0 0 0 .5px rgba(0,0,0,.14),0 30px 80px -20px rgba(40,30,60,.28),0 12px 30px -12px rgba(40,30,60,.18);
-  --desk:radial-gradient(circle at 18% 22%,#f2d8c6 0,transparent 48%),radial-gradient(circle at 82% 28%,#c8d7f2 0,transparent 52%),radial-gradient(circle at 55% 95%,#d4e7d6 0,transparent 55%),#e8e5ee;
-  --prose:ui-serif,"New York","Newsreader","Iowan Old Style",Georgia,serif;
-  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Inter,system-ui,sans-serif;
-  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;
-  --ease:cubic-bezier(.2,.8,.2,1);
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --page:#1E1E20; --page2:#18181A; --ink:#F2F2F7; --ink2:#A1A1A6; --ink3:#5C5C61;
-    --rule:rgba(255,255,255,.12); --field:rgba(255,255,255,.08);
-    --accent:#3D8BFF; --accentSoft:rgba(61,139,255,.22); --callout:rgba(61,139,255,.14);
-    --green:#30D158; --greenSoft:rgba(48,209,88,.16); --orange:#FF9F0A; --orangeSoft:rgba(255,159,10,.18); --red:#FF453A; --redSoft:rgba(255,69,58,.18);
-    --code:#2A2A2D; --kw:#FF7AB2; --typ:#78C2B3; --str:#D9C97C; --com:#7F8C98;
-    --glass:rgba(62,62,70,.55);
-    --glassEdge:0 0 0 .5px rgba(255,255,255,.14),0 6px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);
-    --shot:0 0 0 .5px rgba(255,255,255,.14),0 30px 80px -20px rgba(0,0,0,.7),0 12px 30px -12px rgba(0,0,0,.5);
-    --desk:radial-gradient(circle at 18% 22%,#3a2c2a 0,transparent 48%),radial-gradient(circle at 82% 28%,#22304a 0,transparent 52%),radial-gradient(circle at 55% 95%,#223226 0,transparent 55%),#1a1a1d;
-  }
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:var(--page);color:var(--ink);font:16px/1.6 var(--ui);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:3px}
-::selection{background:var(--accentSoft)}
-code{font:.88em var(--mono);background:var(--field);padding:1px 6px;border-radius:6px}
-kbd{font:600 .8em var(--ui);padding:2px 8px;border-radius:6px;background:var(--field);box-shadow:inset 0 -1px 0 var(--rule);color:var(--ink);white-space:nowrap}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
-.glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:var(--glassEdge)}
-.ai-text{background:var(--ai);-webkit-background-clip:text;background-clip:text;color:transparent}
-
-/* Nav */
-.nav{position:sticky;top:12px;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:1120px;margin:12px auto 0;padding:0 12px}
-.cap{display:flex;align-items:center;gap:2px;height:44px;padding:4px;border-radius:999px}
-.brand{display:flex;align-items:center;gap:10px;padding:0 14px 0 6px;font:600 15px var(--ui);color:var(--ink)}
-.brand:hover{text-decoration:none}
-.brand img{width:30px;height:30px;border-radius:8px}
-.cap a.link{padding:0 14px;height:36px;display:flex;align-items:center;border-radius:999px;font-size:14px;color:var(--ink);transition:background .2s}
-.cap a.link:hover{background:var(--field);text-decoration:none}
-.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:999px;font:600 14px var(--ui);border:0;cursor:pointer;transition:transform .2s var(--ease),background .2s,filter .2s}
-.btn:hover{text-decoration:none;transform:translateY(-1px)}
-.btn-accent{background:var(--accent);color:#fff}
-.btn-accent:hover{filter:brightness(1.08)}
-.btn-field{background:var(--field);color:var(--ink)}
-.btn-lg{height:46px;padding:0 22px;font-size:15px}
-@media (max-width:760px){.nav .cap .hide-s{display:none}}
-
 /* Hero */
-.hero{padding:88px 0 24px;text-align:center}
-.chips{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:22px;font:500 12.5px var(--ui);color:var(--ink2)}
-.chips span{padding:4px 11px;border-radius:999px;background:var(--field)}
-h1,h2,h3{font-family:var(--prose);letter-spacing:-.01em;text-wrap:balance}
-.hero h1{font-size:clamp(40px,6.4vw,72px);line-height:1.04;font-weight:700;margin-bottom:22px}
-.hero p.lede{font:clamp(18px,2.1vw,22px)/1.55 var(--prose);color:var(--ink2);max-width:680px;margin:0 auto 32px;text-wrap:pretty}
-.hero p.lede strong{color:var(--ink)}
-.ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.hero{position:relative;padding:164px 0 40px;text-align:center;overflow:hidden;isolation:isolate}
+.aurora{position:absolute;inset:-20% -20% 0;z-index:-1;pointer-events:none}
+.aurora i{position:absolute;width:48vw;height:48vw;max-width:700px;max-height:700px;border-radius:50%;filter:blur(80px);opacity:.7;animation:float 24s var(--ease) infinite alternate}
+.aurora i:nth-child(1){left:8%;top:0;background:var(--glowC)}
+.aurora i:nth-child(2){right:6%;top:-10%;background:var(--glowB);animation-delay:-9s}
+.aurora i:nth-child(3){left:38%;top:30%;background:var(--glowA);animation-delay:-15s;animation-duration:30s}
+@keyframes float{50%{transform:translate3d(6%,5%,0) scale(1.1)}100%{transform:translate3d(-4%,-3%,0) scale(.95)}}
+.hero h1{font-size:clamp(54px,8.6vw,128px);margin-bottom:28px}
+.hero h1 em{color:var(--ink2);display:block}
+.hero .lede{font-size:clamp(17px,1.9vw,21px);color:var(--ink2);max-width:680px;margin:0 auto 36px;text-wrap:balance}
+.hero .lede strong{color:var(--ink);font-weight:600}
+.hero .lede a{color:var(--ink)}
+.ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.chips{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:40px}
+.chips span{padding:6px 14px;border-radius:999px;border:1px solid var(--line);font:500 13px var(--ui);color:var(--ink2)}
 
-/* Sections */
-section{padding:104px 0}
-.eyebrow{font:600 12px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-.head{max-width:680px;margin-bottom:48px}
-.head.center{margin-left:auto;margin-right:auto;text-align:center}
-.head h2{font-size:clamp(30px,4.4vw,48px);line-height:1.1;font-weight:700;margin-bottom:16px}
-.head p{font:19px/1.6 var(--prose);color:var(--ink2);text-wrap:pretty}
-.alt{background:var(--page2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
-
-.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-.trio>div{padding:26px;border-radius:20px;background:var(--field)}
-.trio h3{font-size:22px;margin-bottom:8px}
-.trio p{color:var(--ink2);font-size:15px}
-@media (max-width:820px){.trio{grid-template-columns:minmax(0,1fr)}}
+/* Bundle anatomy: a folder tree that draws itself */
+.anatomy{display:grid;grid-template-columns:5fr 6fr;gap:56px;align-items:center}
+.tree3{font:14px/2 var(--mono);color:var(--ink2);padding:28px 30px;border-radius:24px;background:var(--surface);border:1px solid var(--line)}
+.tree3 div{opacity:0;transform:translateX(-10px);transition:opacity .5s var(--ease),transform .5s var(--ease);transition-delay:calc(var(--n) * 70ms)}
+.tree3.in div{opacity:1;transform:none}
+.tree3 b{color:var(--ink);font-weight:500}
+.tree3 i{font-style:normal;color:var(--ink3)}
+.tree3 .r{color:var(--ink3);margin-left:10px;font-family:var(--ui);font-size:12.5px}
+.parts{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+.parts article{padding:26px 28px;background:var(--bg);transition:background .3s}
+.parts article:hover{background:var(--surface)}
+.parts .n{font:500 12.5px var(--mono);color:var(--ink3);display:block;margin-bottom:10px}
+.parts h3{font:400 30px/1.05 var(--display);letter-spacing:-.01em;margin-bottom:8px}
+.parts p{color:var(--ink2);font-size:15px}
+@media (max-width:900px){.anatomy{grid-template-columns:1fr;gap:32px}}
 
 /* Feature rows */
-.row{display:grid;grid-template-columns:5fr 6fr;gap:56px;align-items:center;margin-bottom:96px}
+.row{display:grid;grid-template-columns:5fr 6fr;gap:64px;align-items:center;margin-bottom:120px}
 .row:last-child{margin-bottom:0}
 .row.flip{grid-template-columns:6fr 5fr}
 .row.flip .copy{order:2}
-.row .copy h3{font-size:clamp(26px,3vw,34px);line-height:1.15;margin-bottom:14px}
-.row .copy p{font:18px/1.65 var(--prose);color:var(--ink2);margin-bottom:18px;text-wrap:pretty}
-.row .copy ul{list-style:none;display:grid;gap:9px;font-size:14.5px;color:var(--ink2)}
-.row .copy li{padding-left:18px;position:relative}
-.row .copy li::before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.row .copy h3{font:400 clamp(34px,3.8vw,50px)/1.02 var(--display);letter-spacing:-.02em;margin-bottom:18px}
+.row .copy h3 em{color:var(--ink2)}
+.row .copy>p{font-size:17px;color:var(--ink2);margin-bottom:22px;text-wrap:pretty}
+.row .copy ul{list-style:none;display:grid;gap:12px}
+.row .copy li{display:grid;grid-template-columns:24px 1fr;gap:10px;font-size:15px;color:var(--ink2);text-wrap:pretty}
+.row .copy li svg{width:18px;height:18px;margin-top:3px;color:var(--ink)}
 .row .copy li b{color:var(--ink);font-weight:600}
-@media (max-width:880px){.row,.row.flip{grid-template-columns:minmax(0,1fr);gap:28px;margin-bottom:72px}.row.flip .copy{order:0}}
+.row .frame{min-width:0}
+@media (max-width:900px){.row,.row.flip{grid-template-columns:minmax(0,1fr);gap:32px;margin-bottom:96px}.row.flip .copy{order:0}}
 
-/* Mock window */
-.frame{padding:clamp(12px,2.4vw,28px);border-radius:24px;background:var(--desk);min-width:0}
-.win{border-radius:16px;background:var(--page);box-shadow:var(--shot);overflow:hidden}
-.win .bar{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-bottom:1px solid var(--rule)}
-.win .bar i{width:11px;height:11px;border-radius:50%;background:var(--ink3);opacity:.6}
-.win .bar span{margin-left:10px;font:600 12.5px var(--ui);color:var(--ink2)}
-.win .body{padding:26px 28px 30px}
+/* App-like window mock */
+.win{--paper:#FCFBF9;--pink:#1D1D1F;--pink2:#5E5E63;--pline:rgba(0,0,0,.08);--pfield:rgba(0,0,0,.05);--side:#F4F2EE;
+  border-radius:16px;background:var(--paper);color:var(--pink);box-shadow:var(--shot);overflow:hidden}
+[data-resolved="dark"] .win{--paper:#1E1E20;--pink:#F2F2F7;--pink2:#A1A1A6;--pline:rgba(255,255,255,.1);--pfield:rgba(255,255,255,.08);--side:#18181A}
+.win .bar{display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-bottom:1px solid var(--pline)}
+.win .bar i{width:11px;height:11px;border-radius:50%;background:#FF5F57}.win .bar i:nth-child(2){background:#FEBC2E}.win .bar i:nth-child(3){background:#28C840}
+.win .bar span{margin-left:10px;font:600 12.5px var(--ui);color:var(--pink2)}
+.win .body{padding:28px 30px 32px}
+.win code{background:var(--pfield)}
 .win.split{display:grid;grid-template-columns:200px minmax(0,1fr)}
-.win.split .body{padding:22px 24px}
-@media (max-width:560px){.win.split{grid-template-columns:minmax(0,1fr)}.win.split aside{border-right:0;border-bottom:1px solid var(--rule)}}
-
-/* Chip row, as drawn above a concept's title */
+.win.split .bar{grid-column:1/-1}
+@media (max-width:560px){.win.split{grid-template-columns:minmax(0,1fr)}.win.split aside{border-right:0;border-bottom:1px solid var(--pline)}}
+/* Concept badges, as Markify draws them: the type in the accent, everything else neutral. */
 .chiprow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:22px}
-.chiprow span{padding:3px 10px;border-radius:999px;font:500 12px var(--ui);background:var(--field);color:var(--ink2)}
-.chiprow .type{background:var(--accentSoft);color:var(--accent)}
-.chiprow .draft,.chiprow .stale{background:var(--orangeSoft);color:var(--orange)}
-.chiprow .dep{background:var(--redSoft);color:var(--red)}
-.chiprow .ok{background:var(--greenSoft);color:var(--green)}
-.chiprow .plain{background:none;padding:3px 2px}
-.chiprow .res{background:none;color:var(--accent);padding:3px 2px}
+.chiprow span{padding:3px 10px;border-radius:999px;font:500 12px var(--ui);background:var(--pfield);color:var(--pink2);opacity:0;transform:scale(.85);transition:opacity .4s var(--ease),transform .5s var(--spring);transition-delay:calc(var(--n,0) * 90ms + .2s)}
+.in .chiprow span,.chiprow.in span{opacity:1;transform:none}
+.chiprow .type{background:#0A64D6;color:#fff}
+.chiprow .warn{box-shadow:inset 0 0 0 1px var(--pline);background:none;color:var(--pink)}
+.chiprow .ok{background:var(--pink);color:var(--paper)}
+.chiprow .res{background:none;color:#3D8BFF;padding:3px 2px}
 .doc h4{font:700 28px/1.2 var(--prose);margin-bottom:12px}
-.doc p{font:16.5px/1.65 var(--prose);color:var(--ink)}
-.doc a{border-bottom:1px solid var(--accentSoft)}
-.hint{display:inline-block;margin-top:14px;font:12px var(--ui);color:var(--ink2);padding:4px 10px;border-radius:8px;background:var(--field)}
-
-/* Sidebar mock */
-aside{padding:16px 12px;border-right:1px solid var(--rule);background:var(--page2);font:13px var(--ui);min-width:0}
-aside h5{font:600 10.5px var(--ui);letter-spacing:.04em;color:var(--ink2);margin:0 4px 6px}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);padding:2px;border-radius:8px;background:var(--field);margin-bottom:10px}
-.seg b{font:500 11px var(--ui);text-align:center;padding:3px 0;border-radius:6px;color:var(--ink2)}
-.seg b.on{background:var(--page);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
-.tree div{padding:3px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-.tree .in1{padding-left:20px}.tree .in2{padding-left:34px}
-.tree .dir{color:var(--ink2)}
-.tree .cur{background:var(--accentSoft);font-weight:600}
-.tree small{display:block;color:var(--ink2);font-size:11px}
+.doc p{font:16.5px/1.65 var(--prose);color:var(--pink)}
+.doc a{color:#3D8BFF;border-bottom:1px solid rgba(61,139,255,.3)}
+.hint{display:inline-flex;gap:6px;margin-top:16px;font:12px var(--ui);color:var(--pink2);padding:5px 11px;border-radius:999px;background:var(--pfield)}
+.win aside{padding:16px 12px;border-right:1px solid var(--pline);background:var(--side);font:13px var(--ui);min-width:0}
+.win aside h5,.meta h5{font:600 10.5px var(--ui);letter-spacing:.05em;color:var(--pink2);margin:0 4px 6px}
+.mseg{display:grid;grid-template-columns:repeat(3,1fr);padding:2px;border-radius:8px;background:var(--pfield);margin-bottom:10px}
+.mseg b{font:500 11px var(--ui);text-align:center;padding:3px 0;border-radius:6px;color:var(--pink2)}
+.mseg b.on{background:var(--paper);color:var(--pink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.ftree div{padding:3px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ftree .in1{padding-left:20px}
+.ftree .dir{color:var(--pink2)}
+.ftree .cur{background:rgba(10,100,214,.14);font-weight:600}
 .meta{margin-top:14px;display:grid;gap:3px}
-.meta div{padding:2px 6px;font-size:12px;color:var(--ink2)}
-.meta div b{color:var(--ink);font-weight:500}
-.meta .warn::before{content:"▲ ";color:var(--orange);font-size:10px}
-.meta .info::before{content:"ⓘ ";color:var(--ink2)}
-
-/* Source code sample */
-pre.src{font:13px/1.7 var(--mono);background:var(--code);color:var(--ink);padding:18px 20px;border-radius:14px;overflow-x:auto;border:1px solid var(--rule)}
+.meta div{padding:2px 6px;font-size:12px;color:var(--pink2)}
+.meta div b{color:var(--pink);font-weight:500}
+.meta .info::before{content:"ⓘ ";color:var(--pink2)}
+.meta .lk{color:#3D8BFF!important}
+pre.src{font:13px/1.75 var(--mono);background:var(--surface);color:var(--ink);padding:22px 24px;border-radius:16px;overflow-x:auto;box-shadow:var(--shot)}
 pre.src .k{color:var(--typ)}pre.src .s{color:var(--str)}pre.src .c{color:var(--com)}pre.src .d{color:var(--ink3)}
-
-/* Menu mock */
-.menu{max-width:280px;margin:0 auto;padding:6px;border-radius:12px;font:13.5px var(--ui)}
-.menu div{padding:5px 12px;border-radius:6px;display:flex;justify-content:space-between;gap:12px}
-.menu div.hl{background:var(--accent);color:#fff}
+pre.src .hl{display:inline-block;width:100%;background:var(--accentSoft);border-radius:4px;animation:pulse 3.2s var(--ease) infinite}
+@keyframes pulse{0%,100%{background:transparent}40%,60%{background:var(--accentSoft)}}
+.menu{max-width:300px;margin:0 auto;padding:6px;border-radius:14px;font:13.5px var(--ui)}
+.menu div{padding:6px 12px;border-radius:7px;display:flex;justify-content:space-between;gap:12px;transition:background .25s,color .25s}
+.menu div.hl{background:#0A64D6;color:#fff}
 .menu div small{color:inherit;opacity:.6}
-.menu hr{border:0;border-top:1px solid var(--rule);margin:5px 8px}
+.menu hr{border:0;border-top:1px solid var(--line);margin:5px 8px}
 
-/* Coverage table */
-.cover{width:100%;border-collapse:collapse;font-size:14.5px;background:var(--page);border:1px solid var(--rule);border-radius:16px;overflow:hidden}
-.cover th,.cover td{padding:12px 16px;border-top:1px solid var(--rule);text-align:left;vertical-align:top}
-.cover thead th{border-top:0;font:600 12px var(--ui);letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);background:var(--field)}
-.cover td:first-child{white-space:nowrap;color:var(--ink2);font:13px var(--mono)}
-.cover td:nth-child(2){font-weight:600}
+/* Trio */
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:96px}
+.trio>div{padding:28px;border-radius:24px;background:var(--surface);border:1px solid var(--line);transition:transform .5s var(--spring)}
+.trio>div:hover{transform:translateY(-4px)}
+.trio h3{font:600 17px var(--ui);margin-bottom:8px}
+.trio p{color:var(--ink2);font-size:15px}
+@media (max-width:860px){.trio{grid-template-columns:minmax(0,1fr)}}
+
+/* Coverage */
+.tablewrap{overflow-x:auto;border-radius:24px;border:1px solid var(--line);background:var(--surface)}
+.cover{width:100%;border-collapse:collapse;font-size:14.5px}
+.cover th,.cover td{padding:15px 20px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+.cover thead th{border-top:0;font:600 12px var(--ui);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
+.cover td:first-child{white-space:nowrap;color:var(--ink3);font:13px var(--mono)}
+.cover td:nth-child(2){font-weight:600;white-space:nowrap}
 .cover td:last-child{color:var(--ink2)}
-.tablewrap{overflow-x:auto;border-radius:16px}
-
-.limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:40px}
-.limits div{padding:22px 24px;border-radius:18px;border:1px solid var(--rule)}
-.limits h3{font:600 16px var(--ui);margin-bottom:6px;letter-spacing:0}
+.cover tbody tr{transition:background .25s}
+.cover tbody tr:hover{background:var(--surface2)}
+.limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+.limits div{padding:24px 26px;border-radius:22px;border:1px solid var(--line)}
+.limits h3{font:600 16px var(--ui);margin-bottom:6px}
 .limits p{font-size:14.5px;color:var(--ink2)}
 @media (max-width:820px){.limits{grid-template-columns:minmax(0,1fr)}}
 
 .cta{text-align:center}
-.cta p{font:19px/1.6 var(--prose);color:var(--ink2);max-width:560px;margin:0 auto 28px}
-.cta h2{font-size:clamp(32px,4.6vw,50px);line-height:1.08;margin-bottom:14px}
-
-footer{border-top:1px solid var(--rule);padding:34px 0 48px;font-size:13.5px;color:var(--ink2)}
-footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-footer nav{display:flex;gap:20px;flex-wrap:wrap}
-footer a{color:var(--ink2)}
-
-.js .rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
-.js .rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.js .rv{opacity:1;transform:none;transition:none}}
-@media (max-width:560px){.wrap{padding:0 16px}section{padding:76px 0}.hero{padding-top:56px}.nav{padding:0 8px}.cap a.link{padding:0 10px}.win .body{padding:20px}}
-
-/* Accessibility */
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.btn:focus-visible,.cap a:focus-visible,.toggle button:focus-visible,.ai-tabs button:focus-visible{outline-offset:3px}
-main p a:not(.btn),main li a:not(.btn),footer a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
-.skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 16px;border-radius:10px;background:#0A64D6;color:#fff;font-weight:600}
-.skip:focus{top:12px}
-main:focus{outline:none}
-/* White text needs the deeper blue in both appearances. */
-.btn-accent,.toggle button[aria-pressed="true"]{background:#0A64D6}
-.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.cta h2{font-size:clamp(46px,6.4vw,88px);margin-bottom:20px}
+.cta h2 em{color:var(--ink2)}
+.cta>.wrap>p{color:var(--ink2);max-width:560px;margin:0 auto 32px;font-size:18px}
 </style>
-<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
 <a class="skip" href="#top">Skip to content</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="aig" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF9F0A"/><stop offset=".35" stop-color="#FF375F"/><stop offset=".65" stop-color="#BF5AF2"/><stop offset="1" stop-color="#0A84FF"/></linearGradient>
+  <symbol id="down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m0 0-5-5m5 5-5 5"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></symbol>
+  <symbol id="moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></symbol>
+</defs></svg>
 
 <nav class="nav" aria-label="Main">
   <div class="cap glass">
     <a class="brand" href="./" aria-label="Markify home"><img src="images/app-icon.png?v=2" alt="">Markify</a>
-    <a class="link hide-s" href="#reading">Reading</a>
-    <a class="link hide-s" href="#bundles">Bundles</a>
-    <a class="link hide-s" href="#authoring">Authoring</a>
+    <a class="link hide-s" href="./#why">Why</a>
+    <a class="link hide-s" href="./#use-cases">Use cases</a>
+    <a class="link hide-s" href="./#features">Features</a>
+    <a class="link hide-s" href="compare.html">Compare</a>
+    <a class="link hide-s" href="okf.html" aria-current="page">OKF</a>
+    <a class="link hide-s" href="help/">Help</a>
   </div>
   <div class="cap glass">
-    <a class="link hide-s" href="#coverage">Spec coverage</a>
-    <a class="link hide-s" href="help/knowledge.html">Help</a>
-    <a class="btn btn-accent" href="./#download">Download</a>
+    <button class="theme-btn" type="button" aria-label="Switch appearance"><svg class="moon" aria-hidden="true"><use href="#moon"/></svg><svg class="sun" aria-hidden="true"><use href="#sun"/></svg></button>
+    <a class="btn btn-ink" href="./#download">Download</a>
   </div>
 </nav>
 
 <main id="top" tabindex="-1">
-  <div class="hero wrap">
-    <div class="chips rv"><span>Open Knowledge Format 0.2</span><span>macOS 26</span><span>Plain Markdown</span></div>
-    <h1 class="rv">Knowledge for agents,<br>edited by people.</h1>
-    <p class="lede rv">The <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">Open Knowledge Format</a> packages what an organization knows as a folder of Markdown files that AI agents can read. Markify <strong>reads, browses and maintains those bundles</strong> without changing a line you didn’t touch.</p>
-    <div class="ctas rv">
-      <a class="btn btn-accent btn-lg" href="./#download">Download Markify</a>
-      <a class="btn btn-field btn-lg" href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">Read the OKF spec</a>
+  <header class="hero">
+    <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="wrap">
+      <p class="eyebrow rv">Open Knowledge Format</p>
+      <h1 class="display rv">Knowledge for agents, <em>edited by people.</em></h1>
+      <p class="lede rv">The <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">Open Knowledge Format</a> packages what an organization knows as a folder of Markdown files that AI agents can read. Markify <strong>reads, browses and maintains those bundles</strong> without changing a line you didn’t touch.</p>
+      <div class="ctas rv">
+        <a class="btn btn-ink btn-lg" href="./#download"><svg aria-hidden="true"><use href="#down"/></svg>Download Markify</a>
+        <a class="btn btn-field btn-lg" href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">Read the OKF spec <svg class="arrow" aria-hidden="true"><use href="#right"/></svg></a>
+      </div>
+      <div class="chips rv"><span>OKF 0.2</span><span>macOS 26</span><span>Plain Markdown</span><span>Nothing executed</span></div>
     </div>
-  </div>
+  </header>
 
   <section id="format">
     <div class="wrap">
       <div class="head rv">
         <p class="eyebrow">The format</p>
-        <h2>A bundle is just a folder.</h2>
+        <h2>A bundle is <em>just a folder.</em></h2>
         <p>No database and no server. If you can open a Markdown file, you can read OKF, and if you can commit to Git, you can ship it.</p>
       </div>
-      <div class="trio">
-        <div class="rv"><h3>Bundle</h3><p>A directory of <code>.md</code> files organized by topic, with optional <code>index.md</code> listings and <code>log.md</code> histories at any level.</p></div>
-        <div class="rv"><h3>Concept</h3><p>One Markdown file with YAML frontmatter. Only <code>type</code> is required; <code>title</code>, <code>description</code>, <code>resource</code> and <code>tags</code> are recommended.</p></div>
-        <div class="rv"><h3>Links</h3><p>Ordinary Markdown links between concepts, preferably bundle-absolute like <code>/tables/orders.md</code>. A broken link is knowledge not written yet.</p></div>
+      <div class="anatomy">
+        <div class="tree3 rv" id="tree" aria-label="Example bundle folder">
+          <div style="--n:0"><b>acme-knowledge/</b></div>
+          <div style="--n:1">├─ <b>index.md</b><span class="r">okf_version, listing</span></div>
+          <div style="--n:2">├─ <b>log.md</b><span class="r">history, newest first</span></div>
+          <div style="--n:3">├─ metrics/</div>
+          <div style="--n:4">│  ├─ <b>revenue.md</b><span class="r">type: Metric</span></div>
+          <div style="--n:5">│  └─ gross-profit.md</div>
+          <div style="--n:6">├─ tables/</div>
+          <div style="--n:7">│  ├─ <b>orders.md</b><span class="r">type: Table</span></div>
+          <div style="--n:8">│  └─ customers.md</div>
+          <div style="--n:9">└─ playbooks/<i> …</i></div>
+        </div>
+        <div class="parts stagger">
+          <article class="rv"><span class="n">01</span><h3>Bundle</h3><p>A directory of <code>.md</code> files organized by topic, with optional <code>index.md</code> listings and <code>log.md</code> histories at any level.</p></article>
+          <article class="rv"><span class="n">02</span><h3>Concept</h3><p>One Markdown file with YAML frontmatter. Only <code>type</code> is required; <code>title</code>, <code>description</code>, <code>resource</code> and <code>tags</code> are recommended.</p></article>
+          <article class="rv"><span class="n">03</span><h3>Links</h3><p>Ordinary Markdown links between concepts, preferably bundle-absolute like <code>/tables/orders.md</code>. A broken link is knowledge not written yet.</p></article>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="alt" id="reading">
+  <section class="band" id="reading">
     <div class="wrap">
       <div class="row">
         <div class="copy rv">
           <p class="eyebrow">Reading</p>
-          <h3>Status, trust and freshness above the title.</h3>
-          <p>In the rendered lens a concept’s frontmatter folds into one row of chips. Plain notes look exactly as they always have; the badges appear only when a file declares a <code>type</code>.</p>
+          <h3>Status, trust and freshness <em>above the title.</em></h3>
+          <p>In the Rendered lens a concept’s frontmatter folds into one row of chips. Plain notes look exactly as they always have; the badges appear only when a file declares a <code>type</code>.</p>
           <ul>
-            <li><b>Type</b> in the accent color, then <b>Draft</b> or <b>Deprecated</b> when the status isn’t stable.</li>
-            <li><b>Stale</b> once <code>stale_after</code> has passed.</li>
-            <li>The trust tier from <code>verified</code>: <b>✓ Reviewed</b> by a person, <b>Machine-confirmed</b>, or <b>Unverified</b>.</li>
-            <li>The <code>resource</code> as a link to the asset the concept describes.</li>
-            <li><kbd>⌘</kbd>-click any link to follow it. A link to a concept that doesn’t exist yet offers to create it.</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Type</b> in the accent color, then <b>Draft</b> or <b>Deprecated</b> when the status isn’t stable.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Stale</b> once <code>stale_after</code> has passed.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>The trust tier from <code>verified</code>: <b>✓ Reviewed</b> by a person, <b>Machine-confirmed</b>, or <b>Unverified</b>.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>The <code>resource</code> as a link to the asset the concept describes.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><kbd>⌘</kbd>-click any link to follow it. A link to a concept that doesn’t exist yet offers to create it.</span></li>
           </ul>
         </div>
-        <div class="frame rv" aria-hidden="true">
+        <div class="frame rv-scale" aria-hidden="true">
           <div class="win">
             <div class="bar"><i></i><i></i><i></i><span>revenue</span></div>
             <div class="body doc">
-              <div class="chiprow"><span class="type">Metric</span><span class="draft">Draft</span><span class="stale">Stale</span><span class="ok">✓ Reviewed</span><span>finance</span><span>revenue</span><span class="res">↗ console.cloud.google.com</span></div>
+              <div class="chiprow"><span class="type" style="--n:0">Metric</span><span class="warn" style="--n:1">Draft</span><span class="warn" style="--n:2">Stale</span><span class="ok" style="--n:3">✓ Reviewed</span><span style="--n:4">finance</span><span style="--n:5">revenue</span><span class="res" style="--n:6">↗ console.cloud.google.com</span></div>
               <h4>Definition</h4>
               <p>Recognized revenue sums <code>amount</code> from the <a>orders table</a>, per the finance recognition policy.</p>
               <span class="hint">⌘-click opens /tables/orders.md</span>
@@ -294,15 +260,15 @@ main:focus{outline:none}
       <div class="row flip">
         <div class="copy rv">
           <p class="eyebrow">Plain files</p>
-          <h3>The source stays yours.</h3>
+          <h3>The source <em>stays yours.</em></h3>
           <p>Switch to the Markdown lens and it’s the same YAML you wrote. Markify parses frontmatter with a real YAML reader but never re-serializes it: every change rewrites only the key it touches.</p>
           <ul>
-            <li>Comments, key order and your own extension keys survive every edit.</li>
-            <li>Nested fields like <code>verified</code>, <code>sources</code> and <code>executor</code> are understood, including the single-mapping shorthand.</li>
-            <li>Everything is undoable as one step.</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>Comments, key order and your own extension keys survive every edit.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>Nested fields like <code>verified</code>, <code>sources</code> and <code>executor</code> are understood, including the single-mapping shorthand.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>Everything is undoable as one step.</span></li>
           </ul>
         </div>
-        <div class="frame rv">
+        <div class="frame rv-scale">
 <pre class="src" tabindex="0" aria-label="Example concept source"><span class="d">---</span>
 <span class="k">type</span>: Metric
 <span class="k">title</span>: Revenue
@@ -311,7 +277,7 @@ main:focus{outline:none}
 <span class="k">status</span>: draft
 <span class="c"># owned by the finance data team</span>
 <span class="k">generated</span>: { by: reference_agent/gemini-2.5-pro, at: 2026-06-20T22:53:05Z }
-<span class="k">verified</span>: { by: human:ana, at: 2026-06-25T09:00:00Z }
+<span class="hl"><span class="k">verified</span>: { by: human:ana, at: 2026-06-25T09:00:00Z }</span>
 <span class="k">stale_after</span>: 2026-09-23T00:00:00Z
 <span class="k">sources</span>:
   - { id: rev-policy, resource: <span class="s">https://wiki.acme/revenue</span> }
@@ -326,21 +292,22 @@ main:focus{outline:none}
       <div class="row">
         <div class="copy rv">
           <p class="eyebrow">Bundles</p>
-          <h3>Browse the whole bundle from the sidebar.</h3>
+          <h3>The whole bundle, <em>in the sidebar.</em></h3>
           <p>Choose <b>File › Open Bundle Folder…</b> (<kbd>⇧⌘O</kbd>) once and Markify remembers it. The Knowledge section of the sidebar (<kbd>⌃⌘S</kbd>) then shows every concept.</p>
           <ul>
-            <li>Browse by <b>folder</b>, by <b>type</b>, or by <b>tag</b>. Search filters by title, description and tag.</li>
-            <li><b>Linked from</b> lists every concept that points at this one, including through <code>sources</code> and other path fields.</li>
-            <li>Issues are checked as you type: missing <code>type</code>, bad timestamps, unknown statuses, broken links.</li>
-            <li>The bundle is rescanned when files change on disk, whether you, Git or an agent changed them.</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>Browse by <b>folder</b>, by <b>type</b>, or by <b>tag</b>. Search filters by title, description and tag.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Linked from</b> lists every concept that points at this one, including through <code>sources</code> and other path fields.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>Issues are checked as you type: missing <code>type</code>, bad timestamps, unknown statuses, broken links.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>The bundle is rescanned when files change on disk, whether you, Git or an agent changed them.</span></li>
           </ul>
         </div>
-        <div class="frame rv" aria-hidden="true">
+        <div class="frame rv-scale" aria-hidden="true">
           <div class="win split">
+            <div class="bar"><i></i><i></i><i></i><span>Revenue</span></div>
             <aside>
               <h5>KNOWLEDGE</h5>
-              <div class="seg"><b class="on">Folders</b><b>Types</b><b>Tags</b></div>
-              <div class="tree">
+              <div class="mseg" id="mseg"><b class="on">Folders</b><b>Types</b><b>Tags</b></div>
+              <div class="ftree">
                 <div class="dir">▾ metrics/</div>
                 <div class="in1 cur">Revenue</div>
                 <div class="in1">Gross profit</div>
@@ -357,7 +324,7 @@ main:focus{outline:none}
               </div>
             </aside>
             <div class="body doc">
-              <div class="chiprow"><span class="type">Metric</span><span class="ok">✓ Reviewed</span><span>finance</span></div>
+              <div class="chiprow"><span class="type" style="--n:0">Metric</span><span class="ok" style="--n:1">✓ Reviewed</span><span style="--n:2">finance</span></div>
               <h4>Revenue</h4>
               <p>Joined with <a>customers</a> on <code>customer_id</code>.</p>
             </div>
@@ -368,29 +335,29 @@ main:focus{outline:none}
       <div class="row flip">
         <div class="copy rv">
           <p class="eyebrow">Provenance &amp; trust</p>
-          <h3>Where a fact came from, and who checked it.</h3>
+          <h3>Where a fact came from, <em>and who checked it.</em></h3>
           <p>Below the browser, the sidebar shows what the current concept’s frontmatter says about itself, so a reviewer can judge it without reading YAML.</p>
           <ul>
-            <li>When it last changed and who changed it, and when and by whom it was last verified.</li>
-            <li>Each source with its credibility signals: author, usage count and last change.</li>
-            <li>Footnotes keyed to a source show that source in their tooltip.</li>
-            <li><b>Attested Computations</b> show their contract (runtime, parameters, executor, attester) as links. Markify shows the contract; it never runs a computation.</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>When it last changed and who changed it, and when and by whom it was last verified.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>Each source with its credibility signals: author, usage count and last change.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span>Footnotes keyed to a source show that source in their tooltip.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Attested Computations</b> show their contract (runtime, parameters, executor, attester) as links. Markify shows the contract; it never runs a computation.</span></li>
           </ul>
         </div>
-        <div class="frame rv" aria-hidden="true">
+        <div class="frame rv-scale" aria-hidden="true">
           <div class="win">
             <div class="bar"><i></i><i></i><i></i><span>Knowledge</span></div>
             <div class="body">
               <div class="meta" style="margin:0">
                 <div>Changed Jun 20, 2026 by <b>reference_agent/gemini-2.5-pro</b></div>
                 <div>Verified Jun 25, 2026 by <b>ana</b></div>
-                <h5 style="margin-top:12px">SOURCES</h5>
-                <div><b style="color:var(--accent)">Revenue recognition policy</b><br>finance-docs · 5,000 uses · updated May 30, 2026</div>
-                <h5 style="margin-top:12px">COMPUTATION</h5>
+                <h5 style="margin-top:14px">SOURCES</h5>
+                <div><b class="lk">Revenue recognition policy</b><br>finance-docs · 5,000 uses · updated May 30, 2026</div>
+                <h5 style="margin-top:14px">COMPUTATION</h5>
                 <div>Runs on <b>bigquery</b></div>
                 <div style="font-family:var(--mono)">year: integer</div>
-                <div><b style="color:var(--accent)">Executor</b> · returns job_id, executed_sql, result</div>
-                <div><b style="color:var(--accent)">Attester</b> · references/attesters/revenue.py</div>
+                <div><b class="lk">Executor</b> · returns job_id, executed_sql, result</div>
+                <div><b class="lk">Attester</b> · references/attesters/revenue.py</div>
               </div>
             </div>
           </div>
@@ -399,23 +366,23 @@ main:focus{outline:none}
     </div>
   </section>
 
-  <section class="alt" id="authoring">
+  <section class="band" id="authoring">
     <div class="wrap">
       <div class="row">
         <div class="copy rv">
           <p class="eyebrow">Authoring</p>
-          <h3>Maintain a bundle without hand-editing YAML.</h3>
+          <h3>Maintain a bundle <em>without hand-editing YAML.</em></h3>
           <p>The Knowledge menu, under the <b>…</b> button, covers the chores that keep a bundle trustworthy.</p>
           <ul>
-            <li><b>Make Concept</b> adds a <code>type</code>, suggesting the types the bundle already uses.</li>
-            <li><b>Mark Verified</b> adds <code>{ by: human:you, at: now }</code> to <code>verified</code>. Set your ID in Settings › General.</li>
-            <li><b>Status</b> switches between draft, stable and deprecated.</li>
-            <li><b>Add Log Entry</b> writes a dated entry to the folder’s <code>log.md</code>, newest first.</li>
-            <li><b>Rebuild Index</b> regenerates <code>index.md</code> from each concept’s type, title and description.</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Make Concept</b> adds a <code>type</code>, suggesting the types the bundle already uses.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Mark Verified</b> adds <code>{ by: human:you, at: now }</code> to <code>verified</code>. Set your ID in Settings › General.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Status</b> switches between draft, stable and deprecated.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Add Log Entry</b> writes a dated entry to the folder’s <code>log.md</code>, newest first.</span></li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg><span><b>Rebuild Index</b> regenerates <code>index.md</code> from each concept’s type, title and description.</span></li>
           </ul>
         </div>
-        <div class="frame rv" aria-hidden="true">
-          <div class="menu glass">
+        <div class="frame rv-scale" aria-hidden="true">
+          <div class="menu glass" id="menu">
             <div>Mark Verified</div>
             <div>Status <small>▸</small></div>
             <hr>
@@ -427,7 +394,7 @@ main:focus{outline:none}
         </div>
       </div>
 
-      <div class="trio">
+      <div class="trio stagger">
         <div class="rv"><h3>Links that keep up</h3><p>Type <code>](/</code> to pick a concept from the bundle. After <b>Rename</b> or <b>Move To</b>, Markify offers to update every link that pointed at the old location, keeping absolute links absolute and relative links relative.</p></div>
         <div class="rv"><h3>Honest authorship</h3><p>OKF separates who wrote a concept from who confirmed it. When you edit a concept’s text, Markify records you in <code>generated</code>, at most once a day. You can turn this off in Settings.</p></div>
         <div class="rv"><h3><span class="ai-text">Apple Intelligence</span></h3><p>“Suggest title, type &amp; tags” also proposes a one-sentence description, merged key by key. AI text you keep in a concept is recorded as <code>apple-intelligence</code> in <code>generated</code>. It all runs on device.</p></div>
@@ -439,7 +406,7 @@ main:focus{outline:none}
     <div class="wrap">
       <div class="head rv">
         <p class="eyebrow">Spec coverage</p>
-        <h2>OKF 0.2, section by section.</h2>
+        <h2>OKF 0.2, <em>section by section.</em></h2>
         <p>Markify follows the spec’s conformance rules as a consumer: it reports problems, and never refuses a bundle for missing optional fields, unknown types or keys, broken links or a missing index.</p>
       </div>
       <div class="tablewrap rv">
@@ -460,7 +427,7 @@ main:focus{outline:none}
           </tbody>
         </table>
       </div>
-      <div class="limits">
+      <div class="limits stagger">
         <div class="rv"><h3>No execution</h3><p>Computations, executors and attesters are displayed, not run. That belongs to the agent that consumes the bundle.</p></div>
         <div class="rv"><h3>Folders you allow</h3><p>Markify is sandboxed. Bundle-wide features work in your library folder and in folders opened with Open Bundle Folder.</p></div>
         <div class="rv"><h3>Unpacked bundles</h3><p>Zip and tarball bundles need unpacking first. There’s no graph view; links show as lists in the sidebar.</p></div>
@@ -468,39 +435,55 @@ main:focus{outline:none}
     </div>
   </section>
 
-  <section class="alt cta">
+  <section class="band cta">
     <div class="wrap">
-      <h2 class="rv">Open a bundle and start reviewing.</h2>
+      <h2 class="display rv">Open a bundle and <em>start reviewing.</em></h2>
       <p class="rv">Free, native, and entirely on your Mac. Your knowledge stays plain Markdown in folders you control.</p>
       <div class="ctas rv">
-        <a class="btn btn-accent btn-lg" href="./#download">Download Markify</a>
-        <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify/blob/main/OKF.md">Implementation notes</a>
+        <a class="btn btn-ink btn-xl" data-dl href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg" download>
+          <svg aria-hidden="true"><use href="#down"/></svg>
+          <span class="lbl"><span data-dl-name>Download for Mac</span><small data-dl-sub data-version="v2.0.2">Apple silicon · v2.0.2</small></span>
+        </a>
+        <a class="btn btn-field btn-lg" href="https://github.com/spaquet/markify/blob/main/OKF.md">Implementation notes <svg class="arrow" aria-hidden="true"><use href="#right"/></svg></a>
       </div>
+      <p class="rv" style="margin:18px auto 0;font-size:14px"><span data-dl-other-label>Have an Intel Mac?</span> <a data-dl-alt href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg" download style="color:var(--ink)">Download for Intel</a></p>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <span>© 2026 Markify · by <a href="https://github.com/spaquet">Stéphane Paquet</a> · OKF is an open specification by Google Cloud.</span>
-    <nav aria-label="Footer">
-      <a href="./">Home</a>
-      <a href="help/">Help</a>
-      <a href="faq.html">FAQ</a>
-      <a href="https://github.com/spaquet/markify">Source</a>
-      <a href="https://github.com/spaquet/markify/releases">Releases</a>
-      <a href="https://github.com/spaquet/markify/issues">Issues</a>
-      <a href="known-issues.html">Known issues</a>
-      <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="legal.html">Legal &amp; privacy</a>
+    <div class="who">
+      <a class="brand" href="./"><img src="images/app-icon.png?v=2" alt="">Markify</a>
+      <span>Markdown, without the markup.<br>© 2026 · by <a href="https://github.com/spaquet">Stéphane Paquet</a><br>OKF is an open specification by Google Cloud.</span>
+      <div class="seg" role="group" aria-label="Appearance">
+        <button type="button" data-theme-set="system" aria-pressed="true">System</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">Light</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <nav class="cols" aria-label="Footer">
+      <div><h4>Product</h4><ul><li><a href="./#download">Download</a></li><li><a href="compare.html">Compare</a></li><li><a href="okf.html">Open Knowledge Format</a></li><li><a href="https://github.com/spaquet/markify/releases">Releases</a></li></ul></div>
+      <div><h4>Help</h4><ul><li><a href="help/">User guide</a></li><li><a href="help/knowledge.html">Knowledge bundles</a></li><li><a href="faq.html">FAQ</a></li><li><a href="known-issues.html">Known issues</a></li></ul></div>
+      <div><h4>Project</h4><ul><li><a href="https://github.com/spaquet/markify">Source</a></li><li><a href="https://github.com/sponsors/spaquet">Sponsor</a></li><li><a href="legal.html">Legal &amp; privacy</a></li><li><a href="llms.txt">llms.txt</a></li></ul></div>
     </nav>
   </div>
 </footer>
 
+<script src="assets/site.js?v=3" defer></script>
 <script>
 (() => {
-  const io = new IntersectionObserver((es) => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
-  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The folder tree draws itself, and the chip rows pop in, when they scroll into view.
+  const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .3 });
+  document.querySelectorAll('#tree, .chiprow').forEach(el => io.observe(el));
+  if (reduce) return;
+  // The sidebar mock cycles Folders, Types, Tags; the menu mock moves its highlight like a pointer would.
+  const seg = [...document.querySelectorAll('#mseg b')];
+  let s = 0; setInterval(() => { seg[s].classList.remove('on'); s = (s + 1) % seg.length; seg[s].classList.add('on'); }, 2200);
+  const items = [...document.querySelectorAll('#menu div')];
+  let m = items.findIndex(d => d.classList.contains('hl'));
+  setInterval(() => { items[m].classList.remove('hl'); m = (m + 1) % items.length; items[m].classList.add('hl'); }, 1400);
 })();
 </script>
 </body>

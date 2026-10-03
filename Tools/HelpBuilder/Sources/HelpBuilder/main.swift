@@ -236,6 +236,11 @@ try PropertyListSerialization.data(fromPropertyList: bookInfo, format: .xml, opt
 
 // MARK: The website
 
+/// The appearance button's moon and sun; assets/site.js shows the one that switches away from the current theme.
+let themeIcons = """
+<svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></svg>
+"""
+
 func webPage(_ page: Page, index: Int) -> String {
     let url = site + page.web
     let isIndex = page.slug == "index"
@@ -267,8 +272,9 @@ func webPage(_ page: Page, index: Int) -> String {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>\(MarkdownHTML.escape(docTitle))</title>
     <meta name="description" content="\(MarkdownHTML.escape(page.description))">
-    <meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#1E1E20" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
+    <script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
     <link rel="canonical" href="\(url)">
     <meta property="og:site_name" content="Markify">
     <meta property="og:type" content="article">
@@ -378,7 +384,9 @@ func webPage(_ page: Page, index: Int) -> String {
         <a class="brand" href="\(up)"><img src="\(assetBase)images/app-icon.png?v=2" alt="" width="30" height="30">Markify</a>
         <a class="link" href="\(helpHome)"\(page.web.hasPrefix("help/") ? " aria-current=\"true\"" : "")>Help</a>
         <a class="link hide-s" href="\(relative("faq.html", from: page.web))"\(page.web == "faq.html" ? " aria-current=\"page\"" : "")>FAQ</a>
-        <a class="link hide-s" href="\(relative("okf.html", from: page.web))">Knowledge</a>
+        <a class="link hide-s" href="\(relative("compare.html", from: page.web))">Compare</a>
+        <a class="link hide-s" href="\(relative("okf.html", from: page.web))">OKF</a>
+        <button class="theme-btn" type="button" aria-label="Switch appearance">\(themeIcons)</button>
         <a class="btn btn-accent" href="\(up)#download">Download</a>
       </nav>
     </header>
@@ -394,6 +402,7 @@ func webPage(_ page: Page, index: Int) -> String {
         <nav aria-label="Footer">
           <a href="\(helpHome)">Help</a>
           <a href="\(relative("faq.html", from: page.web))">FAQ</a>
+          <a href="\(relative("compare.html", from: page.web))">Compare</a>
           <a href="\(repository)">Source</a>
           <a href="\(repository)/releases">Releases</a>
           <a href="\(relative("okf.html", from: page.web))">Open Knowledge Format</a>
@@ -404,6 +413,7 @@ func webPage(_ page: Page, index: Int) -> String {
         </nav>
       </div>
     </footer>
+    <script src="\(relative("assets/site.js", from: page.web))?v=3" defer></script>
     \(scripts)</body>
     </html>
 
@@ -426,6 +436,7 @@ let homeModified = lastModified(docs.appendingPathComponent("index.html"))
 var sitemap = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
 sitemap += "<url><loc>\(site)</loc><lastmod>\(homeModified)</lastmod><priority>1.0</priority></url>\n"
 sitemap += "<url><loc>\(site)okf.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("okf.html")))</lastmod><priority>0.8</priority></url>\n"
+sitemap += "<url><loc>\(site)compare.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("compare.html")))</lastmod><priority>0.7</priority></url>\n"
 sitemap += "<url><loc>\(site)known-issues.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("known-issues.html")))</lastmod><priority>0.5</priority></url>\n"
 for page in pages {
     let loc = page.web == "help/index.html" ? site + "help/" : site + page.web
@@ -465,7 +476,7 @@ llms += "\n## FAQ and legal\n\n"
 for page in pages where page.schema == "faq" || page.license {
     llms += "- [\(page.title)](\(webURL(page))): \(page.description)\n"
 }
-llms += "\n## Optional\n\n- [Open Knowledge Format in Markify](\(site)okf.html): How Markify reads, browses and maintains OKF knowledge bundles.\n- [Full help as one Markdown file](\(site)llms-full.txt)\n"
+llms += "\n## Optional\n\n- [Markify compared with other Markdown editors](\(site)compare.html): Features side by side with Typora, Obsidian, iA Writer and Bear.\n- [Open Knowledge Format in Markify](\(site)okf.html): How Markify reads, browses and maintains OKF knowledge bundles.\n- [Full help as one Markdown file](\(site)llms-full.txt)\n"
 try llms.write(to: docs.appendingPathComponent("llms.txt"), atomically: true, encoding: .utf8)
 
 var full = "# Markify Help\n\nThe complete Markify user guide as Markdown. Source: \(repository)/tree/main/help\n"

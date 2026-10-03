@@ -58,9 +58,21 @@ The page takes the whole window. A few controls float on glass above it and fade
 
 - **Library** (sidebar button, ⌃⌘S) shows your open files and library notes. See [Library and find](https://spaquet.github.io/markify/help/library.html).
 - **Title**: click the document's name to rename it, move it or browse its versions.
+- **Contents and Links** (right sidebar button) slides in a pane with two tabs; see [Contents](#contents) and [Links panel](https://spaquet.github.io/markify/help/images-and-links.html#links-panel). The pane slides over the page; click the page, the same button or press Esc to close it. It updates as you edit and remembers the last tab.
 - **Apple Intelligence** (the multicolor symbol) opens writing actions for the whole document. See [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.html).
 - **MD** switches to the Markdown lens (⌘/). See [Two lenses](https://spaquet.github.io/markify/help/lenses.html).
 - **More** (…) holds Share, Export, Source (for documents opened from URLs), Knowledge, Find, the word count and Settings.
+
+## Contents
+
+The **Contents** tab outlines the document's headings at every level, with guide lines showing which section each sits in. Click a heading to move the caret to it; it scrolls to the top of the page. Click the triangle beside a heading to fold or unfold its section.
+
+- **H1, H2, H3, All** choose how deep the outline goes. Markify remembers the depth.
+- **Filter headings** shows the headings whose title contains what you type, inside their sections.
+- The heading you're reading is highlighted, and its guide line turns blue. The bar at the bottom shows how far through the document you've scrolled.
+- **Insert Table of Contents** adds a Contents card at the caret, listing the headings shown at the current depth. Click an entry to go to its heading. The card keeps itself up to date as you add, rename or remove headings, a moment after you stop typing; **⌘Z** undoes an update. When the document has one, the button reads **Update Table of Contents** and rebuilds it at the current depth.
+
+In the file, the table of contents is an ordinary list of links between two comments, `<!-- toc -->` and `<!-- /toc -->`, so other apps and GitHub show it as a list. The Markdown lens shows that source; exported HTML and PDF show the card.
 
 ## Start writing
 
@@ -284,11 +296,28 @@ The web location remains in use for the current document session, including afte
 
 ### Links panel
 
-Click the right sidebar button in the toolbar to list destinations in the order they first appear. Repeated links to the same resolved destination share one entry, even when their labels differ. Each entry lists its source line numbers, which update as you edit. Click a line number to jump to that occurrence, click the title to jump to the first occurrence, or choose **Open destination** to follow the link. Multiple mentions on one line list that line once. The panel shows an empty message when the document has no links.
+Click the right sidebar button in the toolbar, then **Links** at the top of the pane. Links are grouped into **In this document** (links to a heading, such as `#method`), **Files** and **Web**, in the order they first appear. Mail, phone and app links (`mailto:`, `tel:`, `slack://`) aren't listed. Repeated links to the same destination share one row, marked ×2, ×3 and so on, even when their labels differ. The chips at the top show all links, one group, or only broken ones.
 
-Expand **Summary** on a link to see a saved summary or request one with Apple Intelligence. For websites, **Fetch and summarize** contacts the site only when you click it. Local `.md`, `.markdown` and `.mdx` files use their readable text; websites must return a text or HTML page. Other destinations remain in the list without a summary. The panel shows progress or an error if a destination cannot be read, and explains when Apple Intelligence is unavailable.
+Each row shows the line of the first occurrence. Point at a row to see its actions:
 
-Summaries are saved by Markify outside your Markdown file. Local summaries show when their target changed and can be refreshed. Web summaries show their generation date and stay as saved until you choose **Refresh summary**.
+- **↩ Go to line** moves to the link in the document. With repeated links, each click goes to the next occurrence; clicking the row does the same.
+- **↗ Open** opens the file in Markify or the page in your browser.
+- **✦ Summarize** shows a summary from Apple Intelligence under the row (see below).
+- **✎ Fix link…** appears on broken links (see below).
+
+⌘-click a link to a heading in the document to jump to it. A link such as `notes.md#setup` opens `notes.md` at that heading.
+
+#### Broken links
+
+Markify checks links in the background while the pane is open and marks broken ones in red with the reason: **No such heading**, **File not found**, or for web pages **Not found (404)**, **Server not found**, **Timed out** and similar. Links to headings and files are checked as you type. Web links are checked when the pane opens and after you stop typing; each result is kept for 24 hours, even after you quit, so the same page isn't asked again. Clicking a link, in the pane or ⌘-clicking it in the document, checks it again at once, so a page that came back or went away shows its current state. **Check Links** at the bottom checks every link again now; the line beside it shows how many are broken and when they were checked. Pages that need a login count as working. Markify never marks a link broken when your Mac is offline.
+
+**✎ Fix link…** shows the destination in an editable field with suggestions: the closest headings for a link to a heading, or similar Markdown files in the same folder for a missing file. Choose a suggestion or type a destination, then **Replace**. Every occurrence of that link changes, including a reference definition (`[label]: path`), and one **Undo** puts them all back.
+
+#### Summaries
+
+**✦** opens a card under the link. If no summary is saved, Apple Intelligence writes one on your Mac; for websites, Markify downloads the page only when you choose ✦. Local `.md`, `.markdown` and `.mdx` files use their readable text; websites must return a text or HTML page. ✦ doesn't appear for other destinations or when Apple Intelligence is unavailable. The card shows progress, or an error with **Try Again**.
+
+Summaries are saved by Markify outside your Markdown file. The card shows when a summary was generated, notes **Source changed** when a local file changed since, and offers **Refresh**.
 
 Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.
 
@@ -511,7 +540,8 @@ Choose **Markify › Settings…** (⌘,).
 ## Editor
 
 - **Open documents in** the Rendered lens, the Markdown lens or the last one used, and optionally remember the lens per document.
-- **Prose font** (New York or SF Pro), **Markdown font** (SF Mono or Menlo) and **Line width**.
+- **Prose font** (New York or SF Pro) and **Markdown font** (SF Mono or Menlo).
+- **Limit line width**: text normally fills the window, with margins that grow as the window widens. Turn this on to keep lines no wider than **Line width** (560–1200 pt) however wide the window is.
 - **Fade toolbar while typing** and **Show word count**.
 
 ## Appearance
@@ -827,7 +857,7 @@ Yes. Markify uses the standard Mac text view, so VoiceOver reads and edits the d
 
 ### Can I make the text bigger?
 
-Yes. Press ⌘= and ⌘- to zoom, ⌘0 to return to actual size, and change the fonts and line width in **Settings › Editor**.
+Yes. Press ⌘= and ⌘- to zoom, ⌘0 to return to actual size, and change the fonts, or limit the line width, in **Settings › Editor**.
 
 ---
 
@@ -851,6 +881,8 @@ Markify connects to the internet only in these cases:
 - **Crash and performance reports.** When Markify crashes, it sends a crash report to [Sentry](https://sentry.io), which hosts Markify's error reports. A report holds the stack trace, Markify's version, and your Mac's model and macOS version; it holds no document text, file names or personal data. Markify also sends timing data for a sample of sessions (about one in ten) so slow operations can be found and fixed. As with any web request, Sentry sees your IP address; Markify doesn't ask it to keep it. Sentry's handling is described in [Sentry's privacy policy](https://sentry.io/privacy/).
 - **Remote images.** When a document contains an image from a web address and **Settings › General › Load remote images** is on, Markify downloads it from that server. Turn the setting off to stop this.
 - **Links you open.** ⌘-clicking a web link opens it in your browser.
+- **Link checks.** While the Contents and Links pane is open, Markify asks each web link in the document whether the page still exists (a `HEAD` request, or a one-byte `GET` when the server refuses `HEAD`), so broken links can be marked. Each site sees your IP address, as with any web request; nothing about your document is sent. Results are kept on your Mac for 24 hours, and a link is checked again when you click it or choose **Check Links**.
+- **Link summaries.** Choosing ✦ on a web link in the Links pane downloads that page so Apple Intelligence can summarize it on your Mac.
 
 **Apple Intelligence** features run on your Mac through Apple's on-device model and system Writing Tools; Markify sends no text to cloud services. Apple's handling of Apple Intelligence is described in [Apple's privacy policy](https://www.apple.com/legal/privacy/).
 
