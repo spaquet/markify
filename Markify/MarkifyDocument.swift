@@ -40,38 +40,224 @@ struct MarkifyDocument: FileDocument {
     }
 }
 
-/// Watch the parent folder so atomic replacements keep being observed.
+/// Observe the folder for atomic saves, with polling for missed/coalesced file events.
 @MainActor final class DocumentFileRefresh {
+    enum Choice { case keep, reload, merge }
     private let watcher = BundleWatcher()
     private weak var document: NSDocument?
+    private weak var window: NSWindow?
     private var url: URL?
+    private var lastDisk: Data?
+    private var timer: Timer?
+    private var presenting = false
     private let refreshSearch: () -> Void
+    private let readText: (() -> String)?
+    private let writeText: ((String) -> Void)?
+    private let choose: ((NSDocument, @escaping (Choice) -> Void) -> Void)?
 
-    init(refreshSearch: @escaping () -> Void = { LibrarySearch.shared.refresh() }) {
+    init(refreshSearch: @escaping () -> Void = { LibrarySearch.shared.refresh() },
+         readText: (() -> String)? = nil, writeText: ((String) -> Void)? = nil,
+         choose: ((NSDocument, @escaping (Choice) -> Void) -> Void)? = nil) {
         self.refreshSearch = refreshSearch
+        self.readText = readText
+        self.writeText = writeText
+        self.choose = choose
+    }
+
+    func stop() {
+        watcher.stop()
+        timer?.invalidate()
+        timer = nil
+        document = nil
+        url = nil
+        window = nil
+    }
+
+    func watch(_ window: NSWindow) {
+        guard let document = NSDocumentController.shared.document(for: window) else { return }
+        self.window = window
+        watch(document)
     }
 
     func watch(_ document: NSDocument) {
         guard self.document !== document || url != document.fileURL else { return }
+        timer?.invalidate()
         self.document = document
         url = document.fileURL
-        watcher.watch(url?.deletingLastPathComponent()) { [weak self] in
-            self?.refresh()
+        // Establish the disk baseline when attaching or following a new file URL.
+        // SwiftUI may still be displaying the previous document during native revert.
+        lastDisk = url.flatMap { try? Data(contentsOf: $0) }
+        watcher.watch(url?.deletingLastPathComponent()) { [weak self] in self?.refresh() }
+        guard url != nil else { return }
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async { self?.refresh() }
         }
     }
 
     func refresh() {
-        guard let document, let url, document.fileURL == url,
-              let type = document.fileType,
-              let disk = try? Data(contentsOf: url),
-              let current = try? document.fileWrapper(ofType: type).regularFileContents,
-              disk != current else { return }
+        guard !presenting, let document, let url, document.fileURL == url,
+              let type = document.fileType, let disk = try? Data(contentsOf: url),
+              disk != lastDisk else { return }
+        let base = lastDisk
+        guard let current = (readText?()).map({ Data($0.utf8) })
+                ?? (try? document.fileWrapper(ofType: type).regularFileContents) else { return }
+        if disk == current { lastDisk = disk; return } // Our own save.
+        guard String(data: disk, encoding: .utf8) != nil else { return }
         refreshSearch()
-        // Never replace local edits with an external version.
-        guard !document.isDocumentEdited else { return }
-        do { try document.revert(toContentsOf: url, ofType: type) }
-        catch { NSApp.presentError(error) }
+        presenting = true
+        let complete: (Choice) -> Void = { [weak self, weak document] choice in
+            DispatchQueue.main.async {
+                guard let self, let document, self.url == url, document.fileURL == url else { return }
+                do {
+                    guard try Data(contentsOf: url) == disk else {
+                        self.presenting = false
+                        self.refreshAfterSheet()
+                        return
+                    }
+                    switch choice {
+                    case .keep: break
+                    case .reload:
+                        try document.revert(toContentsOf: url, ofType: type)
+                        self.writeText?(String(decoding: disk, as: UTF8.self))
+                    case .merge:
+                        guard let base, self.writeText != nil else { self.presenting = false; return }
+                        let local = self.readText?() ?? String(decoding: current, as: UTF8.self)
+                        DispatchQueue.global(qos: .userInitiated).async { [weak self, weak document] in
+                            let result = Result {
+                                try Self.merge(local: local, base: String(decoding: base, as: UTF8.self),
+                                               external: String(decoding: disk, as: UTF8.self))
+                            }
+                            DispatchQueue.main.async {
+                                guard let self else { return }
+                                defer { self.presenting = false }
+                                guard let document, self.document === document, self.url == url,
+                                      document.fileURL == url, (try? Data(contentsOf: url)) == disk,
+                                      (self.readText?() ?? local) == local else {
+                                    self.refreshAfterSheet()
+                                    return
+                                }
+                                do {
+                                    let merged = try result.get()
+                                    let undo = document.undoManager
+                                    undo?.beginUndoGrouping()
+                                    undo?.registerUndo(withTarget: self) { target in target.writeText?(local) }
+                                    self.writeText?(merged)
+                                    undo?.setActionName("Merge External Changes")
+                                    undo?.endUndoGrouping()
+                                    self.lastDisk = disk
+                                } catch { NSApp.presentError(error) }
+                            }
+                        }
+                        return
+                    }
+                    self.lastDisk = disk
+                } catch { NSApp.presentError(error) }
+                self.presenting = false
+            }
+        }
+        if let choose { choose(document, complete); return }
+        guard let window = self.window ?? document.windowControllers.first?.window else {
+            presenting = false
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = "This file changed outside Markify"
+        alert.informativeText = "Choose how to handle changes to \(url.lastPathComponent). Reload replaces your current text. Merge combines both versions; overlapping edits are marked for you to resolve."
+        alert.addButton(withTitle: "Keep My Changes")
+        alert.addButton(withTitle: "Reload")
+        if base != nil, writeText != nil { alert.addButton(withTitle: "Merge") }
+        alert.beginSheetModal(for: window) { response in
+            // Let AppKit finish dismissing the sheet before replacing the SwiftUI document.
+            DispatchQueue.main.async {
+                complete(response == .alertSecondButtonReturn ? .reload : response == .alertThirdButtonReturn ? .merge : .keep)
+            }
+        }
     }
+
+    private func refreshAfterSheet() {
+        DispatchQueue.main.async { [weak self] in self?.refresh() }
+    }
+
+    /// Combine line edits against the last disk version; overlapping edits remain explicit conflicts.
+    nonisolated static func merge(local: String, base: String, external: String) throws -> String {
+        struct Edit {
+            var range: Range<Int>
+            var lines: [String]
+            var local: Bool
+        }
+        let original = base.components(separatedBy: "\n")
+        func edits(_ source: String, local: Bool) -> [Edit] {
+            let lines = source.components(separatedBy: "\n")
+            var removed = Set<Int>(), inserted = Set<Int>()
+            for change in lines.difference(from: original) {
+                switch change {
+                case .remove(let offset, _, _): removed.insert(offset)
+                case .insert(let offset, _, _): inserted.insert(offset)
+                }
+            }
+            var result: [Edit] = []
+            var old = 0, new = 0
+            while old < original.count || new < lines.count {
+                if removed.contains(old) || inserted.contains(new) {
+                    let start = old
+                    var replacement: [String] = []
+                    repeat {
+                        if removed.contains(old) { old += 1 }
+                        if inserted.contains(new) { replacement.append(lines[new]); new += 1 }
+                    } while removed.contains(old) || inserted.contains(new)
+                    result.append(Edit(range: start..<old, lines: replacement, local: local))
+                } else { old += 1; new += 1 }
+            }
+            return result
+        }
+        let changes = (edits(local, local: true) + edits(external, local: false)).sorted {
+            $0.range.lowerBound == $1.range.lowerBound
+                ? $0.range.upperBound < $1.range.upperBound : $0.range.lowerBound < $1.range.lowerBound
+        }
+        func version(_ changes: [Edit], in range: Range<Int>, local: Bool) -> [String] {
+            var result: [String] = []
+            var cursor = range.lowerBound
+            for change in changes where change.local == local {
+                result += original[cursor..<change.range.lowerBound]
+                result += change.lines
+                cursor = change.range.upperBound
+            }
+            result += original[cursor..<range.upperBound]
+            return result
+        }
+        var result: [String] = []
+        var cursor = 0, index = 0
+        while index < changes.count {
+            let first = changes[index]
+            var end = first.range.upperBound
+            var group = [first]
+            index += 1
+            while index < changes.count {
+                let next = changes[index]
+                let sameInsertion = first.range.isEmpty && next.range.isEmpty && next.range.lowerBound == first.range.lowerBound
+                guard next.range.lowerBound < end || sameInsertion else { break }
+                group.append(next)
+                end = max(end, next.range.upperBound)
+                index += 1
+            }
+            let range = first.range.lowerBound..<end
+            result += original[cursor..<range.lowerBound]
+            let before = Array(original[range])
+            let mine = version(group, in: range, local: true)
+            let theirs = version(group, in: range, local: false)
+            if mine == theirs || theirs == before { result += mine }
+            else if mine == before { result += theirs }
+            else {
+                result += ["<<<<<<< My Changes"] + mine + ["||||||| Original"] + before
+                    + ["======="] + theirs + [">>>>>>> External Changes"]
+            }
+            cursor = end
+        }
+        result += original[cursor..<original.count]
+        return result.joined(separator: "\n")
+    }
+
+    isolated deinit { timer?.invalidate() }
 }
 
 private final class ReportDocumentFactory: @unchecked Sendable {
