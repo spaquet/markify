@@ -506,8 +506,9 @@ struct NativeEditor: NSViewRepresentable {
             for table in model.tables {
                 for row in table.rows {
                     let rowStyle = NSMutableParagraphStyle()
-                    rowStyle.minimumLineHeight = row.separator ? 2 : 40
-                    rowStyle.maximumLineHeight = row.separator ? 2 : 40
+                    rowStyle.minimumLineHeight = row.separator ? 0.01 : (editor as? MarkdownTextView)?.tableRowHeight(row, table: table) ?? 43
+                    rowStyle.maximumLineHeight = rowStyle.minimumLineHeight
+                    rowStyle.lineBreakMode = .byClipping
                     storage.addAttributes([.font: NSFont.systemFont(ofSize: 1),
                                            .foregroundColor: NSColor.clear,
                                            .paragraphStyle: rowStyle],
@@ -851,24 +852,158 @@ final class MarkdownTextView: NSTextView {
         return model
     }
 
+    private var hoveredTableRow: Int?
+    private var tableHoverWork: DispatchWorkItem?
+    private var tableAnimation: Task<Void, Never>?
+    private var tableAnimatedHeights: [Int: CGFloat] = [:]
+
+    func hoverTableRow(_ start: Int?) {
+        tableHoverWork?.cancel()
+        guard hoveredTableRow != start else { return }
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.hoveredTableRow = start
+            self.animateTableHeights()
+        }
+        tableHoverWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + (start == nil ? 0.06 : hoveredTableRow == nil ? 0.12 : 0.06), execute: work)
+    }
+
+    private func animateTableHeights() {
+        tableAnimation?.cancel()
+        let rows = model.tables.flatMap { table in table.rows.filter { !$0.separator }.map { ($0, table) } }
+        let from = Dictionary(uniqueKeysWithValues: rows.map { row, _ in
+            (row.start, tableAnimatedHeights[row.start] ?? tableOverlays.values.first { $0.rowStart == row.start }?.frame.height ?? 43)
+        })
+        tableAnimatedHeights = [:]
+        let to = Dictionary(uniqueKeysWithValues: rows.map { ($0.0.start, tableRowHeight($0.0, table: $0.1)) })
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, from != to else { refreshTableHeights(); return }
+        tableAnimatedHeights = from
+        refreshTableHeights()
+        let began = Date.timeIntervalSinceReferenceDate
+        let version = textVersion
+        tableAnimation = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(16))
+                guard !Task.isCancelled, let self else { return }
+                guard self.textVersion == version else {
+                    self.tableAnimatedHeights = [:]
+                    self.refreshTableHeights()
+                    return
+                }
+                let t = min(1, CGFloat((Date.timeIntervalSinceReferenceDate - began) / 0.28))
+                let eased = 1 - pow(1 - t, 3)
+                self.tableAnimatedHeights = to
+                for (start, target) in to { self.tableAnimatedHeights[start] = (from[start] ?? 43) + (target - (from[start] ?? 43)) * eased }
+                if t == 1 { self.tableAnimatedHeights = [:] }
+                self.refreshTableHeights()
+                if t == 1 { return }
+            }
+        }
+    }
+
+    func refreshTableHeights() {
+        guard rendered, let storage = textStorage else { return }
+        storage.beginEditing()
+        for table in model.tables {
+            for row in table.rows where !row.separator {
+                let style = NSMutableParagraphStyle()
+                style.minimumLineHeight = tableRowHeight(row, table: table)
+                style.maximumLineHeight = style.minimumLineHeight
+                style.lineBreakMode = .byClipping
+                storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: row.start, length: row.end - row.start))
+            }
+        }
+        storage.endEditing()
+        refreshTables()
+    }
+
+    func tableWidths(_ table: MarkdownModel.Table) -> [CGFloat] {
+        let source = string as NSString
+        let count = table.rows.first?.cells.count ?? 0
+        guard count > 0 else { return [] }
+        let id = tableIDColumn(table)
+        let body = table.rows.dropFirst().filter { !$0.separator }
+        let compact = (0..<count).filter { col in
+            if col == id { return true }
+            let values = body.compactMap { row in row.cells.indices.contains(col) ? source.substring(with: row.cells[col]).trimmingCharacters(in: .whitespaces) : nil }.filter { !$0.isEmpty }
+            return !values.isEmpty && values.allSatisfy { $0.count <= 12 && Double($0) != nil }
+        }
+        var widths = Array(repeating: columnWidth / CGFloat(count), count: count)
+        if compact.count < count {
+            let font = NSFont.monospacedDigitSystemFont(ofSize: 14, weight: .semibold)
+            for col in compact {
+                let measured = table.rows.filter { !$0.separator && $0.cells.indices.contains(col) }.map { row in
+                    (source.substring(with: row.cells[col]) as NSString).size(withAttributes: [.font: font]).width + 42
+                }.max() ?? 56
+                widths[col] = min(max(48, measured), columnWidth / CGFloat(count))
+            }
+            let remaining = columnWidth - compact.reduce(0) { $0 + widths[$1] }
+            for col in widths.indices where !compact.contains(col) { widths[col] = remaining / CGFloat(count - compact.count) }
+        }
+        return widths
+    }
+
+    func tableIDColumn(_ table: MarkdownModel.Table) -> Int? {
+        let source = string as NSString
+        return table.rows.first?.cells.firstIndex { range in
+            ["#", "id", "rank", "demand rank"].contains(source.substring(with: range).trimmingCharacters(in: .whitespaces).lowercased())
+        }
+    }
+
+    func tableRowExpanded(_ row: MarkdownTable.Row) -> Bool {
+        hoveredTableRow == row.start || tableOverlays.values.contains { overlay in
+            overlay.fields.contains { $0.currentEditor() != nil && row.start <= $0.sourceRange.location && $0.sourceRange.location <= row.end }
+        }
+    }
+
+    func tableRowHeight(_ row: MarkdownTable.Row, table: MarkdownModel.Table) -> CGFloat {
+        if let height = tableAnimatedHeights[row.start] { return height }
+        guard row.start != table.rows.first?.start, tableRowExpanded(row) else { return 43 }
+        let widths = tableWidths(table)
+        let id = tableIDColumn(table)
+        return row.cells.enumerated().map { col, range in
+            TableRowView.cellHeight((string as NSString).substring(with: range), width: widths[col] - 28, id: col == id) + 22
+        }.max() ?? 43
+    }
+
     func refreshTables() {
         guard window != nil else { return }
-        let rows: [(MarkdownTable.Row, Bool)] = rendered ? MarkdownTable.blocks(in: model).flatMap { table in
-            table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0) }
+        if !rendered {
+            tableHoverWork?.cancel()
+            tableAnimation?.cancel()
+            hoveredTableRow = nil
+            tableAnimatedHeights = [:]
+        }
+        let rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)] = rendered ? model.tables.flatMap { table in
+            table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
         } : []
         if let last = rows.last { settleLayout(through: last.0.end) }
-        for (index, (row, header)) in rows.enumerated() {
+        for (index, (row, header, table, ordinal)) in rows.enumerated() {
             let line = textRect(NSRange(location: row.start, length: 1))
             let overlay = tableOverlays[index] ?? TableRowView()
             if overlay.superview == nil { addSubview(overlay) }
             tableOverlays[index] = overlay
-            overlay.frame = NSRect(x: 0, y: line.minY, width: columnWidth, height: 40)
+            overlay.frame = NSRect(x: 0, y: line.minY, width: columnWidth, height: tableRowHeight(row, table: table))
+            overlay.rowStart = row.start
+            overlay.widths = tableWidths(table)
+            overlay.idColumn = tableIDColumn(table)
+            overlay.expanded = !header && tableRowExpanded(row)
+            overlay.striped = ordinal % 2 == 0
+            overlay.first = header
+            overlay.last = row.start == table.rows.last?.start
+            overlay.onHover = { [weak self] inside in self?.hoverTableRow(inside && !header ? row.start : nil) }
             overlay.update(cells: row.cells, source: string, header: header,
                            onEdit: { [weak self] range, value in
                                self?.replaceTableCell(range, with: value) ?? range
                            },
                            onFocus: { [weak self] range in
                                self?.setSelectedRange(NSRange(location: range.location, length: 0))
+                               DispatchQueue.main.async { [weak self] in
+                                   self?.tableAnimation?.cancel()
+                                   self?.tableAnimatedHeights = [:]
+                                   self?.refreshTableHeights()
+                               }
                            },
                            onTab: { [weak self] range, backward in
                                guard let self else { return }
@@ -1167,7 +1302,7 @@ final class MarkdownTextView: NSTextView {
         let reflows = newSize.width != frame.width
         super.setFrameSize(newSize)
         // A new width rewraps the text above a table, moving its rows.
-        if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTables() } }
+        if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTableHeights() } }
     }
 
     /// Selects `range` and scrolls its first line near the top of the page, even when it is already on screen,
@@ -2226,7 +2361,52 @@ final class MarkdownTextView: NSTextView {
 final class TableRowView: NSView {
     override var isFlipped: Bool { true }
     var fields: [TableCellField] = []
+    static var textParagraph: NSParagraphStyle {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.minimumLineHeight = 21
+        paragraph.maximumLineHeight = 21
+        return paragraph
+    }
+    static func cellHeight(_ text: String, width: CGFloat, id: Bool) -> CGFloat {
+        let font = id ? NSFont.monospacedDigitSystemFont(ofSize: 14, weight: .semibold) : NSFont.systemFont(ofSize: 14)
+        if (text as NSString).size(withAttributes: [.font: font]).width <= max(1, width - 4) { return 21 }
+        let height = (text as NSString).boundingRect(with: NSSize(width: max(1, width - 4), height: .greatestFiniteMagnitude),
+                                                   options: [.usesLineFragmentOrigin, .usesFontLeading],
+                                                   attributes: [.font: font, .paragraphStyle: textParagraph]).height
+        return max(21, ceil(height) + 2)
+    }
     private var header = false
+    var rowStart = 0
+    var hoveredColumn: Int?
+    var widths: [CGFloat] = []
+    var idColumn: Int?
+    var expanded = false
+    var striped = false
+    var first = false
+    var last = false
+    var onHover: ((Bool) -> Void)?
+    private var tracking: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        // inVisibleRect follows resizing; replacing the area during expansion sends spurious exits.
+        guard tracking == nil else { return }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect], owner: self)
+        addTrackingArea(area)
+        tracking = area
+    }
+    override func mouseEntered(with event: NSEvent) { onHover?(true) }
+    override func mouseExited(with event: NSEvent) {
+        hoveredColumn = nil
+        needsDisplay = true
+        onHover?(false)
+    }
+    override func mouseMoved(with event: NSEvent) {
+        let x = convert(event.locationInWindow, from: nil).x
+        var end: CGFloat = 0
+        hoveredColumn = widths.firstIndex { width in end += width; return x < end }
+        needsDisplay = true
+    }
 
     func update(cells: [NSRange], source: String, header: Bool,
                 onEdit: @escaping (NSRange, String) -> NSRange,
@@ -2239,14 +2419,31 @@ final class TableRowView: NSView {
             fields.append(field)
         }
         while fields.count > cells.count { fields.removeLast().removeFromSuperview() }
-        let width = bounds.width / CGFloat(max(cells.count, 1))
+        var x: CGFloat = 0
         for (index, range) in cells.enumerated() {
             let field = fields[index]
-            field.frame = NSRect(x: width * CGFloat(index) + 14, y: (bounds.height - 20) / 2, width: width - 28, height: 20)
+            let width = widths.indices.contains(index) ? widths[index] : bounds.width / CGFloat(max(cells.count, 1))
+            field.frame = NSRect(x: x + 14, y: 11, width: max(1, width - 28), height: index == idColumn ? min(bounds.height - 22, expanded ? Self.cellHeight((source as NSString).substring(with: range), width: width - 28, id: true) : 21) : bounds.height - 22)
+            x += width
+            field.maximumNumberOfLines = expanded ? 0 : 1
+            field.cell?.wraps = expanded
+            field.cell?.isScrollable = !expanded
+            field.cell?.lineBreakMode = expanded ? .byWordWrapping : .byTruncatingTail
+            field.alignment = index == idColumn ? .center : .left
+            field.drawsBackground = expanded && index == idColumn
+            field.backgroundColor = .controlAccentColor
+            field.wantsLayer = true
+            field.layer?.cornerRadius = 6
+            field.layer?.masksToBounds = true
             field.sourceRange = range
-            if field.currentEditor() == nil { field.stringValue = (source as NSString).substring(with: range) }
-            field.font = .systemFont(ofSize: header ? 12.5 : 14, weight: header ? .semibold : .regular)
-            field.textColor = header ? .secondaryLabelColor : .labelColor
+            if field.currentEditor() == nil {
+                let paragraph = Self.textParagraph.mutableCopy() as! NSMutableParagraphStyle
+                paragraph.alignment = field.alignment
+                paragraph.lineBreakMode = expanded ? .byWordWrapping : .byTruncatingTail
+                field.attributedStringValue = NSAttributedString(string: (source as NSString).substring(with: range), attributes: [.paragraphStyle: paragraph])
+            }
+            field.font = index == idColumn ? .monospacedDigitSystemFont(ofSize: header ? 12.5 : 14, weight: header || expanded ? .semibold : .regular) : .systemFont(ofSize: header ? 12.5 : 14, weight: header ? .semibold : .regular)
+            field.textColor = expanded && index == idColumn ? .white : header || index == idColumn ? .secondaryLabelColor : .labelColor
             field.onEdit = onEdit
             field.onFocus = onFocus
             field.onTab = onTab
@@ -2255,20 +2452,33 @@ final class TableRowView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        if header {
+        let fill = expanded ? NSColor.controlAccentColor.withAlphaComponent(0.1) : NSColor.labelColor.withAlphaComponent(header ? 0.045 : striped ? 0.02 : 0)
+        fill.setFill()
+        let rect = bounds.insetBy(dx: 0.25, dy: 0.25)
+        let top: CGFloat = first ? 12 : 0
+        let bottom: CGFloat = last ? 12 : 0
+        let outline = NSBezierPath()
+        outline.move(to: NSPoint(x: rect.minX + top, y: rect.minY))
+        outline.line(to: NSPoint(x: rect.maxX - top, y: rect.minY))
+        outline.curve(to: NSPoint(x: rect.maxX, y: rect.minY + top), controlPoint1: NSPoint(x: rect.maxX, y: rect.minY), controlPoint2: NSPoint(x: rect.maxX, y: rect.minY))
+        outline.line(to: NSPoint(x: rect.maxX, y: rect.maxY - bottom))
+        outline.curve(to: NSPoint(x: rect.maxX - bottom, y: rect.maxY), controlPoint1: NSPoint(x: rect.maxX, y: rect.maxY), controlPoint2: NSPoint(x: rect.maxX, y: rect.maxY))
+        outline.line(to: NSPoint(x: rect.minX + bottom, y: rect.maxY))
+        outline.curve(to: NSPoint(x: rect.minX, y: rect.maxY - bottom), controlPoint1: NSPoint(x: rect.minX, y: rect.maxY), controlPoint2: NSPoint(x: rect.minX, y: rect.maxY))
+        outline.line(to: NSPoint(x: rect.minX, y: rect.minY + top))
+        outline.curve(to: NSPoint(x: rect.minX + top, y: rect.minY), controlPoint1: NSPoint(x: rect.minX, y: rect.minY), controlPoint2: NSPoint(x: rect.minX, y: rect.minY))
+        outline.close()
+        outline.fill()
+        if expanded, let col = hoveredColumn, col != idColumn, widths.indices.contains(col) {
             NSColor.labelColor.withAlphaComponent(0.04).setFill()
-            NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 8, yRadius: 8).fill()
+            NSRect(x: widths.prefix(col).reduce(0, +), y: 0, width: widths[col], height: bounds.height).fill()
         }
         NSColor.separatorColor.setStroke()
-        let outline = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 8, yRadius: 8)
-        outline.lineWidth = 1
+        outline.lineWidth = 0.5
         outline.stroke()
-        if fields.count > 1 {
-            let width = bounds.width / CGFloat(fields.count)
-            for index in 1..<fields.count {
-                let x = width * CGFloat(index)
-                NSBezierPath.strokeLine(from: NSPoint(x: x, y: 0), to: NSPoint(x: x, y: bounds.height))
-            }
+        if expanded {
+            NSColor.controlAccentColor.setFill()
+            NSBezierPath(roundedRect: NSRect(x: 0, y: 6, width: 3, height: bounds.height - 12), xRadius: 1.5, yRadius: 1.5).fill()
         }
     }
 }
@@ -2288,10 +2498,30 @@ final class TableCellField: NSTextField, NSTextFieldDelegate {
     }
     required init?(coder: NSCoder) { fatalError("Table cells are created in code") }
 
+    override func becomeFirstResponder() -> Bool {
+        let focused = super.becomeFirstResponder()
+        if focused { onFocus?(sourceRange) }
+        return focused
+    }
+
+
     func controlTextDidChange(_ obj: Notification) {
         if let range = onEdit?(sourceRange, stringValue) { sourceRange = range }
     }
-    func controlTextDidBeginEditing(_ obj: Notification) { onFocus?(sourceRange) }
+    func controlTextDidBeginEditing(_ obj: Notification) {
+        onFocus?(sourceRange)
+        if let editor = currentEditor() as? NSTextView {
+            editor.isHorizontallyResizable = false
+            editor.textContainer?.widthTracksTextView = true
+            editor.textContainer?.lineBreakMode = .byWordWrapping
+            editor.defaultParagraphStyle = TableRowView.textParagraph
+        }
+    }
+    func controlTextDidEndEditing(_ obj: Notification) {
+        DispatchQueue.main.async { [weak self] in
+            (self?.superview?.superview as? MarkdownTextView)?.refreshTableHeights()
+        }
+    }
     func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
         if selector == #selector(NSResponder.insertTab(_:)) { onTab?(sourceRange, false); return true }
         if selector == #selector(NSResponder.insertBacktab(_:)) { onTab?(sourceRange, true); return true }

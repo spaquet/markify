@@ -128,6 +128,98 @@ import Testing
         }
     }
 
+    @Test func expandedTablesWrapAndPreserveSource() async throws {
+        let (window, editor) = makeEditor()
+        let source = "| ID | Request | Priority |\n| --- | --- | --- |\n| 54 | " + String(repeating: "Long cell content wraps completely. ", count: 12) + " | High |\n| 55 | Next row | Low |\n\nAfter table"
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        let table = try #require(editor.model.tables.first)
+        let row = table.rows[2]
+        #expect(editor.tableIDColumn(table) == 0)
+        #expect(editor.tableWidths(table)[0] < editor.tableWidths(table)[1])
+        #expect(editor.tableRowHeight(row, table: table) == 43)
+        editor.hoverTableRow(row.start)
+        for _ in 0..<100 {
+            if editor.tableOverlays[1]?.expanded == true, (editor.tableOverlays[1]?.frame.height ?? 0) > 100 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        // Let the transition finish before resizing the expanded row.
+        try await Task.sleep(for: .milliseconds(300))
+        let overlay = try #require(editor.tableOverlays[1])
+        #expect(overlay.expanded)
+        #expect(overlay.frame.height > 100)
+        #expect(overlay.fields[1].maximumNumberOfLines == 0)
+        #expect(overlay.fields[0].drawsBackground)
+        #expect(overlay.fields[0].frame.height == 21)
+        #expect(editor.tableOverlays[2]!.frame.minY >= overlay.frame.maxY - 1)
+        editor.columnWidth = 400
+        editor.refreshTableHeights()
+        #expect(overlay.frame.height > 150)
+        editor.hoverTableRow(nil)
+        for _ in 0..<100 {
+            if !overlay.expanded, overlay.frame.height == 43 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(overlay.frame.height == 43)
+        #expect(overlay.fields[1].maximumNumberOfLines == 1)
+        #expect(editor.string == source)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableHoverDelayCancelsAndKeyboardEditingExpands() async throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| Name | Notes |\n| --- | --- |\n| First | " + String(repeating: "Long content ", count: 30) + " |"
+        style(editor)
+        editor.refreshTables()
+        let table = try #require(editor.model.tables.first)
+        #expect(editor.tableIDColumn(table) == nil)
+        let row = table.rows[2]
+        editor.hoverTableRow(row.start)
+        editor.hoverTableRow(nil)
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(editor.tableRowHeight(row, table: table) == 43)
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        #expect(window.makeFirstResponder(field))
+        #expect(editor.tableRowExpanded(row))
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(editor.tableOverlays[1]!.frame.height > 43)
+    }
+
+    @Test func idAndNumericColumnsHandleRaggedRows() throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| Name | Count | id |\n| --- | --- | --- |\n| One | 2 | 54 |\n| Two |\n| Three | 12 | 55 |"
+        let table = try #require(editor.model.tables.first)
+        #expect(editor.tableIDColumn(table) == 2)
+        let widths = editor.tableWidths(table)
+        #expect(widths.count == 3)
+        #expect(widths[0] > widths[1])
+        #expect(widths[0] > widths[2])
+        #expect(abs(widths.reduce(0, +) - editor.columnWidth) < 1)
+        editor.refreshTables()
+        #expect(editor.tableOverlays.count == 4)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func longIDsWrapInTheirHighlightedPill() async throws {
+        let (window, editor) = makeEditor()
+        editor.columnWidth = 320
+        editor.string = "| ID | Notes |\n| --- | --- |\n| 550e8400-e29b-41d4-a716-446655440000 | Short note |"
+        style(editor)
+        editor.columnWidth = 320
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.first)
+        #expect(window.makeFirstResponder(field))
+        for _ in 0..<100 {
+            if field.frame.height > 21 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(field.frame.height > 21)
+        #expect(field.maximumNumberOfLines == 0)
+        #expect(field.drawsBackground)
+        #expect(editor.tableOverlays[1]!.frame.height >= field.frame.height + 22)
+    }
+
     /// Painting the visible part of a long note stays fast even though positions come from the layout manager.
     @Test func paintingALargeDocumentStaysFast() {
         let large = Array(repeating: EditorFixtureTests.source, count: 60).joined(separator: "\n")
