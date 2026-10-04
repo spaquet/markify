@@ -95,7 +95,8 @@ struct MarkifyDocument: FileDocument {
     }
 
     func refresh() {
-        guard !presenting, let document, let url, document.fileURL == url,
+        guard !presenting, let document, !document.isBrowsingVersions, !document.isInViewingMode,
+              let url, document.fileURL == url,
               let type = document.fileType, let disk = try? Data(contentsOf: url),
               disk != lastDisk else { return }
         let base = lastDisk

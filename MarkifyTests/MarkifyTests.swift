@@ -6,6 +6,40 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test @MainActor func externalFilePromptsWaitUntilVersionBrowsingEnds() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("original".utf8).write(to: url)
+        let document = RefreshTestDocument()
+        document.fileURL = url
+        document.fileType = "net.daringfireball.markdown"
+        var notifications = 0
+        let refresh = DocumentFileRefresh(refreshSearch: {}, choose: { _, complete in
+            notifications += 1
+            complete(.reload)
+        })
+        defer { refresh.stop() }
+        refresh.watch(document)
+        document.browsing = true
+        try Data("external".utf8).write(to: url, options: .atomic)
+        refresh.refresh()
+        #expect(notifications == 0)
+        #expect(document.text == "original")
+        document.browsing = false
+        document.viewing = true
+        refresh.refresh()
+        #expect(notifications == 0)
+        document.viewing = false
+        refresh.refresh()
+        for _ in 0..<100 {
+            if document.text == "external" { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(notifications == 1)
+        #expect(document.text == "external")
+        #expect(try Data(contentsOf: url) == Data("external".utf8))
+    }
+
     @Test @MainActor func externalFileRefreshReloadsCleanDocumentsAndPreservesEdits() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -841,6 +875,10 @@ struct MarkifyTests {
 @MainActor private final class RefreshTestDocument: NSDocument {
     var text = "original"
     var reloads = 0
+    var browsing = false
+    var viewing = false
+    override var isBrowsingVersions: Bool { browsing }
+    override var isInViewingMode: Bool { viewing }
     override func fileWrapper(ofType typeName: String) throws -> FileWrapper {
         FileWrapper(regularFileWithContents: Data(text.utf8))
     }
