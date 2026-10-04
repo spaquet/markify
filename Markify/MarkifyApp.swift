@@ -113,6 +113,8 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
             let requests = self.pendingURLs
             self.pendingURLs.removeAll()
             requests.forEach(self.receive)
+            // Tests create their own documents; a delayed Welcome or reopen can claim their startup window.
+            guard !Self.isTesting else { return }
             let startup = UserDefaults.standard.string(forKey: "startup") ?? "Reopen last documents"
             let urls = startup == "Reopen last documents" ? Self.lastOpenDocuments() : []
             guard !urls.isEmpty else { return Self.openInitialDocument(startup: startup) }

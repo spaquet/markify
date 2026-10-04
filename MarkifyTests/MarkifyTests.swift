@@ -6,7 +6,7 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
-    @Test @MainActor func externalFileRefreshReloadsCleanDocumentsAndPreservesEdits() throws {
+    @Test @MainActor func externalFileRefreshReloadsCleanDocumentsAndPreservesEdits() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
         defer { try? FileManager.default.removeItem(at: url) }
         try Data("original".utf8).write(to: url)
@@ -14,23 +14,109 @@ struct MarkifyTests {
         document.fileURL = url
         document.fileType = "net.daringfireball.markdown"
         var searchRefreshes = 0
-        let refresh = DocumentFileRefresh { searchRefreshes += 1 }
+        var choice = DocumentFileRefresh.Choice.reload
+        var notifications = 0
+        let refresh = DocumentFileRefresh(refreshSearch: { searchRefreshes += 1 }, choose: { _, complete in
+            notifications += 1
+            complete(choice)
+        })
         refresh.watch(document)
         refresh.refresh()
+        try await Task.sleep(for: .milliseconds(100))
         #expect(document.reloads == 0)
         #expect(searchRefreshes == 0)
         try Data("external".utf8).write(to: url, options: .atomic)
         refresh.refresh()
+        try await Task.sleep(for: .milliseconds(100))
         #expect(document.text == "external")
         #expect(document.reloads == 1)
         #expect(searchRefreshes == 1)
+        choice = .keep
         document.text = "local edits"
         document.updateChangeCount(.changeDone)
         try Data("another external edit".utf8).write(to: url)
         refresh.refresh()
+        try await Task.sleep(for: .milliseconds(100))
         #expect(document.text == "local edits")
         #expect(document.reloads == 1)
         #expect(searchRefreshes == 2)
+        #expect(notifications == 2)
+        refresh.refresh()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(notifications == 2)
+        // An unrelated folder event or local typing is not an external change.
+        document.text = "more local edits"
+        refresh.refresh()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(notifications == 2)
+        try Data(document.text.utf8).write(to: url)
+        refresh.refresh()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(notifications == 2)
+    }
+
+    @Test @MainActor func externalFilePollingDetectsAtomicSavesAndDeletionOfText() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("original".utf8).write(to: url)
+        let document = RefreshTestDocument()
+        document.fileURL = url
+        document.fileType = "net.daringfireball.markdown"
+        var notifications = 0
+        let refresh = DocumentFileRefresh(choose: { _, complete in notifications += 1; complete(.reload) })
+        refresh.watch(document)
+        for text in ["added text\noriginal", "updated text", ""] {
+            try Data(text.utf8).write(to: url, options: .atomic)
+            for _ in 0..<40 {
+                if document.text == text { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            #expect(document.text == text)
+        }
+        #expect(notifications == 3)
+    }
+
+    @Test func externalFileMergePreservesBothVersionsAndMarksConflicts() throws {
+        let base = "one\ntwo\nthree\n"
+        #expect(try DocumentFileRefresh.merge(local: "ONE\ntwo\nthree\n", base: base,
+                                             external: "one\ntwo\nTHREE\n") == "ONE\ntwo\nTHREE\n")
+        #expect(try DocumentFileRefresh.merge(local: base, base: base, external: "one\nthree\n") == "one\nthree\n")
+        let conflict = try DocumentFileRefresh.merge(local: "mine\n", base: "original\n", external: "theirs\n")
+        #expect(conflict.contains("<<<<<<< My Changes"))
+        #expect(conflict.contains("mine\n"))
+        #expect(conflict.contains("theirs\n"))
+        #expect(conflict.contains(">>>>>>> External Changes"))
+    }
+
+    @Test @MainActor func externalFileMergeUpdatesEditorBindingAndCanBeUndone() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let base = "one\ntwo\nthree\n"
+        try Data(base.utf8).write(to: url)
+        let document = RefreshTestDocument()
+        document.text = base
+        document.fileURL = url
+        document.fileType = "net.daringfireball.markdown"
+        let undo = try #require(document.undoManager)
+        undo.groupsByEvent = false // SwiftUI documents manage their own undo groups.
+        var editorText = base
+        let refresh = DocumentFileRefresh(readText: { editorText }, writeText: { editorText = $0 },
+                                          choose: { _, complete in complete(.merge) })
+        refresh.watch(document)
+        editorText = "ONE\ntwo\nthree\n"
+        document.updateChangeCount(.changeDone)
+        try Data("one\ntwo\nTHREE\n".utf8).write(to: url)
+        refresh.refresh()
+        for _ in 0..<100 {
+            if editorText == "ONE\ntwo\nTHREE\n" { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(editorText == "ONE\ntwo\nTHREE\n")
+        #expect(document.reloads == 0)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "one\ntwo\nTHREE\n")
+        #expect(undo.groupingLevel == 0)
+        undo.undo()
+        #expect(editorText == "ONE\ntwo\nthree\n")
     }
 
     @Test func linksPanelUsesMarkdownLinksInSourceOrder() {

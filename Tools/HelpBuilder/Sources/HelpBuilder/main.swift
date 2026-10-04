@@ -438,6 +438,7 @@ sitemap += "<url><loc>\(site)</loc><lastmod>\(homeModified)</lastmod><priority>1
 sitemap += "<url><loc>\(site)okf.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("okf.html")))</lastmod><priority>0.8</priority></url>\n"
 sitemap += "<url><loc>\(site)compare.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("compare.html")))</lastmod><priority>0.7</priority></url>\n"
 sitemap += "<url><loc>\(site)known-issues.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("known-issues.html")))</lastmod><priority>0.5</priority></url>\n"
+sitemap += "<url><loc>\(site)media-kit.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("media-kit.html")))</lastmod><priority>0.5</priority></url>\n"
 for page in pages {
     let loc = page.web == "help/index.html" ? site + "help/" : site + page.web
     sitemap += "<url><loc>\(loc)</loc><lastmod>\(page.lastModified)</lastmod><priority>\(page.slug == "index" || page.schema == "faq" ? "0.8" : "0.6")</priority></url>\n"
@@ -476,7 +477,7 @@ llms += "\n## FAQ and legal\n\n"
 for page in pages where page.schema == "faq" || page.license {
     llms += "- [\(page.title)](\(webURL(page))): \(page.description)\n"
 }
-llms += "\n## Optional\n\n- [Markify compared with other Markdown editors](\(site)compare.html): Features side by side with Typora, Obsidian, iA Writer and Bear.\n- [Open Knowledge Format in Markify](\(site)okf.html): How Markify reads, browses and maintains OKF knowledge bundles.\n- [Full help as one Markdown file](\(site)llms-full.txt)\n"
+llms += "\n## Optional\n\n- [Media kit](\(site)media-kit.html): Ready-to-use descriptions, logos and product screenshots.\n- [Markify compared with other Markdown editors](\(site)compare.html): Features side by side with Typora, Obsidian, iA Writer and Bear.\n- [Open Knowledge Format in Markify](\(site)okf.html): How Markify reads, browses and maintains OKF knowledge bundles.\n- [Full help as one Markdown file](\(site)llms-full.txt)\n"
 try llms.write(to: docs.appendingPathComponent("llms.txt"), atomically: true, encoding: .utf8)
 
 var full = "# Markify Help\n\nThe complete Markify user guide as Markdown. Source: \(repository)/tree/main/help\n"

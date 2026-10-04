@@ -35,6 +35,8 @@ Opening a file replaces an untouched, empty startup document in the same window,
 
 Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
 
+If another app changes an open file, Markify notifies you, including when text is added, updated or removed. Choose **Keep My Changes** to leave your text alone, **Reload** to replace it with the version on disk, or **Merge** to combine both versions. Merge marks overlapping edits with `<<<<<<< My Changes`, `||||||| Original`, `=======` and `>>>>>>> External Changes`; edit those sections to keep the text you want and remove the markers before saving. Keeping your changes leaves the external file alone until Markify saves your version. Merging can be undone with **⌘Z**.
+
 To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams. It loads HTTPS images and local images referenced by the document, without a folder permission step. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See [Images and links](https://spaquet.github.io/markify/help/images-and-links.html#links-in-finder-previews).
 
 ## Open a URL

@@ -52,6 +52,82 @@ import Testing
         #expect(editor.documentURL == url)
     }
 
+    @Test func externalChangesPromptAndRefreshTheActualDocumentWindow() async throws {
+        // Let the previous test's closed SwiftUI document window finish its teardown.
+        try await Task.sleep(for: .milliseconds(300))
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")
+        try Data("one\ntwo\nthree\n".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        var opened: NSDocument?
+        DispatchQueue.main.async {
+            NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { document, _, _ in
+                opened = document
+            }
+        }
+        for _ in 0..<100 {
+            if opened != nil { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let document = try #require(opened)
+        defer { document.updateChangeCount(.changeCleared); document.close() }
+        for _ in 0..<100 {
+            if MarkdownTextView.openEditors.allObjects.contains(where: { $0.documentURL == url && $0.window?.isVisible == true }) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let initialEditor = try #require(MarkdownTextView.openEditors.allObjects.first { $0.documentURL == url && $0.window?.isVisible == true })
+        let window = try #require(initialEditor.window)
+        func installedEditor(in view: NSView) -> MarkdownTextView? {
+            if let editor = view as? MarkdownTextView { return editor }
+            return view.subviews.lazy.compactMap { installedEditor(in: $0) }.first
+        }
+        var editor: MarkdownTextView {
+            window.contentView.flatMap { installedEditor(in: $0) } ?? initialEditor
+        }
+        func buttons(in view: NSView) -> [NSButton] {
+            (view as? NSButton).map { [$0] } ?? view.subviews.flatMap { buttons(in: $0) }
+        }
+        func respond(_ title: String) async throws {
+            for _ in 0..<100 {
+                if window.attachedSheet != nil { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            let sheet = try #require(window.attachedSheet)
+            let content = try #require(sheet.contentView)
+            let choices = buttons(in: content)
+            #expect(choices.map(\.title).contains("Keep My Changes"))
+            #expect(choices.map(\.title).contains("Reload"))
+            #expect(choices.map(\.title).contains("Merge"))
+            let button = try #require(choices.first { $0.title == title })
+            button.performClick(nil)
+            for _ in 0..<100 {
+                if window.attachedSheet == nil { break }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+        }
+        // Allow native document registration and the deferred watcher attachment to finish.
+        try await Task.sleep(for: .milliseconds(300))
+        try Data("one\ntwo\nTHREE\n".utf8).write(to: url, options: .atomic)
+        try await respond("Keep My Changes")
+        #expect(editor.string == "one\ntwo\nthree\n")
+        try Data("one\ntwo\nupdated\n".utf8).write(to: url, options: .atomic)
+        try await respond("Reload")
+        for _ in 0..<100 {
+            if editor.string == "one\ntwo\nupdated\n" { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(editor.string == "one\ntwo\nupdated\n")
+        editor.insertText("local ", replacementRange: NSRange(location: 0, length: 0))
+        if let undo = editor.undoManager, undo.groupingLevel > 0 { undo.endUndoGrouping() }
+        try await Task.sleep(for: .milliseconds(100))
+        try Data("one\ntwo\nexternal\n".utf8).write(to: url, options: .atomic)
+        try await respond("Merge")
+        for _ in 0..<100 {
+            if editor.string == "local one\ntwo\nexternal\n" { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(editor.string == "local one\ntwo\nexternal\n")
+    }
+
     @Test func reportURLConsumesOnlyItsEnvelope() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }

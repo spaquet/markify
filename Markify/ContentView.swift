@@ -419,7 +419,7 @@ struct ContentView: View {
         .navigationTitle("")
         .toolbar(removing: .title)
         .toolbarBackground(.hidden, for: .windowToolbar)
-        .background(WindowConfiguration())
+        .background(WindowConfiguration(text: $document.text))
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
         .tint(accent)
         .onReceive(NotificationCenter.default.publisher(for: NSView.boundsDidChangeNotification)) { notification in
@@ -2048,19 +2048,31 @@ struct LibraryNote: Identifiable {
 }
 
 private final class DocumentWindowView: NSView {
-    let fileRefresh = DocumentFileRefresh()
+    var text: Binding<String>?
+    lazy var fileRefresh = DocumentFileRefresh(
+        readText: { [weak self] in self?.text?.wrappedValue ?? "" },
+        writeText: { [weak self] in self?.text?.wrappedValue = $0 }
+    )
+    var isActive = true
+    func watchDocument() {
+        guard isActive else { return }
+        guard let window, let document = NSDocumentController.shared.document(for: window) else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in self?.watchDocument() }
+            return
+        }
+        guard !MarkifyAppDelegate.replaceStartupDocument(with: document) else { return }
+        fileRefresh.watch(window)
+    }
 }
 
 private struct WindowConfiguration: NSViewRepresentable {
+    @Binding var text: String
     func makeNSView(context: Context) -> NSView {
         let view = DocumentWindowView()
+        view.text = $text
         DispatchQueue.main.async {
+            view.watchDocument()
             guard let window = view.window else { return }
-            if let document = NSDocumentController.shared.document(for: window),
-               MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
-            if let document = NSDocumentController.shared.document(for: window) {
-                view.fileRefresh.watch(document)
-            }
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.title = ""
@@ -2071,13 +2083,14 @@ private struct WindowConfiguration: NSViewRepresentable {
         }
         return view
     }
+    static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
+        (nsView as? DocumentWindowView)?.isActive = false
+        (nsView as? DocumentWindowView)?.fileRefresh.stop()
+    }
     func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? DocumentWindowView)?.text = $text
         DispatchQueue.main.async {
-            if let window = nsView.window, let document = NSDocumentController.shared.document(for: window),
-               MarkifyAppDelegate.replaceStartupDocument(with: document) { return }
-            if let window = nsView.window, let document = NSDocumentController.shared.document(for: window) {
-                (nsView as? DocumentWindowView)?.fileRefresh.watch(document)
-            }
+            (nsView as? DocumentWindowView)?.watchDocument()
             nsView.window?.titleVisibility = .hidden
             nsView.window?.titlebarAppearsTransparent = true
             nsView.window?.title = ""
