@@ -225,9 +225,11 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.font, value: font, range: segment)
             }
         }
-        let definitions = model.spans.compactMap { span -> (label: String, text: String, span: MarkdownModel.Span)? in
+        let definitionModel = (editor as? MarkdownTextView)?.tableDocument?.model ?? model
+        let definitionSource = definitionModel.source as NSString
+        let definitions = definitionModel.spans.compactMap { span -> (label: String, text: String, span: MarkdownModel.Span)? in
             guard case .footnoteDefinition(let label, _) = span.kind else { return nil }
-            return (label, source.substring(with: span.content), span)
+            return (label, definitionSource.substring(with: span.content), span)
         }
 
         // A table of contents Markify keeps is drawn as a Contents card in the Rendered lens; its parts are styled below.
@@ -779,7 +781,7 @@ struct NativeEditor: NSViewRepresentable {
     }
 }
 
-final class MarkdownTextView: NSTextView {
+class MarkdownTextView: NSTextView {
     static let openEditors = NSHashTable<MarkdownTextView>.weakObjects()
     /// Held strongly: the layout manager keeps its delegate weakly.
     private let layoutDelegate = MarkdownLayoutDelegate()
@@ -806,6 +808,9 @@ final class MarkdownTextView: NSTextView {
     private var isCompletingLink = false
     var columnWidth: CGFloat = 640
     var rendered = true
+    var tableReadingOnly = false
+    weak var tableDocument: MarkdownTextView?
+    var tableSourceRange: NSRange?
     /// A theme change restyles the text, which redraws its fragments; renders made with the old one are dropped.
     var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:] } } }
     var loadRemoteImages = true {
@@ -852,6 +857,7 @@ final class MarkdownTextView: NSTextView {
         return model
     }
 
+    private(set) var tablePresentations: [Int: TableCellPresentation] = [:]
     private var hoveredTableRow: Int?
     private var tableHoverWork: DispatchWorkItem?
     private var tableAnimation: Task<Void, Never>?
@@ -911,7 +917,9 @@ final class MarkdownTextView: NSTextView {
                 style.minimumLineHeight = tableRowHeight(row, table: table)
                 style.maximumLineHeight = style.minimumLineHeight
                 style.lineBreakMode = .byClipping
-                storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: row.start, length: row.end - row.start))
+                if storage.attribute(.paragraphStyle, at: row.start, effectiveRange: nil) as? NSParagraphStyle != style {
+                    storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: row.start, length: row.end - row.start))
+                }
             }
         }
         storage.endEditing()
@@ -963,8 +971,22 @@ final class MarkdownTextView: NSTextView {
         let widths = tableWidths(table)
         let id = tableIDColumn(table)
         return row.cells.enumerated().map { col, range in
-            TableRowView.cellHeight((string as NSString).substring(with: range), width: widths[col] - 28, id: col == id) + 22
+            if col == id {
+                let text = (string as NSString).substring(with: range)
+                let badge = TableRowView.badgeWidth(text, available: widths[col] - 28)
+                return TableRowView.cellHeight(text, width: badge, id: true) + 22
+            }
+            return tablePresentation(range, width: widths[col] - 28).fullHeight + 22
         }.max() ?? 43
+    }
+
+    func tablePresentation(_ range: NSRange, width: CGFloat) -> TableCellPresentation {
+        let presentation = tablePresentations[range.location] ?? TableCellPresentation()
+        tablePresentations[range.location] = presentation
+        presentation.reading.tableSourceRange = range
+        let header = model.tables.contains { $0.rows.first?.cells.contains(range) == true }
+        presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header)
+        return presentation
     }
 
     func refreshTables() {
@@ -985,6 +1007,7 @@ final class MarkdownTextView: NSTextView {
             if overlay.superview == nil { addSubview(overlay) }
             tableOverlays[index] = overlay
             overlay.frame = NSRect(x: 0, y: line.minY, width: columnWidth, height: tableRowHeight(row, table: table))
+            overlay.owner = self
             overlay.rowStart = row.start
             overlay.widths = tableWidths(table)
             overlay.idColumn = tableIDColumn(table)
@@ -1015,6 +1038,10 @@ final class MarkdownTextView: NSTextView {
                                    }
                                }
                            })
+        }
+        let locations = Set(rows.flatMap { $0.0.cells.map(\.location) })
+        for location in tablePresentations.keys.filter({ !locations.contains($0) }) {
+            tablePresentations.removeValue(forKey: location)?.removeFromSuperview()
         }
         for index in tableOverlays.keys.filter({ $0 >= rows.count }) {
             tableOverlays[index]?.removeFromSuperview()
@@ -1609,6 +1636,8 @@ final class MarkdownTextView: NSTextView {
             if spans.last != anchors[low].span { spans.append(anchors[low].span) }
             low += 1
         }
+        // Rich table cells own their decorations; the hidden source row must not paint them again.
+        spans.removeAll { span in model.tables.contains { NSLocationInRange(span.range.location, $0.range) } }
         guard !spans.isEmpty else { return }
         drawingSpans = spans
         defer { drawingSpans = [] }
@@ -1815,6 +1844,7 @@ final class MarkdownTextView: NSTextView {
 
     /// True while the caret or selection touches `span`, so its source shows for editing.
     func isEditing(_ span: MarkdownModel.Span) -> Bool {
+        if tableReadingOnly { return false }
         let selection = selectedRange()
         return selection.location <= NSMaxRange(span.range) && NSMaxRange(selection) >= span.range.location
     }
@@ -2164,6 +2194,13 @@ final class MarkdownTextView: NSTextView {
     /// ⌘-click on a footnote reference selects its definition; on a definition's label, the reference it was reached from.
     /// Returns false when `index` is on neither.
     func followFootnote(at index: Int) -> Bool {
+        if let parent = tableDocument, let cell = tableSourceRange,
+           let reference = model.spans.first(where: { span in
+               if case .footnoteReference = span.kind { return NSLocationInRange(index, span.range) }; return false
+           }),
+           let original = parent.model.spans.first(where: { $0.kind == reference.kind && NSLocationInRange($0.range.location, cell) }) {
+            return parent.followFootnote(at: original.range.location)
+        }
         let spans = model.spans
         func hit(_ range: NSRange) -> Bool { range.location <= index && index <= NSMaxRange(range) }
         func reveal(_ range: NSRange) {
@@ -2358,6 +2395,208 @@ final class MarkdownTextView: NSTextView {
     }
 }
 
+/// A cell reads through the same TextKit renderer as the document, and edits through its source field.
+final class TableCellPresentation: NSView {
+    override var isFlipped: Bool { true }
+    let reading = TableCellReading(usingTextLayoutManager: true)
+    let summary = NSTextField(labelWithString: "")
+    let thumbnail = NSImageView()
+    weak var field: TableCellField?
+    private weak var owner: MarkdownTextView?
+    private var source = ""
+    private var theme: EditorTheme?
+    private var width: CGFloat = 0
+    private var expanded = false
+    private var mediaSummary: String?
+    private var header = false
+    private var contextVersion = -1
+    private(set) var fullHeight: CGFloat = 21
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.masksToBounds = true
+        reading.drawsBackground = false
+        reading.isEditable = false
+        reading.isSelectable = true
+        reading.textContainerInset = .zero
+        reading.textContainer?.lineFragmentPadding = 0
+        reading.textContainer?.widthTracksTextView = true
+        reading.presentation = self
+        summary.font = .systemFont(ofSize: 14)
+        summary.lineBreakMode = .byTruncatingTail
+        addSubview(reading)
+        addSubview(summary)
+        thumbnail.imageScaling = .scaleProportionallyUpOrDown
+        thumbnail.wantsLayer = true
+        thumbnail.layer?.cornerRadius = 4
+        thumbnail.layer?.masksToBounds = true
+        addSubview(thumbnail)
+    }
+    required init?(coder: NSCoder) { fatalError("Table presentations are created in code") }
+
+    static func documentSource(_ source: String) -> String {
+        source.replacingOccurrences(of: "<br\\s*/?>", with: "\n", options: .regularExpression)
+            .replacingOccurrences(of: "\\|", with: "|")
+    }
+
+    func update(source: String, width: CGFloat, owner: MarkdownTextView, header: Bool) {
+        self.owner = owner
+        let changed = contextVersion != owner.textVersion || self.header != header || self.source != source || self.width != width || theme != owner.theme
+            || reading.documentURL != owner.documentURL || reading.baseDirectory != owner.baseDirectory
+            || reading.loadRemoteImages != owner.loadRemoteImages || reading.effectiveAppearance.name != owner.effectiveAppearance.name
+        guard changed else { return }
+        contextVersion = owner.textVersion
+        self.header = header
+        self.source = source
+        self.width = max(1, width)
+        theme = owner.theme
+        reading.appearance = owner.effectiveAppearance
+        reading.tableDocument = owner
+        reading.documentURL = owner.documentURL
+        reading.baseDirectory = owner.baseDirectory
+        reading.bundleRoot = owner.bundleRoot
+        reading.loadRemoteImages = owner.loadRemoteImages
+        let decoded = Self.documentSource(source)
+        if reading.string != decoded { reading.string = decoded }
+        reading.setSelectedRange(NSRange(location: (reading.string as NSString).length, length: 0))
+        // A read-only cell never exposes a formula as source at its selection.
+        reading.tableReadingOnly = true
+        reading.frame = NSRect(x: 0, y: 0, width: self.width, height: 1000)
+        reading.columnWidth = self.width
+        reading.restyle = { [weak self] in self?.render() }
+        render()
+    }
+
+    private func render() {
+        guard let owner, let theme else { return }
+        var cellTheme = theme
+        cellTheme.proseFont = "SF Pro"
+        cellTheme.proseSize = header ? 12.5 : 14
+        reading.theme = cellTheme
+        reading.textContainer?.maximumNumberOfLines = 0
+        reading.textContainer?.lineBreakMode = .byWordWrapping
+        NativeEditor(text: .constant(reading.string), fileURL: owner.documentURL, columnWidth: width,
+                     markdownLens: false, findQuery: "", matchCase: false,
+                     selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil),
+                     onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in },
+                     theme: cellTheme, bundleRoot: owner.bundleRoot, baseDirectory: owner.baseDirectory).style(reading)
+        if let storage = reading.textStorage {
+            if header {
+                var fonts: [(NSRange, NSFont)] = []
+                storage.enumerateAttribute(.font, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+                    guard let font = value as? NSFont, font.pointSize > 1,
+                          !font.fontDescriptor.symbolicTraits.contains(.bold),
+                          !font.fontDescriptor.symbolicTraits.contains(.monoSpace) else { return }
+                    let semibold = NSFont.systemFont(ofSize: font.pointSize, weight: .semibold)
+                    fonts.append((range, NSFont(descriptor: semibold.fontDescriptor.withSymbolicTraits(font.fontDescriptor.symbolicTraits), size: font.pointSize) ?? semibold))
+                }
+                for (range, font) in fonts { storage.addAttribute(.font, value: font, range: range) }
+            }
+            var changes: [(NSRange, NSParagraphStyle)] = []
+            storage.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+                guard let paragraph = value as? NSParagraphStyle, paragraph.maximumLineHeight == 0,
+                      let copy = paragraph.mutableCopy() as? NSMutableParagraphStyle else { return }
+                copy.lineSpacing = 0
+                copy.minimumLineHeight = 21
+                changes.append((range, copy))
+            }
+            for (range, paragraph) in changes { storage.addAttribute(.paragraphStyle, value: paragraph, range: range) }
+        }
+        if let manager = reading.textLayoutManager {
+            manager.ensureLayout(for: manager.documentRange)
+            var height: CGFloat = 21
+            manager.enumerateTextLayoutFragments(from: manager.documentRange.location, options: [.ensuresLayout]) { fragment in
+                height = max(height, fragment.layoutFragmentFrame.maxY)
+                return true
+            }
+            let old = fullHeight
+            fullHeight = ceil(height) + 2
+            if old != fullHeight, let range = reading.tableSourceRange,
+               owner.model.tables.contains(where: { table in table.rows.contains { $0.cells.contains(range) && owner.tableRowExpanded($0) } }) {
+                DispatchQueue.main.async { [weak owner] in owner?.refreshTableHeights() }
+            }
+        }
+        let spans = reading.model.spans
+        mediaSummary = nil
+        thumbnail.image = nil
+        if let image = spans.first(where: { if case .image = $0.kind { return true }; return false }),
+           case .image(let path, _) = image.kind {
+            if case .image(let content) = owner.image(for: path) { thumbnail.image = content }
+            mediaSummary = (thumbnail.image == nil ? "▧ " : "") + ((path.removingPercentEncoding ?? path).components(separatedBy: "/").last ?? path)
+        } else if let diagram = spans.first(where: { if case .codeBlock(let language?, _) = $0.kind { return language.lowercased() == "mermaid" }; return false }) {
+            let content = (reading.string as NSString).substring(with: diagram.content)
+            mediaSummary = "◇ Mermaid · " + content.replacingOccurrences(of: "\n", with: " → ")
+        }
+        summary.stringValue = mediaSummary ?? ""
+        show(expanded: expanded)
+    }
+
+    func show(expanded: Bool) {
+        self.expanded = expanded
+        let useSummary = !expanded && mediaSummary != nil
+        summary.isHidden = !useSummary
+        reading.isHidden = useSummary
+        thumbnail.isHidden = !useSummary || thumbnail.image == nil
+        thumbnail.frame = NSRect(x: 0, y: 0, width: 34, height: 21)
+        let inset: CGFloat = thumbnail.isHidden ? 0 : 42
+        summary.frame = NSRect(x: inset, y: 0, width: max(1, width - inset), height: 21)
+        reading.textContainer?.maximumNumberOfLines = expanded ? 0 : 1
+        reading.textContainer?.lineBreakMode = expanded ? .byWordWrapping : .byTruncatingTail
+        reading.frame = NSRect(x: 0, y: 0, width: width, height: max(21, fullHeight))
+        needsDisplay = true
+    }
+
+    func beginEditing() {
+        guard let field else { return }
+        isHidden = true
+        window?.makeFirstResponder(field)
+        field.selectText(nil)
+    }
+
+    override func mouseDown(with event: NSEvent) { beginEditing() }
+    override func menu(for event: NSEvent) -> NSMenu? { field?.menu(for: event) }
+
+
+}
+
+final class TableCellReading: MarkdownTextView {
+    weak var presentation: TableCellPresentation?
+    private var contextModel: (source: String, model: MarkdownModel)?
+    private static let reference = try! NSRegularExpression(pattern: #"^!?\[([^\]]+)\](?:\[([^\]]*)\])?$"#)
+
+    override var model: MarkdownModel {
+        guard let owner = tableDocument, let range = tableSourceRange else { return super.model }
+        let original = owner.string as NSString
+        let definitions = owner.model.spans.compactMap { span -> String? in
+            guard NSLocationInRange(span.range.location, range) else { return nil }
+            let destination: String
+            switch span.kind {
+            case .link(let target): destination = target
+            case .image(let target, _): destination = target
+            default: return nil
+            }
+            let raw = original.substring(with: span.range) as NSString
+            guard let match = Self.reference.firstMatch(in: raw as String, range: NSRange(location: 0, length: raw.length)) else { return nil }
+            let explicit = match.range(at: 2)
+            let label = explicit.location != NSNotFound && explicit.length > 0 ? raw.substring(with: explicit) : raw.substring(with: match.range(at: 1))
+            return "[" + label + "]: <" + destination.replacingOccurrences(of: ">", with: "%3E") + ">"
+        }
+        guard !definitions.isEmpty else { return super.model }
+        let contextual = string + "\n\n" + definitions.joined(separator: "\n")
+        if let contextModel, contextModel.source == contextual { return contextModel.model }
+        let parsed = MarkdownModel(contextual, mdx: Self.isMDX(documentURL))
+        contextModel = (contextual, parsed)
+        return parsed
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.command) { super.mouseDown(with: event) }
+        else { presentation?.beginEditing() }
+    }
+    override func menu(for event: NSEvent) -> NSMenu? { presentation?.menu(for: event) }
+}
+
 final class TableRowView: NSView {
     override var isFlipped: Bool { true }
     var fields: [TableCellField] = []
@@ -2366,6 +2605,10 @@ final class TableRowView: NSView {
         paragraph.minimumLineHeight = 21
         paragraph.maximumLineHeight = 21
         return paragraph
+    }
+    static func badgeWidth(_ value: String, available: CGFloat) -> CGFloat {
+        let width = value.count == 1 ? 21 : ceil((value as NSString).size(withAttributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 14, weight: .semibold)]).width) + 14
+        return min(max(21, width), max(21, available))
     }
     static func cellHeight(_ text: String, width: CGFloat, id: Bool) -> CGFloat {
         let font = id ? NSFont.monospacedDigitSystemFont(ofSize: 14, weight: .semibold) : NSFont.systemFont(ofSize: 14)
@@ -2376,6 +2619,7 @@ final class TableRowView: NSView {
         return max(21, ceil(height) + 2)
     }
     private var header = false
+    weak var owner: MarkdownTextView?
     var rowStart = 0
     var hoveredColumn: Int?
     var widths: [CGFloat] = []
@@ -2423,7 +2667,10 @@ final class TableRowView: NSView {
         for (index, range) in cells.enumerated() {
             let field = fields[index]
             let width = widths.indices.contains(index) ? widths[index] : bounds.width / CGFloat(max(cells.count, 1))
-            field.frame = NSRect(x: x + 14, y: 11, width: max(1, width - 28), height: index == idColumn ? min(bounds.height - 22, expanded ? Self.cellHeight((source as NSString).substring(with: range), width: width - 28, id: true) : 21) : bounds.height - 22)
+            let cellX = x
+            let value = (source as NSString).substring(with: range)
+            let badgeWidth = Self.badgeWidth(value, available: width - 28)
+            field.frame = NSRect(x: index == idColumn ? cellX + (width - badgeWidth) / 2 : x + 14, y: 11, width: index == idColumn ? badgeWidth : max(1, width - 28), height: index == idColumn ? min(bounds.height - 22, expanded ? Self.cellHeight((source as NSString).substring(with: range), width: badgeWidth, id: true) : 21) : bounds.height - 22)
             x += width
             field.maximumNumberOfLines = expanded ? 0 : 1
             field.cell?.wraps = expanded
@@ -2447,6 +2694,15 @@ final class TableRowView: NSView {
             field.onEdit = onEdit
             field.onFocus = onFocus
             field.onTab = onTab
+            if index != idColumn, let owner {
+                let presentation = owner.tablePresentation(range, width: width - 28)
+                if presentation.superview !== self { presentation.removeFromSuperview(); addSubview(presentation) }
+                presentation.field = field
+                presentation.frame = NSRect(x: cellX + 14, y: 11, width: max(1, width - 28), height: bounds.height - 22)
+                presentation.show(expanded: expanded)
+                presentation.isHidden = field.currentEditor() != nil
+                field.isHidden = false
+            } else { field.isHidden = false }
         }
         needsDisplay = true
     }
@@ -2498,9 +2754,22 @@ final class TableCellField: NSTextField, NSTextFieldDelegate {
     }
     required init?(coder: NSCoder) { fatalError("Table cells are created in code") }
 
+    override func draw(_ dirtyRect: NSRect) {
+        if let row = superview as? TableRowView,
+           let presentation = row.owner?.tablePresentations[sourceRange.location], !presentation.isHidden { return }
+        super.draw(dirtyRect)
+    }
+
     override func becomeFirstResponder() -> Bool {
         let focused = super.becomeFirstResponder()
-        if focused { onFocus?(sourceRange) }
+        if focused {
+            if let row = superview as? TableRowView, let owner = row.owner {
+                owner.tablePresentations[sourceRange.location]?.isHidden = true
+                isHidden = false
+                stringValue = (owner.string as NSString).substring(with: sourceRange)
+            }
+            onFocus?(sourceRange)
+        }
         return focused
     }
 

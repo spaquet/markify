@@ -61,8 +61,17 @@ Each row shows its Markdown shortcut, so you can type the syntax directly next t
 - Numbered lists renumber themselves when you add, remove or move items.
 - To nest an item, indent it with spaces in the Markdown lens.
 - Click a task's checkbox to tick it; the file changes from `- [ ]` to `- [x]`.
-- In the Rendered lens, table rows show one line per cell with an ellipsis for longer text. Pause over a row to expand all its cells; move away to collapse it. A row also stays expanded while you edit a cell. ID columns (headed `ID`, `#`, `Rank` or `Demand rank`, ignoring case) fit their content, use centered tabular numbers, and highlight the active ID. Tables have alternating row shading and an accent bar on the active row. Hovering never changes your Markdown.
+- In the Rendered lens, table rows show one line per cell with an ellipsis for longer text. Pause over a row to expand all its cells; move away to collapse it. A row also stays expanded while you edit a cell. ID columns (headed `ID`, `#`, `Rank` or `Demand rank`, ignoring case) fit their content, use centered tabular numbers, and highlight the active ID. Tables have alternating row shading and an accent bar on the active row. Hovering never changes your Markdown. ID badges fit their values rather than filling the column. Cells render Markdown, including emphasis, links, images, math and Mermaid; click a cell to edit its original Markdown, or ⌘-click a link to follow it. For multiline content inside a GFM cell, use `<br>` between lines.
 - In a table, press Tab to move to the next cell and ⇧Tab to go back. Pressing Tab in the last cell adds a row.
 - To add or remove rows and columns, right-click a cell and choose **Insert Row Above** or **Below**, **Insert Column Left** or **Right**, **Delete Row** or **Delete Column**, or use their shortcuts (⌥⌘ with an arrow key, ⌥⌘⌫ and ⌥⇧⌘⌫). A row inserted above the header row becomes the new header, and deleting the header promotes the first row below it. A table keeps at least its header and one column.
+
+A Mermaid table cell can contain a fenced block with `<br>` line breaks:
+
+~~~~markdown
+| Flow |
+| --- |
+| ```mermaid<br>flowchart TD<br>A --> B<br>``` |
+~~~~
+
 
 See [Markdown support](markdown.md) for everything Markify renders.

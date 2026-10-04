@@ -220,6 +220,87 @@ import Testing
         #expect(editor.tableOverlays[1]!.frame.height >= field.frame.height + 22)
     }
 
+    @Test func tableIDBadgeFitsTheValue() throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| ID | Notes |\n| --- | --- |\n| 4 | Note |\n| 123 | Another |"
+        style(editor)
+        editor.refreshTables()
+        let single = try #require(editor.tableOverlays[1]?.fields.first)
+        let multiple = try #require(editor.tableOverlays[2]?.fields.first)
+        #expect(single.frame.width == 21)
+        #expect(multiple.frame.width > single.frame.width)
+        #expect(single.frame.width < editor.tableOverlays[1]!.widths[0] - 28)
+        #expect(abs(single.frame.midX - editor.tableOverlays[1]!.widths[0] / 2) < 1)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableCellsReuseMarkdownRenderingAndEditTheirSource() async throws {
+        let (window, editor) = makeEditor()
+        let source = "| ID | Notes |\n| --- | --- |\n| 4 | **Bold** and *italic* with `code`, ~~gone~~, [link][site] and $x^2$ |\n\n[site]: https://example.com"
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        let presentation = try #require(editor.tablePresentations[field.sourceRange.location])
+        let reading = presentation.reading
+        let bold = (reading.string as NSString).range(of: "Bold")
+        let font = try #require(reading.textStorage?.attribute(.font, at: bold.location, effectiveRange: nil) as? NSFont)
+        #expect(font.fontDescriptor.symbolicTraits.contains(.bold))
+        let marker = (reading.string as NSString).range(of: "**")
+        #expect(reading.textStorage?.attribute(.foregroundColor, at: marker.location, effectiveRange: nil) as? NSColor == .clear)
+        #expect(reading.inlineFormulas.count == 1)
+        #expect(reading.model.spans.contains { $0.kind == .link(destination: "https://example.com") })
+        presentation.beginEditing()
+        #expect(field.stringValue == (source as NSString).substring(with: field.sourceRange))
+        #expect(presentation.isHidden)
+        #expect(editor.string == source)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableMermaidUsesTheBundledRenderer() async throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| ID | Flow |\n| --- | --- |\n| 1 | ```mermaid<br>flowchart TD<br>A[Start] --> B[End]<br>``` |"
+        style(editor)
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        let presentation = try #require(editor.tablePresentations[field.sourceRange.location])
+        let block = try #require(presentation.reading.model.spans.first { if case .codeBlock(let language?, _) = $0.kind { return language == "mermaid" }; return false })
+        let code = (presentation.reading.string as NSString).substring(with: block.content)
+        for _ in 0..<150 {
+            if case .rendered = MermaidRenderer.shared.cached(code, dark: false) { break }
+            if case .rendered = MermaidRenderer.shared.cached(code, dark: true) { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let state = MermaidRenderer.shared.cached(code, dark: false) ?? MermaidRenderer.shared.cached(code, dark: true)
+        guard case .rendered = state else { Issue.record("The table Mermaid did not render"); return }
+        #expect(presentation.fullHeight > 43)
+        #expect(editor.string.contains("<br>"))
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableImagesShowAThumbnailAndFootnotesUseTheDocument() throws {
+        let (window, editor) = makeEditor()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 80, pixelsHigh: 50, bitsPerSample: 8,
+                                                   samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        try #require(bitmap.representation(using: .png, properties: [:])).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        editor.string = "| ID | Image | Note |\n| --- | --- | --- |\n| 1 | ![Mockup](" + url.path + ") | Citation[^n] |\n\n[^n]: The document footnote."
+        style(editor)
+        editor.refreshTables()
+        let fields = try #require(editor.tableOverlays[1]?.fields)
+        let image = try #require(editor.tablePresentations[fields[1].sourceRange.location])
+        #expect(image.thumbnail.image != nil)
+        #expect(!image.thumbnail.isHidden)
+        #expect(image.fullHeight > 21)
+        let note = try #require(editor.tablePresentations[fields[2].sourceRange.location])
+        let reference = try #require(note.reading.model.spans.first { if case .footnoteReference = $0.kind { return true }; return false })
+        #expect(note.reading.textStorage?.attribute(.toolTip, at: reference.content.location, effectiveRange: nil) as? String == "The document footnote.")
+        #expect(note.reading.followFootnote(at: reference.range.location))
+        #expect(editor.selectedRange().location == (editor.string as NSString).range(of: "[^n]:").location + 2)
+        withExtendedLifetime(window) {}
+    }
+
     /// Painting the visible part of a long note stays fast even though positions come from the layout manager.
     @Test func paintingALargeDocumentStaysFast() {
         let large = Array(repeating: EditorFixtureTests.source, count: 60).joined(separator: "\n")
