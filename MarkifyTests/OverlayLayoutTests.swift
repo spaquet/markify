@@ -128,6 +128,179 @@ import Testing
         }
     }
 
+    @Test func expandedTablesWrapAndPreserveSource() async throws {
+        let (window, editor) = makeEditor()
+        let source = "| ID | Request | Priority |\n| --- | --- | --- |\n| 54 | " + String(repeating: "Long cell content wraps completely. ", count: 12) + " | High |\n| 55 | Next row | Low |\n\nAfter table"
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        let table = try #require(editor.model.tables.first)
+        let row = table.rows[2]
+        #expect(editor.tableIDColumn(table) == 0)
+        #expect(editor.tableWidths(table)[0] < editor.tableWidths(table)[1])
+        #expect(editor.tableRowHeight(row, table: table) == 43)
+        editor.hoverTableRow(row.start)
+        for _ in 0..<100 {
+            if editor.tableOverlays[1]?.expanded == true, (editor.tableOverlays[1]?.frame.height ?? 0) > 100 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        // Let the transition finish before resizing the expanded row.
+        try await Task.sleep(for: .milliseconds(300))
+        let overlay = try #require(editor.tableOverlays[1])
+        #expect(overlay.expanded)
+        #expect(overlay.frame.height > 100)
+        #expect(overlay.fields[1].maximumNumberOfLines == 0)
+        #expect(overlay.fields[0].drawsBackground)
+        #expect(overlay.fields[0].frame.height == 21)
+        #expect(editor.tableOverlays[2]!.frame.minY >= overlay.frame.maxY - 1)
+        editor.columnWidth = 400
+        editor.refreshTableHeights()
+        #expect(overlay.frame.height > 150)
+        editor.hoverTableRow(nil)
+        for _ in 0..<100 {
+            if !overlay.expanded, overlay.frame.height == 43 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(overlay.frame.height == 43)
+        #expect(overlay.fields[1].maximumNumberOfLines == 1)
+        #expect(editor.string == source)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableHoverDelayCancelsAndKeyboardEditingExpands() async throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| Name | Notes |\n| --- | --- |\n| First | " + String(repeating: "Long content ", count: 30) + " |"
+        style(editor)
+        editor.refreshTables()
+        let table = try #require(editor.model.tables.first)
+        #expect(editor.tableIDColumn(table) == nil)
+        let row = table.rows[2]
+        editor.hoverTableRow(row.start)
+        editor.hoverTableRow(nil)
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(editor.tableRowHeight(row, table: table) == 43)
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        #expect(window.makeFirstResponder(field))
+        #expect(editor.tableRowExpanded(row))
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(editor.tableOverlays[1]!.frame.height > 43)
+    }
+
+    @Test func idAndNumericColumnsHandleRaggedRows() throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| Name | Count | id |\n| --- | --- | --- |\n| One | 2 | 54 |\n| Two |\n| Three | 12 | 55 |"
+        let table = try #require(editor.model.tables.first)
+        #expect(editor.tableIDColumn(table) == 2)
+        let widths = editor.tableWidths(table)
+        #expect(widths.count == 3)
+        #expect(widths[0] > widths[1])
+        #expect(widths[0] > widths[2])
+        #expect(abs(widths.reduce(0, +) - editor.columnWidth) < 1)
+        editor.refreshTables()
+        #expect(editor.tableOverlays.count == 4)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func longIDsWrapInTheirHighlightedPill() async throws {
+        let (window, editor) = makeEditor()
+        editor.columnWidth = 320
+        editor.string = "| ID | Notes |\n| --- | --- |\n| 550e8400-e29b-41d4-a716-446655440000 | Short note |"
+        style(editor)
+        editor.columnWidth = 320
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.first)
+        #expect(window.makeFirstResponder(field))
+        for _ in 0..<100 {
+            if field.frame.height > 21 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(field.frame.height > 21)
+        #expect(field.maximumNumberOfLines == 0)
+        #expect(field.drawsBackground)
+        #expect(editor.tableOverlays[1]!.frame.height >= field.frame.height + 22)
+    }
+
+    @Test func tableIDBadgeFitsTheValue() throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| ID | Notes |\n| --- | --- |\n| 4 | Note |\n| 123 | Another |"
+        style(editor)
+        editor.refreshTables()
+        let single = try #require(editor.tableOverlays[1]?.fields.first)
+        let multiple = try #require(editor.tableOverlays[2]?.fields.first)
+        #expect(single.frame.width == 21)
+        #expect(multiple.frame.width > single.frame.width)
+        #expect(single.frame.width < editor.tableOverlays[1]!.widths[0] - 28)
+        #expect(abs(single.frame.midX - editor.tableOverlays[1]!.widths[0] / 2) < 1)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableCellsReuseMarkdownRenderingAndEditTheirSource() async throws {
+        let (window, editor) = makeEditor()
+        let source = "| ID | Notes |\n| --- | --- |\n| 4 | **Bold** and *italic* with `code`, ~~gone~~, [link][site] and $x^2$ |\n\n[site]: https://example.com"
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        let presentation = try #require(editor.tablePresentations[field.sourceRange.location])
+        let reading = presentation.reading
+        let bold = (reading.string as NSString).range(of: "Bold")
+        let font = try #require(reading.textStorage?.attribute(.font, at: bold.location, effectiveRange: nil) as? NSFont)
+        #expect(font.fontDescriptor.symbolicTraits.contains(.bold))
+        let marker = (reading.string as NSString).range(of: "**")
+        #expect(reading.textStorage?.attribute(.foregroundColor, at: marker.location, effectiveRange: nil) as? NSColor == .clear)
+        #expect(reading.inlineFormulas.count == 1)
+        #expect(reading.model.spans.contains { $0.kind == .link(destination: "https://example.com") })
+        presentation.beginEditing()
+        #expect(field.stringValue == (source as NSString).substring(with: field.sourceRange))
+        #expect(presentation.isHidden)
+        #expect(editor.string == source)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableMermaidUsesTheBundledRenderer() async throws {
+        let (window, editor) = makeEditor()
+        editor.string = "| ID | Flow |\n| --- | --- |\n| 1 | ```mermaid<br>flowchart TD<br>A[Start] --> B[End]<br>``` |"
+        style(editor)
+        editor.refreshTables()
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        let presentation = try #require(editor.tablePresentations[field.sourceRange.location])
+        let block = try #require(presentation.reading.model.spans.first { if case .codeBlock(let language?, _) = $0.kind { return language == "mermaid" }; return false })
+        let code = (presentation.reading.string as NSString).substring(with: block.content)
+        for _ in 0..<150 {
+            if case .rendered = MermaidRenderer.shared.cached(code, dark: false) { break }
+            if case .rendered = MermaidRenderer.shared.cached(code, dark: true) { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let state = MermaidRenderer.shared.cached(code, dark: false) ?? MermaidRenderer.shared.cached(code, dark: true)
+        guard case .rendered = state else { Issue.record("The table Mermaid did not render"); return }
+        #expect(presentation.fullHeight > 43)
+        #expect(editor.string.contains("<br>"))
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func tableImagesShowAThumbnailAndFootnotesUseTheDocument() throws {
+        let (window, editor) = makeEditor()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 80, pixelsHigh: 50, bitsPerSample: 8,
+                                                   samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        try #require(bitmap.representation(using: .png, properties: [:])).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        editor.string = "| ID | Image | Note |\n| --- | --- | --- |\n| 1 | ![Mockup](" + url.path + ") | Citation[^n] |\n\n[^n]: The document footnote."
+        style(editor)
+        editor.refreshTables()
+        let fields = try #require(editor.tableOverlays[1]?.fields)
+        let image = try #require(editor.tablePresentations[fields[1].sourceRange.location])
+        #expect(image.thumbnail.image != nil)
+        #expect(!image.thumbnail.isHidden)
+        #expect(image.fullHeight > 21)
+        let note = try #require(editor.tablePresentations[fields[2].sourceRange.location])
+        let reference = try #require(note.reading.model.spans.first { if case .footnoteReference = $0.kind { return true }; return false })
+        #expect(note.reading.textStorage?.attribute(.toolTip, at: reference.content.location, effectiveRange: nil) as? String == "The document footnote.")
+        #expect(note.reading.followFootnote(at: reference.range.location))
+        #expect(editor.selectedRange().location == (editor.string as NSString).range(of: "[^n]:").location + 2)
+        withExtendedLifetime(window) {}
+    }
+
     /// Painting the visible part of a long note stays fast even though positions come from the layout manager.
     @Test func paintingALargeDocumentStaysFast() {
         let large = Array(repeating: EditorFixtureTests.source, count: 60).joined(separator: "\n")
