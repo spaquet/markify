@@ -19,6 +19,28 @@ import WebKit
 
     enum Format { case html, pdf }
 
+    /// HTML clipboard content lets browser editors paste the rendered Markdown directly.
+    nonisolated static func mediumHTML(_ source: String, mdx: Bool = false) -> String {
+        var options = MarkdownHTML.Options()
+        options.codeLabels = false
+        return "<html><head><meta charset=\"utf-8\"></head><body>"
+            + MarkdownHTML.render(source, mdx: mdx, options: options).body + "</body></html>"
+    }
+
+    static func copyAll(_ source: String, to pasteboard: NSPasteboard = .general) {
+        pasteboard.clearContents()
+        pasteboard.setString(source, forType: .string)
+    }
+
+    static func copyForMedium(_ source: String, mdx: Bool = false,
+                              to pasteboard: NSPasteboard = .general) async {
+        let html = await Task.detached(priority: .userInitiated) {
+            mediumHTML(source, mdx: mdx)
+        }.value
+        copyAll(source, to: pasteboard)
+        pasteboard.setString(html, forType: .html)
+    }
+
     /// A complete HTML page for the document.
     static func page(_ context: Context, for format: Format) async -> String {
         let mdx = MarkdownTextView.isMDX(context.documentURL)

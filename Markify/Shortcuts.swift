@@ -119,3 +119,33 @@ enum Shortcuts {
         return (names.filter { flags.contains($0.0) }.map(\.1) + [key]).joined(separator: " ")
     }
 }
+
+/// Actions from the active document, also available while its find fields have focus.
+struct DocumentCopyActions {
+    let markdown: () -> Void
+    let medium: () -> Void
+}
+
+private struct DocumentCopyKey: FocusedValueKey {
+    typealias Value = DocumentCopyActions
+}
+
+extension FocusedValues {
+    var documentCopy: DocumentCopyActions? {
+        get { self[DocumentCopyKey.self] }
+        set { self[DocumentCopyKey.self] = newValue }
+    }
+}
+
+struct DocumentCopyCommands: Commands {
+    @FocusedValue(\.documentCopy) private var actions
+
+    var body: some Commands {
+        CommandGroup(after: .pasteboard) {
+            Button("Copy All as Markdown") { actions?.markdown() }
+                .disabled(actions == nil)
+            Button("Copy All for Medium") { actions?.medium() }
+                .disabled(actions == nil)
+        }
+    }
+}

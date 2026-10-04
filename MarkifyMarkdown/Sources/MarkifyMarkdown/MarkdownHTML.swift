@@ -9,6 +9,8 @@ import Markdown
 /// comes from `Options`.
 public struct MarkdownHTML {
     public struct Options {
+        /// Include the fenced code language as a visible label.
+        public var codeLabels = true
         /// LaTeX to HTML, `true` for display math; nil shows the LaTeX as code.
         public var math: (_ latex: String, _ display: Bool) -> String?
         /// A fenced block's language and code to HTML, for diagrams; nil renders it as a code block.
@@ -276,7 +278,7 @@ private struct Renderer {
             return "<figure class=\"diagram\">\(diagram)</figure>\n"
         }
         let attribute = language.map { " class=\"language-\(MarkdownHTML.escape($0))\"" } ?? ""
-        let label = language.map { "<span class=\"code-label\" aria-hidden=\"true\">\(MarkdownHTML.escape($0))</span>" } ?? ""
+        let label = (options.codeLabels ? language : nil).map { "<span class=\"code-label\" aria-hidden=\"true\">\(MarkdownHTML.escape($0))</span>" } ?? ""
         let highlighted = options.highlight(body, language) ?? MarkdownHTML.escape(body)
         return "<pre>\(label)<code\(attribute)>\(highlighted)</code></pre>\n"
     }

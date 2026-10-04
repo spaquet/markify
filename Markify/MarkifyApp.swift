@@ -307,6 +307,7 @@ struct MarkifyApp: App {
         }
         .defaultLaunchBehavior(.suppressed)
         .commands {
+            DocumentCopyCommands()
             CommandGroup(replacing: .appInfo) {
                 AboutButton()
                 CheckForUpdatesButton()

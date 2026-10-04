@@ -316,6 +316,8 @@ struct ContentView: View {
                                         }
                                     }
                                 }
+                                Button("Copy All as Markdown") { copyAll() }
+                                Button("Copy All for Medium") { copyAll(medium: true) }
                                 Menu("Export") {
                                     Button("HTML") { exportHTML() }
                                     Button("PDF") { exportPDF() }
@@ -416,6 +418,8 @@ struct ContentView: View {
         }
         .frame(minWidth: 520, minHeight: 400)
         .ignoresSafeArea(.container, edges: .top)
+        .focusedSceneValue(\.documentCopy, DocumentCopyActions(
+            markdown: { copyAll() }, medium: { copyAll(medium: true) }))
         .navigationTitle("")
         .toolbar(removing: .title)
         .toolbarBackground(.hidden, for: .windowToolbar)
@@ -1387,6 +1391,16 @@ struct ContentView: View {
         aiOutput = ""
         showAI = false
         showWritingMenu = false
+    }
+
+    private func copyAll(medium: Bool = false) {
+        let source = document.text
+        if medium {
+            let mdx = MarkdownTextView.isMDX(fileURL)
+            Task { await DocumentExport.copyForMedium(source, mdx: mdx) }
+        } else {
+            DocumentExport.copyAll(source)
+        }
     }
 
     private func exportHTML() { export(.html) }
