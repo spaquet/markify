@@ -33,7 +33,17 @@ URL: https://spaquet.github.io/markify/help/getting-started.html
 
 Opening a file replaces an untouched, empty startup document in the same window, keeping its size. Once you edit that document, files open in separate windows.
 
-Markify saves automatically, like other Mac apps. Use **File › Revert To** or the title menu's **Browse All Versions…** to go back to an earlier version.
+Markify saves automatically, like other Mac apps. Once an edit has autosaved, reloading the file does not undo it. Use **⌘Z** for recent edits or macOS version history for earlier saved text.
+
+### Recover an earlier version
+
+Save a document to a file before using version history. Choose **File › Revert To › Browse All Versions…**, or click the document's title and choose **Browse All Versions…**. Select an earlier version and click **Restore** to make it current. Hold **Option** to choose **Restore a Copy**, keeping the current document intact. Choose **Done** to leave without restoring.
+
+macOS manages version checkpoints and their storage; history does not capture every keystroke. Markify does not create a separate backup folder. Versions recover the Markdown text, including image paths, but do not restore changes to linked images or other files. Available history depends on the file's storage location; keep backups for long-term recovery.
+
+External-change prompts pause while the version browser is open. Restoring an earlier version deliberately replaces the current file; use Restore a Copy if you want to preserve the current content, including edits from another app.
+
+### Changes from another app
 
 If another app changes an open file, Markify notifies you, including when text is added, updated or removed. Choose **Keep My Changes** to leave your text alone, **Reload** to replace it with the version on disk, or **Merge** to combine both versions. Merge marks overlapping edits with `<<<<<<< My Changes`, `||||||| Original`, `=======` and `>>>>>>> External Changes`; edit those sections to keep the text you want and remove the markers before saving. Keeping your changes leaves the external file alone until Markify saves your version. Merging can be undone with **⌘Z**.
 

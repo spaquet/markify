@@ -5,6 +5,58 @@ import Testing
 @testable import Markify
 
 @Suite(.serialized) @MainActor struct ReportTests {
+    @Test func nativeVersionRestoreUpdatesTheDocumentAndEditor() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")
+        let snapshot = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")
+        defer {
+            try? NSFileVersion.removeOtherVersionsOfItem(at: url)
+            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: snapshot)
+        }
+        let original = "# Original\nUnicode café 🌻\n![Image](assets/image.png)\n"
+        try Data(original.utf8).write(to: snapshot)
+        try Data("# Updated\n".utf8).write(to: url)
+        // Seed a known checkpoint; automatic checkpoint timing belongs to macOS.
+        _ = try NSFileVersion.addOfItem(at: url, withContentsOf: snapshot, options: [])
+        let document: NSDocument = try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.main.async {
+                NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { document, _, error in
+                    if let document { continuation.resume(returning: document) }
+                    else { continuation.resume(throwing: error ?? CocoaError(.fileReadUnknown)) }
+                }
+            }
+        }
+        defer { document.updateChangeCount(.changeCleared); document.close() }
+        #expect(type(of: document).autosavesInPlace)
+        #expect(type(of: document).preservesVersions)
+        for _ in 0..<100 {
+            if MarkdownTextView.openEditors.allObjects.contains(where: { $0.documentURL == url && $0.window?.isVisible == true }) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let editor = try #require(MarkdownTextView.openEditors.allObjects.first { $0.documentURL == url && $0.window?.isVisible == true })
+        let window = try #require(editor.window)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(editor.string == "# Updated\n")
+        #expect(try String(contentsOf: url, encoding: .utf8) == "# Updated\n")
+        let versions = NSFileVersion.otherVersionsOfItem(at: url) ?? []
+        let version = try #require(versions.first { (try? String(contentsOf: $0.url, encoding: .utf8)) == original })
+        // Use the same native version store and document read path as Restore, without the full-screen UI.
+        _ = try version.replaceItem(at: url, options: [])
+        try document.revert(toContentsOf: url, ofType: "net.daringfireball.markdown")
+        for _ in 0..<100 {
+            if MarkdownTextView.openEditors.allObjects.contains(where: {
+                $0.window === window && $0.documentURL == url && $0.string == original
+            }) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(try String(contentsOf: url, encoding: .utf8) == original)
+        #expect(MarkdownTextView.openEditors.allObjects.contains(where: {
+            $0.window === window && $0.documentURL == url && $0.string == original
+        }))
+        #expect(window.attachedSheet == nil)
+        #expect(!document.isDocumentEdited)
+    }
+
     @Test func openedFileReusesOnlyUntouchedEmptyStartupWindow() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")
         try Data("# Opened file".utf8).write(to: url)
