@@ -56,6 +56,33 @@ import Testing
         #expect(editor.textVersion == version)
     }
 
+    @Test func tableFootnoteTooltipsRefreshWhenDefinitionsChange() throws {
+        let owner = MarkdownTextView(usingTextLayoutManager: true)
+        owner.string = "| Note |\n| --- |\n| Citation[^n] |\n\n[^n]: Original footnote."
+        let range = try #require(owner.model.tables.first?.rows.last?.cells.first)
+        let cell = owner.tablePresentation(range, width: 200)
+        let reference = try #require(cell.reading.model.spans.first { if case .footnoteReference = $0.kind { return true }; return false })
+        func tip() -> String? { cell.reading.textStorage?.attribute(.toolTip, at: reference.content.location, effectiveRange: nil) as? String }
+        #expect(tip() == "Original footnote.")
+        owner.textStorage?.replaceCharacters(in: (owner.string as NSString).range(of: "Original"), with: "Updated")
+        #expect(owner.tablePresentation(range, width: 200) === cell)
+        #expect(tip() == "Updated footnote.")
+    }
+
+    @Test func summaryPersistenceFitsItsReloadBudget() async throws {
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: location) }
+        let store = LinkSummaryStore(location: location)
+        let summary = LinkSummary(text: "Summary", fingerprint: "fingerprint", date: .now)
+        try await store.save(summary, for: "small")
+        try await store.save(summary, for: String(repeating: "\n", count: 2_000_000))
+        #expect(try Data(contentsOf: location).count <= 4_000_000)
+        let reloaded = LinkSummaryStore(location: location)
+        await reloaded.waitForLoad()
+        #expect(reloaded.entries == store.entries)
+        #expect(reloaded.entries["small"]?.text == "Summary")
+    }
+
     @Test func clicksFollowRenderedLinkForms() throws {
         for source in ["[web](https://example.com/a_(b))", "<https://example.com>",
                        "[web][site]\n\n[site]: https://example.com"] {

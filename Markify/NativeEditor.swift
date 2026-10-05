@@ -1848,11 +1848,13 @@ class MarkdownTextView: NSTextView {
         let key = "\(width)|\(theme.accent)|\(html)"
         if let cached = htmlRenderCache[key] { return cached }
         guard htmlLoads[key] == nil, !htmlFailures.contains(key), htmlLoads.count < 2,
-              key.utf8.count <= 1_000_000, htmlRenderCache.count + htmlFailures.count < 64 else { return nil }
+              key.utf8.count <= 1_000_000, htmlRenderCache.count + htmlFailures.count < 64,
+              htmlCosts.values.reduce(0, +) + key.utf8.count <= 8_000_000 else { return nil }
         let token = UUID()
         let accent = theme.accent
         htmlLoads[key] = token
         htmlInputs[key] = raw
+        htmlCosts[key] = key.utf8.count
         // WebKit's supported asynchronous importer keeps its work outside the typing/style call.
         NSAttributedString.loadFromHTML(string: html as String, options: [.timeout: 5]) { [weak self] parsed, _, _ in
             let imported = HTMLImportResult(parsed)
@@ -1860,8 +1862,9 @@ class MarkdownTextView: NSTextView {
             MainActor.assumeIsolated {
                 guard let self, self.htmlLoads[key] == token else { return }
                 self.htmlLoads[key] = nil
-                guard self.activeHTML.contains(raw) else {
+                guard self.activeHTML.contains(raw), self.columnWidth == width, self.theme.accent == accent else {
                     self.htmlInputs[key] = nil
+                    self.htmlCosts[key] = nil
                     self.scheduleRemoteRestyle()
                     return
                 }
@@ -1873,7 +1876,7 @@ class MarkdownTextView: NSTextView {
                 text.enumerateAttribute(.link, in: all) { link, range, _ in if link != nil { links.append(range) } }
                 for range in links { text.addAttribute(.foregroundColor, value: accent, range: range) }
                 let cost = key.utf8.count + text.length * 64
-                guard self.htmlCosts.values.reduce(0, +) + cost <= 8_000_000 else { self.htmlFailures.insert(key); return }
+                guard self.htmlCosts.values.reduce(0, +) - (self.htmlCosts[key] ?? 0) + cost <= 8_000_000 else { self.htmlFailures.insert(key); return }
                 let size = text.size()
                 let scale = min(1, width / max(size.width, 1))
                 self.htmlRenderCache[key] = HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
@@ -2831,6 +2834,7 @@ final class TableCellPresentation: NSView {
     private var mediaSummary: String?
     private var header = false
     private var contextDefinitions: [String] = []
+    private var footnoteContext: [String] = []
     private(set) var fullHeight: CGFloat = 21
 
     override init(frame: NSRect) {
@@ -2865,11 +2869,14 @@ final class TableCellPresentation: NSView {
         self.owner = owner
         reading.tableDocument = owner
         let definitions = reading.referenceDefinitions()
+        let footnotes = reading.footnoteDefinitions()
         let changed = contextDefinitions != definitions || self.header != header || self.source != source || self.width != width || theme != owner.theme
+            || footnoteContext != footnotes || reading.bundleRoot != owner.bundleRoot
             || reading.documentURL != owner.documentURL || reading.baseDirectory != owner.baseDirectory
             || reading.loadRemoteImages != owner.loadRemoteImages || reading.effectiveAppearance.name != owner.effectiveAppearance.name
         guard changed else { return }
         contextDefinitions = definitions
+        footnoteContext = footnotes
         self.header = header
         self.source = source
         self.width = max(1, width)
@@ -2988,16 +2995,35 @@ final class TableCellReading: MarkdownTextView {
     private var contextModel: (source: String, model: MarkdownModel)?
     private static let reference = try! NSRegularExpression(pattern: #"^!?\[([^\]]+)\](?:\[([^\]]*)\])?$"#)
 
-    func referenceDefinitions() -> [String] {
-        guard let owner = tableDocument, let range = tableSourceRange else { return [] }
+    func footnoteDefinitions() -> [String] {
+        guard let owner = tableDocument else { return [] }
+        let labels = Set(contextSpans().compactMap { span -> String? in
+            guard case .footnoteReference(let label) = span.kind else { return nil }
+            return label
+        })
+        guard !labels.isEmpty else { return [] }
         let original = owner.string as NSString
+        return owner.model.spans.compactMap { span in
+            guard case .footnoteDefinition(let label, _) = span.kind, labels.contains(label) else { return nil }
+            return original.substring(with: span.range)
+        }
+    }
+
+    private func contextSpans() -> ArraySlice<MarkdownModel.Span> {
+        guard let owner = tableDocument, let range = tableSourceRange else { return [] }
         let spans = owner.model.spans
         var low = 0, high = spans.count
         while low < high {
             let middle = (low + high) / 2
             if spans[middle].range.location < range.location { low = middle + 1 } else { high = middle }
         }
-        return spans[low...].prefix { $0.range.location < NSMaxRange(range) }.compactMap { span -> String? in
+        return spans[low...].prefix { $0.range.location < NSMaxRange(range) }
+    }
+
+    func referenceDefinitions() -> [String] {
+        guard let owner = tableDocument else { return [] }
+        let original = owner.string as NSString
+        return contextSpans().compactMap { span -> String? in
             let destination: String
             switch span.kind {
             case .link(let target): destination = target

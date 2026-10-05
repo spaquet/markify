@@ -90,11 +90,21 @@ struct SelectableLinkText: NSViewRepresentable {
 
 private actor LinkSummaryWriter {
     private var writtenRevision = 0
-    func write(_ entries: [String: LinkSummary], at location: URL, revision: Int) throws {
-        guard revision >= writtenRevision else { return }
+    func write(_ entries: [String: LinkSummary], at location: URL, revision: Int) throws -> [String: LinkSummary] {
+        guard revision >= writtenRevision else { return entries }
+        let encoder = JSONEncoder()
+        var bounded: [String: LinkSummary] = [:]
+        var bytes = 2 // Dictionary braces; each entry includes its JSON escaping overhead.
+        for (key, value) in entries.sorted(by: { $0.value.date > $1.value.date }) {
+            let cost = try encoder.encode([key: value]).count - 2 + (bounded.isEmpty ? 0 : 1)
+            guard cost <= 4_000_000 - bytes else { continue }
+            bounded[key] = value
+            bytes += cost
+        }
         try FileManager.default.createDirectory(at: location.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try JSONEncoder().encode(entries).write(to: location, options: .atomic)
+        try encoder.encode(bounded).write(to: location, options: .atomic)
         writtenRevision = revision
+        return bounded
     }
 }
 
@@ -159,7 +169,9 @@ private actor LinkSummaryWriter {
         updated[key] = summary
         entries = Self.pruned(updated)
         revision += 1
-        try await writer.write(entries, at: location, revision: revision)
+        let savedRevision = revision
+        let saved = try await writer.write(entries, at: location, revision: savedRevision)
+        if revision == savedRevision { entries = saved }
     }
 }
 
