@@ -175,6 +175,14 @@ import WebKit
             const { svg } = await mermaid.render('diagram' + Date.now(), source);
             const box = document.getElementById('diagram');
             box.innerHTML = svg;
+            // Responsive SVGs otherwise inherit the previous diagram's snapshot width.
+            const drawing = box.querySelector('svg');
+            const bounds = drawing.viewBox.baseVal;
+            if (bounds.width > 0 && bounds.height > 0) {
+                drawing.style.maxWidth = 'none';
+                drawing.style.width = bounds.width + 'px';
+                drawing.style.height = bounds.height + 'px';
+            }
             const rect = box.getBoundingClientRect();
             return [rect.width, rect.height];
             """, arguments: ["source": job.source, "dark": job.dark], in: nil, in: .page) { [weak self] result in

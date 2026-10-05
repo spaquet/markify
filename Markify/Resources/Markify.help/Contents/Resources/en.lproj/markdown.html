@@ -65,12 +65,26 @@ $$</code></pre>
 <h2 id="footnotes">Footnotes</h2>
 <p>Write <code>[^1]</code> where the note belongs and <code>[^1]: The note.</code> anywhere in the document. Hover over a reference to read its note; ⌘-click to jump to the note and back.</p>
 <h2 id="mermaid-diagrams">Mermaid diagrams</h2>
-<p>A fenced block with the language <code>mermaid</code> renders as a diagram in the Rendered lens:</p>
+<p>A fenced block with the language <code>mermaid</code> renders as a diagram in the Rendered lens. Use <code>mermaid</code> on the opening fence for every diagram type; the first line inside chooses the type. For a flowchart:</p>
 <pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">```mermaid
-graph TD
-  Draft --&gt; Review --&gt; Publish
+flowchart TD
+  Draft --&gt; Review{Ready?}
+  Review --&gt;|Yes| Publish
+  Review --&gt;|No| Draft
 ```</code></pre>
-<p>If Mermaid can't read the diagram, Markify shows the source with Mermaid's error message. Diagrams render offline with a copy of Mermaid bundled in the app.</p>
+<p>For a sequence diagram, use the same fence and start with <code>sequenceDiagram</code>:</p>
+<pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">```mermaid
+sequenceDiagram
+  participant Author
+  participant Editor
+  Author-&gt;&gt;Editor: Review draft
+  Editor--&gt;&gt;Author: Feedback
+```</code></pre>
+<p>Flowcharts also accept <code>graph TD</code> or <code>graph LR</code>; <code>TD</code> runs from top to bottom and <code>LR</code> from left to right. Flowcharts support decision shapes, labeled arrows and subgraphs. Sequence diagrams support participants, messages, notes, activation, loops and alternatives. A fence labeled <code>flowchart</code> or <code>sequence</code> is an ordinary code block: those names do not replace <code>mermaid</code>.</p>
+<p>The bundled Mermaid 12 engine also handles class (<code>classDiagram</code>), state (<code>stateDiagram-v2</code>), entity relationship (<code>erDiagram</code>), Gantt (<code>gantt</code>), pie (<code>pie</code>), journey (<code>journey</code>), Git (<code>gitGraph</code>), mind map (<code>mindmap</code>), timeline (<code>timeline</code>), quadrant (<code>quadrantChart</code>), XY (<code>xychart-beta</code>), block (<code>block-beta</code>) and Sankey (<code>sankey-beta</code>) diagrams. See Mermaid's <a rel="noopener" href="https://mermaid.js.org/syntax/flowchart.html">flowchart syntax</a> and <a rel="noopener" href="https://mermaid.js.org/syntax/sequenceDiagram.html">sequence syntax</a> for details. Syntax from a newer Mermaid release may require a future Markify update.</p>
+<p>Requirements (<code>requirementDiagram</code>), packets (<code>packet-beta</code>), architecture (<code>architecture-beta</code>), Kanban (<code>kanban</code>) and C4 (<code>C4Context</code>) are supported too. Mermaid YAML frontmatter inside the fence can set a diagram title and configuration; it is separate from the document's frontmatter.</p>
+<p>Choose <strong>Mermaid</strong> in the <code>/</code> menu to insert a starter flowchart. Switch to the Markdown lens (⌘/) to edit the source; the Rendered lens shows the diagram again. Diagrams follow the light or dark appearance and scale to the column. HTML and PDF exports include vector diagrams, and Finder's Quick Look preview renders them too.</p>
+<p>If Mermaid can't read the diagram, Markify shows the source with Mermaid's error message. A failed diagram stays as code in exports. Diagrams render offline with a copy of Mermaid bundled in the app; external images and clickable links inside diagrams are disabled. Each diagram is limited to 64 KB of source and a 15-second rendering timeout; editor images also have size and memory limits.</p>
 <h2 id="frontmatter">Frontmatter</h2>
 <p>A YAML block at the very top of the file, between <code>---</code> lines, holds metadata. Markify shows <code>tags</code> and <code>date</code> as chips above the title and uses <code>title</code> to name an untitled document:</p>
 <pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">---
