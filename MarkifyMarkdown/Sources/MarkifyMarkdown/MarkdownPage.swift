@@ -26,8 +26,16 @@ public enum MarkdownPage {
                             diagram: @escaping (String, String) -> String? = { _, _ in nil },
                             highlight: @escaping (String, String?) -> String? = { _, _ in nil },
                             pdf: Bool = false, remoteImages: Bool = true) -> String {
+        var images: [String: String] = [:]
+        var remainingImageBytes = 50_000_000
         let options = MarkdownHTML.Options(math: math, diagram: diagram,
-            image: { imageSource($0, context: context) }, link: { linkTarget($0, context: context) }, highlight: highlight)
+            image: { source in
+                if let cached = images[source] { return cached }
+                let result = imageSource(source, context: context, maximumBytes: min(24_999_999, remainingImageBytes * 3 / 4))
+                if result.hasPrefix("data:") { remainingImageBytes = max(0, remainingImageBytes - result.utf8.count) }
+                images[source] = result
+                return result
+            }, link: { linkTarget($0, context: context) }, highlight: highlight)
         let result = MarkdownHTML.render(context.source, mdx: context.documentURL?.pathExtension.lowercased() == "mdx", options: options)
         let metadata = metadata(context.source)
         let title = metadata.title ?? result.firstHeading ?? context.fallbackTitle
@@ -48,7 +56,7 @@ public enum MarkdownPage {
         return "<!doctype html>\n<html lang=\"\(language)\">\n<head>\n\(head)</head>\n<body>\n<main>\n<article>\n\(body)</article>\n</main>\n</body>\n</html>\n"
     }
 
-    public static func imageSource(_ source: String, context: Context) -> String {
+    public static func imageSource(_ source: String, context: Context, maximumBytes: Int = 24_999_999) -> String {
         if let base = context.baseDirectory, !base.isFileURL {
             return URL(string: source, relativeTo: base)?.absoluteURL.absoluteString ?? source
         }
@@ -59,7 +67,7 @@ public enum MarkdownPage {
             "webp": "image/webp", "svg": "image/svg+xml", "tif": "image/tiff", "tiff": "image/tiff",
             "heic": "image/heic"
         ][extensionName]
-        guard let data = try? Data(contentsOf: url), data.count < 25_000_000,
+        guard let data = try? FileRead.data(at: url, maximumBytes: maximumBytes),
               let type = mime else {
             return relative(url, from: context.destination)
         }

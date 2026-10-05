@@ -46,9 +46,14 @@ import WebKit
         let mdx = MarkdownTextView.isMDX(context.documentURL)
         // Mermaid renders asynchronously in its web view, so diagrams are ready before the synchronous render.
         var diagrams: [String: String] = [:]
-        for span in MarkdownModel(context.source, mdx: mdx).spans {
-            guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { continue }
-            let code = (context.source as NSString).substring(with: span.content)
+        let diagramSources = await Task.detached(priority: .userInitiated) {
+            MarkdownModel(context.source, mdx: mdx).spans.compactMap { span -> String? in
+                guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { return nil }
+                return (context.source as NSString).substring(with: span.content)
+            }
+        }.value
+        for code in diagramSources {
+            guard !Task.isCancelled else { return "" }
             let key = code.trimmingCharacters(in: .whitespacesAndNewlines)
             if diagrams[key] == nil, let svg = await MermaidRenderer.shared.svg(for: code) { diagrams[key] = svg }
         }
@@ -71,11 +76,16 @@ import WebKit
     }
 
     static func writeHTML(_ context: Context) async throws {
-        try await page(context, for: .html).write(to: context.destination, atomically: true, encoding: .utf8)
+        let html = await page(context, for: .html)
+        try Task.checkCancellation()
+        try await Task.detached(priority: .userInitiated) {
+            try html.write(to: context.destination, atomically: true, encoding: .utf8)
+        }.value
     }
 
     static func writePDF(_ context: Context) async throws {
         let html = await page(context, for: .pdf)
+        try Task.checkCancellation()
         try await PDFPrinter().print(html, to: context.destination)
     }
 
