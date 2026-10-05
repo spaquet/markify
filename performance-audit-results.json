@@ -1,0 +1,321 @@
+[
+  {
+    "bytes" : 7309,
+    "milliseconds" : [
+      5.138625,
+      3.753958,
+      3.741625
+    ],
+    "operation" : "parse",
+    "workload" : "prose-100"
+  },
+  {
+    "bytes" : 7309,
+    "milliseconds" : [
+      17.595958,
+      10.102042,
+      10.084708
+    ],
+    "operation" : "full-style",
+    "workload" : "prose-100"
+  },
+  {
+    "bytes" : 7309,
+    "milliseconds" : [
+      37.309209,
+      37.547625,
+      37.0765
+    ],
+    "operation" : "edit-and-incremental-style",
+    "workload" : "prose-100"
+  },
+  {
+    "bytes" : 7309,
+    "milliseconds" : [
+      1.843792,
+      1.81525,
+      1.806917
+    ],
+    "operation" : "word-count",
+    "workload" : "prose-100"
+  },
+  {
+    "bytes" : 73009,
+    "milliseconds" : [
+      36.432875,
+      35.608167,
+      35.462375
+    ],
+    "operation" : "parse",
+    "workload" : "prose-1000"
+  },
+  {
+    "bytes" : 73009,
+    "milliseconds" : [
+      157.151666,
+      114.172083,
+      113.172333
+    ],
+    "operation" : "full-style",
+    "workload" : "prose-1000"
+  },
+  {
+    "bytes" : 73009,
+    "milliseconds" : [
+      375.833125,
+      370.5965,
+      370.783375
+    ],
+    "operation" : "edit-and-incremental-style",
+    "workload" : "prose-1000"
+  },
+  {
+    "bytes" : 73009,
+    "milliseconds" : [
+      18.282334,
+      18.084459,
+      17.828125
+    ],
+    "operation" : "word-count",
+    "workload" : "prose-1000"
+  },
+  {
+    "bytes" : 365009,
+    "milliseconds" : [
+      180.517542,
+      179.728958,
+      177.284125
+    ],
+    "operation" : "parse",
+    "workload" : "prose-5000"
+  },
+  {
+    "bytes" : 365009,
+    "milliseconds" : [
+      1283.648583,
+      1057.777459,
+      1050.925834
+    ],
+    "operation" : "full-style",
+    "workload" : "prose-5000"
+  },
+  {
+    "bytes" : 365009,
+    "milliseconds" : [
+      2380.288959,
+      2370.011083,
+      2370.011083
+    ],
+    "operation" : "edit-and-incremental-style",
+    "workload" : "prose-5000"
+  },
+  {
+    "bytes" : 365009,
+    "milliseconds" : [
+      90.980375,
+      90.808583,
+      92.258833
+    ],
+    "operation" : "word-count",
+    "workload" : "prose-5000"
+  },
+  {
+    "bytes" : 3700,
+    "milliseconds" : [
+      7.615959,
+      7.473292,
+      7.558625
+    ],
+    "operation" : "parse",
+    "workload" : "long-line-100"
+  },
+  {
+    "bytes" : 2700,
+    "milliseconds" : [
+      1.386875,
+      1.287792,
+      1.268
+    ],
+    "operation" : "parse",
+    "workload" : "inline-math-100"
+  },
+  {
+    "bytes" : 2700,
+    "milliseconds" : [
+      4.498583,
+      4.188208,
+      4.3955
+    ],
+    "operation" : "warm-style",
+    "workload" : "inline-math-100"
+  },
+  {
+    "bytes" : 18500,
+    "milliseconds" : [
+      148.9135,
+      150.265083,
+      149.768458
+    ],
+    "operation" : "parse",
+    "workload" : "long-line-500"
+  },
+  {
+    "bytes" : 13500,
+    "milliseconds" : [
+      6.499417,
+      6.314583,
+      6.434834
+    ],
+    "operation" : "parse",
+    "workload" : "inline-math-500"
+  },
+  {
+    "bytes" : 13500,
+    "milliseconds" : [
+      19.89375,
+      19.546708,
+      20.062375
+    ],
+    "operation" : "warm-style",
+    "workload" : "inline-math-500"
+  },
+  {
+    "bytes" : 55500,
+    "milliseconds" : [
+      1293.571625,
+      1294.098,
+      1291.664375
+    ],
+    "operation" : "parse",
+    "workload" : "long-line-1500"
+  },
+  {
+    "bytes" : 40500,
+    "milliseconds" : [
+      20.542375,
+      20.437625,
+      20.388209
+    ],
+    "operation" : "parse",
+    "workload" : "inline-math-1500"
+  },
+  {
+    "bytes" : 40500,
+    "milliseconds" : [
+      59.085125,
+      59.261208,
+      59.508875
+    ],
+    "operation" : "warm-style",
+    "workload" : "inline-math-1500"
+  },
+  {
+    "bytes" : 2845,
+    "milliseconds" : [
+      198.151667
+    ],
+    "operation" : "initial-overlays",
+    "workload" : "table-50"
+  },
+  {
+    "bytes" : 2845,
+    "milliseconds" : [
+      59.414666,
+      57.202,
+      56.635
+    ],
+    "operation" : "unchanged-overlays",
+    "workload" : "table-50"
+  },
+  {
+    "bytes" : 2845,
+    "milliseconds" : [
+      134.840625,
+      133.908292,
+      133.68275
+    ],
+    "operation" : "edit-style-and-overlays",
+    "workload" : "table-50"
+  },
+  {
+    "bytes" : 11445,
+    "milliseconds" : [
+      1674.157917
+    ],
+    "operation" : "initial-overlays",
+    "workload" : "table-200"
+  },
+  {
+    "bytes" : 11445,
+    "milliseconds" : [
+      841.771291,
+      845.722333,
+      844.908459
+    ],
+    "operation" : "unchanged-overlays",
+    "workload" : "table-200"
+  },
+  {
+    "bytes" : 11445,
+    "milliseconds" : [
+      1320.09625,
+      1325.151458,
+      1314.530958
+    ],
+    "operation" : "edit-style-and-overlays",
+    "workload" : "table-200"
+  },
+  {
+    "bytes" : 28845,
+    "milliseconds" : [
+      9509.329334
+    ],
+    "operation" : "initial-overlays",
+    "workload" : "table-500"
+  },
+  {
+    "bytes" : 28845,
+    "milliseconds" : [
+      5145.642875,
+      5137.327042,
+      5190.477
+    ],
+    "operation" : "unchanged-overlays",
+    "workload" : "table-500"
+  },
+  {
+    "bytes" : 28845,
+    "milliseconds" : [
+      7389.672875,
+      7418.847,
+      7719.764958
+    ],
+    "operation" : "edit-style-and-overlays",
+    "workload" : "table-500"
+  },
+  {
+    "bytes" : 106,
+    "milliseconds" : [
+      364.715625
+    ],
+    "operation" : "full-style",
+    "workload" : "html-cold"
+  },
+  {
+    "bytes" : 1200000,
+    "milliseconds" : [
+      0.233416,
+      0.100042,
+      0.086625,
+      0.086667,
+      0.087375,
+      0.086791,
+      0.088375,
+      0.08375,
+      0.084667,
+      0.083875
+    ],
+    "operation" : "refresh",
+    "workload" : "poll-unchanged-local"
+  }
+]
