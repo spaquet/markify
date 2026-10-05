@@ -944,18 +944,31 @@ struct MarkifyTests {
         #expect(MarkdownTextView.noteTitle("No heading", url: note) == "Other note")
     }
 
-    @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {
+    @Test @MainActor func knowledgeIssuesTrackUnsavedText() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         try "---\nokf_version: \"0.2\"\n---\n".write(to: root.appendingPathComponent("index.md"), atomically: true, encoding: .utf8)
         try "---\ntype: Metric\n---\n".write(to: root.appendingPathComponent("orders.md"), atomically: true, encoding: .utf8)
         let file = root.appendingPathComponent("revenue.md")
-        #expect(Knowledge.root(for: file, text: "Plain note", boundary: nil).map(OKFBundle.key) == OKFBundle.key(root))
-        #expect(Knowledge.root(for: file, text: "---\ntype: Metric\n---\n", boundary: nil) != nil)
+        #expect(await Knowledge.root(for: file, text: "Plain note", boundary: nil).map(OKFBundle.key) == OKFBundle.key(root))
+        #expect(await Knowledge.root(for: file, text: "---\ntype: Metric\n---\n", boundary: nil) != nil)
         let issues = Knowledge.issues(text: "---\ntype: Metric\n---\nSee [orders](/orders.md) and [later](/later.md).", fileURL: file, root: root)
         #expect(issues.map(\.message) == ["Links to /later.md, which does not exist yet."])
         #expect(Knowledge.issues(text: "No frontmatter", fileURL: file, root: root).first?.severity == .error)
+    }
+
+    @Test func backlinkRetargetingPreservesTheCurrentDiskText() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("retarget-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("backlink.md")
+        try "Newer edit\n\n[Old](old.md)\n".write(to: url, atomically: true, encoding: .utf8)
+        let failed = await Task.detached {
+            Knowledge.retargetFiles([url], root: root, movedFrom: root.appendingPathComponent("old.md"), to: root.appendingPathComponent("new.md"))
+        }.value
+        #expect(failed.isEmpty)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "Newer edit\n\n[Old](new.md)\n")
     }
 }
 

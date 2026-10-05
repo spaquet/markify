@@ -95,10 +95,31 @@ struct MarkifyDocument: FileDocument {
         readGeneration = UUID()
         self.document = document
         url = document.fileURL
-        // Establish the disk baseline when attaching or following a new file URL.
-        // SwiftUI may still be displaying the previous document during native revert.
-        lastDisk = url.flatMap { try? Data(contentsOf: $0) }
-        lastStamp = url.flatMap { FileStamp(at: $0) }
+        // Native document contents are available without disk I/O; the SwiftUI binding may still
+        // show the previous document during revert. Confirm the disk baseline on a worker.
+        lastDisk = document.fileType.flatMap { try? document.fileWrapper(ofType: $0).regularFileContents } ?? nil
+        lastStamp = nil
+        if let url {
+            let generation = readGeneration
+            let initialStamp = FileStamp(at: url)
+            let work = Task.detached(priority: .utility) { () -> (FileStamp, Data)? in
+                guard !Task.isCancelled, let stamp = FileStamp(at: url),
+                      let data = try? FileRead.data(at: url, maximumBytes: 50_000_000),
+                      FileStamp(at: url) == stamp else { return nil }
+                return (stamp, data)
+            }
+            readTask = Task { [weak self] in
+                let baseline = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+                guard !Task.isCancelled, let self, self.readGeneration == generation else { return }
+                self.readTask = nil
+                if self.lastStamp == nil, let (stamp, disk) = baseline {
+                    self.lastStamp = stamp
+                    if stamp == initialStamp { self.lastDisk = disk }
+                    else { self.refresh(disk: disk) }
+                }
+                if self.readAgain { self.readAgain = false; self.scheduleRefresh() }
+            }
+        }
         watcher.watch(url?.deletingLastPathComponent()) { [weak self] in self?.scheduleRefresh() }
         guard url != nil else { return }
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
@@ -116,7 +137,7 @@ struct MarkifyDocument: FileDocument {
         let generation = readGeneration
         let work = Task.detached(priority: .utility) { () -> (FileStamp, Data)? in
             guard !Task.isCancelled, let stamp = FileStamp(at: url), stamp != previous,
-                  let disk = try? Data(contentsOf: url), !Task.isCancelled,
+                  let disk = try? FileRead.data(at: url, maximumBytes: 50_000_000), !Task.isCancelled,
                   FileStamp(at: url) == stamp else { return nil }
             return (stamp, disk)
         }

@@ -1,5 +1,6 @@
 import AppKit
 import OKFKit
+import MarkifyMarkdown
 import SwiftUI
 
 /// A scanned Open Knowledge Format bundle and its bundle-wide findings.
@@ -60,12 +61,37 @@ private actor KnowledgeLoader {
 
     /// The bundle root to scan for a document, or nil for a plain note outside any declared bundle.
     /// A folder opened with Open Bundle Folder… is a bundle even without `okf_version`.
-    static func root(for fileURL: URL?, text: String, boundary: URL?) -> URL? {
+    static func root(for fileURL: URL?, text: String, boundary: URL?) async -> URL? {
         guard let fileURL else { return nil }
-        if let granted = BundleAccess.folder(containing: fileURL) { return OKFBundle.findRoot(for: fileURL, boundary: granted) }
-        let root = OKFBundle.findRoot(for: fileURL, boundary: boundary)
-        let isConcept = (try? OKFConcept.parse(source: text)?.get())?.isConcept == true
-        return isConcept || OKFBundle.declaredVersion(at: root) != nil ? root : nil
+        let granted = BundleAccess.folder(containing: fileURL)
+        let work = Task.detached(priority: .utility) {
+            if let granted { return OKFBundle.findRoot(for: fileURL, boundary: granted) as URL? }
+            let root = OKFBundle.findRoot(for: fileURL, boundary: boundary)
+            let isConcept = (try? OKFConcept.parse(source: text)?.get())?.isConcept == true
+            return isConcept || OKFBundle.declaredVersion(at: root) != nil ? root : nil
+        }
+        return await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+    }
+
+    /// Read the current file under coordination; a bundle snapshot must never overwrite newer edits.
+    nonisolated static func retargetFiles(_ urls: [URL], root: URL, movedFrom old: URL, to new: URL) -> [URL] {
+        var failed: [URL] = []
+        for url in urls {
+            guard !Task.isCancelled else { break }
+            var coordinationError: NSError?
+            var writeFailed = false
+            NSFileCoordinator().coordinate(writingItemAt: url, options: .forMerging, error: &coordinationError) { current in
+                do {
+                    let data = try FileRead.data(at: current, maximumBytes: 20_000_000)
+                    guard let source = String(data: data, encoding: .utf8) else { throw CocoaError(.fileReadInapplicableStringEncoding) }
+                    let updated = OKFEditing.retargetingLinks(in: source, document: url, root: root, movedFrom: old, to: new)
+                    try Task.checkCancellation()
+                    if updated != source { try updated.write(to: current, atomically: true, encoding: .utf8) }
+                } catch { writeFailed = true }
+            }
+            if writeFailed || coordinationError != nil { failed.append(url) }
+        }
+        return failed
     }
 
     static func load(root: URL) async -> KnowledgeState {
