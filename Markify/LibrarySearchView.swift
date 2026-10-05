@@ -190,7 +190,7 @@ struct LibrarySearchPanel: View {
                 }.padding(9).background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
             }
             ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
+                LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(service.snapshot.folders.filter { root in
                         (selectedScope == "all" || selectedScope == root.id) && (service.snapshot.status[root.id]?.contains("Access") == true)
                     }) { root in
