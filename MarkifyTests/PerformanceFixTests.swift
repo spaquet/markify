@@ -4,6 +4,22 @@ import Testing
 @testable import Markify
 
 @MainActor struct PerformanceFixTests {
+    @Test func derivedValuesInvalidateWithSourceAndFindOptions() {
+        let cache = DocumentDerivedData()
+        for text in ["", "one two\tthree\n", "café 😀\u{a0}four", "é\u{301} final"] {
+            #expect(cache.wordCount(in: text) == text.split(whereSeparator: \.isWhitespace).count)
+        }
+        #expect(cache.matches(in: "One one", query: "one", matchCase: false).count == 2)
+        #expect(cache.matches(in: "One one", query: "one", matchCase: true).count == 1)
+        #expect(cache.matches(in: "absent", query: "one", matchCase: true).isEmpty)
+        let model = cache.model(in: "# Title\n[web](https://example.com)", mdx: false, editor: nil)
+        #expect(cache.headings(in: model).first?.title == "Title")
+        #expect(cache.documentLinks(in: model).count == 1)
+        let changed = cache.model(in: "# New", mdx: false, editor: nil)
+        #expect(cache.headings(in: changed).first?.title == "New")
+        #expect(cache.documentLinks(in: changed).isEmpty)
+    }
+
     @Test func largeTablesOnlyCreateNearbyCells() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         editor.frame = NSRect(x: 0, y: 0, width: 640, height: 400)

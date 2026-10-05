@@ -8,6 +8,12 @@ struct KnowledgeState: Sendable {
     let issues: [OKFDiagnostic]
 }
 
+struct KnowledgeIssueInput: Equatable, Sendable {
+    let text: String
+    let fileURL: URL?
+    let root: URL?
+}
+
 /// Concurrent windows share one immutable scan per root; the last departing consumer cancels it.
 private actor KnowledgeLoader {
     static let shared = KnowledgeLoader()
@@ -67,15 +73,17 @@ private actor KnowledgeLoader {
     }
 
     /// Findings for the text being edited, so they track unsaved changes.
-    static func issues(text: String, fileURL: URL?, root: URL?) -> [OKFDiagnostic] {
+    nonisolated static func issues(text: String, fileURL: URL?, root: URL?) -> [OKFDiagnostic] {
         let isRoot = fileURL.map { OKFBundle.key($0.deletingLastPathComponent()) } == root.map(OKFBundle.key)
         var found = OKFValidator.validate(source: text, kind: kind(of: fileURL), isBundleRoot: isRoot)
         for link in OKFLinks.extract(from: FrontmatterBlock.body(of: text)) {
+            guard !Task.isCancelled else { return found }
             guard let target = OKFLinks.resolve(link.target, from: fileURL, bundleRoot: root),
                   !FileManager.default.fileExists(atPath: target.path) else { continue }
             found.append(OKFDiagnostic(.info, "Links to \(link.target), which does not exist yet."))
         }
         for reference in (try? OKFConcept.parse(source: text)?.get())?.references ?? [] {
+            guard !Task.isCancelled else { return found }
             guard let target = OKFLinks.resolve(reference.target, from: fileURL, bundleRoot: root),
                   !FileManager.default.fileExists(atPath: target.path) else { continue }
             found.append(OKFDiagnostic(.warning, "`\(reference.field)` points to \(reference.target), which does not exist."))
@@ -83,7 +91,7 @@ private actor KnowledgeLoader {
         return found
     }
 
-    static func kind(of url: URL?) -> OKFDocument.Kind {
+    nonisolated static func kind(of url: URL?) -> OKFDocument.Kind {
         switch url?.lastPathComponent.lowercased() {
         case "index.md": .index
         case "log.md": .log

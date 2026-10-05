@@ -1,6 +1,69 @@
 import Foundation
 import MarkifyMarkdown
 
+/// Source-derived values survive selection, scrolling and other view updates.
+@MainActor final class DocumentDerivedData {
+    private var source: String?
+    private var words: Int?
+    private var parsed: MarkdownModel?
+    private var outline: [DocumentHeading]?
+    private var links: [DocumentLink]?
+    private var find: (query: String, matchCase: Bool, ranges: [NSRange])?
+
+    private func prepare(_ text: String) {
+        guard source != text else { return }
+        source = text
+        words = nil; parsed = nil; outline = nil; links = nil; find = nil
+    }
+
+    func wordCount(in text: String) -> Int {
+        prepare(text)
+        if let words { return words }
+        var count = 0, inWord = false
+        for scalar in text.unicodeScalars {
+            let whitespace = scalar.properties.isWhitespace
+            if !whitespace && !inWord { count += 1 }
+            inWord = !whitespace
+        }
+        words = count
+        return count
+    }
+
+    func model(in text: String, mdx: Bool, editor: MarkdownTextView?) -> MarkdownModel {
+        prepare(text)
+        if let parsed, parsed.mdx == mdx { return parsed }
+        let model = editor.flatMap { $0.string == text ? $0.model : nil } ?? MarkdownModel(text, mdx: mdx)
+        parsed = model
+        outline = nil; links = nil
+        return model
+    }
+
+    func headings(in model: MarkdownModel) -> [DocumentHeading] {
+        prepare(model.source)
+        if let outline { return outline }
+        let result = DocumentHeading.extract(from: model)
+        outline = result
+        return result
+    }
+
+    func documentLinks(in model: MarkdownModel) -> [DocumentLink] {
+        prepare(model.source)
+        if let links { return links }
+        let result = DocumentLink.extract(from: model)
+        links = result
+        return result
+    }
+
+    func matches(in text: String, query: String, matchCase: Bool) -> [NSRange] {
+        prepare(text)
+        if let find, find.query == query, find.matchCase == matchCase { return find.ranges }
+        let regex = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: query), options: matchCase ? [] : [.caseInsensitive])
+        let result = regex?.matches(in: text, range: NSRange(location: 0, length: (text as NSString).length)).map(\.range) ?? []
+        find = (query, matchCase, result)
+        return result
+    }
+}
+
 /// A heading for the Contents outline. `range` is the heading's text in source offsets.
 struct DocumentHeading: Identifiable, Equatable, Sendable {
     let range: NSRange
