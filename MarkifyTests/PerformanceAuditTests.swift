@@ -5,6 +5,12 @@ import Testing
 
 /// Manual diagnostics, excluded from normal test runs. See PERFORMANCE_AUDIT.md for the command and limits.
 @MainActor struct PerformanceAuditTests {
+    private final class AuditDocument: NSDocument {
+        var text = ""
+        override func fileWrapper(ofType typeName: String) throws -> FileWrapper {
+            FileWrapper(regularFileWithContents: Data(text.utf8))
+        }
+    }
     struct Measurement: Codable {
         let workload: String
         let bytes: Int
@@ -49,6 +55,11 @@ import Testing
             }
             var words = 0
             measure("prose-\(count)", source, "word-count") { words = view.string.split(whereSeparator: \.isWhitespace).count }
+            let currentSource = view.string // ContentView reads its String binding, rather than NSTextView.string on every access.
+            measure("prose-\(count)", source, "word-count-cached-cold") { words = DocumentDerivedData().wordCount(in: currentSource) }
+            let derived = DocumentDerivedData()
+            _ = derived.wordCount(in: currentSource)
+            measure("prose-\(count)", source, "word-count-cached-warm") { words = derived.wordCount(in: currentSource) }
             #expect(words > count)
             #expect(view.string == source + "xxx")
         }
@@ -81,19 +92,14 @@ import Testing
             window.contentView = nil
         }
 
-        let html = "<div><h2>HTML block</h2><p>Text with <b>bold</b> and a <a href='https://example.com'>link</a>.</p></div>\n\n"
-        measure("html-cold", html, "full-style", repeats: 1) {
-            let view = editor(html)
-            IncrementalStyleTests.native(html).style(view)
-        }
-
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("markify-audit-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let source = String(repeating: "Unchanged file on disk.\n", count: 50_000)
         let file = directory.appendingPathComponent("poll.md")
         try source.write(to: file, atomically: true, encoding: .utf8)
-        let document = NSDocument()
+        let document = AuditDocument()
+        document.text = source
         document.fileURL = file
         document.fileType = "net.daringfireball.markdown"
         let refresh = DocumentFileRefresh(refreshSearch: {}, readText: { source })
@@ -103,5 +109,35 @@ import Testing
 
         try encoder.encode(results).write(to: output, options: .atomic)
         print("Performance audit measurements: \(output.path)")
+    }
+
+    // Run in a separate test host so cold WebKit timing does not include the table/prose workloads.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["MARKIFY_PERFORMANCE_AUDIT"] == "1"))
+    func measureHTMLImport() async throws {
+        let html = "<div><h2>HTML block</h2><p>Text with <b>bold</b> and a <a href='https://example.com'>link</a>.</p></div>\n\n"
+        let view = MarkdownTextView(usingTextLayoutManager: true)
+        view.columnWidth = 640
+        view.string = html
+        let start = ContinuousClock.now
+        IncrementalStyleTests.native(html).style(view)
+        func elapsed() -> Double {
+            let duration = (ContinuousClock.now - start).components
+            return Double(duration.seconds) * 1000 + Double(duration.attoseconds) / 1e15
+        }
+        let submitted = elapsed()
+        let span = try #require(view.model.spans.first { $0.kind == .htmlBlock })
+        let raw = (html as NSString).substring(with: span.range)
+        while view.renderHTML(raw, width: 640) == nil, ContinuousClock.now - start < .seconds(10) {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(view.renderHTML(raw, width: 640) != nil)
+        let results = [
+            Measurement(workload: "html-cold", bytes: html.utf8.count, operation: "style-submission", milliseconds: [submitted]),
+            Measurement(workload: "html-cold", bytes: html.utf8.count, operation: "style-to-import-completion", milliseconds: [elapsed()])
+        ]
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(results).write(to: URL(fileURLWithPath: "/private/tmp/markify-performance-html-audit.json"), options: .atomic)
+        view.stopObserving()
     }
 }
