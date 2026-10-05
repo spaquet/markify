@@ -111,6 +111,8 @@ scripts/set-website-version.sh 1.27     # hero line, download section and struct
 
 Commit and push the `docs/` changes to `main`; the Pages workflow deploys it. The download buttons use `releases/latest/download/…`, so they already point to the new DMGs.
 
+Update `Casks/markify.rb` to the published version and both verified DMG SHA-256 hashes, validate both architecture branches, and commit the cask change to `main`. See [HOMEBREW.md](HOMEBREW.md). Homebrew updates use this pinned cask; publishing a GitHub release alone does not update it.
+
 ### Release assets
 
 - `markify-as.dmg` and `markify-as.dmg.sha256` for Apple silicon (M1 and later)
@@ -143,6 +145,7 @@ gh run watch
 - [ ] Annotated tag pushed: `git tag -a vX.Y -m "Markify X.Y" && git push origin vX.Y`
 - [ ] Build number (`CURRENT_PROJECT_VERSION`) is higher than the last release's; Sparkle compares it, not the version
 - [ ] Workflow succeeded and `scripts/check-release.sh` passes
+- [ ] Homebrew cask version and both DMG hashes updated, validated and pushed
 - [ ] Website updated with `scripts/set-website-version.sh` and deployed
 
 ## Verifying Downloaded Files
