@@ -110,6 +110,17 @@ struct FixtureModelTests {
 }
 
 struct EdgeModelTests {
+    @Test func fileReadsAreBoundedAndStampsDetectAtomicReplacement() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("abc".utf8).write(to: url)
+        let before = FileStamp(at: url)
+        #expect(try FileRead.data(at: url, maximumBytes: 3) == Data("abc".utf8))
+        #expect(throws: CocoaError.self) { try FileRead.data(at: url, maximumBytes: 2) }
+        try Data("xyz".utf8).write(to: url, options: .atomic)
+        #expect(FileStamp(at: url) != before)
+    }
+
     @Test func indexedSourceOffsetsMatchScalarWalk() {
         let source = "ASCII **link** é😀e\u{301}終\r\n第二行 🐈\n"
         let map = MarkdownSourceMap(source)
