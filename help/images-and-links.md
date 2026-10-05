@@ -16,6 +16,8 @@ Drag an image file onto the page or paste an image. Markify copies it into a fol
 
 Local images and linked Markdown files are read directly from their paths relative to the document. No folder permission step is needed.
 
+Editor images load in the background. Images above 10 MB show an unavailable placeholder; displayed images are reduced to at most 2,048 pixels on their longest side. Your original files stay unchanged.
+
 ### Remote images
 
 Images from the web (`https://…`) load only when **Settings › General › Load remote images** is on. Turn it off to keep documents from contacting other servers.
@@ -57,10 +59,14 @@ Markify checks links in the background while the pane is open and marks broken o
 
 Summaries are saved by Markify outside your Markdown file. The card shows when a summary was generated, notes **Source changed** when a local file changed since, and offers **Refresh**.
 
+Website summaries accept pages up to 1 MB, and local summaries accept Markdown files up to 2 MB. Older summaries and link checks may be removed as their caches fill; you can generate a summary or check a link again.
+
 Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.
 
 ### Links in Finder previews
 
 Press Space on a Markdown file in Finder to preview it. Click a local `.md`, `.markdown` or `.mdx` link to open the linked file in Markify. Relative paths, including `../` and percent-encoded filenames, resolve beside the previewed file. A missing or inaccessible destination produces a selectable message at the bottom of the preview. Links to other local file types are not opened by this preview.
+
+Previews accept Markdown files up to 2 MB and omit remote images. Local images are included within the preview's image size limits.
 
 HTTPS links open in your browser; in-document anchors stay inside the preview. Links to a section of another Markdown file open that document without jumping to its section. No folder permission step is added.

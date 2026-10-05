@@ -25,6 +25,7 @@
 </li>
 </ul>
 <p>Local images and linked Markdown files are read directly from their paths relative to the document. No folder permission step is needed.</p>
+<p>Editor images load in the background. Images above 10 MB show an unavailable placeholder; displayed images are reduced to at most 2,048 pixels on their longest side. Your original files stay unchanged.</p>
 <h3 id="remote-images">Remote images</h3>
 <p>Images from the web (<code>https://…</code>) load only when <strong>Settings › General › Load remote images</strong> is on. Turn it off to keep documents from contacting other servers.</p>
 <h2 id="links">Links</h2>
@@ -59,9 +60,11 @@
 <h4 id="summaries">Summaries</h4>
 <p><strong>✦</strong> opens a card under the link. If no summary is saved, Apple Intelligence writes one on your Mac; for websites, Markify downloads the page only when you choose ✦. Local <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files use their readable text; websites must return a text or HTML page. ✦ doesn't appear for other destinations or when Apple Intelligence is unavailable. The card shows progress, or an error with <strong>Try Again</strong>.</p>
 <p>Summaries are saved by Markify outside your Markdown file. The card shows when a summary was generated, notes <strong>Source changed</strong> when a local file changed since, and offers <strong>Refresh</strong>.</p>
+<p>Website summaries accept pages up to 1 MB, and local summaries accept Markdown files up to 2 MB. Older summaries and link checks may be removed as their caches fill; you can generate a summary or check a link again.</p>
 <p>Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.</p>
 <h3 id="links-in-finder-previews">Links in Finder previews</h3>
 <p>Press Space on a Markdown file in Finder to preview it. Click a local <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> link to open the linked file in Markify. Relative paths, including <code>../</code> and percent-encoded filenames, resolve beside the previewed file. A missing or inaccessible destination produces a selectable message at the bottom of the preview. Links to other local file types are not opened by this preview.</p>
+<p>Previews accept Markdown files up to 2 MB and omit remote images. Local images are included within the preview's image size limits.</p>
 <p>HTTPS links open in your browser; in-document anchors stay inside the preview. Links to a section of another Markdown file open that document without jumping to its section. No folder permission step is added.</p>
 </article>
 </main>

@@ -45,9 +45,9 @@ External-change prompts pause while the version browser is open. Restoring an ea
 
 ### Changes from another app
 
-If another app changes an open file, Markify notifies you, including when text is added, updated or removed. Choose **Keep My Changes** to leave your text alone, **Reload** to replace it with the version on disk, or **Merge** to combine both versions. Merge marks overlapping edits with `<<<<<<< My Changes`, `||||||| Original`, `=======` and `>>>>>>> External Changes`; edit those sections to keep the text you want and remove the markers before saving. Keeping your changes leaves the external file alone until Markify saves your version. Merging can be undone with **⌘Z**.
+If another app changes an open file, Markify notifies you, including when text is added, updated or removed. Repeated external edits share one prompt; your choice uses the latest contents on disk. Before **Reload** or **Merge**, Markify saves both your current text (including unsaved edits) and the latest external text in **Browse All Versions…**. If either version cannot be saved, Markify reports the error and leaves your current text intact. Choose **Keep My Changes** to leave your text alone, **Reload** to replace it with the version on disk, or **Merge** to combine both versions. Merge marks overlapping edits with `<<<<<<< My Changes`, `||||||| Original`, `=======` and `>>>>>>> External Changes`; edit those sections to keep the text you want and remove the markers before saving. Keeping your changes leaves the external file alone until Markify saves your version. Merging can be undone with **⌘Z**.
 
-To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams. It loads HTTPS images and local images referenced by the document, without a folder permission step. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See [Images and links](https://spaquet.github.io/markify/help/images-and-links.html#links-in-finder-previews).
+To preview a Markdown file without opening it, select a `.md`, `.markdown` or `.mdx` file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams for files up to 2 MB. It loads local images referenced by the document, without a folder permission step; remote images are omitted. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See [Images and links](https://spaquet.github.io/markify/help/images-and-links.html#links-in-finder-previews).
 
 ## Open a URL
 
@@ -300,6 +300,8 @@ Drag an image file onto the page or paste an image. Markify copies it into a fol
 
 Local images and linked Markdown files are read directly from their paths relative to the document. No folder permission step is needed.
 
+Editor images load in the background. Images above 10 MB show an unavailable placeholder; displayed images are reduced to at most 2,048 pixels on their longest side. Your original files stay unchanged.
+
 ### Remote images
 
 Images from the web (`https://…`) load only when **Settings › General › Load remote images** is on. Turn it off to keep documents from contacting other servers.
@@ -341,11 +343,15 @@ Markify checks links in the background while the pane is open and marks broken o
 
 Summaries are saved by Markify outside your Markdown file. The card shows when a summary was generated, notes **Source changed** when a local file changed since, and offers **Refresh**.
 
+Website summaries accept pages up to 1 MB, and local summaries accept Markdown files up to 2 MB. Older summaries and link checks may be removed as their caches fill; you can generate a summary or check a link again.
+
 Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.
 
 ### Links in Finder previews
 
 Press Space on a Markdown file in Finder to preview it. Click a local `.md`, `.markdown` or `.mdx` link to open the linked file in Markify. Relative paths, including `../` and percent-encoded filenames, resolve beside the previewed file. A missing or inaccessible destination produces a selectable message at the bottom of the preview. Links to other local file types are not opened by this preview.
+
+Previews accept Markdown files up to 2 MB and omit remote images. Local images are included within the preview's image size limits.
 
 HTTPS links open in your browser; in-document anchors stay inside the preview. Links to a section of another Markdown file open that document without jumping to its section. No folder permission step is added.
 
@@ -460,11 +466,15 @@ The HTML file is a complete, self-contained web page:
 - The page follows the reader's light or dark appearance and prints cleanly.
 - The page's title comes from the frontmatter `title`, else the first heading. Frontmatter `tags` and `date` appear as chips; other frontmatter is left out.
 
+Image embedding accepts local images below 25 MB, with a 50 MB total budget for embedded image data. Remote PDF images have a 10 MB download limit. Images that exceed these limits stay linked, so keep those files with the exported page. A failed Mermaid render falls back to its source.
+
 ## PDF
 
 The PDF is the same page laid out on your Mac's default paper size, such as A4 or US Letter. Headings stay with the text that follows them, and code blocks, table rows, callouts, equations and images aren't split across pages. Links stay clickable.
 
 Remote images are included in the PDF only when **Settings › General › Load remote images** is on.
+
+Closing the document or starting another export cancels the previous export. A canceled PDF export leaves an existing destination file intact. If PDF printing times out and later PDF exports fail, quit and reopen Markify before retrying.
 
 ## Sharing the Markdown itself
 

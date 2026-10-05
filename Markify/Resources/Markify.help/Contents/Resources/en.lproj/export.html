@@ -31,9 +31,11 @@
 <li>The page's title comes from the frontmatter <code>title</code>, else the first heading. Frontmatter <code>tags</code> and <code>date</code> appear as chips; other frontmatter is left out.
 </li>
 </ul>
+<p>Image embedding accepts local images below 25 MB, with a 50 MB total budget for embedded image data. Remote PDF images have a 10 MB download limit. Images that exceed these limits stay linked, so keep those files with the exported page. A failed Mermaid render falls back to its source.</p>
 <h2 id="pdf">PDF</h2>
 <p>The PDF is the same page laid out on your Mac's default paper size, such as A4 or US Letter. Headings stay with the text that follows them, and code blocks, table rows, callouts, equations and images aren't split across pages. Links stay clickable.</p>
 <p>Remote images are included in the PDF only when <strong>Settings › General › Load remote images</strong> is on.</p>
+<p>Closing the document or starting another export cancels the previous export. A canceled PDF export leaves an existing destination file intact. If PDF printing times out and later PDF exports fail, quit and reopen Markify before retrying.</p>
 <h2 id="sharing-the-markdown-itself">Sharing the Markdown itself</h2>
 <p>Your document is already a plain <code>.md</code> file. <strong>More (…) › Share</strong> sends the file itself with AirDrop, Mail, Messages and other services.</p>
 <p>For scripted HTML export, see <a href="command-line.html">Command line</a>.</p>
