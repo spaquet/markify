@@ -38,6 +38,32 @@ public struct MarkdownModel: Sendable {
 
     public func spans(where include: (Kind) -> Bool) -> [Span] { spans.filter { include($0.kind) } }
 
+    /// A complete text-storage paragraph containing only inline text styles. No second parse is needed.
+    public func styledParagraph(_ range: NSRange) -> MarkdownModel? {
+        let source = source as NSString
+        guard range.location >= 0, NSMaxRange(range) <= source.length else { return nil }
+        guard !tables.contains(where: { NSIntersectionRange($0.range, range).length > 0 }) else { return nil }
+        var selected: [Span] = []
+        for span in spans where NSIntersectionRange(span.range, range).length > 0 {
+            guard span.range.location >= range.location, NSMaxRange(span.range) <= NSMaxRange(range) else { return nil }
+            switch span.kind {
+            case .strong, .emphasis, .strikethrough, .inlineCode, .escape, .link: break
+            default: return nil
+            }
+            func shifted(_ value: NSRange) -> NSRange { NSRange(location: value.location - range.location, length: value.length) }
+            selected.append(Span(kind: span.kind, range: shifted(span.range), content: shifted(span.content), markers: span.markers.map(shifted)))
+        }
+        let text = source.substring(with: range)
+        // Definitions aren't spans, but can change links elsewhere in the document.
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("[") else { return nil }
+        return MarkdownModel(source: text, mdx: mdx, spans: selected)
+    }
+
+    private init(source: String, mdx: Bool, spans: [Span]) {
+        self.source = source; self.mdx = mdx; self.spans = spans
+        tables = []; lists = []
+    }
+
     // MARK: Types
 
     public struct Span: Hashable, Sendable {

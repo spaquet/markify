@@ -157,15 +157,32 @@ struct NativeEditor: NSViewRepresentable {
     /// Styles both lenses from the model. `incremental` (typing) styles a copy and applies only the attributes that
     /// changed: resetting the whole storage makes TextKit 2 discard the layout of every line, and the lines above the
     /// page fall back to estimated heights, so the visible text blanks and jumps on each keystroke.
-    func style(_ editor: NSTextView, incremental: Bool = false) {
+    func style(_ editor: NSTextView, incremental: Bool = false, using reading: MarkdownModel? = nil) {
         guard let live = editor.textStorage else { return }
-        let storage = incremental ? NSTextStorage(attributedString: live) : live
         // HTML blocks are imported through WebKit, which spins the run loop: an image or diagram arriving then
         // asks for a restyle in the middle of this pass. It runs once this pass is done instead of inside it.
         let styling = editor as? MarkdownTextView
         if let styling, styling.isStyling { styling.restyleAfterStyling = true; return }
+        let styleKey = StyleKey(native: self, editor: editor)
+        if incremental, findQuery.isEmpty, let styling,
+           let paragraph = styling.changedStyledParagraph(key: styleKey) {
+            let scratch = styling.paragraphStylingView
+            scratch.string = paragraph.model.source
+            style(scratch, using: paragraph.model)
+            live.beginEditing()
+            scratch.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: scratch.textStorage?.length ?? 0)) { attributes, range, _ in
+                live.setAttributes(attributes, range: NSRange(location: paragraph.range.location + range.location, length: range.length))
+            }
+            live.endEditing()
+            updateTypingFont(editor)
+            styling.recordStyle(key: styleKey)
+            DispatchQueue.main.async { [weak styling] in styling?.refreshTables() }
+            return
+        }
+        let storage = incremental ? NSTextStorage(attributedString: live) : live
         styling?.isStyling = true
         defer {
+            styling?.recordStyle(key: styleKey)
             styling?.isStyling = false
             if styling?.restyleAfterStyling == true {
                 styling?.restyleAfterStyling = false
@@ -209,7 +226,7 @@ struct NativeEditor: NSViewRepresentable {
             if !markdownLens { collapse(range) }
         }
         let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
+        let model = reading ?? (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
         if let styling {
             styling.retainHTML(Set(model.spans.filter { $0.kind == .htmlBlock }.map { (model.source as NSString).substring(with: $0.range) }))
             let urls = Set(model.spans.compactMap { span -> URL? in
@@ -817,6 +834,28 @@ struct NativeEditor: NSViewRepresentable {
     }
 }
 
+struct StyleKey: Equatable {
+    let theme: EditorTheme
+    let markdown: Bool
+    let width: CGFloat
+    let query: String
+    let matchCase: Bool
+    let match: NSRange?
+    let appearance: NSAppearance.Name
+    let file: URL?
+    let base: URL?
+    let root: URL?
+    let remote: Bool
+
+    init(native: NativeEditor, editor: NSTextView) {
+        theme = native.theme; markdown = native.markdownLens; width = native.columnWidth
+        query = native.findQuery; matchCase = native.matchCase; match = native.currentMatch
+        appearance = editor.effectiveAppearance.name
+        file = native.fileURL; base = native.baseDirectory; root = native.bundleRoot
+        remote = (editor as? MarkdownTextView)?.loadRemoteImages ?? true
+    }
+}
+
 class MarkdownTextView: NSTextView {
     static let openEditors = NSHashTable<MarkdownTextView>.weakObjects()
     /// Held strongly: the layout manager keeps its delegate weakly.
@@ -902,6 +941,30 @@ class MarkdownTextView: NSTextView {
     /// Bumped whenever the characters change (not their attributes), so caches check validity without comparing the text.
     private(set) var textVersion = 0
     private var editingObserver: NSObjectProtocol?
+    private var pendingCharacterEdit: (range: NSRange, delta: Int)?
+    private var multipleCharacterEdits = false
+    private var styledSource: String?
+    private var styleKey: StyleKey?
+    lazy var paragraphStylingView = NSTextView()
+
+    func recordStyle(key: StyleKey) {
+        styledSource = string
+        styleKey = key
+        pendingCharacterEdit = nil
+        multipleCharacterEdits = false
+    }
+
+    func changedStyledParagraph(key: StyleKey) -> (range: NSRange, model: MarkdownModel)? {
+        guard styleKey == key, !multipleCharacterEdits, let edit = pendingCharacterEdit,
+              let styledSource, let previous = modelCache?.model, previous.source == styledSource else { return nil }
+        let old = styledSource as NSString, new = string as NSString
+        let oldLine = old.paragraphRange(for: NSRange(location: min(edit.range.location, old.length), length: 0))
+        let newLine = new.paragraphRange(for: NSRange(location: min(edit.range.location, new.length), length: 0))
+        guard oldLine.location == newLine.location, oldLine.length + edit.delta == newLine.length,
+              NSMaxRange(edit.range) <= NSMaxRange(newLine), previous.styledParagraph(oldLine) != nil,
+              let paragraph = model.styledParagraph(newLine) else { return nil }
+        return (newLine, paragraph)
+    }
 
     isolated deinit {
         stopObserving()
@@ -932,8 +995,11 @@ class MarkdownTextView: NSTextView {
         editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: nil, queue: nil) { [weak self] notification in
             guard let storage = notification.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
             let edited = ObjectIdentifier(storage)
+            let range = storage.editedRange, delta = storage.changeInLength
             MainActor.assumeIsolated {
                 guard let self, let current = self.textStorage, ObjectIdentifier(current) == edited else { return }
+                if self.pendingCharacterEdit != nil { self.multipleCharacterEdits = true }
+                self.pendingCharacterEdit = (range, delta)
                 self.textVersion += 1
                 self.scheduleTableOfContentsUpdate()
             }
