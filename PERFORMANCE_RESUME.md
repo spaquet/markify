@@ -4,42 +4,47 @@ Continue the Markify performance work in `/Users/spaquet/Sites/Markify`.
 
 Original instruction: fix the performance gaps in `PERFORMANCE_AUDIT.md`, plus the regression where web links do not open. Commit each coherent, verified step. Keep all work on the current branch, **`optimize`**. Do not push or deploy. Read `AGENTS.md` and the audit before proceeding. Ponytail full is active: prefer minimal fixes in shared code, native APIs, and meaningful regression checks. Do not spawn agents without authorization.
 
-The previous session stopped for a context handoff, not because the task was finished. Implementation HEAD before this handoff was **`b64b14d`**. Many improvements are committed, but the full audit has not been closed or measured after the changes. Do not claim it is complete.
+The previous session stopped for a context handoff, not because the task was finished. Latest implementation HEAD before this handoff is **`17c6d7c`**. Many improvements are committed, but the full audit has not been closed or measured after the changes. Do not claim it is complete. This file was updated after the second implementation session; the pending work below supersedes the original handoff.
 
 ## Start here
 
 1. Inspect `git status`, current diff and recent commits. Preserve pending and pre-existing edits.
-2. Review and compile the pending summary/link-check work described below. The intended test command did **not** start before interruption; `/private/tmp/markify-summary-fixes.log` did not exist at handoff.
+2. Review and rerun the pending knowledge/export/document/Quick Look changes described below. Summary/link-check work is now tested and committed.
 3. Verify and commit this step, then address remaining audit work, regenerate help, run the complete relevant tests and repeat the Release audit. Record actual results and remaining limitations.
 
 ```sh
 xcodebuild -quiet -project Markify.xcodeproj -scheme Markify \
   -only-testing:MarkifyTests/MarkifyTests \
-  -only-testing:MarkifyTests/OpenURLTests \
+  -only-testing:MarkifyTests/ExportTests \
+  -only-testing:MarkifyTests/InspectorTests \
   -parallel-testing-enabled NO test CODE_SIGNING_ALLOWED=NO \
-  > /private/tmp/markify-summary-fixes.log 2>&1
+  > /private/tmp/markify-resume-next.log 2>&1
 ```
 
 Use default Xcode DerivedData for Markify; **never add `-derivedDataPath`**. Sandbox restrictions on Xcode/Swift cache directories have required escalated execution. Request tool escalation when necessary, rather than changing build locations. Git add/commit is authorized. Check for leftover test processes before starting another run.
 
 ## Pending changes and ownership
 
-Uncommitted implementation:
+Uncommitted implementation (preserve it):
 
-- `Markify/LinksPanel.swift`: asynchronous, bounded summary-cache loading and actor-based persistence; summary/staleness job ownership and cancellation.
-- `Markify/LinkHealth.swift`: asynchronous bounded disk-cache loading; one shared queue of web probes with four global slots; bounded pending keys and cache; serialized off-main persistence.
-- `Markify/Inspector.swift`: cancel summary jobs when panels/cards disappear.
-- `MarkifyMarkdown/Sources/MarkifyMarkdown/FileRead.swift`: harden bounded reads with `Darwin.open(O_RDONLY | O_NONBLOCK)` and `fstat` regular-file/size checks, preventing a changed path from blocking on a nonregular file.
-- `MarkifyTests/MarkifyTests.swift`: async summary-cache test changes, plus two async media test adjustments that already passed the latest focused suite.
+- `Markify/Knowledge.swift`: `Knowledge.root` is now async, captures the granted folder on MainActor and runs ancestry/index/concept work in a cancellation-forwarded detached task. New nonisolated `retargetFiles` reads current disk contents under `NSFileCoordinator` before changing links; bounded 20 MB reads and cancellation checks prevent writing stale bundle snapshots.
+- `Markify/ContentView.swift`: awaits root discovery within the owned knowledge task; owns/cancels backlink and export jobs on disappearance; applies own-link changes only if editor source still equals the pre-alert snapshot; reports backlink failures after worker completion. Export task cancels the previous export and suppresses cancellation alerts.
+- `Markify/Export.swift`: forwards cancellation into detached scan/render/HTML-write tasks. PDFPrinter bounds load wait at 30 s and native print wait at 60 s, handles WebKit termination/failure, settles continuations once, and prints to a temporary file before off-main atomic destination writing. See the native-print limitation below.
+- `Markify/MarkifyDocument.swift`: establishes native document bytes without a synchronous disk read, confirms initial baseline in a worker, uses an initial identity stamp to distinguish existing unsaved differences from an external change during attachment. Automatic reads now use FileRead with a 50 MB limit. Latest initial-stamp refinement was made while the last build was in progress; rerun it explicitly.
+- `QuickLook/PreviewImageClient.swift`: cancellation forwards to the XPC image request and invalidates its connection; Request can be canceled before its continuation attaches and remembers its completion to prevent double resumes.
+- `MarkifyTests/MarkifyTests.swift`: async knowledge-root tests and a coordinated backlink regression verifying newer disk text survives.
+- `MarkifyTests/ExportTests.swift`: canceled PDF job preserves the existing destination; repeated failure cannot resume twice.
 
-These need review and validation. In particular:
+Review before committing:
 
-- Confirm Swift actor isolation/Sendability and operator precedence in the web queue's `force || entries[key].map(...) ?? true` condition.
-- Check shared queue scheduling, cache limits, and cancellation semantics across windows.
-- Summary `save` updates memory before disk success; consider consistency on write failure. The load task currently remains stored after completion.
-- Summary cancellation guards must prevent an old canceled job from clearing a newer job for the same key.
-- Test persistence/reload and concurrent updates; add a focused global probe-budget test if practical using the existing URLProtocol test pattern.
-- Rerun package tests for the FileRead hardening and paragraph-model changes. Commit hardening separately from summary/link behavior where practical.
+- **PDF native ceiling:** NSPrintOperation exposes no public cancel method; its SDK explicitly says not to call `cleanUpOperation` yourself. `PDFPrinter.activePrint` retains at most one native job/delegate until its callback, including after our timeout/cancel. This prevents repeated abandoned jobs and dangling delegates, but a permanently hung native print may retain one job and reject subsequent PDFs until restart. Record this limitation honestly. Callback cleanup removes canceled temporary output. Verify successful output is not removed before the outer copy (the successful `completed` flag protects it).
+- PDF cancellation test and actual pagination passed before the final cancellation-forwarding edits; rerun current source. Check cancellation before/after continuations and output staging, and avoid overwriting existing files on cancellation.
+- **XPC race:** request attach and connection startup are separate; cancellation can invalidate a connection between them. Review startup serialization or confirm safe API behavior. Cancellation currently applies to `images`, not the user-initiated `openMarkdown` request. Request's generic optional result handles an optional nil value via `.some(value)`.
+- **Document baseline:** native fallback comes from `document.fileWrapper`, not the potentially stale SwiftUI binding. Initial metadata lookup still runs on MainActor. Explicit `refresh()` and prompt rereads/version preservation/merge validation remain synchronous. Preserve Reload/Merge/Versions/own-save behavior; do not silently replace a merge baseline when the file changes during attachment.
+- **Knowledge writes:** current disk text is coordinated, but review interaction with open documents/unsaved changes and failure/cancellation reporting. A new batch cancels the prior batch between files. No stale source snapshot is written.
+- **Summary cache follow-up:** the committed async save updates memory before disk success; write errors are reported, but no rollback is implemented. Entries are bounded by count/text and reads by total JSON bytes; unusually long keys/fingerprints could still make the written file exceed its reload cap. Consider a serialized byte budget if warranted.
+
+Stage and commit coherent tested steps. `ContentView.swift` contains both knowledge and export changes, so use partial staging to keep separate commits if useful. No partial staging is pending at this handoff: the math test hunk was staged and committed, while the knowledge hunk remains unstaged.
 
 Pre-existing user edits that must be preserved:
 
@@ -75,6 +80,11 @@ Read the commits for implementation details; this is a map, not a certification 
 | `fc8f1e2` | Bounded, cancellable off-main Quick Look preparation |
 | `a3ef7e8` | Safe paragraph-only styling and renderer recovery tests |
 | `b64b14d` | Cached source-derived UI values; off-main knowledge validation |
+| `dbaeec9` | Reject nonregular files after opening bounded read handles |
+| `410930b` | Shared four-probe budget, async/pruned persistence, owned summary cancellation |
+| `86fd9c0` | Table hover updates restricted to affected row heights; stale overlay indices filtered |
+| `4913d7e` | Bounded chunk reads for OKF bundle files and root indexes |
+| `17c6d7c` | Cached inline formulas/code tokens; asynchronous bounded display-math preparation |
 
 Links use `MarkdownTextView.link(at:)` over the model rather than an OKF regex. Reference links, angle autolinks and URLs with balanced parentheses are covered; links in code are skipped. Bare URLs currently are not link spans in the model.
 
@@ -82,29 +92,44 @@ Safe prose styling still parses the new complete model once, then styles a trans
 
 Media budgets: remote/local image reads 10 MB, thumbnails max dimension 2048, caches max 64 entries / 64 MB; four image jobs concurrently. HTML uses native asynchronous `NSAttributedString.loadFromHTML`, timeout five seconds, two imports per editor, bounded source/cache, stale completion gates. Mermaid has bounded queues/source/SVG/dimensions/cache, 15-second load/render deadlines and recovery. Quick Look source is bounded at 2 MB and disables remote preview images. Export embeds bounded images with a 50 MB aggregate URI budget and falls back to paths.
 
+Latest math work: display drawing only requests/reads worker results, four jobs per editor. Source limit 8,192 UTF-8 bytes; raster metrics max 2,048 points per dimension / one million square points before allocating at 2x scale; settled image cache max 64 entries / estimated 64 MB. Deleted formulas, theme changes and teardown cancel/prune cache entries. Inline formulas reuse up to 256 cached values; code tokens up to 32 blocks / roughly 2 MB source. Inline formulas still prepare synchronously when uncached; only display raster preparation moved off-main. Async math reuse/oversized-source test is committed and passed. There are no final memory-plateau measurements yet.
+
 ## Remaining work / review targets
 
 Use the fifteen findings in the audit as the source of truth. Known incomplete areas:
 
-- **Styling:** measure paragraph fast path in Release. Full parse remains synchronous; full fallback rebuilds inline formulas/code highlighting. Review reference/neighbor dependencies and preserve full-style equivalence.
-- **Tables:** hover animation still scans all rows and refreshes heights every frame. Restrict work to affected rows. Filter preserved active overlay indices against current rows after deletion. Unchanged cell invalidation includes reference definitions but needs review for footnote/other owner context changes.
-- **Document refresh:** initial baseline, explicit manual refresh, prompt rereads, version preservation and merge validation still have synchronous I/O. Preserve conflict/data-loss semantics and existing tests when moving these tails.
-- **Media:** math cache is not yet bounded/pruned; display math still renders during drawing. Inline formulas rebuild. Paste file copying and TIFF conversion remain synchronous. Review async HTML stale keys/failure-cache byte accounting and lifetime across closed editors.
-- **Bundle scans:** aggregate 50 MB/file-count limits are present, but some `String(contentsOf:)` reads still rely on preflight size checks and could overbuffer a growing file; root-index reads and per-document validation cancellation need review.
+- **Styling:** measure paragraph fast path in Release. Full parse remains synchronous; formula/code caches are now implemented. Review reference/neighbor dependencies and preserve full-style equivalence.
+- **Tables:** hover only modifies affected heights, but row enumeration/overlay refresh still runs each frame. Profile remaining cost. Unchanged cell invalidation includes reference definitions but needs review for footnote/other owner context changes.
+- **Document refresh:** review/finish pending async initial baseline. Explicit manual refresh, prompt rereads, version preservation and merge validation still have synchronous I/O. Preserve conflict/data-loss semantics and existing tests when moving these tails.
+- **Media:** paste file copying and TIFF conversion remain synchronous; uncached inline math remains synchronous. Review async HTML stale keys/failure-cache byte accounting and lifetime across closed editors. Inline-cache input bound is present, but output dimensions/vector cost deserve review.
+- **Bundle scans:** bounded growing-file and root-index reads are now committed (root index max 2 MB). Review cancellation within individual document validation and truncated reporting if a file exceeds the budget after preflight.
 - **Search:** unchanged notes are reused and enrichment no longer blocks the indexing actor; main-thread result sorting/mapping and eager enrichment may remain. Do not add complexity without evidence.
 - **Mermaid:** review cache/consumer cleanup and failure retry behavior. Recovery and obsolete-queue regression tests passed.
-- **Quick Look:** XPC image helper has a five-second bound, but request cancellation is not yet forwarded into its connection.
-- **Export:** PDFPrinter still needs explicit deadline/cancellation/process-termination handling and single continuation settlement. ContentView export tasks need owned handles, window teardown cancellation, and no alert on cancellation. SDK NSPrintOperation has no public cancelOperation; do not call unsafe cleanup as cancellation. Avoid stale writes or data loss.
-- **Derived UI / Knowledge:** root discovery and backlink retarget writes remain main-thread filesystem work; Inspector grouping still rebuilds in body. Move filesystem work safely with source/version/cancellation gates. Coordinate retarget writes using current disk contents, not a stale snapshot.
-- **Links:** finish the pending globally bounded queue, cache persistence and summary cancellation; validate them before committing.
+- **Quick Look:** pending XPC cancellation needs startup-race review and final verification.
+- **Export:** pending deadlines/cancellation/task ownership are implemented; verify and commit them, with the native-print ceiling documented.
+- **Derived UI / Knowledge:** pending off-main root discovery and coordinated backlink writes passed focused tests; finish review/commit. Inspector grouping still rebuilds in body.
+- **Links:** globally bounded queue/persistence/summary cancellation are now tested and committed; review final persistent byte limits if necessary.
 
 ## Validation so far
 
-Latest successful Xcode suite: `/private/tmp/markify-paragraph-fixes.log`, covering `IncrementalStyleTests`, `PerformanceFixTests`, `MermaidTests`, and `MarkifyTests`, serial execution. It passed, including async HTML/local-image assertions and paragraph/full-style equivalence. The pending summary/web-cache changes were made afterward and are **untested**.
+Latest session test results (serial Xcode suites, successful exit):
+
+- `/private/tmp/markify-summary-fixes.log`: MarkifyTests, OpenURLTests, InspectorTests; concurrent callers peak at exactly four probes and unchanged URLs do not fetch again; concurrent summary saves survive reload. Initial actor-isolation compile failures were corrected (`nonisolated lifetime`, `@MainActor` local queue helper).
+- `/private/tmp/markify-hover-fixes.log`: OverlayLayoutTests, IncrementalStyleTests, PerformanceFixTests passed.
+- `/private/tmp/markify-math-fixes.log`: MarkifyTests, InlineMathTests, EditorFixtureTests passed.
+- `/private/tmp/markify-knowledge-fixes.log`: MarkifyTests and InspectorTests passed, including current-disk backlink preservation.
+- `/private/tmp/markify-export-lifetime.log`: ExportTests, MarkifyTests, InlineMathTests, EditorFixtureTests passed; includes native pagination and canceled-destination preservation. Later forwarding changes need rerun.
+- `/private/tmp/markify-lifetimes-resume.log`: ExportTests and MarkifyTests passed (6.474 s test session); Quick Look request changes compiled. The final initial-stamp baseline refinement occurred during this build, so rerun explicitly rather than assuming which source revision it compiled.
+- `/private/tmp/markify-package-resume.log`: all 46 Markdown package tests passed with hardened FileRead.
+- `/private/tmp/markify-okf-resume.log`: all 37 OKF tests passed with bounded reads.
+
+Last Xcode process returned exit 0; no test command remains intentionally running. Tool session 6918 is already closed. No interactive git staging session remains open.
+
+The previous handoff's `/private/tmp/markify-paragraph-fixes.log` also passed IncrementalStyleTests, PerformanceFixTests, MermaidTests, and MarkifyTests, including paragraph/full-style equivalence.
 
 Earlier successful focused logs: `/private/tmp/markify-{table,refresh,viewport,io,search,media,renderer}-fixes.log`. They cover observer teardown, overlay layout, refresh conflicts/versions, bounded URL responses, export, search, remote/local media and renderer recovery.
 
-MarkifyMarkdown previously passed 46 tests and OKFKit 37 tests, but rerun after current changes. Async media tests retain source/pixel checks; layout bitmap helpers now ensure layout before capturing, and table thumbnails use their cell reading's prepared images.
+Async media tests retain source/pixel checks; layout bitmap helpers ensure layout before capturing, and table thumbnails use their cell reading's prepared images.
 
 No full final app-test run, post-change Release audit, Instruments run, Intel validation, idle/battery measurements or memory-plateau certification has happened. Baseline timing JSON remains unchanged.
 
