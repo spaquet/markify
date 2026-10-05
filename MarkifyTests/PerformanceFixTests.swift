@@ -4,17 +4,25 @@ import Testing
 @testable import Markify
 
 @MainActor struct PerformanceFixTests {
-    @Test func editorsReleaseTheirNotificationObservers() {
-        weak var released: MarkdownTextView?
-        autoreleasepool {
-            let editor = MarkdownTextView(usingTextLayoutManager: true)
-            editor.string = "temporary"
-            released = editor
-        }
-        #expect(released == nil)
-        // Posting after destruction must also be harmless.
-        let storage = NSTextStorage(string: "another")
-        storage.replaceCharacters(in: NSRange(location: 0, length: 1), with: "A")
+    @Test func tableCellsKeepTheirStyleAfterUnrelatedEdits() throws {
+        let owner = MarkdownTextView(usingTextLayoutManager: true)
+        owner.string = "| A | B |\n| --- | --- |\n| **cell** | other |\n\nTail"
+        let range = try #require(owner.model.tables.first?.rows.last?.cells.first)
+        let presentation = owner.tablePresentation(range, width: 200)
+        let version = presentation.reading.textVersion
+        owner.textStorage?.replaceCharacters(in: NSRange(location: (owner.string as NSString).length, length: 0), with: "!")
+        #expect(owner.tablePresentation(range, width: 200) === presentation)
+        #expect(presentation.reading.textVersion == version)
+    }
+
+    @Test func teardownRemovesEditingObservers() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "another"
+        let version = editor.textVersion
+        editor.stopObserving()
+        editor.stopObserving()
+        editor.textStorage?.replaceCharacters(in: NSRange(location: 0, length: 1), with: "A")
+        #expect(editor.textVersion == version)
     }
 
     @Test func clicksFollowRenderedLinkForms() throws {

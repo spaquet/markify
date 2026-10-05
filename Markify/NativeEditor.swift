@@ -54,6 +54,12 @@ struct NativeEditor: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
+    static func dismantleNSView(_ scroll: NSScrollView, coordinator: Coordinator) {
+        (scroll.documentView as? MarkdownTextView)?.stopObserving()
+        scroll.documentView = nil
+        coordinator.editor = nil
+    }
+
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
         scroll.drawsBackground = false
@@ -835,11 +841,21 @@ class MarkdownTextView: NSTextView {
     private var editingObserver: NSObjectProtocol?
 
     isolated deinit {
+        stopObserving()
+    }
+
+    /// SwiftUI teardown can precede AppKit releasing its text view.
+    func stopObserving() {
         if let editingObserver { NotificationCenter.default.removeObserver(editingObserver) }
+        editingObserver = nil
         clipObservers.forEach(NotificationCenter.default.removeObserver)
+        clipObservers = []
         if let frontmatterPopoverClose { NotificationCenter.default.removeObserver(frontmatterPopoverClose) }
+        frontmatterPopoverClose = nil
         tableHoverWork?.cancel()
         tableAnimation?.cancel()
+        tableOfContentsUpdate?.cancel()
+        for presentation in tablePresentations.values { presentation.reading.stopObserving() }
     }
 
     private func observeEdits() {
@@ -2433,7 +2449,7 @@ final class TableCellPresentation: NSView {
     private var expanded = false
     private var mediaSummary: String?
     private var header = false
-    private var contextVersion = -1
+    private var contextDefinitions: [String] = []
     private(set) var fullHeight: CGFloat = 21
 
     override init(frame: NSRect) {
@@ -2466,11 +2482,13 @@ final class TableCellPresentation: NSView {
 
     func update(source: String, width: CGFloat, owner: MarkdownTextView, header: Bool) {
         self.owner = owner
-        let changed = contextVersion != owner.textVersion || self.header != header || self.source != source || self.width != width || theme != owner.theme
+        reading.tableDocument = owner
+        let definitions = reading.referenceDefinitions()
+        let changed = contextDefinitions != definitions || self.header != header || self.source != source || self.width != width || theme != owner.theme
             || reading.documentURL != owner.documentURL || reading.baseDirectory != owner.baseDirectory
             || reading.loadRemoteImages != owner.loadRemoteImages || reading.effectiveAppearance.name != owner.effectiveAppearance.name
         guard changed else { return }
-        contextVersion = owner.textVersion
+        contextDefinitions = definitions
         self.header = header
         self.source = source
         self.width = max(1, width)
@@ -2589,11 +2607,16 @@ final class TableCellReading: MarkdownTextView {
     private var contextModel: (source: String, model: MarkdownModel)?
     private static let reference = try! NSRegularExpression(pattern: #"^!?\[([^\]]+)\](?:\[([^\]]*)\])?$"#)
 
-    override var model: MarkdownModel {
-        guard let owner = tableDocument, let range = tableSourceRange else { return super.model }
+    func referenceDefinitions() -> [String] {
+        guard let owner = tableDocument, let range = tableSourceRange else { return [] }
         let original = owner.string as NSString
-        let definitions = owner.model.spans.compactMap { span -> String? in
-            guard NSLocationInRange(span.range.location, range) else { return nil }
+        let spans = owner.model.spans
+        var low = 0, high = spans.count
+        while low < high {
+            let middle = (low + high) / 2
+            if spans[middle].range.location < range.location { low = middle + 1 } else { high = middle }
+        }
+        return spans[low...].prefix { $0.range.location < NSMaxRange(range) }.compactMap { span -> String? in
             let destination: String
             switch span.kind {
             case .link(let target): destination = target
@@ -2606,6 +2629,10 @@ final class TableCellReading: MarkdownTextView {
             let label = explicit.location != NSNotFound && explicit.length > 0 ? raw.substring(with: explicit) : raw.substring(with: match.range(at: 1))
             return "[" + label + "]: <" + destination.replacingOccurrences(of: ">", with: "%3E") + ">"
         }
+    }
+
+    override var model: MarkdownModel {
+        let definitions = referenceDefinitions()
         guard !definitions.isEmpty else { return super.model }
         let contextual = string + "\n\n" + definitions.joined(separator: "\n")
         if let contextModel, contextModel.source == contextual { return contextModel.model }
