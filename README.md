@@ -59,6 +59,17 @@ See [FEATURES.md](FEATURES.md) for the full implemented feature inventory.
 
 Get the latest version of Markify from the [Releases page](https://github.com/spaquet/markify/releases).
 
+### Homebrew
+
+Once the cask is merged into the default branch, install from Markify's project-owned tap:
+
+```sh
+brew tap spaquet/markify https://github.com/spaquet/markify.git
+brew install --cask spaquet/markify/markify
+```
+
+Markify is not yet notarized. Homebrew preserves quarantine, so first launch may require approval in **System Settings › Privacy & Security › Open Anyway** if you trust the release. See [Homebrew distribution](HOMEBREW.md) for updates, validation and official-cask eligibility.
+
 ### Pre-built Binaries
 
 Two versions are available for download:
