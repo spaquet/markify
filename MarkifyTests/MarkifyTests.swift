@@ -6,6 +6,57 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test @MainActor func externalFilePromptUsesLatestContentsAndSavesBothVersions() async throws {
+        for choice in [DocumentFileRefresh.Choice.reload, .merge, .keep] {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+            defer { try? FileManager.default.removeItem(at: url) }
+            let base = "one\ntwo\nthree\n"
+            try Data(base.utf8).write(to: url)
+            let document = RefreshTestDocument()
+            document.text = base
+            document.fileURL = url
+            document.fileType = "net.daringfireball.markdown"
+            var editorText = "ONE\ntwo\nthree\n"
+            var notifications = 0
+            var respond: ((DocumentFileRefresh.Choice) -> Void)?
+            let refresh = DocumentFileRefresh(refreshSearch: {}, readText: { editorText },
+                                              writeText: { editorText = $0 }, choose: { _, complete in
+                notifications += 1
+                respond = complete
+            })
+            defer { refresh.stop() }
+            refresh.watch(document)
+            try Data("one\ntwo\nintermediate\n".utf8).write(to: url, options: .atomic)
+            refresh.refresh()
+            let external = "one\ntwo\nTHREE\n"
+            try Data(external.utf8).write(to: url, options: .atomic)
+            refresh.refresh()
+            #expect(notifications == 1)
+            let complete = try #require(respond)
+            complete(choice)
+            let expected = choice == .reload ? external : choice == .merge ? "ONE\ntwo\nTHREE\n" : "ONE\ntwo\nthree\n"
+            for _ in 0..<100 {
+                if editorText == expected && choice != .keep { break }
+                try await Task.sleep(for: .milliseconds(20))
+                if choice == .keep { break }
+            }
+            #expect(editorText == expected)
+            refresh.refresh()
+            #expect(notifications == 1)
+            #expect(try String(contentsOf: url, encoding: .utf8) == external)
+            let versions = NSFileVersion.otherVersionsOfItem(at: url) ?? []
+            let contents = try versions.map { try String(contentsOf: $0.url, encoding: .utf8) }
+            if choice == .keep {
+                #expect(versions.isEmpty)
+            } else {
+                #expect(contents.contains("ONE\ntwo\nthree\n"))
+                #expect(contents.contains(external))
+                #expect(!contents.contains("one\ntwo\nintermediate\n"))
+            }
+            for version in versions { try version.remove() }
+        }
+    }
+
     @Test @MainActor func externalFilePromptsWaitUntilVersionBrowsingEnds() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
         defer { try? FileManager.default.removeItem(at: url) }

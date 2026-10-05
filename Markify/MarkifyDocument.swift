@@ -48,6 +48,10 @@ struct MarkifyDocument: FileDocument {
     private weak var window: NSWindow?
     private var url: URL?
     private var lastDisk: Data?
+    private var lastStamp: FileStamp?
+    private var readTask: Task<Void, Never>?
+    private var readGeneration = UUID()
+    private var readAgain = false
     private var timer: Timer?
     private var presenting = false
     private let refreshSearch: () -> Void
@@ -65,6 +69,10 @@ struct MarkifyDocument: FileDocument {
     }
 
     func stop() {
+        readTask?.cancel()
+        readTask = nil
+        readGeneration = UUID()
+        readAgain = false
         watcher.stop()
         timer?.invalidate()
         timer = nil
@@ -82,22 +90,58 @@ struct MarkifyDocument: FileDocument {
     func watch(_ document: NSDocument) {
         guard self.document !== document || url != document.fileURL else { return }
         timer?.invalidate()
+        readTask?.cancel()
+        readTask = nil
+        readGeneration = UUID()
         self.document = document
         url = document.fileURL
         // Establish the disk baseline when attaching or following a new file URL.
         // SwiftUI may still be displaying the previous document during native revert.
         lastDisk = url.flatMap { try? Data(contentsOf: $0) }
-        watcher.watch(url?.deletingLastPathComponent()) { [weak self] in self?.refresh() }
+        lastStamp = url.flatMap { FileStamp(at: $0) }
+        watcher.watch(url?.deletingLastPathComponent()) { [weak self] in self?.scheduleRefresh() }
         guard url != nil else { return }
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            DispatchQueue.main.async { self?.refresh() }
+        timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            DispatchQueue.main.async { self?.scheduleRefresh() }
+        }
+        timer?.tolerance = 2
+    }
+
+    /// One read at a time, with a trailing check for events that arrive during I/O.
+    func scheduleRefresh() {
+        guard !presenting, let document, !document.isBrowsingVersions, !document.isInViewingMode,
+              let url, document.fileURL == url else { return }
+        guard readTask == nil else { readAgain = true; return }
+        let previous = lastStamp
+        let generation = readGeneration
+        let work = Task.detached(priority: .utility) { () -> (FileStamp, Data)? in
+            guard !Task.isCancelled, let stamp = FileStamp(at: url), stamp != previous,
+                  let disk = try? Data(contentsOf: url), !Task.isCancelled,
+                  FileStamp(at: url) == stamp else { return nil }
+            return (stamp, disk)
+        }
+        readTask = Task { [weak self] in
+            let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard let self, !Task.isCancelled, self.readGeneration == generation else { return }
+            self.readTask = nil
+            if let (stamp, disk) = result { self.lastStamp = stamp; self.refresh(disk: disk) }
+            if self.readAgain { self.readAgain = false; self.scheduleRefresh() }
         }
     }
 
     func refresh() {
+        guard let url, let stamp = FileStamp(at: url), stamp != lastStamp,
+              let disk = try? Data(contentsOf: url), FileStamp(at: url) == stamp else { return }
+        // Don't consume an event while Versions or the external-change sheet owns the document.
+        guard !presenting, let document, !document.isBrowsingVersions, !document.isInViewingMode else { return }
+        lastStamp = stamp
+        refresh(disk: disk)
+    }
+
+    private func refresh(disk: Data) {
         guard !presenting, let document, !document.isBrowsingVersions, !document.isInViewingMode,
               let url, document.fileURL == url,
-              let type = document.fileType, let disk = try? Data(contentsOf: url),
+              let type = document.fileType,
               disk != lastDisk else { return }
         let base = lastDisk
         guard let current = (readText?()).map({ Data($0.utf8) })
@@ -106,23 +150,25 @@ struct MarkifyDocument: FileDocument {
         guard String(data: disk, encoding: .utf8) != nil else { return }
         refreshSearch()
         presenting = true
-        let complete: (Choice) -> Void = { [weak self, weak document] choice in
-            DispatchQueue.main.async {
-                guard let self, let document, self.url == url, document.fileURL == url else { return }
+        @MainActor func complete(_ choice: Choice) {
+            DispatchQueue.main.async { [weak self, weak document] in
+                guard let self, let document, self.document === document,
+                      self.url == url, document.fileURL == url else { return }
                 do {
-                    guard try Data(contentsOf: url) == disk else {
-                        self.presenting = false
-                        self.refreshAfterSheet()
-                        return
+                    let disk = try Data(contentsOf: url)
+                    guard let external = String(data: disk, encoding: .utf8) else {
+                        throw CocoaError(.fileReadCorruptFile)
                     }
+                    let local = try self.readText?() ?? String(decoding: document.fileWrapper(ofType: type).regularFileContents ?? current, as: UTF8.self)
                     switch choice {
                     case .keep: break
                     case .reload:
+                        try Self.preserveVersions(at: url, local: Data(local.utf8), external: disk, document: document)
                         try document.revert(toContentsOf: url, ofType: type)
-                        self.writeText?(String(decoding: disk, as: UTF8.self))
+                        self.writeText?(external)
                     case .merge:
                         guard let base, self.writeText != nil else { self.presenting = false; return }
-                        let local = self.readText?() ?? String(decoding: current, as: UTF8.self)
+                        let retry: @MainActor @Sendable (Choice) -> Void = { complete($0) }
                         DispatchQueue.global(qos: .userInitiated).async { [weak self, weak document] in
                             let result = Result {
                                 try Self.merge(local: local, base: String(decoding: base, as: UTF8.self),
@@ -130,15 +176,16 @@ struct MarkifyDocument: FileDocument {
                             }
                             DispatchQueue.main.async {
                                 guard let self else { return }
-                                defer { self.presenting = false }
                                 guard let document, self.document === document, self.url == url,
-                                      document.fileURL == url, (try? Data(contentsOf: url)) == disk,
+                                      document.fileURL == url else { self.presenting = false; return }
+                                guard (try? Data(contentsOf: url)) == disk,
                                       (self.readText?() ?? local) == local else {
-                                    self.refreshAfterSheet()
+                                    retry(choice)
                                     return
                                 }
                                 do {
                                     let merged = try result.get()
+                                    try Self.preserveVersions(at: url, local: Data(local.utf8), external: disk, document: document)
                                     let undo = document.undoManager
                                     undo?.beginUndoGrouping()
                                     undo?.registerUndo(withTarget: self) { target in target.writeText?(local) }
@@ -147,6 +194,7 @@ struct MarkifyDocument: FileDocument {
                                     undo?.endUndoGrouping()
                                     self.lastDisk = disk
                                 } catch { NSApp.presentError(error) }
+                                self.presenting = false
                             }
                         }
                         return
@@ -163,7 +211,7 @@ struct MarkifyDocument: FileDocument {
         }
         let alert = NSAlert()
         alert.messageText = "This file changed outside Markify"
-        alert.informativeText = "Choose how to handle changes to \(url.lastPathComponent). Reload replaces your current text. Merge combines both versions; overlapping edits are marked for you to resolve."
+        alert.informativeText = "Choose how to handle changes to \(url.lastPathComponent). Reload uses the latest external text. Merge combines it with your current text; overlapping edits are marked for you to resolve. Both versions are saved in Browse All Versions before Reload or Merge."
         alert.addButton(withTitle: "Keep My Changes")
         alert.addButton(withTitle: "Reload")
         if base != nil, writeText != nil { alert.addButton(withTitle: "Merge") }
@@ -175,8 +223,24 @@ struct MarkifyDocument: FileDocument {
         }
     }
 
-    private func refreshAfterSheet() {
-        DispatchQueue.main.async { [weak self] in self?.refresh() }
+    /// Save snapshots without writing over the externally edited file.
+    static func preserveVersions(at url: URL, local: Data, external: Data, document: NSDocument) throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let snapshot = directory.appendingPathComponent(url.lastPathComponent)
+        let coordinator = NSFileCoordinator(filePresenter: document)
+        var coordinationError: NSError?
+        var snapshotError: Error?
+        coordinator.coordinate(writingItemAt: url, options: [], error: &coordinationError) { coordinatedURL in
+            do {
+                for contents in [local, external] {
+                    try contents.write(to: snapshot)
+                    _ = try NSFileVersion.addOfItem(at: coordinatedURL, withContentsOf: snapshot)
+                }
+            } catch { snapshotError = error }
+        }
+        if let error = coordinationError ?? snapshotError { throw error }
     }
 
     /// Combine line edits against the last disk version; overlapping edits remain explicit conflicts.
