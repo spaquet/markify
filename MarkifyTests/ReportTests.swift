@@ -128,18 +128,21 @@ import Testing
         }
         let initialEditor = try #require(MarkdownTextView.openEditors.allObjects.first { $0.documentURL == url && $0.window?.isVisible == true })
         let window = try #require(initialEditor.window)
-        func installedEditor(in view: NSView) -> MarkdownTextView? {
-            if let editor = view as? MarkdownTextView { return editor }
-            return view.subviews.lazy.compactMap { installedEditor(in: $0) }.first
+        func installedView<T: NSView>(in view: NSView) -> T? {
+            if let match = view as? T { return match }
+            return view.subviews.lazy.compactMap { installedView(in: $0) as T? }.first
         }
+        let content = try #require(window.contentView)
+        let configuration: DocumentWindowView = try #require(installedView(in: content))
         var editor: MarkdownTextView {
-            window.contentView.flatMap { installedEditor(in: $0) } ?? initialEditor
+            window.contentView.flatMap { installedView(in: $0) } ?? initialEditor
         }
         func buttons(in view: NSView) -> [NSButton] {
             (view as? NSButton).map { [$0] } ?? view.subviews.flatMap { buttons(in: $0) }
         }
         func respond(_ title: String) async throws {
-            for _ in 0..<100 {
+            // Cover the five-second polling fallback, its two-second tolerance and UI delivery.
+            for _ in 0..<200 {
                 if window.attachedSheet != nil { break }
                 try await Task.sleep(for: .milliseconds(50))
             }
@@ -151,13 +154,13 @@ import Testing
             #expect(choices.map(\.title).contains("Merge"))
             let button = try #require(choices.first { $0.title == title })
             button.performClick(nil)
-            for _ in 0..<100 {
-                if window.attachedSheet == nil { break }
+            for _ in 0..<200 {
+                if window.attachedSheet == nil && !configuration.fileRefresh.presenting { break }
                 try await Task.sleep(for: .milliseconds(50))
             }
-            // Sheet dismissal precedes the deferred response. Let it acknowledge the
-            // latest disk contents before starting a separate external-change batch.
-            try await Task.sleep(for: .milliseconds(100))
+            // Detachment precedes the response callback; don't start another batch until it finishes.
+            try #require(window.attachedSheet == nil && !configuration.fileRefresh.presenting,
+                         "Waiting for \(title) to finish")
         }
         // Allow native document registration and the deferred watcher attachment to finish.
         try await Task.sleep(for: .milliseconds(300))

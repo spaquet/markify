@@ -2082,7 +2082,7 @@ struct LibraryNote: Identifiable {
     }
 }
 
-private final class DocumentWindowView: NSView {
+final class DocumentWindowView: NSView {
     var text: Binding<String>?
     lazy var fileRefresh = DocumentFileRefresh(
         readText: { [weak self] in self?.text?.wrappedValue ?? "" },

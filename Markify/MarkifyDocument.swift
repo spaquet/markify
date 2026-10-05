@@ -53,7 +53,7 @@ struct MarkifyDocument: FileDocument {
     private var readGeneration = UUID()
     private var readAgain = false
     private var timer: Timer?
-    private var presenting = false
+    private(set) var presenting = false
     private let refreshSearch: () -> Void
     private let readText: (() -> String)?
     private let writeText: ((String) -> Void)?
