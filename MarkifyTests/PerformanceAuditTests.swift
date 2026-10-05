@@ -77,7 +77,7 @@ import Testing
                 IncrementalStyleTests.native(view.string).style(view, incremental: true)
                 view.refreshTables()
             }
-            #expect(view.tableOverlays.count == count + 1)
+            #expect(view.tableOverlays.count < count + 1)
             window.contentView = nil
         }
 

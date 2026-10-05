@@ -888,6 +888,8 @@ class MarkdownTextView: NSTextView {
     private var tableAnimatedHeights: [Int: CGFloat] = [:]
     private var tableWidthCache: (version: Int, width: CGFloat, values: [Int: [CGFloat]])?
     private var tableRowIndices: [Int: Int] = [:]
+    private var refreshingTables = false
+    private var tableRefreshScheduled = false
 
     func hoverTableRow(_ start: Int?) {
         tableHoverWork?.cancel()
@@ -1020,7 +1022,9 @@ class MarkdownTextView: NSTextView {
     }
 
     func refreshTables() {
-        guard window != nil else { return }
+        guard window != nil, !refreshingTables else { return }
+        refreshingTables = true
+        defer { refreshingTables = false }
         if !rendered {
             tableHoverWork?.cancel()
             tableAnimation?.cancel()
@@ -1031,8 +1035,21 @@ class MarkdownTextView: NSTextView {
             table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
         } : []
         tableRowIndices = Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) })
-        if let last = rows.last { settleLayout(through: last.0.end) }
+        var wanted = Set(rows.indices)
+        if rows.count > 32, let manager = textLayoutManager, let content = manager.textContentManager {
+            manager.ensureLayout(for: visibleRect.insetBy(dx: 0, dy: -200))
+            manager.textViewportLayoutController.layoutViewport()
+            if let viewport = manager.textViewportLayoutController.viewportRange {
+                let start = content.offset(from: content.documentRange.location, to: viewport.location)
+                let end = content.offset(from: content.documentRange.location, to: viewport.endLocation)
+                let visible = rows.indices.filter { rows[$0].0.end >= start && rows[$0].0.start <= end }
+                wanted = Set(visible.flatMap { max(0, $0 - 5)...min(rows.count - 1, $0 + 5) })
+            } else { wanted = Set(rows.indices.prefix(32)) }
+            // Keep the field editor alive if its row scrolls out of view.
+            wanted.formUnion(tableOverlays.compactMap { $0.value.fields.contains { $0.currentEditor() != nil } ? $0.key : nil })
+        } else if let last = rows.last { settleLayout(through: last.0.end) }
         for (index, (row, header, table, ordinal)) in rows.enumerated() {
+            guard wanted.contains(index) else { continue }
             let line = textRect(NSRange(location: row.start, length: 1))
             let overlay = tableOverlays[index] ?? TableRowView()
             if overlay.superview == nil { addSubview(overlay) }
@@ -1070,11 +1087,14 @@ class MarkdownTextView: NSTextView {
                                }
                            })
         }
-        let locations = Set(rows.flatMap { $0.0.cells.map(\.location) })
+        let locations = Set(rows.enumerated().filter { wanted.contains($0.offset) }.flatMap { $0.element.0.cells.map(\.location) })
         for location in tablePresentations.keys.filter({ !locations.contains($0) }) {
-            tablePresentations.removeValue(forKey: location)?.removeFromSuperview()
+            if let presentation = tablePresentations.removeValue(forKey: location) {
+                presentation.reading.stopObserving()
+                presentation.removeFromSuperview()
+            }
         }
-        for index in tableOverlays.keys.filter({ $0 >= rows.count }) {
+        for index in tableOverlays.keys.filter({ !wanted.contains($0) }) {
             tableOverlays[index]?.removeFromSuperview()
             tableOverlays[index] = nil
         }
@@ -1332,6 +1352,13 @@ class MarkdownTextView: NSTextView {
     /// Overlays placed while outside the visible area are not painted when it grows to include them.
     private func visibleAreaChanged() {
         for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
+        guard !tableRefreshScheduled, !refreshingTables, model.tables.contains(where: { $0.rows.count > 32 }) else { return }
+        tableRefreshScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.tableRefreshScheduled = false
+            self.refreshTables()
+        }
     }
 
     /// Table overlays need a window to place themselves; the first style pass can run before the view has one.

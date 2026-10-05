@@ -4,6 +4,21 @@ import Testing
 @testable import Markify
 
 @MainActor struct PerformanceFixTests {
+    @Test func largeTablesOnlyCreateNearbyCells() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.frame = NSRect(x: 0, y: 0, width: 640, height: 400)
+        editor.columnWidth = 640
+        editor.string = "| A | B |\n| --- | --- |\n" + String(repeating: "| cell | value |\n", count: 500)
+        let window = NSWindow(contentRect: editor.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentView = editor
+        IncrementalStyleTests.native(editor.string).style(editor)
+        editor.refreshTables()
+        #expect(!editor.tableOverlays.isEmpty)
+        #expect(editor.tableOverlays.count < 40)
+        #expect(editor.tablePresentations.count < 80)
+        window.contentView = nil
+    }
+
     @Test func tableCellsKeepTheirStyleAfterUnrelatedEdits() throws {
         let owner = MarkdownTextView(usingTextLayoutManager: true)
         owner.string = "| A | B |\n| --- | --- |\n| **cell** | other |\n\nTail"
