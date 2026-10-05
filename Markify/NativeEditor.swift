@@ -834,6 +834,14 @@ class MarkdownTextView: NSTextView {
     private(set) var textVersion = 0
     private var editingObserver: NSObjectProtocol?
 
+    isolated deinit {
+        if let editingObserver { NotificationCenter.default.removeObserver(editingObserver) }
+        clipObservers.forEach(NotificationCenter.default.removeObserver)
+        if let frontmatterPopoverClose { NotificationCenter.default.removeObserver(frontmatterPopoverClose) }
+        tableHoverWork?.cancel()
+        tableAnimation?.cancel()
+    }
+
     private func observeEdits() {
         textLayoutManager?.delegate = layoutDelegate
         // Any storage: TextKit 2 may give the view a different storage than the one it has during init.
@@ -862,6 +870,8 @@ class MarkdownTextView: NSTextView {
     private var tableHoverWork: DispatchWorkItem?
     private var tableAnimation: Task<Void, Never>?
     private var tableAnimatedHeights: [Int: CGFloat] = [:]
+    private var tableWidthCache: (version: Int, width: CGFloat, values: [Int: [CGFloat]])?
+    private var tableRowIndices: [Int: Int] = [:]
 
     func hoverTableRow(_ start: Int?) {
         tableHoverWork?.cancel()
@@ -879,7 +889,7 @@ class MarkdownTextView: NSTextView {
         tableAnimation?.cancel()
         let rows = model.tables.flatMap { table in table.rows.filter { !$0.separator }.map { ($0, table) } }
         let from = Dictionary(uniqueKeysWithValues: rows.map { row, _ in
-            (row.start, tableAnimatedHeights[row.start] ?? tableOverlays.values.first { $0.rowStart == row.start }?.frame.height ?? 43)
+            (row.start, tableAnimatedHeights[row.start] ?? tableRowIndices[row.start].flatMap { tableOverlays[$0]?.frame.height } ?? 43)
         })
         tableAnimatedHeights = [:]
         let to = Dictionary(uniqueKeysWithValues: rows.map { ($0.0.start, tableRowHeight($0.0, table: $0.1)) })
@@ -927,6 +937,11 @@ class MarkdownTextView: NSTextView {
     }
 
     func tableWidths(_ table: MarkdownModel.Table) -> [CGFloat] {
+        if tableWidthCache?.version != textVersion || tableWidthCache?.width != columnWidth {
+            tableWidthCache = (textVersion, columnWidth, [:])
+        }
+        let key = table.rows.first?.start ?? 0
+        if let widths = tableWidthCache?.values[key] { return widths }
         let source = string as NSString
         let count = table.rows.first?.cells.count ?? 0
         guard count > 0 else { return [] }
@@ -949,6 +964,7 @@ class MarkdownTextView: NSTextView {
             let remaining = columnWidth - compact.reduce(0) { $0 + widths[$1] }
             for col in widths.indices where !compact.contains(col) { widths[col] = remaining / CGFloat(count - compact.count) }
         }
+        tableWidthCache?.values[key] = widths
         return widths
     }
 
@@ -960,9 +976,7 @@ class MarkdownTextView: NSTextView {
     }
 
     func tableRowExpanded(_ row: MarkdownTable.Row) -> Bool {
-        hoveredTableRow == row.start || tableOverlays.values.contains { overlay in
-            overlay.fields.contains { $0.currentEditor() != nil && row.start <= $0.sourceRange.location && $0.sourceRange.location <= row.end }
-        }
+        hoveredTableRow == row.start || (tableRowIndices[row.start].flatMap { tableOverlays[$0] }?.fields.contains { $0.currentEditor() != nil } == true)
     }
 
     func tableRowHeight(_ row: MarkdownTable.Row, table: MarkdownModel.Table) -> CGFloat {
@@ -1000,6 +1014,7 @@ class MarkdownTextView: NSTextView {
         let rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)] = rendered ? model.tables.flatMap { table in
             table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
         } : []
+        tableRowIndices = Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) })
         if let last = rows.last { settleLayout(through: last.0.end) }
         for (index, (row, header, table, ordinal)) in rows.enumerated() {
             let line = textRect(NSRange(location: row.start, length: 1))

@@ -4,6 +4,19 @@ import Testing
 @testable import Markify
 
 @MainActor struct PerformanceFixTests {
+    @Test func editorsReleaseTheirNotificationObservers() {
+        weak var released: MarkdownTextView?
+        autoreleasepool {
+            let editor = MarkdownTextView(usingTextLayoutManager: true)
+            editor.string = "temporary"
+            released = editor
+        }
+        #expect(released == nil)
+        // Posting after destruction must also be harmless.
+        let storage = NSTextStorage(string: "another")
+        storage.replaceCharacters(in: NSRange(location: 0, length: 1), with: "A")
+    }
+
     @Test func clicksFollowRenderedLinkForms() throws {
         for source in ["[web](https://example.com/a_(b))", "<https://example.com>",
                        "[web][site]\n\n[site]: https://example.com"] {
