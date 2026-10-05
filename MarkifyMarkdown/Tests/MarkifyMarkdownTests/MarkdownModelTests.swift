@@ -110,6 +110,34 @@ struct FixtureModelTests {
 }
 
 struct EdgeModelTests {
+    @Test func fileReadsAreBoundedAndStampsDetectAtomicReplacement() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("abc".utf8).write(to: url)
+        let before = FileStamp(at: url)
+        #expect(try FileRead.data(at: url, maximumBytes: 3) == Data("abc".utf8))
+        #expect(throws: CocoaError.self) { try FileRead.data(at: url, maximumBytes: 2) }
+        try Data("xyz".utf8).write(to: url, options: .atomic)
+        #expect(FileStamp(at: url) != before)
+    }
+
+    @Test func indexedSourceOffsetsMatchScalarWalk() {
+        let source = "ASCII **link** é😀e\u{301}終\r\n第二行 🐈\n"
+        let map = MarkdownSourceMap(source)
+        for (line, text) in map.lines.enumerated() {
+            for byte in 0...text.utf8.count + 1 {
+                var remaining = byte, utf16 = 0
+                for scalar in text.unicodeScalars {
+                    if remaining <= 0 { break }
+                    remaining -= scalar.utf8.count
+                    utf16 += scalar.utf16.count
+                }
+                let expected: Int? = remaining <= 0 ? map.starts[line] + utf16 : nil
+                #expect(map.offset(Markdown.SourceLocation(line: line + 1, column: byte + 1, source: nil)) == expected)
+            }
+        }
+    }
+
     @Test func offsetsSurviveUnicode() {
         let probe = Probe("😀 intro **bold** é\n# Café 🎉\n")
         #expect(probe.contents { $0 == .strong } == ["bold"])

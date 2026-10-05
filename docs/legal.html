@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Legal — Markify Help</title>
@@ -14,17 +33,23 @@
 <meta property="og:url" content="https://spaquet.github.io/markify/legal.html">
 <meta property="og:title" content="Legal — Markify Help">
 <meta property="og:description" content="Markify's license, privacy statement, and the third-party software, fonts and specifications it uses.">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
 <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Legal — Markify Help">
+<meta name="twitter:description" content="Markify's license, privacy statement, and the third-party software, fonts and specifications it uses.">
+<meta name="twitter:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
 <link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
 <link rel="apple-touch-icon" href="images/app-icon.png?v=2">
-<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/legal.md" title="Markdown source">
+<link rel="alternate" type="text/markdown" href="https://spaquet.github.io/markify/legal.md" title="Markdown version">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/legal.html","name":"Legal","position":2}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-03","description":"Markify's license, privacy statement, and the third-party software, fonts and specifications it uses.","headline":"Legal","inLanguage":"en","keywords":"license, legal, privacy, acknowledgements, third party, open source, trademarks, commons clause, mit","url":"https://spaquet.github.io/markify/legal.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/legal.html","name":"Legal","position":2}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-05","description":"Markify's license, privacy statement, and the third-party software, fonts and specifications it uses.","headline":"Legal","inLanguage":"en","keywords":"license, legal, privacy, acknowledgements, third party, open source, trademarks, commons clause, mit","url":"https://spaquet.github.io/markify/legal.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -87,7 +112,7 @@
 </li>
 </ul>
 <p><strong>Apple Intelligence</strong> features run on your Mac through Apple's on-device model and system Writing Tools; Markify sends no text to cloud services. Apple's handling of Apple Intelligence is described in <a rel="noopener" href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>.</p>
-<p><strong>This website</strong> is hosted on GitHub Pages, which may log visits as described in GitHub's privacy statement, and loads its typefaces from Google Fonts, which receives your IP address under <a rel="noopener" href="https://policies.google.com/privacy">Google's privacy policy</a>. It sets no cookies and uses no analytics.</p>
+<p><strong>This website</strong> has its own <a href="privacy.html">privacy policy</a> and <a href="terms.html">terms of use</a>. In short: it's hosted on GitHub Pages and loads its typefaces from Google Fonts, and it uses Google Analytics only if you accept cookies in its banner. The app itself has no analytics.</p>
 <h2 id="third-party-software-and-specifications">Third-party software and specifications</h2>
 <p>Markify is built on the work of others. Thank you to everyone behind these projects.</p>
 <h3 id="in-the-app">In the app</h3>
@@ -134,9 +159,9 @@
 <p>Apple, Mac, macOS, Apple Intelligence and New York are trademarks of Apple Inc., registered in the U.S. and other countries. GitHub is a trademark of GitHub, Inc. Google Cloud is a trademark of Google LLC. Other names are trademarks of their respective owners. Markify is an independent project and isn't affiliated with or endorsed by Apple, GitHub or Google.</p>
 <h2 id="disclaimer">Disclaimer</h2>
 <p>Markify is provided “as is”, without warranty of any kind, as stated in its license.</p>
-<p class="edit">Updated 2026-10-03 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/legal.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-05 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/legal.md">Suggest a change on GitHub</a></p>
 </article>
-<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="faq.html"><span>Previous</span>Frequently asked questions</a></nav>
+<nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="faq.html"><span>Previous</span>Frequently asked questions</a><a rel="next" href="privacy.html"><span>Next</span>Website privacy policy</a></nav>
 </main>
 </div>
 <footer>
@@ -152,11 +177,14 @@
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="known-issues.html">Known issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="legal.html">Legal &amp; privacy</a>
+      <a href="legal.html">Legal</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <button type="button" data-consent-open>Cookie settings</button>
     </nav>
   </div>
 </footer>
-<script src="assets/site.js?v=3" defer></script>
+<script src="assets/site.js?v=4" defer></script>
 <script>
 (() => {
   const box = document.getElementById('license-text');

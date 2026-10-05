@@ -23,6 +23,8 @@
 - [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.html): Every keyboard shortcut in Markify, and how to change them.
 - [Coding agents](https://spaquet.github.io/markify/help/coding-agents.html): Read coding-agent reports in Markify, with Claude Code, Codex, and OpenCode installation.
 - [Install and update](https://spaquet.github.io/markify/help/updates.html): Download and install Markify on your Mac, open it the first time, and keep it up to date.
+- [Website privacy policy](https://spaquet.github.io/markify/privacy.html): What Markify's website collects, the Google Analytics cookies it sets only with your consent, and your rights in the EU, the UK, California and elsewhere.
+- [Website terms of use](https://spaquet.github.io/markify/terms.html): The terms for using Markify's website: what you may do with its content, downloads, links and the limits of responsibility.
 
 ## FAQ and legal
 

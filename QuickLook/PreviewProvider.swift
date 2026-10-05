@@ -10,6 +10,8 @@ import WebKit
     // about:blank fragment navigation is unreliable across WebKit versions.
     private static let pageURL = URL(string: "https://markify.invalid/preview")!
     private var document: URL?
+    private var preparation: Task<Void, Never>?
+    private var generation = UUID()
     private let webView: WKWebView = {
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
@@ -32,11 +34,17 @@ import WebKit
     }
 
     func preparePreviewOfFile(at url: URL, completionHandler: @escaping (Error?) -> Void) {
+        preparation?.cancel()
+        generation = UUID()
+        let token = generation
         document = url
         loadViewIfNeeded()
-        Task {
+        preparation = Task {
             do {
-                let html = try await html(for: url)
+                let (html, title) = try await html(for: url)
+                try Task.checkCancellation()
+                guard generation == token else { throw CancellationError() }
+                self.title = title
                 webView.loadHTMLString(html, baseURL: Self.pageURL)
                 completionHandler(nil)
             } catch { completionHandler(error) }
@@ -71,39 +79,55 @@ import WebKit
         NSAccessibility.post(element: message, notification: .valueChanged)
     }
 
-    private func html(for file: URL) async throws -> String {
-        let source = try String(contentsOf: file, encoding: .utf8)
-        let images = await PreviewImageClient.images(for: file)
+    private func html(for file: URL) async throws -> (String, String) {
         let mdx = file.pathExtension.lowercased() == "mdx"
+        let work = Task.detached(priority: .userInitiated) { () -> (String, [String]) in
+            let data = try FileRead.data(at: file, maximumBytes: 2_000_000)
+            guard let source = String(data: data, encoding: .utf8) else { throw CocoaError(.fileReadCorruptFile) }
+            let codes = MarkdownModel(source, mdx: mdx).spans.compactMap { span -> String? in
+                guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { return nil }
+                return (source as NSString).substring(with: span.content)
+            }
+            return (source, codes)
+        }
+        let (source, codes) = try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
+        try Task.checkCancellation()
+        let images = await PreviewImageClient.images(for: file)
         var diagrams: [String: String] = [:]
-        for span in MarkdownModel(source, mdx: mdx).spans {
-            guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { continue }
-            let code = (source as NSString).substring(with: span.content)
+        for code in codes {
+            try Task.checkCancellation()
             let key = code.trimmingCharacters(in: .whitespacesAndNewlines)
             if diagrams[key] == nil, let svg = await MermaidRenderer.shared.svg(for: code) { diagrams[key] = svg }
         }
+        let renderedDiagrams = diagrams
+        let render = Task.detached(priority: .userInitiated) {
+            try Task.checkCancellation()
+            return Self.render(source, file: file, images: images, diagrams: renderedDiagrams)
+        }
+        return try await withTaskCancellationHandler { try await render.value } onCancel: { render.cancel() }
+    }
+
+    nonisolated private static func render(_ source: String, file: URL, images: [String: String], diagrams: [String: String]) -> (String, String) {
+        let mdx = file.pathExtension.lowercased() == "mdx"
         let options = MarkdownHTML.Options(
             math: { MathSVG.render($0, display: $1) },
             diagram: { language, code in
                 language.lowercased() == "mermaid" ? diagrams[code.trimmingCharacters(in: .whitespacesAndNewlines)] : nil
             },
-            image: { path in
-                URL(string: path)?.scheme?.lowercased() == "https" ? path : images[path] ?? ""
-            },
+            image: { images[$0] ?? "" },
             link: { PreviewLinks.target($0, relativeTo: file) })
         let body = MarkdownHTML.render(source, mdx: mdx, options: options)
         let title = body.firstHeading ?? file.deletingPathExtension().lastPathComponent
-        self.title = title
         let html = """
         <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src data:">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:">
         <title>\(MarkdownHTML.escape(title))</title><style>\(Self.style)</style></head>
         <body><main>\(body.body)</main></body></html>
         """
-        return html
+        return (html, title)
     }
 
-    private static let style = """
+    nonisolated private static let style = """
     :root{color-scheme:light dark;--page:#FCFBF9;--ink:#1D1D1F;--muted:#6E6E73;--rule:#DDD;--code:#F3F1ED;--accent:#0A64D6}
     @media(prefers-color-scheme:dark){:root{--page:#1E1E20;--ink:#F2F2F7;--muted:#A1A1A6;--rule:#444;--code:#2A2A2D;--accent:#4C97FF}}
     *{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:18px/1.6 ui-serif,"New York",Georgia,serif}

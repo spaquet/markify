@@ -4,6 +4,20 @@ import Testing
 
 /// Typing restyles only what changed, so TextKit keeps the layout of the rest of the document.
 @MainActor struct IncrementalStyleTests {
+    @Test func paragraphFastPathMatchesFullStylingAcrossInlineAndBlockChanges() {
+        for insertion in ["text", "**bold** ", "[web](https://example.com) ", "\n", "## ", "[ref]: https://example.com\n"] {
+            let editor = MarkdownTextView(usingTextLayoutManager: true)
+            editor.string = "# Title\n\nParagraph with *emphasis*.\n\nTail.\n"
+            Self.native(editor.string).style(editor)
+            let end = (editor.string as NSString).range(of: "Tail.").location
+            editor.textStorage!.replaceCharacters(in: NSRange(location: end, length: 0), with: insertion)
+            Self.native(editor.string).style(editor, incremental: true)
+            let incremental = NSAttributedString(attributedString: editor.textStorage!)
+            Self.native(editor.string).style(editor)
+            #expect(incremental.isEqual(to: editor.textStorage!), "inserting \(insertion)")
+        }
+    }
+
     static let source = "# Title\n\n<!-- toc -->\n- [Title](#title)\n  - [Part](#part)\n<!-- /toc -->\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n"
         + String(repeating: "Paragraph with **bold** and [a link](https://example.com).\n\n", count: 40) + "## Part\n\nLast line.\n"
 

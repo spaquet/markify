@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 /// One Markdown file in a bundle.
 public struct OKFDocument: Identifiable, Sendable {
@@ -63,18 +64,24 @@ public struct OKFBundle: Sendable {
     public let truncated: Bool
 
     /// Reads every `.md` file under `root`, skipping hidden files and packages.
-    public static func load(root: URL, limit: Int = 5000) -> OKFBundle {
+    public static func load(root: URL, limit: Int = 5000, maximumBytes: Int = 50_000_000) -> OKFBundle {
         let root = root.standardizedFileURL
         var documents: [OKFDocument] = []
         var truncated = false
+        var bytes = 0
         let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey],
                                                         options: [.skipsHiddenFiles, .skipsPackageDescendants])
         while let url = enumerator?.nextObject() as? URL {
+            guard !Task.isCancelled else { truncated = true; break }
             guard url.pathExtension.lowercased() == "md",
                   (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
             guard documents.count < limit else { truncated = true; break }
-            guard let source = try? String(contentsOf: url, encoding: .utf8),
+            guard let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+                  size <= maximumBytes - bytes else { truncated = true; break }
+            guard let source = boundedSource(at: url, maximumBytes: maximumBytes - bytes),
                   let path = OKFLinks.bundlePath(of: url, root: root) else { continue }
+            guard source.utf8.count <= maximumBytes - bytes else { truncated = true; break }
+            bytes += source.utf8.count
             documents.append(OKFDocument(url: url.standardizedFileURL, path: path, source: source, root: root))
         }
         documents.sort { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
@@ -88,6 +95,7 @@ public struct OKFBundle: Sendable {
         let limit = boundary.map { key($0) }
         var directory = folder
         while true {
+            guard !Task.isCancelled else { return folder }
             if declaredVersion(at: directory) != nil { return directory }
             if key(directory) == limit || directory.path == "/" { break }
             directory = directory.deletingLastPathComponent().standardizedFileURL
@@ -99,9 +107,29 @@ public struct OKFBundle: Sendable {
     /// `okf_version` from a directory's `index.md` frontmatter.
     public static func declaredVersion(at directory: URL) -> String? {
         let index = directory.appendingPathComponent("index.md")
-        guard let source = try? String(contentsOf: index, encoding: .utf8),
+        guard let source = boundedSource(at: index, maximumBytes: 2_000_000),
               case .success(let concept)? = OKFConcept.parse(source: source) else { return nil }
         return concept.okfVersion
+    }
+
+    /// This package is independent of the editor model; bound reads even if a file grows during scanning.
+    private static func boundedSource(at url: URL, maximumBytes: Int) -> String? {
+        guard maximumBytes >= 0, !Task.isCancelled else { return nil }
+        let descriptor = open(url.path, O_RDONLY | O_NONBLOCK)
+        guard descriptor >= 0 else { return nil }
+        let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+        defer { try? handle.close() }
+        var info = stat()
+        guard fstat(descriptor, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
+              info.st_size <= maximumBytes else { return nil }
+        var data = Data()
+        do {
+            while let chunk = try handle.read(upToCount: min(65_536, maximumBytes - data.count + 1)), !chunk.isEmpty {
+                guard !Task.isCancelled, chunk.count <= maximumBytes - data.count else { return nil }
+                data.append(chunk)
+            }
+        } catch { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     /// True when `url` sits inside `directory`.

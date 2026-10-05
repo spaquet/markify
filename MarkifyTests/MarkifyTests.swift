@@ -6,6 +6,57 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test @MainActor func externalFilePromptUsesLatestContentsAndSavesBothVersions() async throws {
+        for choice in [DocumentFileRefresh.Choice.reload, .merge, .keep] {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+            defer { try? FileManager.default.removeItem(at: url) }
+            let base = "one\ntwo\nthree\n"
+            try Data(base.utf8).write(to: url)
+            let document = RefreshTestDocument()
+            document.text = base
+            document.fileURL = url
+            document.fileType = "net.daringfireball.markdown"
+            var editorText = "ONE\ntwo\nthree\n"
+            var notifications = 0
+            var respond: ((DocumentFileRefresh.Choice) -> Void)?
+            let refresh = DocumentFileRefresh(refreshSearch: {}, readText: { editorText },
+                                              writeText: { editorText = $0 }, choose: { _, complete in
+                notifications += 1
+                respond = complete
+            })
+            defer { refresh.stop() }
+            refresh.watch(document)
+            try Data("one\ntwo\nintermediate\n".utf8).write(to: url, options: .atomic)
+            refresh.refresh()
+            let external = "one\ntwo\nTHREE\n"
+            try Data(external.utf8).write(to: url, options: .atomic)
+            refresh.refresh()
+            #expect(notifications == 1)
+            let complete = try #require(respond)
+            complete(choice)
+            let expected = choice == .reload ? external : choice == .merge ? "ONE\ntwo\nTHREE\n" : "ONE\ntwo\nthree\n"
+            for _ in 0..<100 {
+                if editorText == expected && choice != .keep { break }
+                try await Task.sleep(for: .milliseconds(20))
+                if choice == .keep { break }
+            }
+            #expect(editorText == expected)
+            refresh.refresh()
+            #expect(notifications == 1)
+            #expect(try String(contentsOf: url, encoding: .utf8) == external)
+            let versions = NSFileVersion.otherVersionsOfItem(at: url) ?? []
+            let contents = try versions.map { try String(contentsOf: $0.url, encoding: .utf8) }
+            if choice == .keep {
+                #expect(versions.isEmpty)
+            } else {
+                #expect(contents.contains("ONE\ntwo\nthree\n"))
+                #expect(contents.contains(external))
+                #expect(!contents.contains("one\ntwo\nintermediate\n"))
+            }
+            for version in versions { try version.remove() }
+        }
+    }
+
     @Test @MainActor func externalFilePromptsWaitUntilVersionBrowsingEnds() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -188,7 +239,7 @@ struct MarkifyTests {
         #expect(DocumentHeading.extract(from: MarkdownModel("Just text.\n")).isEmpty)
     }
 
-    @Test @MainActor func linkSummaryCacheSurvivesReloadAndDetectsTargetChanges() throws {
+    @Test @MainActor func linkSummaryCacheSurvivesReloadAndDetectsTargetChanges() async throws {
         let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
         defer { try? FileManager.default.removeItem(at: location) }
         let document = URL(fileURLWithPath: "/tmp/notes/current.md")
@@ -196,11 +247,26 @@ struct MarkifyTests {
         let source = "# Original"
         let saved = LinkSummary(text: "Original summary", fingerprint: LinkSummaryStore.fingerprint(source), date: .now)
         let store = LinkSummaryStore(location: location)
-        try store.save(saved, for: key)
-        #expect(LinkSummaryStore(location: location).entries[key] == saved)
+        try await store.save(saved, for: key)
+        let reloaded = LinkSummaryStore(location: location)
+        await reloaded.waitForLoad()
+        #expect(reloaded.entries[key] == saved)
         #expect(!LinkSummaryStore.isStale(saved, source: source))
         #expect(LinkSummaryStore.isStale(saved, source: "# Changed"))
         #expect(LinkSummaryStore.key("other.md#section", from: document, root: nil) == key)
+    }
+
+    @Test @MainActor func concurrentSummarySavesPreserveBothEntries() async throws {
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: location) }
+        let store = LinkSummaryStore(location: location)
+        let summary = LinkSummary(text: "Summary", fingerprint: "source", date: .now)
+        async let first: Void = store.save(summary, for: "first")
+        async let second: Void = store.save(summary, for: "second")
+        _ = try await (first, second)
+        let reloaded = LinkSummaryStore(location: location)
+        await reloaded.waitForLoad()
+        #expect(reloaded.entries == ["first": summary, "second": summary])
     }
 
     @Test @MainActor func linksPanelGroupsResolvedDestinationsAndTracksSourceLines() throws {
@@ -602,6 +668,22 @@ struct MarkifyTests {
         #expect(image?.size.width ?? 0 < 100)
     }
 
+    @Test @MainActor func displayMathPreparesOffTheDrawingPathAndReusesTheResult() async throws {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        let latex = #"\frac{1}{2}"#
+        #expect(editor.displayMath(latex, dark: false) == nil)
+        var result: NSImage?
+        for _ in 0..<100 {
+            result = editor.displayMath(latex, dark: false)
+            if result != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let image = try #require(result)
+        #expect(editor.displayMath(latex, dark: false) === image)
+        #expect(editor.renderMath(String(repeating: "x", count: 8193), dark: false) == nil)
+        editor.stopObserving()
+    }
+
     @Test func aiAcceptanceKeepsOneFrontmatterBlock() {
         let source = "---\ntags: [old]\n---\n# Title\n"
         let replacement = "---\ntitle: New\ntags: [new]\n---\n"
@@ -677,7 +759,7 @@ struct MarkifyTests {
         #expect(Shortcuts.keyboardShortcut("italic", stored: Shortcuts.assigning(spec, to: "bold", stored: legacy)) == nil)
     }
 
-    @Test @MainActor func remoteImageSettingRefreshesCachedRendering() {
+    @Test @MainActor func remoteImageSettingRefreshesCachedRendering() async throws {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         let source = "<img src=\"https://example.com/settings.png\">"
         editor.string = source
@@ -696,6 +778,8 @@ struct MarkifyTests {
         defer { editor.restyle = nil }
         editor.loadRemoteImages = false
         #expect(refreshes == 1)
+        let deadline = ContinuousClock.now + .seconds(35)
+        while editor.htmlBlocks[0] == nil, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
         #expect(editor.htmlBlocks[0]?.text.string.contains("Remote image") == true)
         #expect(editor.htmlBlocks[0]?.text.string.contains("example.com") == true)
         guard case .placeholder(let message) = editor.image(for: "https://example.com/settings.png") else {
@@ -703,14 +787,15 @@ struct MarkifyTests {
             return
         }
         #expect(message == "Remote image — example.com")
+        let settledRefreshes = refreshes
         editor.loadRemoteImages = false
-        #expect(refreshes == 1)
+        #expect(refreshes == settledRefreshes)
         editor.loadRemoteImages = true
-        #expect(refreshes == 2)
+        #expect(refreshes == settledRefreshes + 1)
         #expect(editor.string == source)
     }
 
-    @Test @MainActor func htmlBlocksDecodeUTF8AndRestylesWaitForTheCurrentPass() {
+    @Test @MainActor func htmlBlocksDecodeUTF8AndRestylesWaitForTheCurrentPass() async throws {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         let source = "<p align=\"center\">Markify — one page</p>\n"
         editor.string = source
@@ -718,6 +803,10 @@ struct MarkifyTests {
             findQuery: "", matchCase: false, selectedRange: .constant(NSRange(location: 0, length: 0)),
             textView: .constant(editor), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
         native.style(editor)
+        editor.restyle = { native.style(editor) }
+        defer { editor.restyle = nil }
+        let deadline = ContinuousClock.now + .seconds(35)
+        while editor.htmlBlocks[0] == nil, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
         #expect(editor.htmlBlocks[0]?.text.string.contains("Markify — one page") == true)
         // A restyle asked for while a pass runs (WebKit's HTML import spins the run loop) waits for it.
         editor.isStyling = true
@@ -857,18 +946,31 @@ struct MarkifyTests {
         #expect(MarkdownTextView.noteTitle("No heading", url: note) == "Other note")
     }
 
-    @Test @MainActor func knowledgeIssuesTrackUnsavedText() throws {
+    @Test @MainActor func knowledgeIssuesTrackUnsavedText() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("okf-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         try "---\nokf_version: \"0.2\"\n---\n".write(to: root.appendingPathComponent("index.md"), atomically: true, encoding: .utf8)
         try "---\ntype: Metric\n---\n".write(to: root.appendingPathComponent("orders.md"), atomically: true, encoding: .utf8)
         let file = root.appendingPathComponent("revenue.md")
-        #expect(Knowledge.root(for: file, text: "Plain note", boundary: nil).map(OKFBundle.key) == OKFBundle.key(root))
-        #expect(Knowledge.root(for: file, text: "---\ntype: Metric\n---\n", boundary: nil) != nil)
+        #expect(await Knowledge.root(for: file, text: "Plain note", boundary: nil).map(OKFBundle.key) == OKFBundle.key(root))
+        #expect(await Knowledge.root(for: file, text: "---\ntype: Metric\n---\n", boundary: nil) != nil)
         let issues = Knowledge.issues(text: "---\ntype: Metric\n---\nSee [orders](/orders.md) and [later](/later.md).", fileURL: file, root: root)
         #expect(issues.map(\.message) == ["Links to /later.md, which does not exist yet."])
         #expect(Knowledge.issues(text: "No frontmatter", fileURL: file, root: root).first?.severity == .error)
+    }
+
+    @Test func backlinkRetargetingPreservesTheCurrentDiskText() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("retarget-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("backlink.md")
+        try "Newer edit\n\n[Old](old.md)\n".write(to: url, atomically: true, encoding: .utf8)
+        let failed = await Task.detached {
+            Knowledge.retargetFiles([url], root: root, movedFrom: root.appendingPathComponent("old.md"), to: root.appendingPathComponent("new.md"))
+        }.value
+        #expect(failed.isEmpty)
+        #expect(try String(contentsOf: url, encoding: .utf8) == "Newer edit\n\n[Old](new.md)\n")
     }
 }
 

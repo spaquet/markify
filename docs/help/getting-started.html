@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Getting started — Markify Help</title>
@@ -14,17 +33,23 @@
 <meta property="og:url" content="https://spaquet.github.io/markify/help/getting-started.html">
 <meta property="og:title" content="Getting started — Markify Help">
 <meta property="og:description" content="Create, open and save Markdown documents in Markify, and find your way around the window.">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
 <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Getting started — Markify Help">
+<meta name="twitter:description" content="Create, open and save Markdown documents in Markify, and find your way around the window.">
+<meta name="twitter:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
 <link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
 <link rel="apple-touch-icon" href="../images/app-icon.png?v=2">
-<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/getting-started.md" title="Markdown source">
+<link rel="alternate" type="text/markdown" href="https://spaquet.github.io/markify/help/getting-started.md" title="Markdown version">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/getting-started.html","name":"Getting started","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-03","description":"Create, open and save Markdown documents in Markify, and find your way around the window.","headline":"Getting started","inLanguage":"en","keywords":"new document, open, save, library, window, welcome, URL, HTTPS, GitHub, GitLab, repository","url":"https://spaquet.github.io/markify/help/getting-started.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/getting-started.html","name":"Getting started","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-05","description":"Create, open and save Markdown documents in Markify, and find your way around the window.","headline":"Getting started","inLanguage":"en","keywords":"new document, open, save, library, window, welcome, URL, HTTPS, GitHub, GitLab, repository","url":"https://spaquet.github.io/markify/help/getting-started.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -85,8 +110,8 @@
 <p>macOS manages version checkpoints and their storage; history does not capture every keystroke. Markify does not create a separate backup folder. Versions recover the Markdown text, including image paths, but do not restore changes to linked images or other files. Available history depends on the file's storage location; keep backups for long-term recovery.</p>
 <p>External-change prompts pause while the version browser is open. Restoring an earlier version deliberately replaces the current file; use Restore a Copy if you want to preserve the current content, including edits from another app.</p>
 <h3 id="changes-from-another-app">Changes from another app</h3>
-<p>If another app changes an open file, Markify notifies you, including when text is added, updated or removed. Choose <strong>Keep My Changes</strong> to leave your text alone, <strong>Reload</strong> to replace it with the version on disk, or <strong>Merge</strong> to combine both versions. Merge marks overlapping edits with <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; My Changes</code>, <code>||||||| Original</code>, <code>=======</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; External Changes</code>; edit those sections to keep the text you want and remove the markers before saving. Keeping your changes leaves the external file alone until Markify saves your version. Merging can be undone with <strong>⌘Z</strong>.</p>
-<p>To preview a Markdown file without opening it, select a <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams. It loads HTTPS images and local images referenced by the document, without a folder permission step. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See <a href="images-and-links.html#links-in-finder-previews">Images and links</a>.</p>
+<p>If another app changes an open file, Markify notifies you, including when text is added, updated or removed. Repeated external edits share one prompt; your choice uses the latest contents on disk. Before <strong>Reload</strong> or <strong>Merge</strong>, Markify saves both your current text (including unsaved edits) and the latest external text in <strong>Browse All Versions…</strong>. If either version cannot be saved, Markify reports the error and leaves your current text intact. Choose <strong>Keep My Changes</strong> to leave your text alone, <strong>Reload</strong> to replace it with the version on disk, or <strong>Merge</strong> to combine both versions. Merge marks overlapping edits with <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; My Changes</code>, <code>||||||| Original</code>, <code>=======</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; External Changes</code>; edit those sections to keep the text you want and remove the markers before saving. Keeping your changes leaves the external file alone until Markify saves your version. Merging can be undone with <strong>⌘Z</strong>.</p>
+<p>To preview a Markdown file without opening it, select a <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> file in Finder and press Space. Markify's Quick Look extension shows formatted Markdown, HTML, math and Mermaid diagrams for files up to 2 MB. It loads local images referenced by the document, without a folder permission step; remote images are omitted. Click linked local Markdown files to open them in Markify; web links open in your browser and anchor links stay in the preview. See <a href="images-and-links.html#links-in-finder-previews">Images and links</a>.</p>
 <h2 id="open-a-url">Open a URL</h2>
 <p>Choose <strong>File › Open URL…</strong>, then select one of the two options:</p>
 <p>The URL shows its host, repository, branch and path as you type. <strong>Access</strong> offers public access, a personal access token for GitHub or GitLab, or username/password and bearer tokens for other HTTPS servers. GitHub tokens need <strong>Contents: read</strong>; GitLab repository browsing needs <strong>read_api</strong>. Browser account sign-in is not configured in this build.</p>
@@ -133,7 +158,7 @@
 <h2 id="take-the-tour">Take the tour</h2>
 <p>The first time you open Markify, it opens <strong>Welcome to Markify</strong>, a document that tours the main features by letting you try them: the two lenses, the format bar and slash menu, tasks, tables, callouts, code, math, diagrams, images, the library, Apple Intelligence and export. It's saved in your library folder, so you can edit it freely.</p>
 <p><a rel="noopener" href="https://github.com/spaquet/markify/blob/main/Markify/Resources/Welcome.md">Open the Welcome tour</a> anytime, or choose <strong>Help › Welcome to Markify</strong>. If you've deleted it, Markify puts a fresh copy back.</p>
-<p class="edit">Updated 2026-10-03 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/getting-started.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-05 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/getting-started.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="index.html"><span>Previous</span>Markify Help</a><a rel="next" href="lenses.html"><span>Next</span>Two lenses</a></nav>
 </main>
@@ -151,10 +176,13 @@
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="../known-issues.html">Known issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="../legal.html">Legal &amp; privacy</a>
+      <a href="../legal.html">Legal</a>
+      <a href="../privacy.html">Privacy</a>
+      <a href="../terms.html">Terms</a>
+      <button type="button" data-consent-open>Cookie settings</button>
     </nav>
   </div>
 </footer>
-<script src="../assets/site.js?v=3" defer></script>
+<script src="../assets/site.js?v=4" defer></script>
 </body>
 </html>

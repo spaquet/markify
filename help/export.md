@@ -19,11 +19,15 @@ The HTML file is a complete, self-contained web page:
 - The page follows the reader's light or dark appearance and prints cleanly.
 - The page's title comes from the frontmatter `title`, else the first heading. Frontmatter `tags` and `date` appear as chips; other frontmatter is left out.
 
+Image embedding accepts local images below 25 MB, with a 50 MB total budget for embedded image data. Remote PDF images have a 10 MB download limit. Images that exceed these limits stay linked, so keep those files with the exported page. A failed Mermaid render falls back to its source.
+
 ## PDF
 
 The PDF is the same page laid out on your Mac's default paper size, such as A4 or US Letter. Headings stay with the text that follows them, and code blocks, table rows, callouts, equations and images aren't split across pages. Links stay clickable.
 
 Remote images are included in the PDF only when **Settings › General › Load remote images** is on.
+
+Closing the document or starting another export cancels the previous export. A canceled PDF export leaves an existing destination file intact. If PDF printing times out and later PDF exports fail, quit and reopen Markify before retrying.
 
 ## Sharing the Markdown itself
 

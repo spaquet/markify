@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Export to HTML and PDF — Markify Help</title>
@@ -14,17 +33,23 @@
 <meta property="og:url" content="https://spaquet.github.io/markify/help/export.html">
 <meta property="og:title" content="Export to HTML and PDF — Markify Help">
 <meta property="og:description" content="Export a Markdown document as a self-contained HTML page or a paginated PDF.">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
 <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Export to HTML and PDF — Markify Help">
+<meta name="twitter:description" content="Export a Markdown document as a self-contained HTML page or a paginated PDF.">
+<meta name="twitter:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
 <link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
 <link rel="apple-touch-icon" href="../images/app-icon.png?v=2">
-<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/export.md" title="Markdown source">
+<link rel="alternate" type="text/markdown" href="https://spaquet.github.io/markify/help/export.md" title="Markdown version">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/export.html","name":"Export to HTML and PDF","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-29","description":"Export a Markdown document as a self-contained HTML page or a paginated PDF.","headline":"Export to HTML and PDF","inLanguage":"en","keywords":"export, html, pdf, print, share, web page","url":"https://spaquet.github.io/markify/help/export.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/export.html","name":"Export to HTML and PDF","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-05","description":"Export a Markdown document as a self-contained HTML page or a paginated PDF.","headline":"Export to HTML and PDF","inLanguage":"en","keywords":"export, html, pdf, print, share, web page","url":"https://spaquet.github.io/markify/help/export.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -82,9 +107,11 @@
 <li>The page's title comes from the frontmatter <code>title</code>, else the first heading. Frontmatter <code>tags</code> and <code>date</code> appear as chips; other frontmatter is left out.
 </li>
 </ul>
+<p>Image embedding accepts local images below 25 MB, with a 50 MB total budget for embedded image data. Remote PDF images have a 10 MB download limit. Images that exceed these limits stay linked, so keep those files with the exported page. A failed Mermaid render falls back to its source.</p>
 <h2 id="pdf">PDF</h2>
 <p>The PDF is the same page laid out on your Mac's default paper size, such as A4 or US Letter. Headings stay with the text that follows them, and code blocks, table rows, callouts, equations and images aren't split across pages. Links stay clickable.</p>
 <p>Remote images are included in the PDF only when <strong>Settings › General › Load remote images</strong> is on.</p>
+<p>Closing the document or starting another export cancels the previous export. A canceled PDF export leaves an existing destination file intact. If PDF printing times out and later PDF exports fail, quit and reopen Markify before retrying.</p>
 <h2 id="sharing-the-markdown-itself">Sharing the Markdown itself</h2>
 <p>Your document is already a plain <code>.md</code> file. <strong>More (…) › Share</strong> sends the file itself with AirDrop, Mail, Messages and other services.</p>
 <p>For scripted HTML export, see <a href="command-line.html">Command line</a>.</p>
@@ -92,7 +119,7 @@
 <p>Choose <strong>More (…) › Copy All as Markdown</strong> or <strong>Edit › Copy All as Markdown</strong> to copy the entire source, including frontmatter, regardless of the current lens or selection.</p>
 <p>Choose <strong>Copy All for Medium</strong> from either menu, then paste into Medium's story editor. The clipboard includes formatted HTML for headings, emphasis, links, lists and code, with Markdown as a plain-text fallback. Frontmatter is omitted from the formatted version. Neither action has a keyboard shortcut.</p>
 <p>Medium controls which formatting survives a paste. Tables, task checkboxes, footnotes, callouts, math and diagrams may lose formatting; check the pasted story before publishing. Local images and links to local notes are not uploaded by copying: upload images to Medium and replace local links with public URLs.</p>
-<p class="edit">Updated 2026-09-29 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/export.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-05 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/export.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="intelligence.html"><span>Previous</span>Apple Intelligence</a><a rel="next" href="knowledge.html"><span>Next</span>Knowledge bundles</a></nav>
 </main>
@@ -110,10 +137,13 @@
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="../known-issues.html">Known issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="../legal.html">Legal &amp; privacy</a>
+      <a href="../legal.html">Legal</a>
+      <a href="../privacy.html">Privacy</a>
+      <a href="../terms.html">Terms</a>
+      <button type="button" data-consent-open>Cookie settings</button>
     </nav>
   </div>
 </footer>
-<script src="../assets/site.js?v=3" defer></script>
+<script src="../assets/site.js?v=4" defer></script>
 </body>
 </html>

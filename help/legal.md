@@ -31,7 +31,7 @@ Markify connects to the internet only in these cases:
 
 **Apple Intelligence** features run on your Mac through Apple's on-device model and system Writing Tools; Markify sends no text to cloud services. Apple's handling of Apple Intelligence is described in [Apple's privacy policy](https://www.apple.com/legal/privacy/).
 
-**This website** is hosted on GitHub Pages, which may log visits as described in GitHub's privacy statement, and loads its typefaces from Google Fonts, which receives your IP address under [Google's privacy policy](https://policies.google.com/privacy). It sets no cookies and uses no analytics.
+**This website** has its own [privacy policy](privacy.md) and [terms of use](terms.md). In short: it's hosted on GitHub Pages and loads its typefaces from Google Fonts, and it uses Google Analytics only if you accept cookies in its banner. The app itself has no analytics.
 
 ## Third-party software and specifications
 

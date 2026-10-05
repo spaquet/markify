@@ -173,6 +173,13 @@ actor SpotlightWorker {
     private let domain: String
     private let persistenceKey: String?
     private var fingerprints: [String: String]
+    private struct CachedNote {
+        let stamp: FileStamp
+        let configuration: String
+        let note: SearchNote
+        let fingerprint: String
+    }
+    private var cachedNotes: [String: CachedNote] = [:]
 
     init(name: String = "com.stephanepaquet.Markify.NoteSearch", domain: String = "markifynotes", persistenceKey: String? = "searchFingerprints") {
         index = CSSearchableIndex(name: name)
@@ -186,6 +193,7 @@ actor SpotlightWorker {
         if rebuild || options.paused {
             try await index.deleteSearchableItems(withDomainIdentifiers: [domain])
             fingerprints = [:]
+            cachedNotes = [:]
             persist()
         }
         var snapshot = SearchSnapshot(folders: folders)
@@ -214,6 +222,8 @@ actor SpotlightWorker {
         var failed = false
         let skipped = Set(options.skippedFolders.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
         let optionKey = String(data: try JSONEncoder().encode(options), encoding: .utf8) ?? ""
+        let configuration = optionKey + accessible.map(\.path).sorted().joined(separator: "\n")
+        var lastProgress = ContinuousClock.now
         for folder in accessible {
             let root = URL(fileURLWithPath: folder.path)
             var scanFailed = false
@@ -238,10 +248,20 @@ actor SpotlightWorker {
                 count += 1
                 guard seen.insert(id).inserted else { continue }
                 do {
+                    let stamp = FileStamp(at: url)
+                    if let cached = cachedNotes[id], cached.stamp == stamp, cached.configuration == configuration,
+                       fingerprints[id] == cached.fingerprint {
+                        snapshot.notes.append(cached.note)
+                        nextFingerprints[id] = cached.fingerprint
+                        continue
+                    }
                     let (note, text) = try SearchNote.read(url, roots: accessible, options: options)
                     snapshot.notes.append(note)
                     let digest = SHA256.hash(data: Data((text + note.title + note.description + note.scopes.joined() + note.tags.joined() + (note.type ?? "") + optionKey + note.modified.description).utf8))
                     let fingerprint = digest.map { String(format: "%02x", $0) }.joined()
+                    if let stamp, FileStamp(at: url) == stamp {
+                        cachedNotes[id] = CachedNote(stamp: stamp, configuration: configuration, note: note, fingerprint: fingerprint)
+                    }
                     if fingerprints[id] != fingerprint {
                         updates.append(note.item(text: text, domain: domain))
                         nextFingerprints[id] = fingerprint
@@ -250,7 +270,10 @@ actor SpotlightWorker {
                         try await index.indexSearchableItems(updates)
                         fingerprints.merge(nextFingerprints) { _, new in new }; persist(); updates.removeAll()
                     }
-                    if snapshot.notes.count.isMultiple(of: 50) { await progress(snapshot) }
+                    if ContinuousClock.now - lastProgress >= .milliseconds(250) {
+                        await progress(snapshot)
+                        lastProgress = .now
+                    }
                 } catch is CancellationError { throw CancellationError() }
                 catch { scanFailed = true }
             }
@@ -264,6 +287,7 @@ actor SpotlightWorker {
             let removed = Set(fingerprints.keys).subtracting(snapshot.notes.map(\.id))
             if !removed.isEmpty { try await index.deleteSearchableItems(withIdentifiers: Array(removed)) }
             nextFingerprints = nextFingerprints.filter { !removed.contains($0.key) }
+            cachedNotes = cachedNotes.filter { seen.contains($0.key) }
         }
         fingerprints = nextFingerprints; persist()
         snapshot.subfolders = Array(Set(snapshot.subfolders)).sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
@@ -272,13 +296,16 @@ actor SpotlightWorker {
     private func persist() { if let persistenceKey { UserDefaults.standard.set(fingerprints, forKey: persistenceKey) } }
     func delete() async throws {
         try await index.deleteSearchableItems(withDomainIdentifiers: [domain])
-        fingerprints = [:]; persist()
+        fingerprints = [:]; cachedNotes = [:]; persist()
     }
-    func matches(_ notes: [SearchNote], query: String, options: SearchOptions) -> [SearchMatch] {
-        notes.compactMap { note in
-            guard let source = try? String(contentsOf: note.url, encoding: .utf8) else { return nil }
-            return SearchMatch.make(note: note, source: source, query: query, headings: options.headings)
+    nonisolated func matches(_ notes: [SearchNote], query: String, options: SearchOptions) -> [SearchMatch] {
+        var matches: [SearchMatch] = []
+        for note in notes {
+            guard !Task.isCancelled else { break }
+            guard let source = try? String(contentsOf: note.url, encoding: .utf8) else { continue }
+            matches.append(SearchMatch.make(note: note, source: source, query: query, headings: options.headings))
         }
+        return matches
     }
 }
 
@@ -468,7 +495,9 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
         UserDefaults.standard.set(recents, forKey: "recentLibrarySearches")
     }
     func enrich(_ notes: [SearchNote], query: String) async -> [SearchMatch] {
-        await worker.matches(notes, query: query, options: options)
+        let worker = worker, options = options
+        let work = Task.detached(priority: .userInitiated) { worker.matches(notes, query: query, options: options) }
+        return await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
     }
     nonisolated func searchableIndex(_ searchableIndex: CSSearchableIndex, reindexAllSearchableItemsWithAcknowledgementHandler acknowledgementHandler: @escaping () -> Void) {
         let acknowledgement = SpotlightAcknowledgement(acknowledgementHandler)

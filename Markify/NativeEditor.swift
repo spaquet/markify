@@ -5,6 +5,14 @@ import SwaTex
 import SwaTexRender
 import SwiftUI
 import UniformTypeIdentifiers
+import ImageIO
+import WebKit
+
+// WebKit's legacy completion lacks actor annotations. Transfer an immutable copy, used only on MainActor.
+nonisolated private struct HTMLImportResult: @unchecked Sendable {
+    let text: NSAttributedString?
+    init(_ text: NSAttributedString?) { self.text = text.map { NSAttributedString(attributedString: $0) } }
+}
 
 enum SlashKey { case up, down, insert, dismiss }
 
@@ -53,6 +61,12 @@ struct NativeEditor: NSViewRepresentable {
     var onWritingToolsEnd: (Bool) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    static func dismantleNSView(_ scroll: NSScrollView, coordinator: Coordinator) {
+        (scroll.documentView as? MarkdownTextView)?.stopObserving()
+        scroll.documentView = nil
+        coordinator.editor = nil
+    }
 
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
@@ -143,15 +157,32 @@ struct NativeEditor: NSViewRepresentable {
     /// Styles both lenses from the model. `incremental` (typing) styles a copy and applies only the attributes that
     /// changed: resetting the whole storage makes TextKit 2 discard the layout of every line, and the lines above the
     /// page fall back to estimated heights, so the visible text blanks and jumps on each keystroke.
-    func style(_ editor: NSTextView, incremental: Bool = false) {
+    func style(_ editor: NSTextView, incremental: Bool = false, using reading: MarkdownModel? = nil) {
         guard let live = editor.textStorage else { return }
-        let storage = incremental ? NSTextStorage(attributedString: live) : live
         // HTML blocks are imported through WebKit, which spins the run loop: an image or diagram arriving then
         // asks for a restyle in the middle of this pass. It runs once this pass is done instead of inside it.
         let styling = editor as? MarkdownTextView
         if let styling, styling.isStyling { styling.restyleAfterStyling = true; return }
+        let styleKey = StyleKey(native: self, editor: editor)
+        if incremental, findQuery.isEmpty, let styling,
+           let paragraph = styling.changedStyledParagraph(key: styleKey) {
+            let scratch = styling.paragraphStylingView
+            scratch.string = paragraph.model.source
+            style(scratch, using: paragraph.model)
+            live.beginEditing()
+            scratch.textStorage?.enumerateAttributes(in: NSRange(location: 0, length: scratch.textStorage?.length ?? 0)) { attributes, range, _ in
+                live.setAttributes(attributes, range: NSRange(location: paragraph.range.location + range.location, length: range.length))
+            }
+            live.endEditing()
+            updateTypingFont(editor)
+            styling.recordStyle(key: styleKey)
+            DispatchQueue.main.async { [weak styling] in styling?.refreshTables() }
+            return
+        }
+        let storage = incremental ? NSTextStorage(attributedString: live) : live
         styling?.isStyling = true
         defer {
+            styling?.recordStyle(key: styleKey)
             styling?.isStyling = false
             if styling?.restyleAfterStyling == true {
                 styling?.restyleAfterStyling = false
@@ -194,7 +225,31 @@ struct NativeEditor: NSViewRepresentable {
                                    .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
             if !markdownLens { collapse(range) }
         }
-        let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
+        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        let model = reading ?? (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
+        if let styling {
+            styling.retainHTML(Set(model.spans.filter { $0.kind == .htmlBlock }.map { (model.source as NSString).substring(with: $0.range) }))
+            let urls = Set(model.spans.compactMap { span -> URL? in
+                guard case .image(let path, _) = span.kind else { return nil }
+                return MarkdownTextView.imageURL(path, document: styling.documentURL, baseDirectory: styling.baseDirectory)
+            })
+            // HTML image subscribers are kept until their block disappears as well.
+            let htmlURLs = model.spans.filter { $0.kind == .htmlBlock }.flatMap { span -> [URL] in
+                let html = (model.source as NSString).substring(with: span.content)
+                let regex = try! NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
+                return regex.matches(in: html, range: NSRange(location: 0, length: (html as NSString).length)).compactMap {
+                    MarkdownTextView.htmlAttribute("src", in: (html as NSString).substring(with: $0.range))
+                }.map { MarkdownTextView.imageURL($0, document: styling.documentURL, baseDirectory: styling.baseDirectory) }
+            }
+            RemoteImages.shared.release(owner: styling, keeping: styling.loadRemoteImages ? urls.union(htmlURLs) : [])
+            styling.releaseLocalImages(keeping: urls.union(htmlURLs).filter(\.isFileURL))
+            let diagramKeys = Set(model.spans.compactMap { span -> String? in
+                guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { return nil }
+                return "\(dark):\((model.source as NSString).substring(with: span.content))"
+            })
+            MermaidRenderer.shared.release(owner: styling, keeping: diagramKeys)
+            styling.retainMath(model: model, dark: dark)
+        }
         let secondary = NSColor.secondaryLabelColor
         var hidden: [NSRange] = []
         /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
@@ -213,7 +268,6 @@ struct NativeEditor: NSViewRepresentable {
         textView?.htmlBlocks = [:]
         textView?.inlineHTMLImages = [:]
         textView?.styledEditedFormula = textView?.editedFormula
-        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         /// Markers are styled after every font, since the hidden ones measure their own width.
         func hide(_ ranges: [NSRange]) { hidden += ranges }
         func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
@@ -296,7 +350,7 @@ struct NativeEditor: NSViewRepresentable {
                 }
                 hide(span.markers)
                 let code = source.substring(with: span.content)
-                for (token, kind) in CodeToken.tokens(in: code) {
+                for (token, kind) in textView?.codeTokens(code) ?? CodeToken.tokens(in: code) {
                     guard let color = theme.code(kind) else { continue }
                     storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.location, length: token.length))
                 }
@@ -372,7 +426,7 @@ struct NativeEditor: NSViewRepresentable {
                 let font = storage.attribute(.font, at: span.content.location, effectiveRange: nil) as? NSFont ?? theme.prose(18)
                 // Typeset unless the caret is in it: then the LaTeX shows, to be edited in place.
                 if !markdownLens, let textView, !textView.isEditing(span),
-                   let formula = InlineFormula(latex: source.substring(with: span.content), size: font.pointSize, dark: dark) {
+                   let formula = textView.inlineFormula(source.substring(with: span.content), size: font.pointSize, dark: dark) {
                     textView.inlineFormulas[span.range.location] = formula
                     formulas.append((span, font, formula.width))
                     hide([span.range])
@@ -692,7 +746,7 @@ struct NativeEditor: NSViewRepresentable {
     /// The height a Mermaid block takes as a diagram, or nil when it failed and shows as code with the error below.
     func diagramHeight(_ span: MarkdownModel.Span, source: NSString, dark: Bool, textView: MarkdownTextView?) -> CGFloat? {
         let diagram = source.substring(with: span.content)
-        let state = MermaidRenderer.shared.state(of: diagram, dark: dark) { [weak textView] in textView?.restyle?() }
+        let state = MermaidRenderer.shared.state(of: diagram, dark: dark, owner: textView) { [weak textView] in textView?.scheduleRenderRestyle() }
         switch state {
         case .rendering: return MarkdownTextView.diagramPadding * 2 + 88
         case .rendered(let image): return MarkdownTextView.fitted(image.size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
@@ -781,6 +835,28 @@ struct NativeEditor: NSViewRepresentable {
     }
 }
 
+struct StyleKey: Equatable {
+    let theme: EditorTheme
+    let markdown: Bool
+    let width: CGFloat
+    let query: String
+    let matchCase: Bool
+    let match: NSRange?
+    let appearance: NSAppearance.Name
+    let file: URL?
+    let base: URL?
+    let root: URL?
+    let remote: Bool
+
+    init(native: NativeEditor, editor: NSTextView) {
+        theme = native.theme; markdown = native.markdownLens; width = native.columnWidth
+        query = native.findQuery; matchCase = native.matchCase; match = native.currentMatch
+        appearance = editor.effectiveAppearance.name
+        file = native.fileURL; base = native.baseDirectory; root = native.bundleRoot
+        remote = (editor as? MarkdownTextView)?.loadRemoteImages ?? true
+    }
+}
+
 class MarkdownTextView: NSTextView {
     static let openEditors = NSHashTable<MarkdownTextView>.weakObjects()
     /// Held strongly: the layout manager keeps its delegate weakly.
@@ -812,9 +888,12 @@ class MarkdownTextView: NSTextView {
     weak var tableDocument: MarkdownTextView?
     var tableSourceRange: NSRange?
     /// A theme change restyles the text, which redraws its fragments; renders made with the old one are dropped.
-    var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:] } } }
+    var theme = EditorTheme() { didSet { if theme != oldValue { releaseMath() } } }
     var loadRemoteImages = true {
-        didSet { if loadRemoteImages != oldValue { remoteImageLoaded() } }
+        didSet {
+            if !loadRemoteImages { RemoteImages.shared.release(owner: self) }
+            if loadRemoteImages != oldValue { remoteImageLoaded() }
+        }
     }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     /// Restyles the text, for results that arrive later, such as a rendered diagram.
@@ -824,15 +903,165 @@ class MarkdownTextView: NSTextView {
     var restyleAfterStyling = false
     /// Local images by URL; `nil` for a file that could not be read.
     private var imageCache: [URL: NSImage?] = [:]
+    private var imageStamps: [URL: FileStamp] = [:]
+    private var imageCosts: [URL: Int] = [:]
+    private var imageDataURIs: [URL: String] = [:]
+    private var imageRequests: [URL: Task<Void, Never>] = [:]
+    private var imageValidation: Task<Void, Never>?
+    private var lastImageCheck = ContinuousClock.now
 
-    /// Forgets local images, so files added or changed since show on the next paint.
-    func forgetImages() { imageCache.removeAll() }
-    private var mathCache: [String: NSImage] = [:]
+    /// Check cached identities on a worker; unrelated edits keep decoded images.
+    func forgetImages() {
+        guard !imageCache.isEmpty, imageValidation == nil, ContinuousClock.now - lastImageCheck >= .seconds(1) else { return }
+        lastImageCheck = .now
+        let stamps = imageStamps, urls = Array(imageCache.keys)
+        let work = Task.detached(priority: .utility) { urls.filter { FileStamp(at: $0) != stamps[$0] } }
+        imageValidation = Task { [weak self] in
+            let changed = await work.value
+            guard let self, !Task.isCancelled else { return }
+            self.imageValidation = nil
+            for url in changed { self.removeLocalImage(url) }
+            if !changed.isEmpty { self.scheduleRemoteRestyle() }
+        }
+    }
+
+    private func removeLocalImage(_ url: URL) {
+        imageRequests.removeValue(forKey: url)?.cancel()
+        imageCache[url] = nil
+        imageStamps[url] = nil
+        imageCosts[url] = nil
+        imageDataURIs[url] = nil
+    }
+
+    func releaseLocalImages(keeping urls: Set<URL>) {
+        for url in Set(imageCache.keys).union(imageRequests.keys).subtracting(urls) { removeLocalImage(url) }
+    }
+    private struct FormulaKey: Hashable {
+        let latex: String
+        let size: CGFloat
+        let dark: Bool
+    }
+    private var mathCache: [FormulaKey: NSImage?] = [:]
+    private var mathRequests: [FormulaKey: Task<Void, Never>] = [:]
+    private var formulaCache: [FormulaKey: InlineFormula] = [:]
+    private var tokenCache: [String: [(NSRange, CodeToken)]] = [:]
+
+    func codeTokens(_ code: String) -> [(NSRange, CodeToken)] {
+        if let tokens = tokenCache[code] { return tokens }
+        let tokens = CodeToken.tokens(in: code)
+        if code.utf8.count <= 256_000 {
+            if tokenCache.count >= 32 || tokenCache.keys.reduce(0, { $0 + $1.utf8.count }) > 2_000_000 { tokenCache = [:] }
+            tokenCache[code] = tokens
+        }
+        return tokens
+    }
+
+    func inlineFormula(_ latex: String, size: CGFloat, dark: Bool) -> InlineFormula? {
+        let key = FormulaKey(latex: latex.trimmingCharacters(in: .whitespacesAndNewlines), size: size, dark: dark)
+        if let formula = formulaCache[key] { return formula }
+        guard let formula = InlineFormula(latex: key.latex, size: size, dark: dark) else { return nil }
+        if formulaCache.count >= 256 { formulaCache = [:] }
+        formulaCache[key] = formula
+        return formula
+    }
+
+    func retainMath(model: MarkdownModel, dark: Bool) {
+        let source = model.source as NSString
+        let formulas = Set(model.spans.filter { $0.kind == .mathBlock || $0.kind == .inlineMath }
+            .map { source.substring(with: $0.content).trimmingCharacters(in: .whitespacesAndNewlines) })
+        for key in Set(mathCache.keys).union(mathRequests.keys) where !formulas.contains(key.latex) || key.dark != dark {
+            mathRequests.removeValue(forKey: key)?.cancel()
+            mathCache[key] = nil
+        }
+        formulaCache = formulaCache.filter { formulas.contains($0.key.latex) && $0.key.dark == dark }
+        let codes = Set(model.spans.compactMap { span -> String? in
+            guard case .codeBlock = span.kind else { return nil }
+            return source.substring(with: span.content)
+        })
+        tokenCache = tokenCache.filter { codes.contains($0.key) }
+    }
+
+    private func releaseMath() {
+        mathRequests.values.forEach { $0.cancel() }
+        mathRequests = [:]
+        mathCache = [:]
+        formulaCache = [:]
+        inlineFormulas = [:]
+    }
+
+    /// Visible blocks request bounded worker renders; drawing itself only reads completed images.
+    func displayMath(_ latex: String, dark: Bool) -> NSImage? {
+        let key = FormulaKey(latex: latex, size: 22 * theme.scale, dark: dark)
+        if let settled = mathCache[key] { return settled }
+        guard mathRequests[key] == nil, mathRequests.count < 4, latex.utf8.count <= 8192 else { return nil }
+        let work = Task.detached(priority: .userInitiated) { Self.mathPNG(latex, size: key.size, dark: dark) }
+        mathRequests[key] = Task { [weak self] in
+            let data = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard !Task.isCancelled, let self else { return }
+            self.mathRequests[key] = nil
+            let image = data.flatMap { NSImage(data: $0) }
+            image?.size = NSSize(width: (image?.size.width ?? 0) / 2, height: (image?.size.height ?? 0) / 2)
+            let cost = self.mathCache.values.compactMap { $0 }.reduce(0) { $0 + $1.size.width * $1.size.height * 16 }
+            if self.mathCache.count >= 64 || cost + (image.map { $0.size.width * $0.size.height * 16 } ?? 0) > 64_000_000 { self.mathCache = [:] }
+            self.mathCache[key] = .some(image)
+            self.needsDisplay = true
+        }
+        return nil
+    }
     private(set) var tableOverlays: [Int: TableRowView] = [:]
     private var modelCache: (version: Int, model: MarkdownModel)?
     /// Bumped whenever the characters change (not their attributes), so caches check validity without comparing the text.
     private(set) var textVersion = 0
     private var editingObserver: NSObjectProtocol?
+    private var pendingCharacterEdit: (range: NSRange, delta: Int)?
+    private var multipleCharacterEdits = false
+    private var styledSource: String?
+    private var styleKey: StyleKey?
+    lazy var paragraphStylingView = NSTextView()
+
+    func recordStyle(key: StyleKey) {
+        styledSource = string
+        styleKey = key
+        pendingCharacterEdit = nil
+        multipleCharacterEdits = false
+    }
+
+    func changedStyledParagraph(key: StyleKey) -> (range: NSRange, model: MarkdownModel)? {
+        guard styleKey == key, !multipleCharacterEdits, let edit = pendingCharacterEdit,
+              let styledSource, let previous = modelCache?.model, previous.source == styledSource else { return nil }
+        let old = styledSource as NSString, new = string as NSString
+        let oldLine = old.paragraphRange(for: NSRange(location: min(edit.range.location, old.length), length: 0))
+        let newLine = new.paragraphRange(for: NSRange(location: min(edit.range.location, new.length), length: 0))
+        guard oldLine.location == newLine.location, oldLine.length + edit.delta == newLine.length,
+              NSMaxRange(edit.range) <= NSMaxRange(newLine), previous.styledParagraph(oldLine) != nil,
+              let paragraph = model.styledParagraph(newLine) else { return nil }
+        return (newLine, paragraph)
+    }
+
+    isolated deinit {
+        stopObserving()
+    }
+
+    /// SwiftUI teardown can precede AppKit releasing its text view.
+    func stopObserving() {
+        releaseMath()
+        tokenCache = [:]
+        RemoteImages.shared.release(owner: self)
+        MermaidRenderer.shared.release(owner: self)
+        releaseLocalImages(keeping: [])
+        imageValidation?.cancel()
+        htmlLoads = [:]
+        if let editingObserver { NotificationCenter.default.removeObserver(editingObserver) }
+        editingObserver = nil
+        clipObservers.forEach(NotificationCenter.default.removeObserver)
+        clipObservers = []
+        if let frontmatterPopoverClose { NotificationCenter.default.removeObserver(frontmatterPopoverClose) }
+        frontmatterPopoverClose = nil
+        tableHoverWork?.cancel()
+        tableAnimation?.cancel()
+        tableOfContentsUpdate?.cancel()
+        for presentation in tablePresentations.values { presentation.reading.stopObserving() }
+    }
 
     private func observeEdits() {
         textLayoutManager?.delegate = layoutDelegate
@@ -840,8 +1069,11 @@ class MarkdownTextView: NSTextView {
         editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: nil, queue: nil) { [weak self] notification in
             guard let storage = notification.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
             let edited = ObjectIdentifier(storage)
+            let range = storage.editedRange, delta = storage.changeInLength
             MainActor.assumeIsolated {
                 guard let self, let current = self.textStorage, ObjectIdentifier(current) == edited else { return }
+                if self.pendingCharacterEdit != nil { self.multipleCharacterEdits = true }
+                self.pendingCharacterEdit = (range, delta)
                 self.textVersion += 1
                 self.scheduleTableOfContentsUpdate()
             }
@@ -862,30 +1094,36 @@ class MarkdownTextView: NSTextView {
     private var tableHoverWork: DispatchWorkItem?
     private var tableAnimation: Task<Void, Never>?
     private var tableAnimatedHeights: [Int: CGFloat] = [:]
+    private var tableWidthCache: (version: Int, width: CGFloat, values: [Int: [CGFloat]])?
+    private var tableRowIndices: [Int: Int] = [:]
+    private var refreshingTables = false
+    private var tableRefreshScheduled = false
 
     func hoverTableRow(_ start: Int?) {
         tableHoverWork?.cancel()
         guard hoveredTableRow != start else { return }
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            let previous = self.hoveredTableRow
             self.hoveredTableRow = start
-            self.animateTableHeights()
+            self.animateTableHeights(changed: Set([previous, start].compactMap { $0 }))
         }
         tableHoverWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + (start == nil ? 0.06 : hoveredTableRow == nil ? 0.12 : 0.06), execute: work)
     }
 
-    private func animateTableHeights() {
+    private func animateTableHeights(changed: Set<Int>) {
         tableAnimation?.cancel()
-        let rows = model.tables.flatMap { table in table.rows.filter { !$0.separator }.map { ($0, table) } }
+        let changed = changed.union(tableAnimatedHeights.keys)
+        let rows = model.tables.flatMap { table in table.rows.filter { !$0.separator && changed.contains($0.start) }.map { ($0, table) } }
         let from = Dictionary(uniqueKeysWithValues: rows.map { row, _ in
-            (row.start, tableAnimatedHeights[row.start] ?? tableOverlays.values.first { $0.rowStart == row.start }?.frame.height ?? 43)
+            (row.start, tableAnimatedHeights[row.start] ?? tableRowIndices[row.start].flatMap { tableOverlays[$0]?.frame.height } ?? 43)
         })
         tableAnimatedHeights = [:]
         let to = Dictionary(uniqueKeysWithValues: rows.map { ($0.0.start, tableRowHeight($0.0, table: $0.1)) })
-        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, from != to else { refreshTableHeights(); return }
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, from != to else { refreshTableHeights(changed: changed); return }
         tableAnimatedHeights = from
-        refreshTableHeights()
+        refreshTableHeights(changed: changed)
         let began = Date.timeIntervalSinceReferenceDate
         let version = textVersion
         tableAnimation = Task { [weak self] in
@@ -902,17 +1140,17 @@ class MarkdownTextView: NSTextView {
                 self.tableAnimatedHeights = to
                 for (start, target) in to { self.tableAnimatedHeights[start] = (from[start] ?? 43) + (target - (from[start] ?? 43)) * eased }
                 if t == 1 { self.tableAnimatedHeights = [:] }
-                self.refreshTableHeights()
+                self.refreshTableHeights(changed: changed)
                 if t == 1 { return }
             }
         }
     }
 
-    func refreshTableHeights() {
+    func refreshTableHeights(changed: Set<Int>? = nil) {
         guard rendered, let storage = textStorage else { return }
         storage.beginEditing()
         for table in model.tables {
-            for row in table.rows where !row.separator {
+            for row in table.rows where !row.separator && (changed?.contains(row.start) ?? true) {
                 let style = NSMutableParagraphStyle()
                 style.minimumLineHeight = tableRowHeight(row, table: table)
                 style.maximumLineHeight = style.minimumLineHeight
@@ -927,6 +1165,11 @@ class MarkdownTextView: NSTextView {
     }
 
     func tableWidths(_ table: MarkdownModel.Table) -> [CGFloat] {
+        if tableWidthCache?.version != textVersion || tableWidthCache?.width != columnWidth {
+            tableWidthCache = (textVersion, columnWidth, [:])
+        }
+        let key = table.rows.first?.start ?? 0
+        if let widths = tableWidthCache?.values[key] { return widths }
         let source = string as NSString
         let count = table.rows.first?.cells.count ?? 0
         guard count > 0 else { return [] }
@@ -949,6 +1192,7 @@ class MarkdownTextView: NSTextView {
             let remaining = columnWidth - compact.reduce(0) { $0 + widths[$1] }
             for col in widths.indices where !compact.contains(col) { widths[col] = remaining / CGFloat(count - compact.count) }
         }
+        tableWidthCache?.values[key] = widths
         return widths
     }
 
@@ -960,9 +1204,7 @@ class MarkdownTextView: NSTextView {
     }
 
     func tableRowExpanded(_ row: MarkdownTable.Row) -> Bool {
-        hoveredTableRow == row.start || tableOverlays.values.contains { overlay in
-            overlay.fields.contains { $0.currentEditor() != nil && row.start <= $0.sourceRange.location && $0.sourceRange.location <= row.end }
-        }
+        hoveredTableRow == row.start || (tableRowIndices[row.start].flatMap { tableOverlays[$0] }?.fields.contains { $0.currentEditor() != nil } == true)
     }
 
     func tableRowHeight(_ row: MarkdownTable.Row, table: MarkdownModel.Table) -> CGFloat {
@@ -990,7 +1232,9 @@ class MarkdownTextView: NSTextView {
     }
 
     func refreshTables() {
-        guard window != nil else { return }
+        guard window != nil, !refreshingTables else { return }
+        refreshingTables = true
+        defer { refreshingTables = false }
         if !rendered {
             tableHoverWork?.cancel()
             tableAnimation?.cancel()
@@ -1000,8 +1244,22 @@ class MarkdownTextView: NSTextView {
         let rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)] = rendered ? model.tables.flatMap { table in
             table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
         } : []
-        if let last = rows.last { settleLayout(through: last.0.end) }
+        tableRowIndices = Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) })
+        var wanted = Set(rows.indices)
+        if rows.count > 32, let manager = textLayoutManager, let content = manager.textContentManager {
+            manager.ensureLayout(for: visibleRect.insetBy(dx: 0, dy: -200))
+            manager.textViewportLayoutController.layoutViewport()
+            if let viewport = manager.textViewportLayoutController.viewportRange {
+                let start = content.offset(from: content.documentRange.location, to: viewport.location)
+                let end = content.offset(from: content.documentRange.location, to: viewport.endLocation)
+                let visible = rows.indices.filter { rows[$0].0.end >= start && rows[$0].0.start <= end }
+                wanted = Set(visible.flatMap { max(0, $0 - 5)...min(rows.count - 1, $0 + 5) })
+            } else { wanted = Set(rows.indices.prefix(32)) }
+            // Keep the field editor alive if its row scrolls out of view.
+            wanted.formUnion(tableOverlays.compactMap { rows.indices.contains($0.key) && $0.value.fields.contains { $0.currentEditor() != nil } ? $0.key : nil })
+        } else if let last = rows.last { settleLayout(through: last.0.end) }
         for (index, (row, header, table, ordinal)) in rows.enumerated() {
+            guard wanted.contains(index) else { continue }
             let line = textRect(NSRange(location: row.start, length: 1))
             let overlay = tableOverlays[index] ?? TableRowView()
             if overlay.superview == nil { addSubview(overlay) }
@@ -1039,11 +1297,14 @@ class MarkdownTextView: NSTextView {
                                }
                            })
         }
-        let locations = Set(rows.flatMap { $0.0.cells.map(\.location) })
+        let locations = Set(rows.enumerated().filter { wanted.contains($0.offset) }.flatMap { $0.element.0.cells.map(\.location) })
         for location in tablePresentations.keys.filter({ !locations.contains($0) }) {
-            tablePresentations.removeValue(forKey: location)?.removeFromSuperview()
+            if let presentation = tablePresentations.removeValue(forKey: location) {
+                presentation.reading.stopObserving()
+                presentation.removeFromSuperview()
+            }
         }
-        for index in tableOverlays.keys.filter({ $0 >= rows.count }) {
+        for index in tableOverlays.keys.filter({ !wanted.contains($0) }) {
             tableOverlays[index]?.removeFromSuperview()
             tableOverlays[index] = nil
         }
@@ -1301,6 +1562,13 @@ class MarkdownTextView: NSTextView {
     /// Overlays placed while outside the visible area are not painted when it grows to include them.
     private func visibleAreaChanged() {
         for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
+        guard !tableRefreshScheduled, !refreshingTables, model.tables.contains(where: { $0.rows.count > 32 }) else { return }
+        tableRefreshScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.tableRefreshScheduled = false
+            self.refreshTables()
+        }
     }
 
     /// Table overlays need a window to place themselves; the first style pass can run before the view has one.
@@ -1532,6 +1800,21 @@ class MarkdownTextView: NSTextView {
     var htmlBlocks: [Int: HTMLBlockRender] = [:]
     /// Rendered HTML blocks by width, accent and final HTML (images inlined), so unchanged blocks skip WebKit.
     private var htmlRenderCache: [String: HTMLBlockRender] = [:]
+    private var htmlLoads: [String: UUID] = [:]
+    private var htmlFailures: Set<String> = []
+    private var htmlCosts: [String: Int] = [:]
+    private var htmlInputs: [String: String] = [:]
+    private var activeHTML: Set<String> = []
+
+    func retainHTML(_ blocks: Set<String>) {
+        activeHTML = blocks
+        for key in Array(htmlInputs.keys) where !blocks.contains(htmlInputs[key]!) && htmlLoads[key] == nil {
+            htmlInputs[key] = nil
+            htmlRenderCache[key] = nil
+            htmlCosts[key] = nil
+            htmlFailures.remove(key)
+        }
+    }
     var inlineHTMLImages: [Int: (path: String, width: CGFloat, font: NSFont)] = [:]
 
     static func htmlAttribute(_ name: String, in html: String) -> String? {
@@ -1547,18 +1830,13 @@ class MarkdownTextView: NSTextView {
             let tag = (raw as NSString).substring(with: match.range)
             guard let path = Self.htmlAttribute("src", in: tag) else { continue }
             let replacement: String
-            switch image(for: path) {
+            switch image(for: path, embed: true) {
             case .image where ["http", "https"].contains(Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory).scheme?.lowercased() ?? ""):
                 // The downloaded bytes, not a TIFF of the decoded image: a screenshot as TIFF is megabytes of HTML.
                 replacement = RemoteImages.shared.dataURI(of: Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)) ?? ""
             case .image:
                 let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
-                if let data = try? Data(contentsOf: url),
-                   let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType {
-                    replacement = "data:\(mime);base64," + data.base64EncodedString()
-                } else {
-                    replacement = ""
-                }
+                replacement = imageDataURIs[url] ?? ""
             case .placeholder(let message):
                 html.replaceCharacters(in: match.range, with: "<span>\(MarkdownHTML.escape(message))</span>")
                 continue
@@ -1569,21 +1847,45 @@ class MarkdownTextView: NSTextView {
         // Importing HTML goes through WebKit and is slow; a restyle reuses every block whose HTML, images included, is unchanged.
         let key = "\(width)|\(theme.accent)|\(html)"
         if let cached = htmlRenderCache[key] { return cached }
-        guard let parsed = try? NSAttributedString(data: Data((html as String).utf8), options: [.documentType: NSAttributedString.DocumentType.html,
-                                                                                               .characterEncoding: String.Encoding.utf8.rawValue], documentAttributes: nil),
-              parsed.length > 0 else { return nil }
-        let text = NSMutableAttributedString(attributedString: parsed)
-        let all = NSRange(location: 0, length: text.length)
-        text.addAttribute(.foregroundColor, value: NSColor.labelColor, range: all)
-        var links: [NSRange] = []
-        text.enumerateAttribute(.link, in: all) { link, range, _ in if link != nil { links.append(range) } }
-        for range in links { text.addAttribute(.foregroundColor, value: theme.accent, range: range) }
-        let size = text.size()
-        let scale = min(1, width / max(size.width, 1))
-        let render = HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
-        if htmlRenderCache.count >= 64 { htmlRenderCache.removeAll() }
-        htmlRenderCache[key] = render
-        return render
+        guard htmlLoads[key] == nil, !htmlFailures.contains(key), htmlLoads.count < 2,
+              key.utf8.count <= 1_000_000, htmlRenderCache.count + htmlFailures.count < 64,
+              htmlCosts.values.reduce(0, +) + key.utf8.count <= 8_000_000 else { return nil }
+        let token = UUID()
+        let accent = theme.accent
+        htmlLoads[key] = token
+        htmlInputs[key] = raw
+        htmlCosts[key] = key.utf8.count
+        // WebKit's supported asynchronous importer keeps its work outside the typing/style call.
+        // Cold WebKit startup and a busy main thread can exceed five seconds.
+        NSAttributedString.loadFromHTML(string: html as String, options: [.timeout: 30]) { [weak self] parsed, _, _ in
+            let imported = HTMLImportResult(parsed)
+            // WebKit delivers this completion through its main-queue navigation callbacks and timeout.
+            MainActor.assumeIsolated {
+                guard let self, self.htmlLoads[key] == token else { return }
+                self.htmlLoads[key] = nil
+                guard self.activeHTML.contains(raw), self.columnWidth == width, self.theme.accent == accent else {
+                    self.htmlInputs[key] = nil
+                    self.htmlCosts[key] = nil
+                    self.scheduleRemoteRestyle()
+                    return
+                }
+                guard let parsed = imported.text, parsed.length > 0 else { self.htmlFailures.insert(key); return }
+                let text = NSMutableAttributedString(attributedString: parsed)
+                let all = NSRange(location: 0, length: text.length)
+                text.addAttribute(.foregroundColor, value: NSColor.labelColor, range: all)
+                var links: [NSRange] = []
+                text.enumerateAttribute(.link, in: all) { link, range, _ in if link != nil { links.append(range) } }
+                for range in links { text.addAttribute(.foregroundColor, value: accent, range: range) }
+                let cost = key.utf8.count + text.length * 64
+                guard self.htmlCosts.values.reduce(0, +) - (self.htmlCosts[key] ?? 0) + cost <= 8_000_000 else { self.htmlFailures.insert(key); return }
+                let size = text.size()
+                let scale = min(1, width / max(size.width, 1))
+                self.htmlRenderCache[key] = HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
+                self.htmlCosts[key] = cost
+                self.scheduleRemoteRestyle()
+            }
+        }
+        return nil
     }
 
     /// Where each decoration is drawn from, sorted: the character whose layout fragment draws it.
@@ -1661,7 +1963,7 @@ class MarkdownTextView: NSTextView {
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
             NSColor.quaternaryLabelColor.withAlphaComponent(0.08).setFill()
             rect.fill()
-            switch image(for: path) {
+            switch image(for: path, embed: true) {
             case .image(let image):
                 let ratio = min(rect.width / image.size.width, rect.height / image.size.height)
                 let size = NSSize(width: image.size.width * ratio, height: image.size.height * ratio)
@@ -1709,27 +2011,48 @@ class MarkdownTextView: NSTextView {
     }
 
     /// The image an `![](path)` shows: a file beside the document, or a remote image when Settings allows it.
-    func image(for path: String) -> ImageContent {
+    func image(for path: String, embed: Bool = false) -> ImageContent {
         let resolved = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
         if baseDirectory?.isFileURL == false && resolved.isFileURL { return .placeholder("Local image unavailable in a web document") }
         if ["http", "https"].contains(resolved.scheme?.lowercased() ?? "") {
             let remote = resolved
             let host = remote.host() ?? path
             guard loadRemoteImages else { return .placeholder("Remote image — \(host)") }
-            switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.scheduleRemoteRestyle() }) {
+            switch RemoteImages.shared.state(of: remote, owner: self, onChange: { [weak self] in self?.scheduleRemoteRestyle() }) {
             case .loaded(let image): return .image(image)
             case .loading: return .placeholder("Loading image — \(host)")
             case .failed: return .placeholder("Image unavailable — \(host)")
             }
         }
-        let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
-        if let cached = imageCache[url] {
+        let url = resolved
+        if let cached = imageCache[url], !embed || cached == nil || imageDataURIs[url] != nil {
             return cached.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
         }
-        // Misses are remembered too, so painting never touches the disk; restyling forgets them.
-        let image = NSImage(contentsOf: url)
-        imageCache[url] = .some(image)
-        return image.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
+        guard imageRequests[url] == nil, imageRequests.count < 4, imageCache.count < 64 else {
+            return imageCache[url]?.map(ImageContent.image) ?? .placeholder("Loading image — \(url.lastPathComponent)")
+        }
+        let work = Task.detached(priority: .utility) { () -> (FileStamp, CGImage, String?)? in
+            guard let stamp = FileStamp(at: url), let data = try? FileRead.data(at: url, maximumBytes: 10_000_000),
+                  let image = ImagePreparation.decode(data), FileStamp(at: url) == stamp, !Task.isCancelled else { return nil }
+            let uri = embed ? ImagePreparation.png(image).map { "data:image/png;base64," + $0.base64EncodedString() } : nil
+            return (stamp, image, uri)
+        }
+        imageRequests[url] = Task { [weak self] in
+            let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard let self, !Task.isCancelled else { return }
+            self.imageRequests[url] = nil
+            if let (stamp, image, uri) = result {
+                let cost = image.bytesPerRow * image.height + (uri?.utf8.count ?? 0)
+                if self.imageCosts.values.reduce(0, +) - (self.imageCosts[url] ?? 0) + cost <= 64_000_000 {
+                    self.imageCache[url] = .some(NSImage(cgImage: image, size: .zero))
+                    self.imageCosts[url] = cost
+                    self.imageDataURIs[url] = uri
+                } else { self.imageCache[url] = .some(nil) }
+                self.imageStamps[url] = stamp
+            } else { self.imageCache[url] = .some(nil) }
+            self.scheduleRemoteRestyle()
+        }
+        return imageCache[url]?.map(ImageContent.image) ?? .placeholder("Loading image — \(url.lastPathComponent)")
     }
 
     private func remoteImageLoaded() {
@@ -1739,6 +2062,7 @@ class MarkdownTextView: NSTextView {
     }
 
     private var remoteRestyleScheduled = false
+    func scheduleRenderRestyle() { scheduleRemoteRestyle() }
     /// Every style pass asks again for each image still loading, so one arrival can carry many callbacks,
     /// and several images arrive together: they share one restyle on the next turn of the run loop.
     private func scheduleRemoteRestyle() {
@@ -1824,9 +2148,7 @@ class MarkdownTextView: NSTextView {
             let rect = NSRect(x: 0, y: line.midY - 40, width: columnWidth, height: 80)
             guard rect.intersects(dirtyRect) else { continue }
             let latex = source.substring(with: span.content).trimmingCharacters(in: .whitespacesAndNewlines)
-            let key = "\(dark):\(latex)"
-            if let image = mathCache[key] ?? renderMath(latex, dark: dark) {
-                mathCache[key] = image
+            if let image = displayMath(latex, dark: dark) {
                 let frame = NSRect(x: rect.midX - image.size.width / 2, y: rect.midY - image.size.height / 2,
                                    width: image.size.width, height: image.size.height)
                 image.draw(in: frame)
@@ -1876,11 +2198,20 @@ class MarkdownTextView: NSTextView {
     }
 
     func renderMath(_ latex: String, dark: Bool) -> NSImage? {
-        guard let list = try? SwaTexEngine.displayList(for: latex, style: .display, color: dark ? .white : .black),
-              let data = ImageRenderer.png(for: list, options: RenderOptions(fontSize: 22 * theme.scale, padding: 2)),
+        guard let data = Self.mathPNG(latex, size: 22 * theme.scale, dark: dark),
               let image = NSImage(data: data) else { return nil }
         image.size = NSSize(width: image.size.width / 2, height: image.size.height / 2)
         return image
+    }
+
+    nonisolated private static func mathPNG(_ latex: String, size: CGFloat, dark: Bool) -> Data? {
+        guard !Task.isCancelled, latex.utf8.count <= 8192,
+              let list = try? SwaTexEngine.displayList(for: latex, style: .display, color: dark ? .white : .black) else { return nil }
+        let options = RenderOptions(fontSize: size, padding: 2)
+        let metrics = DisplayListRenderer.metrics(for: list, options: options)
+        guard !Task.isCancelled, metrics.width.isFinite, metrics.height.isFinite,
+              metrics.width <= 2048, metrics.height <= 2048, metrics.width * metrics.height <= 1_000_000 else { return nil }
+        return ImageRenderer.png(for: list, options: options)
     }
 
     /// Callout titles, code language labels, the footnotes rule and the frontmatter chip row.
@@ -2154,7 +2485,7 @@ class MarkdownTextView: NSTextView {
             return
         }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
-        if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
+        if event.modifierFlags.contains(.command), let link = link(at: characterIndexForInsertion(at: point)) {
             // A link to a heading in this document moves there.
             if link.target.hasPrefix("#") {
                 if !revealAnchor(LinkTarget.fragment(link.target) ?? "") { NSSound.beep() }
@@ -2168,6 +2499,15 @@ class MarkdownTextView: NSTextView {
             return
         }
         super.mouseDown(with: event)
+    }
+
+    /// Use the same CommonMark/GFM reading as styling, including reference links and autolinks.
+    func link(at location: Int) -> (target: String, text: String)? {
+        for span in model.spans where NSLocationInRange(location, span.range) {
+            guard case .link(let target) = span.kind else { continue }
+            return (target, (string as NSString).substring(with: span.content))
+        }
+        return nil
     }
 
     /// Flips a task's `[ ]`/`[x]` as one undoable edit. The caret and the page stay put: `insertText` would move the
@@ -2362,36 +2702,121 @@ class MarkdownTextView: NSTextView {
     }
 }
 
-/// Remote images for the Rendered lens, fetched once per URL and shared by every window.
+/// ImageIO decodes only a display-sized bitmap, on a worker, even for enormous source dimensions.
+nonisolated enum ImagePreparation {
+    static func png(_ image: CGImage) -> Data? {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, image, nil)
+        return CGImageDestinationFinalize(destination) ? data as Data : nil
+    }
+
+    static func decode(_ data: Data) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary) else { return nil }
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: 2048,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true
+        ] as CFDictionary)
+    }
+}
+
+/// Bounded remote images, shared by windows; subscribers are deduplicated by editor identity.
 @MainActor final class RemoteImages {
     static let shared = RemoteImages()
     enum State { case loading, loaded(NSImage), failed }
     private var states: [URL: State] = [:]
-    private var waiting: [URL: [() -> Void]] = [:]
-    /// Each loaded image's bytes as a data URI, for HTML blocks.
+    private var waiting: [URL: [ObjectIdentifier: () -> Void]] = [:]
+    private var tasks: [URL: Task<Void, Never>] = [:]
+    private var queue: [URL] = []
     private var dataURIs: [URL: String] = [:]
+    private var costs: [URL: Int] = [:]
+    private var encodings: [URL: Task<Void, Never>] = [:]
+    private let session: URLSession
+    private let budget = 64_000_000
+    var pendingCount: Int { tasks.count + queue.count }
+    var memoryCost: Int { costs.values.reduce(0, +) }
 
-    func dataURI(of url: URL) -> String? { dataURIs[url] }
+    init(session: URLSession = .shared) { self.session = session }
 
-    /// The image's state, starting a download on first request; `onChange` runs once when it settles.
-    func state(of url: URL, onChange: @escaping () -> Void) -> State {
+    func dataURI(of url: URL) -> String? {
+        if let uri = dataURIs[url] { return uri }
+        guard case .loaded(let image) = states[url], encodings[url] == nil,
+              let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let work = Task.detached(priority: .utility) { ImagePreparation.png(bitmap).map { "data:image/png;base64," + $0.base64EncodedString() } }
+        encodings[url] = Task { [weak self] in
+            let prepared = await work.value
+            guard let self, !Task.isCancelled, self.states[url] != nil else { return }
+            self.encodings[url] = nil
+            guard let uri = prepared else { return }
+            if self.costs.values.reduce(0, +) + uri.utf8.count <= self.budget {
+                self.dataURIs[url] = uri
+                self.costs[url, default: 0] += uri.utf8.count
+                self.waiting[url]?.values.forEach { $0() }
+            }
+        }
+        return nil
+    }
+
+    func release(owner: MarkdownTextView, keeping urls: Set<URL> = []) {
+        let id = ObjectIdentifier(owner)
+        for url in Array(waiting.keys) where !urls.contains(url) {
+            waiting[url]?.removeValue(forKey: id)
+            if waiting[url]?.isEmpty == true {
+                tasks.removeValue(forKey: url)?.cancel()
+                encodings.removeValue(forKey: url)?.cancel()
+                queue.removeAll { $0 == url }
+                states[url] = nil
+                waiting[url] = nil
+                dataURIs[url] = nil
+                costs[url] = nil
+            }
+        }
+        start()
+    }
+
+    func state(of url: URL, owner: MarkdownTextView, onChange: @escaping () -> Void) -> State {
+        guard url.absoluteString.utf8.count <= 8192 else { return .failed }
         if let state = states[url] {
-            if case .loading = state { waiting[url, default: []].append(onChange) }
+            waiting[url, default: [:]][ObjectIdentifier(owner)] = onChange
             return state
         }
+        guard states.count < 64 else { return .failed }
         states[url] = .loading
-        waiting[url] = [onChange]
-        Task {
-            let response = try? await URLSession.shared.data(from: url)
-            let ok = (response?.1 as? HTTPURLResponse).map { (200..<300).contains($0.statusCode) } ?? true
-            states[url] = ok ? response.flatMap { NSImage(data: $0.0) }.map { .loaded($0) } ?? .failed : .failed
-            if case .loaded = states[url], let response {
-                let mime = response.1.mimeType.flatMap { $0.hasPrefix("image/") ? $0 : nil } ?? "application/octet-stream"
-                dataURIs[url] = "data:\(mime);base64," + response.0.base64EncodedString()
-            }
-            waiting.removeValue(forKey: url)?.forEach { $0() }
-        }
+        waiting[url] = [ObjectIdentifier(owner): onChange]
+        queue.append(url)
+        start()
         return .loading
+    }
+
+    private func start() {
+        while tasks.count < 4, !queue.isEmpty {
+            let url = queue.removeFirst()
+            let session = session
+            let work = Task.detached(priority: .utility) { () -> CGImage? in
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 20
+                guard let (data, response) = try? await session.boundedData(for: request, maximumBytes: 10_000_000),
+                      let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
+                      !Task.isCancelled, let image = ImagePreparation.decode(data) else { return nil }
+                return image
+            }
+            tasks[url] = Task { [weak self] in
+                let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+                guard let self, !Task.isCancelled else { return }
+                self.tasks[url] = nil
+                if let image = result {
+                    let cost = image.bytesPerRow * image.height
+                    if self.costs.values.reduce(0, +) + cost <= self.budget {
+                        self.states[url] = .loaded(NSImage(cgImage: image, size: .zero))
+                        self.costs[url] = cost
+                    } else { self.states[url] = .failed }
+                } else { self.states[url] = .failed }
+                self.waiting[url]?.values.forEach { $0() }
+                self.start()
+            }
+        }
     }
 }
 
@@ -2409,7 +2834,8 @@ final class TableCellPresentation: NSView {
     private var expanded = false
     private var mediaSummary: String?
     private var header = false
-    private var contextVersion = -1
+    private var contextDefinitions: [String] = []
+    private var footnoteContext: [String] = []
     private(set) var fullHeight: CGFloat = 21
 
     override init(frame: NSRect) {
@@ -2442,11 +2868,16 @@ final class TableCellPresentation: NSView {
 
     func update(source: String, width: CGFloat, owner: MarkdownTextView, header: Bool) {
         self.owner = owner
-        let changed = contextVersion != owner.textVersion || self.header != header || self.source != source || self.width != width || theme != owner.theme
+        reading.tableDocument = owner
+        let definitions = reading.referenceDefinitions()
+        let footnotes = reading.footnoteDefinitions()
+        let changed = contextDefinitions != definitions || self.header != header || self.source != source || self.width != width || theme != owner.theme
+            || footnoteContext != footnotes || reading.bundleRoot != owner.bundleRoot
             || reading.documentURL != owner.documentURL || reading.baseDirectory != owner.baseDirectory
             || reading.loadRemoteImages != owner.loadRemoteImages || reading.effectiveAppearance.name != owner.effectiveAppearance.name
         guard changed else { return }
-        contextVersion = owner.textVersion
+        contextDefinitions = definitions
+        footnoteContext = footnotes
         self.header = header
         self.source = source
         self.width = max(1, width)
@@ -2522,7 +2953,7 @@ final class TableCellPresentation: NSView {
         thumbnail.image = nil
         if let image = spans.first(where: { if case .image = $0.kind { return true }; return false }),
            case .image(let path, _) = image.kind {
-            if case .image(let content) = owner.image(for: path) { thumbnail.image = content }
+            if case .image(let content) = reading.image(for: path) { thumbnail.image = content }
             mediaSummary = (thumbnail.image == nil ? "▧ " : "") + ((path.removingPercentEncoding ?? path).components(separatedBy: "/").last ?? path)
         } else if let diagram = spans.first(where: { if case .codeBlock(let language?, _) = $0.kind { return language.lowercased() == "mermaid" }; return false }) {
             let content = (reading.string as NSString).substring(with: diagram.content)
@@ -2565,11 +2996,35 @@ final class TableCellReading: MarkdownTextView {
     private var contextModel: (source: String, model: MarkdownModel)?
     private static let reference = try! NSRegularExpression(pattern: #"^!?\[([^\]]+)\](?:\[([^\]]*)\])?$"#)
 
-    override var model: MarkdownModel {
-        guard let owner = tableDocument, let range = tableSourceRange else { return super.model }
+    func footnoteDefinitions() -> [String] {
+        guard let owner = tableDocument else { return [] }
+        let labels = Set(contextSpans().compactMap { span -> String? in
+            guard case .footnoteReference(let label) = span.kind else { return nil }
+            return label
+        })
+        guard !labels.isEmpty else { return [] }
         let original = owner.string as NSString
-        let definitions = owner.model.spans.compactMap { span -> String? in
-            guard NSLocationInRange(span.range.location, range) else { return nil }
+        return owner.model.spans.compactMap { span in
+            guard case .footnoteDefinition(let label, _) = span.kind, labels.contains(label) else { return nil }
+            return original.substring(with: span.range)
+        }
+    }
+
+    private func contextSpans() -> ArraySlice<MarkdownModel.Span> {
+        guard let owner = tableDocument, let range = tableSourceRange else { return [] }
+        let spans = owner.model.spans
+        var low = 0, high = spans.count
+        while low < high {
+            let middle = (low + high) / 2
+            if spans[middle].range.location < range.location { low = middle + 1 } else { high = middle }
+        }
+        return spans[low...].prefix { $0.range.location < NSMaxRange(range) }
+    }
+
+    func referenceDefinitions() -> [String] {
+        guard let owner = tableDocument else { return [] }
+        let original = owner.string as NSString
+        return contextSpans().compactMap { span -> String? in
             let destination: String
             switch span.kind {
             case .link(let target): destination = target
@@ -2582,6 +3037,10 @@ final class TableCellReading: MarkdownTextView {
             let label = explicit.location != NSNotFound && explicit.length > 0 ? raw.substring(with: explicit) : raw.substring(with: match.range(at: 1))
             return "[" + label + "]: <" + destination.replacingOccurrences(of: ">", with: "%3E") + ">"
         }
+    }
+
+    override var model: MarkdownModel {
+        let definitions = referenceDefinitions()
         guard !definitions.isEmpty else { return super.model }
         let contextual = string + "\n\n" + definitions.joined(separator: "\n")
         if let contextModel, contextModel.source == contextual { return contextModel.model }
@@ -3174,7 +3633,7 @@ struct InlineFormula {
 
     init?(latex: String, size: CGFloat, dark: Bool) {
         let latex = latex.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !latex.isEmpty, let list = try? SwaTexEngine.displayList(for: latex, style: .text, color: dark ? .white : .black) else { return nil }
+        guard !latex.isEmpty, latex.utf8.count <= 8192, let list = try? SwaTexEngine.displayList(for: latex, style: .text, color: dark ? .white : .black) else { return nil }
         self.list = list
         options = RenderOptions(fontSize: size, padding: 1)
         metrics = DisplayListRenderer.metrics(for: list, options: options)
@@ -3189,4 +3648,3 @@ struct InlineFormula {
         context.restoreGState()
     }
 }
-

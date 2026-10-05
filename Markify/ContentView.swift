@@ -97,7 +97,11 @@ struct ContentView: View {
     @State private var knowledge: KnowledgeState?
     @State private var bundleRoot: URL?
     @State private var knowledgeTask: Task<Void, Never>?
+    @State private var retargetTask: Task<Void, Never>?
+    @State private var exportTask: Task<Void, Never>?
     @State private var conceptCache = ConceptCache()
+    @State private var derived = DocumentDerivedData()
+    @State private var documentIssues: [OKFDiagnostic] = []
     @State private var watcher = BundleWatcher()
     @State private var watchedRoot: URL?
     /// The body as of the last `generated` stamp, so only content edits count as a new change.
@@ -130,20 +134,18 @@ struct ContentView: View {
     }
     /// Visible find matches: every match in the Markdown lens, only rendered text in the Rendered lens.
     private var findMatches: [NSRange] {
-        guard showFind, !query.isEmpty, let textView,
-              let regex = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: query), options: matchCase ? [] : [.caseInsensitive]) else { return [] }
-        return regex.matches(in: document.text, range: NSRange(location: 0, length: (document.text as NSString).length)).map(\.range)
+        guard showFind, !query.isEmpty, let textView else { return [] }
+        return derived.matches(in: document.text, query: query, matchCase: matchCase)
             .filter { markdownLens || isVisible($0, in: textView) }
     }
     private func shortcut(_ id: String) -> KeyboardShortcut? { Shortcuts.keyboardShortcut(id, stored: shortcutOverrides) }
     private func shortcutLabel(_ id: String) -> String { Shortcuts.display(Shortcuts.key(id, stored: shortcutOverrides)) }
-    private var wordCount: Int { document.text.split(whereSeparator: \.isWhitespace).count }
+    private var wordCount: Int { derived.wordCount(in: document.text) }
     /// The document's OKF reading, when its frontmatter has a `type`.
     private var concept: OKFConcept? { conceptCache.concept(in: document.text) }
     private var aiAvailability: SystemLanguageModel.Availability { SystemLanguageModel.default.availability }
     private var documentModel: MarkdownModel {
-        if let editor = textView as? MarkdownTextView, editor.model.source == document.text { return editor.model }
-        return MarkdownModel(document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx")
+        derived.model(in: document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx", editor: textView as? MarkdownTextView)
     }
 
     var body: some View {
@@ -226,7 +228,7 @@ struct ContentView: View {
                     let model = documentModel
                     let editor = textView as? MarkdownTextView
                     DocumentInspector(
-                        headings: DocumentHeading.extract(from: model), links: DocumentLink.extract(from: model),
+                        headings: derived.headings(in: model), links: derived.documentLinks(in: model),
                         documentURL: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase,
                         readingOffset: reading.offset, readingProgress: reading.progress, accent: accent,
                         jump: { editor?.reveal($0) },
@@ -448,6 +450,12 @@ struct ContentView: View {
             }
         }
         .onDisappear {
+            knowledgeTask?.cancel()
+            retargetTask?.cancel()
+            exportTask?.cancel()
+            humanStampTask?.cancel()
+            aiTask?.cancel()
+            formatBarTask?.cancel()
             if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             rememberDocumentLens()
             libraryFolder?.stopAccessingSecurityScopedResource()
@@ -540,7 +548,13 @@ struct ContentView: View {
             }
             if concept != nil || knowledge != nil {
                 KnowledgeSection(state: knowledge, fileURL: fileURL, concept: concept, text: document.text,
-                                 issues: Knowledge.issues(text: document.text, fileURL: fileURL, root: bundleRoot), search: "", open: open)
+                                 issues: documentIssues, search: "", open: open)
+                    .task(id: KnowledgeIssueInput(text: document.text, fileURL: fileURL, root: bundleRoot)) {
+                        let source = document.text, file = fileURL, root = bundleRoot
+                        let work = Task.detached(priority: .utility) { Knowledge.issues(text: source, fileURL: file, root: root) }
+                        let issues = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+                        if !Task.isCancelled { documentIssues = issues }
+                    }
             }
             Text("Library").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.top, 12)
             if let libraryFolder {
@@ -606,18 +620,19 @@ struct ContentView: View {
 
     /// Rescans the OKF bundle around the document; plain notes outside a declared bundle skip the scan.
     private func refreshKnowledge() {
-        let root = Knowledge.root(for: fileURL, text: document.text, boundary: libraryFolder)
-        bundleRoot = root
-        if let root { LibrarySearch.shared.includeBundle(root) }
         if stampedBody == nil { stampedBody = FrontmatterBlock.body(of: document.text) }
-        if root != watchedRoot {
-            watchedRoot = root
-            // Other windows and tools edit the bundle too; rescan when its files change.
-            watcher.watch(root) { refreshKnowledge() }
-        }
         knowledgeTask?.cancel()
-        guard let root else { knowledge = nil; return }
+        let file = fileURL, source = document.text, boundary = libraryFolder
         knowledgeTask = Task {
+            let root = await Knowledge.root(for: file, text: source, boundary: boundary)
+            guard !Task.isCancelled else { return }
+            bundleRoot = root
+            if let root { LibrarySearch.shared.includeBundle(root) }
+            if root != watchedRoot {
+                watchedRoot = root
+                watcher.watch(root) { refreshKnowledge() }
+            }
+            guard let root else { knowledge = nil; return }
             let state = await Knowledge.load(root: root)
             if !Task.isCancelled { knowledge = state }
         }
@@ -1414,13 +1429,16 @@ struct ContentView: View {
         panel.nameFieldStringValue = title + (format == .html ? ".html" : ".pdf")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let context = DocumentExport.Context(source: document.text, documentURL: fileURL, bundleRoot: bundleRoot, destination: url, fallbackTitle: title, baseDirectory: reportBase)
-        Task {
+        exportTask?.cancel()
+        exportTask = Task {
             do {
                 switch format {
                 case .html: try await DocumentExport.writeHTML(context)
                 case .pdf: try await DocumentExport.writePDF(context)
                 }
-            } catch { NSAlert(error: error).runModal() }
+            } catch {
+                if !Task.isCancelled { NSAlert(error: error).runModal() }
+            }
         }
     }
 
@@ -1668,20 +1686,23 @@ struct ContentView: View {
         alert.addButton(withTitle: "Update Links")
         alert.addButton(withTitle: "Don’t Update")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
-        var failed: [String] = []
-        for other in others {
-            let updated = OKFEditing.retargetingLinks(in: other.source, document: other.url, root: root, movedFrom: old, to: new)
-            guard updated != other.source else { continue }
-            do { try updated.write(to: other.url, atomically: true, encoding: .utf8) } catch { failed.append(other.path) }
-        }
-        if ownUpdated != ownText, let textView {
+        if ownUpdated != ownText, let textView, textView.string == ownText {
             textView.insertText(ownUpdated, replacementRange: NSRange(location: 0, length: (ownText as NSString).length))
         }
-        if !failed.isEmpty {
-            let alert = NSAlert()
-            alert.messageText = "Some links couldn’t be updated."
-            alert.informativeText = failed.joined(separator: "\n")
-            alert.runModal()
+        retargetTask?.cancel()
+        retargetTask = Task {
+            let work = Task.detached(priority: .userInitiated) {
+                Knowledge.retargetFiles(others.map(\.url), root: root, movedFrom: old, to: new)
+            }
+            let failed = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard !Task.isCancelled else { return }
+            if !failed.isEmpty {
+                let alert = NSAlert()
+                alert.messageText = "Some links couldn’t be updated."
+                alert.informativeText = failed.map(\.path).joined(separator: "\n")
+                alert.runModal()
+            }
+            refreshKnowledge()
         }
     }
 

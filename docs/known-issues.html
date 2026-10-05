@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markify — Known issues</title>
@@ -204,11 +224,11 @@ pre.src{margin-top:12px;font:13px/1.7 var(--mono);background:var(--surface2);col
     <nav class="cols" aria-label="Footer">
       <div><h4>Product</h4><ul><li><a href="./#download">Download</a></li><li><a href="compare.html">Compare</a></li><li><a href="okf.html">Open Knowledge Format</a></li><li><a href="https://github.com/spaquet/markify/releases">Releases</a></li></ul></div>
       <div><h4>Help</h4><ul><li><a href="help/">User guide</a></li><li><a href="faq.html">FAQ</a></li><li><a href="known-issues.html">Known issues</a></li><li><a href="https://github.com/spaquet/markify/issues">Report an issue</a></li></ul></div>
-      <div><h4>Project</h4><ul><li><a href="https://github.com/spaquet/markify">Source</a></li><li><a href="https://github.com/sponsors/spaquet">Sponsor</a></li><li><a href="media-kit.html">Media kit</a></li><li><a href="legal.html">Legal &amp; privacy</a></li><li><a href="llms.txt">llms.txt</a></li></ul></div>
+      <div><h4>Project</h4><ul><li><a href="https://github.com/spaquet/markify">Source</a></li><li><a href="https://github.com/sponsors/spaquet">Sponsor</a></li><li><a href="media-kit.html">Media kit</a></li><li><a href="legal.html">Legal</a></li><li><a href="privacy.html">Privacy</a></li><li><a href="terms.html">Terms</a></li><li><button type="button" data-consent-open>Cookie settings</button></li><li><a href="llms.txt">llms.txt</a></li></ul></div>
     </nav>
   </div>
 </footer>
 
-<script src="assets/site.js?v=3" defer></script>
+<script src="assets/site.js?v=4" defer></script>
 </body>
 </html>

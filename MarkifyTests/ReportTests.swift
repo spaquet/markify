@@ -143,7 +143,7 @@ import Testing
                 if window.attachedSheet != nil { break }
                 try await Task.sleep(for: .milliseconds(50))
             }
-            let sheet = try #require(window.attachedSheet)
+            let sheet = try #require(window.attachedSheet, "Waiting for \(title)")
             let content = try #require(sheet.contentView)
             let choices = buttons(in: content)
             #expect(choices.map(\.title).contains("Keep My Changes"))
@@ -155,6 +155,9 @@ import Testing
                 if window.attachedSheet == nil { break }
                 try await Task.sleep(for: .milliseconds(50))
             }
+            // Sheet dismissal precedes the deferred response. Let it acknowledge the
+            // latest disk contents before starting a separate external-change batch.
+            try await Task.sleep(for: .milliseconds(100))
         }
         // Allow native document registration and the deferred watcher attachment to finish.
         try await Task.sleep(for: .milliseconds(300))

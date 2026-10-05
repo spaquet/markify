@@ -1,6 +1,7 @@
 import AppKit
 import MarkifyMarkdown
 import Testing
+import Synchronization
 @testable import Markify
 
 /// The Contents and Links pane: outline rows, the inserted table of contents, link targets and checks, and link fixes.
@@ -145,6 +146,27 @@ struct InspectorTests {
         #expect(WebLinkChecks.key(URL(string: "https://example.com/a#part")!) == "https://example.com/a")
     }
 
+    @Test @MainActor func concurrentWindowsShareFourWebProbes() async throws {
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: location) }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [DelayedProbeProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        DelayedProbeProtocol.counts.withLock { $0 = (0, 0, 0) }
+        let checks = WebLinkChecks(location: location, session: session)
+        let urls = (0..<12).map { URL(string: "https://probe.test/\($0)")! }
+        async let first: Void = checks.check(Array(urls.prefix(6)), force: false)
+        async let second: Void = checks.check(Array(urls.suffix(6)), force: false)
+        _ = await (first, second)
+        #expect(DelayedProbeProtocol.counts.withLock { $0.peak } == 4)
+        #expect(DelayedProbeProtocol.counts.withLock { $0.total } == 12)
+        #expect(urls.allSatisfy { checks.status(of: $0) == .ok })
+        #expect(checks.inFlight.isEmpty)
+        await checks.check(urls, force: false)
+        #expect(DelayedProbeProtocol.counts.withLock { $0.total } == 12)
+    }
+
     @Test @MainActor func fixingALinkRewritesEveryOccurrenceInOneUndo() {
         let source = "See [one](old.md) and [two](old.md).\n\nRef [three][r].\n\n[r]: old.md\n"
         let (window, editor) = LayoutFragmentTests.makeEditor(source)
@@ -265,6 +287,22 @@ final class StubProtocol: URLProtocol {
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: Data())
         client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+private final class DelayedProbeProtocol: URLProtocol, @unchecked Sendable {
+    static let counts = Mutex((active: 0, peak: 0, total: 0))
+    override class func canInit(with request: URLRequest) -> Bool { request.url?.host == "probe.test" }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.counts.withLock { $0.active += 1; $0.total += 1; $0.peak = max($0.peak, $0.active) }
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) { [self] in
+            Self.counts.withLock { $0.active -= 1 }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocolDidFinishLoading(self)
+        }
     }
     override func stopLoading() {}
 }

@@ -38,6 +38,32 @@ public struct MarkdownModel: Sendable {
 
     public func spans(where include: (Kind) -> Bool) -> [Span] { spans.filter { include($0.kind) } }
 
+    /// A complete text-storage paragraph containing only inline text styles. No second parse is needed.
+    public func styledParagraph(_ range: NSRange) -> MarkdownModel? {
+        let source = source as NSString
+        guard range.location >= 0, NSMaxRange(range) <= source.length else { return nil }
+        guard !tables.contains(where: { NSIntersectionRange($0.range, range).length > 0 }) else { return nil }
+        var selected: [Span] = []
+        for span in spans where NSIntersectionRange(span.range, range).length > 0 {
+            guard span.range.location >= range.location, NSMaxRange(span.range) <= NSMaxRange(range) else { return nil }
+            switch span.kind {
+            case .strong, .emphasis, .strikethrough, .inlineCode, .escape, .link: break
+            default: return nil
+            }
+            func shifted(_ value: NSRange) -> NSRange { NSRange(location: value.location - range.location, length: value.length) }
+            selected.append(Span(kind: span.kind, range: shifted(span.range), content: shifted(span.content), markers: span.markers.map(shifted)))
+        }
+        let text = source.substring(with: range)
+        // Definitions aren't spans, but can change links elsewhere in the document.
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("[") else { return nil }
+        return MarkdownModel(source: text, mdx: mdx, spans: selected)
+    }
+
+    private init(source: String, mdx: Bool, spans: [Span]) {
+        self.source = source; self.mdx = mdx; self.spans = spans
+        tables = []; lists = []
+    }
+
     // MARK: Types
 
     public struct Span: Hashable, Sendable {
@@ -178,8 +204,11 @@ enum Extensions {
     static func find(in source: NSString, outside literals: [NSRange]) -> [MarkdownModel.Span] {
         let text = source as String
         let whole = NSRange(location: 0, length: source.length)
-        var taken = literals
-        func free(_ range: NSRange) -> Bool { !taken.contains { NSIntersectionRange($0, range).length > 0 || (range.length == 0 && NSLocationInRange(range.location, $0)) } }
+        var taken = IndexSet()
+        for range in literals { taken.insert(integersIn: range.location..<NSMaxRange(range)) }
+        func free(_ range: NSRange) -> Bool {
+            range.length == 0 ? !taken.contains(range.location) : !taken.intersects(integersIn: range.location..<NSMaxRange(range))
+        }
         var spans: [MarkdownModel.Span] = []
 
         let block = try! NSRegularExpression(pattern: #"(?ms)^\$\$[ \t]*\n?(.*?)\n?\$\$[ \t]*$"#)
@@ -187,7 +216,7 @@ enum Extensions {
             let body = match.range(at: 1)
             spans.append(.init(kind: .mathBlock, range: match.range, content: body,
                                markers: [NSRange(location: match.range.location, length: 2), NSRange(location: NSMaxRange(match.range) - 2, length: 2)]))
-            taken.append(match.range)
+            taken.insert(integersIn: match.range.location..<NSMaxRange(match.range))
         }
         let definition = try! NSRegularExpression(pattern: #"(?m)^(\[\^)([^\]\n]+)(\]:)[ \t]*(.*)$"#)
         var definitionPrefixes: [NSRange] = []
@@ -197,13 +226,13 @@ enum Extensions {
                                range: match.range, content: match.range(at: 4), markers: [match.range(at: 1), match.range(at: 3)]))
             definitionPrefixes.append(NSRange(location: match.range.location, length: NSMaxRange(match.range(at: 3)) - match.range.location))
         }
-        taken += definitionPrefixes
+        for range in definitionPrefixes { taken.insert(integersIn: range.location..<NSMaxRange(range)) }
         // Pandoc's rule: no space inside either dollar, and no digit right after the closing one, so "$5 and $10" stays text.
         let inline = try! NSRegularExpression(pattern: #"(?<![\\$])\$(?![\s$])((?:\\.|[^$\n\\])+?)(?<![\s\\])\$(?![$\d])"#)
         for match in inline.matches(in: text, range: whole) where free(match.range) {
             spans.append(.init(kind: .inlineMath, range: match.range, content: match.range(at: 1),
                                markers: [NSRange(location: match.range.location, length: 1), NSRange(location: NSMaxRange(match.range) - 1, length: 1)]))
-            taken.append(match.range)
+            taken.insert(integersIn: match.range.location..<NSMaxRange(match.range))
         }
         let reference = try! NSRegularExpression(pattern: #"(\[\^)([^\]\n]+)(\])(?!:)"#)
         for match in reference.matches(in: text, range: whole) where free(match.range) {

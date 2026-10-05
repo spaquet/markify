@@ -46,18 +46,28 @@ import WebKit
         let mdx = MarkdownTextView.isMDX(context.documentURL)
         // Mermaid renders asynchronously in its web view, so diagrams are ready before the synchronous render.
         var diagrams: [String: String] = [:]
-        for span in MarkdownModel(context.source, mdx: mdx).spans {
-            guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { continue }
-            let code = (context.source as NSString).substring(with: span.content)
+        let scan = Task.detached(priority: .userInitiated) { () -> [String] in
+            guard !Task.isCancelled else { return [] }
+            return MarkdownModel(context.source, mdx: mdx).spans.compactMap { span -> String? in
+                guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { return nil }
+                return (context.source as NSString).substring(with: span.content)
+            }
+        }
+        let diagramSources = await withTaskCancellationHandler { await scan.value } onCancel: { scan.cancel() }
+        for code in diagramSources {
+            guard !Task.isCancelled else { return "" }
             let key = code.trimmingCharacters(in: .whitespacesAndNewlines)
             if diagrams[key] == nil, let svg = await MermaidRenderer.shared.svg(for: code) { diagrams[key] = svg }
         }
         let remote = UserDefaults.standard.object(forKey: "loadRemoteImages") as? Bool ?? true
         let pdf = format == .pdf
         // Math outlines, code colors and embedded images take a while on long documents; the main thread stays free.
-        return await Task.detached(priority: .userInitiated) {
-            render(context, diagrams: diagrams, pdf: pdf, remoteImages: remote)
-        }.value
+        let renderedDiagrams = diagrams
+        let work = Task.detached(priority: .userInitiated) {
+            guard !Task.isCancelled else { return "" }
+            return render(context, diagrams: renderedDiagrams, pdf: pdf, remoteImages: remote)
+        }
+        return await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
     }
 
     /// The page from already-rendered diagrams, on any thread.
@@ -71,11 +81,18 @@ import WebKit
     }
 
     static func writeHTML(_ context: Context) async throws {
-        try await page(context, for: .html).write(to: context.destination, atomically: true, encoding: .utf8)
+        let html = await page(context, for: .html)
+        try Task.checkCancellation()
+        let write = Task.detached(priority: .userInitiated) {
+            try Task.checkCancellation()
+            try html.write(to: context.destination, atomically: true, encoding: .utf8)
+        }
+        try await withTaskCancellationHandler { try await write.value } onCancel: { write.cancel() }
     }
 
     static func writePDF(_ context: Context) async throws {
         let html = await page(context, for: .pdf)
+        try Task.checkCancellation()
         try await PDFPrinter().print(html, to: context.destination)
     }
 
@@ -124,12 +141,56 @@ import WebKit
 /// Prints an HTML page to a paginated PDF with WebKit, on the paper size and margins of the default print setup.
 @MainActor final class PDFPrinter: NSObject, WKNavigationDelegate {
     private var loaded: CheckedContinuation<Void, Error>?
-    private var printed: CheckedContinuation<Bool, Never>?
+    private var printed: CheckedContinuation<Void, Error>?
+    private var deadline: Task<Void, Never>?
+    private var webView: WKWebView?
+    private var temporaryURL: URL?
+    // ponytail: AppKit has no public print cancellation. Keep one native job alive until its callback,
+    // even if our wait expires; this caps abandoned jobs and keeps the delegate valid.
+    private static var activePrint: PDFPrinter?
 
     func print(_ html: String, to url: URL) async throws {
+        try Task.checkCancellation()
+        guard Self.activePrint == nil else { throw CocoaError(.fileWriteUnknown) }
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("markify-export-\(UUID().uuidString).pdf")
+        temporaryURL = temporary
+        defer {
+            if Self.activePrint !== self {
+                try? FileManager.default.removeItem(at: temporary)
+                temporaryURL = nil
+            }
+        }
+        try await withTaskCancellationHandler {
+            try await performPrint(html, temporary: temporary)
+            try Task.checkCancellation()
+            // A cancelled native print can only write its temporary file, never the chosen destination.
+            let write = Task.detached(priority: .userInitiated) {
+                try Task.checkCancellation()
+                let data = try Data(contentsOf: temporary)
+                try Task.checkCancellation()
+                try data.write(to: url, options: .atomic)
+            }
+            try await withTaskCancellationHandler { try await write.value } onCancel: { write.cancel() }
+        } onCancel: {
+            Task { @MainActor in self.fail(CancellationError()) }
+        }
+    }
+
+    private func performPrint(_ html: String, temporary: URL) async throws {
+        var completed = false
+        defer {
+            deadline?.cancel()
+            deadline = nil
+            webView?.stopLoading()
+            webView?.navigationDelegate = nil
+            webView = nil
+            if !completed, Self.activePrint !== self {
+                try? FileManager.default.removeItem(at: temporary)
+            }
+        }
         let info = NSPrintInfo.shared.copy() as! NSPrintInfo
         info.jobDisposition = .save
-        info.dictionary()[NSPrintInfo.AttributeKey.jobSavingURL] = url
+        info.dictionary()[NSPrintInfo.AttributeKey.jobSavingURL] = temporary
         info.topMargin = 54; info.bottomMargin = 54; info.leftMargin = 60; info.rightMargin = 60
         info.horizontalPagination = .fit
         info.verticalPagination = .automatic
@@ -140,6 +201,7 @@ import WebKit
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: width, height: info.paperSize.height), configuration: configuration)
+        self.webView = webView
         webView.navigationDelegate = self
         // Printing needs the view in a window; this one never appears on screen.
         let window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: width, height: info.paperSize.height),
@@ -149,24 +211,53 @@ import WebKit
 
         try await withCheckedThrowingContinuation { continuation in
             loaded = continuation
+            armDeadline(seconds: 30)
             webView.loadHTMLString(html, baseURL: nil)
         }
+        try Task.checkCancellation()
+        guard Self.activePrint == nil else { throw CocoaError(.fileWriteUnknown) }
         let operation = webView.printOperation(with: info)
         operation.showsPrintPanel = false
         operation.showsProgressPanel = false
         operation.view?.frame = webView.bounds
-        let success = await withCheckedContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             printed = continuation
+            Self.activePrint = self
+            armDeadline(seconds: 60)
             operation.runModal(for: window, delegate: self, didRun: #selector(printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
         }
-        guard success, FileManager.default.fileExists(atPath: url.path) else { throw CocoaError(.fileWriteUnknown, userInfo: [NSFilePathErrorKey: url.path]) }
+        guard FileManager.default.fileExists(atPath: temporary.path) else { throw CocoaError(.fileWriteUnknown) }
+        completed = true
+    }
+
+    private func armDeadline(seconds: Double) {
+        deadline?.cancel()
+        deadline = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
+            self?.fail(URLError(.timedOut))
+        }
+    }
+
+    func fail(_ error: Error) {
+        deadline?.cancel()
+        deadline = nil
+        webView?.stopLoading()
+        let loading = loaded, printing = printed
+        loaded = nil
+        printed = nil
+        loading?.resume(throwing: error)
+        printing?.resume(throwing: error)
     }
 
     /// AppKit calls this on the print operation's own thread.
     @objc nonisolated private func printOperationDidRun(_ operation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
         Task { @MainActor in
-            printed?.resume(returning: success)
+            let continuation = printed
             printed = nil
+            if Self.activePrint === self { Self.activePrint = nil }
+            if success { continuation?.resume() }
+            else { continuation?.resume(throwing: CocoaError(.fileWriteUnknown)) }
+            if continuation == nil, let temporaryURL { try? FileManager.default.removeItem(at: temporaryURL) }
         }
     }
 
@@ -176,14 +267,14 @@ import WebKit
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        loaded?.resume(throwing: error)
-        loaded = nil
+        fail(error)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        loaded?.resume(throwing: error)
-        loaded = nil
+        fail(error)
     }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { fail(CocoaError(.fileReadUnknown)) }
 
     /// Only the page itself loads; links in the PDF stay links but are never followed here.
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {

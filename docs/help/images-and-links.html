@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Images and links — Markify Help</title>
@@ -14,17 +33,23 @@
 <meta property="og:url" content="https://spaquet.github.io/markify/help/images-and-links.html">
 <meta property="og:title" content="Images and links — Markify Help">
 <meta property="og:description" content="Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
 <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Images and links — Markify Help">
+<meta name="twitter:description" content="Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.">
+<meta name="twitter:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
 <link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
 <link rel="apple-touch-icon" href="../images/app-icon.png?v=2">
-<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/images-and-links.md" title="Markdown source">
+<link rel="alternate" type="text/markdown" href="https://spaquet.github.io/markify/help/images-and-links.md" title="Markdown version">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/images-and-links.html","name":"Images and links","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-02","description":"Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.","headline":"Images and links","inLanguage":"en","keywords":"image, picture, paste, drag, assets, remote images, link, note link, command click","url":"https://spaquet.github.io/markify/help/images-and-links.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/images-and-links.html","name":"Images and links","position":3}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-10-05","description":"Add images by dragging or pasting, link to other notes, and follow links with ⌘-click.","headline":"Images and links","inLanguage":"en","keywords":"image, picture, paste, drag, assets, remote images, link, note link, command click","url":"https://spaquet.github.io/markify/help/images-and-links.html"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -76,6 +101,7 @@
 </li>
 </ul>
 <p>Local images and linked Markdown files are read directly from their paths relative to the document. No folder permission step is needed.</p>
+<p>Editor images load in the background. Images above 10 MB show an unavailable placeholder; displayed images are reduced to at most 2,048 pixels on their longest side. Your original files stay unchanged.</p>
 <h3 id="remote-images">Remote images</h3>
 <p>Images from the web (<code>https://…</code>) load only when <strong>Settings › General › Load remote images</strong> is on. Turn it off to keep documents from contacting other servers.</p>
 <h2 id="links">Links</h2>
@@ -110,11 +136,13 @@
 <h4 id="summaries">Summaries</h4>
 <p><strong>✦</strong> opens a card under the link. If no summary is saved, Apple Intelligence writes one on your Mac; for websites, Markify downloads the page only when you choose ✦. Local <code>.md</code>, <code>.markdown</code> and <code>.mdx</code> files use their readable text; websites must return a text or HTML page. ✦ doesn't appear for other destinations or when Apple Intelligence is unavailable. The card shows progress, or an error with <strong>Try Again</strong>.</p>
 <p>Summaries are saved by Markify outside your Markdown file. The card shows when a summary was generated, notes <strong>Source changed</strong> when a local file changed since, and offers <strong>Refresh</strong>.</p>
+<p>Website summaries accept pages up to 1 MB, and local summaries accept Markdown files up to 2 MB. Older summaries and link checks may be removed as their caches fill; you can generate a summary or check a link again.</p>
 <p>Select part or all of a summary or error message to copy it with ⌘C or the standard text context menu. You can paste the copied text into your document or another app.</p>
 <h3 id="links-in-finder-previews">Links in Finder previews</h3>
 <p>Press Space on a Markdown file in Finder to preview it. Click a local <code>.md</code>, <code>.markdown</code> or <code>.mdx</code> link to open the linked file in Markify. Relative paths, including <code>../</code> and percent-encoded filenames, resolve beside the previewed file. A missing or inaccessible destination produces a selectable message at the bottom of the preview. Links to other local file types are not opened by this preview.</p>
+<p>Previews accept Markdown files up to 2 MB and omit remote images. Local images are included within the preview's image size limits.</p>
 <p>HTTPS links open in your browser; in-document anchors stay inside the preview. Links to a section of another Markdown file open that document without jumping to its section. No folder permission step is added.</p>
-<p class="edit">Updated 2026-10-02 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/images-and-links.md">Suggest a change on GitHub</a></p>
+<p class="edit">Updated 2026-10-05 · <a rel="noopener" href="https://github.com/spaquet/markify/blob/main/help/images-and-links.md">Suggest a change on GitHub</a></p>
 </article>
 <nav class="pager" aria-label="Previous and next topics"><a rel="prev" href="markdown.html"><span>Previous</span>Markdown support</a><a rel="next" href="library.html"><span>Next</span>Library and find</a></nav>
 </main>
@@ -132,10 +160,13 @@
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="../known-issues.html">Known issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="../legal.html">Legal &amp; privacy</a>
+      <a href="../legal.html">Legal</a>
+      <a href="../privacy.html">Privacy</a>
+      <a href="../terms.html">Terms</a>
+      <button type="button" data-consent-open>Cookie settings</button>
     </nav>
   </div>
 </footer>
-<script src="../assets/site.js?v=3" defer></script>
+<script src="../assets/site.js?v=4" defer></script>
 </body>
 </html>

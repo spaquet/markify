@@ -2,6 +2,18 @@ import Foundation
 import Testing
 @testable import OKFKit
 
+struct BundleResourceTests {
+    @Test func bundleSourceBudgetStopsBeforeReadingOversizedNotes() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try String(repeating: "x", count: 100).write(to: root.appendingPathComponent("note.md"), atomically: true, encoding: .utf8)
+        let bundle = OKFBundle.load(root: root, maximumBytes: 50)
+        #expect(bundle.truncated)
+        #expect(bundle.documents.isEmpty)
+    }
+}
+
 /// The spec's Attested Computation example (§10.2).
 private let revenue = """
 ---

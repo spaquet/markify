@@ -491,6 +491,7 @@ struct LinksTab: View {
             }
             summarizer.checkStaleness(files, openTexts: OpenTexts.snapshot())
         }
+        .onDisappear { summarizer.cancelAll() }
     }
 
     private func chip(_ value: Filter, _ label: String, _ count: Int) -> some View {
@@ -763,6 +764,7 @@ struct SummaryCard: View {
         .padding(.horizontal, 12).padding(.vertical, 10)
         .background(style.summaryBackground, in: .rect(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(InspectorStyle.intelligenceEdge, lineWidth: 1))
+        .onDisappear { summarizer.cancel(key) }
     }
 }
 

@@ -121,6 +121,21 @@ import Testing
         #expect(size == NSPrintInfo.shared.paperSize)
     }
 
+    @Test func cancelledPDFLeavesTheDestinationUntouched() async throws {
+        let destination = folder.appendingPathComponent("out/cancelled.pdf")
+        try Data("existing".utf8).write(to: destination)
+        let printer = PDFPrinter()
+        let job = Task { try await printer.print("<html><body>Cancelled export</body></html>", to: destination) }
+        // Yield until the navigation wait has been installed, then cancel it.
+        await Task.yield()
+        job.cancel()
+        do { try await job.value; Issue.record("Cancelled PDF export succeeded") }
+        catch { #expect(error is CancellationError) }
+        #expect(try Data(contentsOf: destination) == Data("existing".utf8))
+        // Failure after cancellation cannot resume the continuation a second time.
+        printer.fail(URLError(.timedOut))
+    }
+
     @Test func fixtureExportsCleanly() async throws {
         let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/editor-fixture.md")
         let page = await DocumentExport.page(context(try String(contentsOf: url, encoding: .utf8)), for: .html)

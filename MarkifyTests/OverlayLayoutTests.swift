@@ -278,7 +278,7 @@ import Testing
         withExtendedLifetime(window) {}
     }
 
-    @Test func tableImagesShowAThumbnailAndFootnotesUseTheDocument() throws {
+    @Test func tableImagesShowAThumbnailAndFootnotesUseTheDocument() async throws {
         let (window, editor) = makeEditor()
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
         let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 80, pixelsHigh: 50, bitsPerSample: 8,
@@ -290,6 +290,7 @@ import Testing
         editor.refreshTables()
         let fields = try #require(editor.tableOverlays[1]?.fields)
         let image = try #require(editor.tablePresentations[fields[1].sourceRange.location])
+        for _ in 0..<100 where image.thumbnail.image == nil { try await Task.sleep(for: .milliseconds(20)) }
         #expect(image.thumbnail.image != nil)
         #expect(!image.thumbnail.isHidden)
         #expect(image.fullHeight > 21)
