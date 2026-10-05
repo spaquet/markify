@@ -89,17 +89,22 @@ import Testing
         }
     }
 
-    @Test(arguments: ["", "Intro\n\n"]) func blockImageDrawsFromDocumentFolder(prefix: String) throws {
+    @Test(arguments: ["", "Intro\n\n"]) func blockImageDrawsFromDocumentFolder(prefix: String) async throws {
         let source = prefix + "![Hero](docs/images/og-image.jpg)\n"
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let (window, editor) = Self.makeEditor(source, fileURL: root.appendingPathComponent("README.md"))
         _ = window
+        for _ in 0..<100 {
+            if case .image = editor.image(for: "docs/images/og-image.jpg") { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        IncrementalStyleTests.native(editor.string).style(editor)
         let fragment = try #require(Self.fragment(editor, at: (prefix as NSString).length))
         let (rep, _) = Self.render(fragment)
         #expect(Self.inked(rep, in: CGRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh)) > 20_000)
     }
 
-    @Test func htmlBlockDrawsLocalImageWithoutChangingSource() throws {
+    @Test func htmlBlockDrawsLocalImageWithoutChangingSource() async throws {
         let source = """
         <p align="center">
           <a href="https://spaquet.github.io/markify/"><img src="docs/images/og-image.jpg" alt="Markify — One page, two lenses" width="100%"></a>
@@ -110,6 +115,15 @@ import Testing
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let (window, editor) = Self.makeEditor(source, fileURL: root.appendingPathComponent("README.md"))
         _ = window
+        editor.restyle = { [weak editor] in
+            guard let editor else { return }
+            IncrementalStyleTests.native(editor.string).style(editor)
+        }
+        for _ in 0..<250 {
+            editor.restyle?()
+            if let html = editor.htmlBlocks[0], html.text.size().height > 100 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
         #expect(editor.string == source)
         let html = try #require(editor.htmlBlocks[0])
         #expect(html.text.size().height > 100)
@@ -123,6 +137,7 @@ import Testing
         let manager = editor.textLayoutManager!
         guard let content = manager.textContentManager,
               let textLocation = content.location(content.documentRange.location, offsetBy: location) else { return nil }
+        manager.ensureLayout(for: manager.documentRange)
         return manager.textLayoutFragment(for: textLocation) as? MarkdownLayoutFragment
     }
 

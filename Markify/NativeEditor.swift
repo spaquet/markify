@@ -6,6 +6,13 @@ import SwaTexRender
 import SwiftUI
 import UniformTypeIdentifiers
 import ImageIO
+import WebKit
+
+// WebKit's legacy completion lacks actor annotations. Transfer an immutable copy, used only on MainActor.
+nonisolated private struct HTMLImportResult: @unchecked Sendable {
+    let text: NSAttributedString?
+    init(_ text: NSAttributedString?) { self.text = text.map { NSAttributedString(attributedString: $0) } }
+}
 
 enum SlashKey { case up, down, insert, dismiss }
 
@@ -201,8 +208,10 @@ struct NativeEditor: NSViewRepresentable {
                                    .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
             if !markdownLens { collapse(range) }
         }
+        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
         if let styling {
+            styling.retainHTML(Set(model.spans.filter { $0.kind == .htmlBlock }.map { (model.source as NSString).substring(with: $0.range) }))
             let urls = Set(model.spans.compactMap { span -> URL? in
                 guard case .image(let path, _) = span.kind else { return nil }
                 return MarkdownTextView.imageURL(path, document: styling.documentURL, baseDirectory: styling.baseDirectory)
@@ -216,6 +225,12 @@ struct NativeEditor: NSViewRepresentable {
                 }.map { MarkdownTextView.imageURL($0, document: styling.documentURL, baseDirectory: styling.baseDirectory) }
             }
             RemoteImages.shared.release(owner: styling, keeping: styling.loadRemoteImages ? urls.union(htmlURLs) : [])
+            styling.releaseLocalImages(keeping: urls.union(htmlURLs).filter(\.isFileURL))
+            let diagramKeys = Set(model.spans.compactMap { span -> String? in
+                guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { return nil }
+                return "\(dark):\((model.source as NSString).substring(with: span.content))"
+            })
+            MermaidRenderer.shared.release(owner: styling, keeping: diagramKeys)
         }
         let secondary = NSColor.secondaryLabelColor
         var hidden: [NSRange] = []
@@ -235,7 +250,6 @@ struct NativeEditor: NSViewRepresentable {
         textView?.htmlBlocks = [:]
         textView?.inlineHTMLImages = [:]
         textView?.styledEditedFormula = textView?.editedFormula
-        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         /// Markers are styled after every font, since the hidden ones measure their own width.
         func hide(_ ranges: [NSRange]) { hidden += ranges }
         func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
@@ -714,7 +728,7 @@ struct NativeEditor: NSViewRepresentable {
     /// The height a Mermaid block takes as a diagram, or nil when it failed and shows as code with the error below.
     func diagramHeight(_ span: MarkdownModel.Span, source: NSString, dark: Bool, textView: MarkdownTextView?) -> CGFloat? {
         let diagram = source.substring(with: span.content)
-        let state = MermaidRenderer.shared.state(of: diagram, dark: dark) { [weak textView] in textView?.restyle?() }
+        let state = MermaidRenderer.shared.state(of: diagram, dark: dark, owner: textView) { [weak textView] in textView?.scheduleRenderRestyle() }
         switch state {
         case .rendering: return MarkdownTextView.diagramPadding * 2 + 88
         case .rendered(let image): return MarkdownTextView.fitted(image.size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
@@ -849,9 +863,39 @@ class MarkdownTextView: NSTextView {
     var restyleAfterStyling = false
     /// Local images by URL; `nil` for a file that could not be read.
     private var imageCache: [URL: NSImage?] = [:]
+    private var imageStamps: [URL: FileStamp] = [:]
+    private var imageCosts: [URL: Int] = [:]
+    private var imageDataURIs: [URL: String] = [:]
+    private var imageRequests: [URL: Task<Void, Never>] = [:]
+    private var imageValidation: Task<Void, Never>?
+    private var lastImageCheck = ContinuousClock.now
 
-    /// Forgets local images, so files added or changed since show on the next paint.
-    func forgetImages() { imageCache.removeAll() }
+    /// Check cached identities on a worker; unrelated edits keep decoded images.
+    func forgetImages() {
+        guard !imageCache.isEmpty, imageValidation == nil, ContinuousClock.now - lastImageCheck >= .seconds(1) else { return }
+        lastImageCheck = .now
+        let stamps = imageStamps, urls = Array(imageCache.keys)
+        let work = Task.detached(priority: .utility) { urls.filter { FileStamp(at: $0) != stamps[$0] } }
+        imageValidation = Task { [weak self] in
+            let changed = await work.value
+            guard let self, !Task.isCancelled else { return }
+            self.imageValidation = nil
+            for url in changed { self.removeLocalImage(url) }
+            if !changed.isEmpty { self.scheduleRemoteRestyle() }
+        }
+    }
+
+    private func removeLocalImage(_ url: URL) {
+        imageRequests.removeValue(forKey: url)?.cancel()
+        imageCache[url] = nil
+        imageStamps[url] = nil
+        imageCosts[url] = nil
+        imageDataURIs[url] = nil
+    }
+
+    func releaseLocalImages(keeping urls: Set<URL>) {
+        for url in Set(imageCache.keys).union(imageRequests.keys).subtracting(urls) { removeLocalImage(url) }
+    }
     private var mathCache: [String: NSImage] = [:]
     private(set) var tableOverlays: [Int: TableRowView] = [:]
     private var modelCache: (version: Int, model: MarkdownModel)?
@@ -866,6 +910,10 @@ class MarkdownTextView: NSTextView {
     /// SwiftUI teardown can precede AppKit releasing its text view.
     func stopObserving() {
         RemoteImages.shared.release(owner: self)
+        MermaidRenderer.shared.release(owner: self)
+        releaseLocalImages(keeping: [])
+        imageValidation?.cancel()
+        htmlLoads = [:]
         if let editingObserver { NotificationCenter.default.removeObserver(editingObserver) }
         editingObserver = nil
         clipObservers.forEach(NotificationCenter.default.removeObserver)
@@ -1610,6 +1658,21 @@ class MarkdownTextView: NSTextView {
     var htmlBlocks: [Int: HTMLBlockRender] = [:]
     /// Rendered HTML blocks by width, accent and final HTML (images inlined), so unchanged blocks skip WebKit.
     private var htmlRenderCache: [String: HTMLBlockRender] = [:]
+    private var htmlLoads: [String: UUID] = [:]
+    private var htmlFailures: Set<String> = []
+    private var htmlCosts: [String: Int] = [:]
+    private var htmlInputs: [String: String] = [:]
+    private var activeHTML: Set<String> = []
+
+    func retainHTML(_ blocks: Set<String>) {
+        activeHTML = blocks
+        for key in Array(htmlInputs.keys) where !blocks.contains(htmlInputs[key]!) && htmlLoads[key] == nil {
+            htmlInputs[key] = nil
+            htmlRenderCache[key] = nil
+            htmlCosts[key] = nil
+            htmlFailures.remove(key)
+        }
+    }
     var inlineHTMLImages: [Int: (path: String, width: CGFloat, font: NSFont)] = [:]
 
     static func htmlAttribute(_ name: String, in html: String) -> String? {
@@ -1625,18 +1688,13 @@ class MarkdownTextView: NSTextView {
             let tag = (raw as NSString).substring(with: match.range)
             guard let path = Self.htmlAttribute("src", in: tag) else { continue }
             let replacement: String
-            switch image(for: path) {
+            switch image(for: path, embed: true) {
             case .image where ["http", "https"].contains(Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory).scheme?.lowercased() ?? ""):
                 // The downloaded bytes, not a TIFF of the decoded image: a screenshot as TIFF is megabytes of HTML.
                 replacement = RemoteImages.shared.dataURI(of: Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)) ?? ""
             case .image:
                 let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
-                if let data = try? Data(contentsOf: url),
-                   let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType {
-                    replacement = "data:\(mime);base64," + data.base64EncodedString()
-                } else {
-                    replacement = ""
-                }
+                replacement = imageDataURIs[url] ?? ""
             case .placeholder(let message):
                 html.replaceCharacters(in: match.range, with: "<span>\(MarkdownHTML.escape(message))</span>")
                 continue
@@ -1647,21 +1705,41 @@ class MarkdownTextView: NSTextView {
         // Importing HTML goes through WebKit and is slow; a restyle reuses every block whose HTML, images included, is unchanged.
         let key = "\(width)|\(theme.accent)|\(html)"
         if let cached = htmlRenderCache[key] { return cached }
-        guard let parsed = try? NSAttributedString(data: Data((html as String).utf8), options: [.documentType: NSAttributedString.DocumentType.html,
-                                                                                               .characterEncoding: String.Encoding.utf8.rawValue], documentAttributes: nil),
-              parsed.length > 0 else { return nil }
-        let text = NSMutableAttributedString(attributedString: parsed)
-        let all = NSRange(location: 0, length: text.length)
-        text.addAttribute(.foregroundColor, value: NSColor.labelColor, range: all)
-        var links: [NSRange] = []
-        text.enumerateAttribute(.link, in: all) { link, range, _ in if link != nil { links.append(range) } }
-        for range in links { text.addAttribute(.foregroundColor, value: theme.accent, range: range) }
-        let size = text.size()
-        let scale = min(1, width / max(size.width, 1))
-        let render = HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
-        if htmlRenderCache.count >= 64 { htmlRenderCache.removeAll() }
-        htmlRenderCache[key] = render
-        return render
+        guard htmlLoads[key] == nil, !htmlFailures.contains(key), htmlLoads.count < 2,
+              key.utf8.count <= 1_000_000, htmlRenderCache.count + htmlFailures.count < 64 else { return nil }
+        let token = UUID()
+        let accent = theme.accent
+        htmlLoads[key] = token
+        htmlInputs[key] = raw
+        // WebKit's supported asynchronous importer keeps its work outside the typing/style call.
+        NSAttributedString.loadFromHTML(string: html as String, options: [.timeout: 5]) { [weak self] parsed, _, _ in
+            let imported = HTMLImportResult(parsed)
+            // WebKit delivers this completion through its main-queue navigation callbacks and timeout.
+            MainActor.assumeIsolated {
+                guard let self, self.htmlLoads[key] == token else { return }
+                self.htmlLoads[key] = nil
+                guard self.activeHTML.contains(raw) else {
+                    self.htmlInputs[key] = nil
+                    self.scheduleRemoteRestyle()
+                    return
+                }
+                guard let parsed = imported.text, parsed.length > 0 else { self.htmlFailures.insert(key); return }
+                let text = NSMutableAttributedString(attributedString: parsed)
+                let all = NSRange(location: 0, length: text.length)
+                text.addAttribute(.foregroundColor, value: NSColor.labelColor, range: all)
+                var links: [NSRange] = []
+                text.enumerateAttribute(.link, in: all) { link, range, _ in if link != nil { links.append(range) } }
+                for range in links { text.addAttribute(.foregroundColor, value: accent, range: range) }
+                let cost = key.utf8.count + text.length * 64
+                guard self.htmlCosts.values.reduce(0, +) + cost <= 8_000_000 else { self.htmlFailures.insert(key); return }
+                let size = text.size()
+                let scale = min(1, width / max(size.width, 1))
+                self.htmlRenderCache[key] = HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
+                self.htmlCosts[key] = cost
+                self.scheduleRemoteRestyle()
+            }
+        }
+        return nil
     }
 
     /// Where each decoration is drawn from, sorted: the character whose layout fragment draws it.
@@ -1739,7 +1817,7 @@ class MarkdownTextView: NSTextView {
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
             NSColor.quaternaryLabelColor.withAlphaComponent(0.08).setFill()
             rect.fill()
-            switch image(for: path) {
+            switch image(for: path, embed: true) {
             case .image(let image):
                 let ratio = min(rect.width / image.size.width, rect.height / image.size.height)
                 let size = NSSize(width: image.size.width * ratio, height: image.size.height * ratio)
@@ -1787,7 +1865,7 @@ class MarkdownTextView: NSTextView {
     }
 
     /// The image an `![](path)` shows: a file beside the document, or a remote image when Settings allows it.
-    func image(for path: String) -> ImageContent {
+    func image(for path: String, embed: Bool = false) -> ImageContent {
         let resolved = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
         if baseDirectory?.isFileURL == false && resolved.isFileURL { return .placeholder("Local image unavailable in a web document") }
         if ["http", "https"].contains(resolved.scheme?.lowercased() ?? "") {
@@ -1800,14 +1878,35 @@ class MarkdownTextView: NSTextView {
             case .failed: return .placeholder("Image unavailable — \(host)")
             }
         }
-        let url = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
-        if let cached = imageCache[url] {
+        let url = resolved
+        if let cached = imageCache[url], !embed || cached == nil || imageDataURIs[url] != nil {
             return cached.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
         }
-        // Misses are remembered too, so painting never touches the disk; restyling forgets them.
-        let image = NSImage(contentsOf: url)
-        imageCache[url] = .some(image)
-        return image.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
+        guard imageRequests[url] == nil, imageRequests.count < 4, imageCache.count < 64 else {
+            return imageCache[url]?.map(ImageContent.image) ?? .placeholder("Loading image — \(url.lastPathComponent)")
+        }
+        let work = Task.detached(priority: .utility) { () -> (FileStamp, CGImage, String?)? in
+            guard let stamp = FileStamp(at: url), let data = try? FileRead.data(at: url, maximumBytes: 10_000_000),
+                  let image = ImagePreparation.decode(data), FileStamp(at: url) == stamp, !Task.isCancelled else { return nil }
+            let uri = embed ? ImagePreparation.png(image).map { "data:image/png;base64," + $0.base64EncodedString() } : nil
+            return (stamp, image, uri)
+        }
+        imageRequests[url] = Task { [weak self] in
+            let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard let self, !Task.isCancelled else { return }
+            self.imageRequests[url] = nil
+            if let (stamp, image, uri) = result {
+                let cost = image.bytesPerRow * image.height + (uri?.utf8.count ?? 0)
+                if self.imageCosts.values.reduce(0, +) - (self.imageCosts[url] ?? 0) + cost <= 64_000_000 {
+                    self.imageCache[url] = .some(NSImage(cgImage: image, size: .zero))
+                    self.imageCosts[url] = cost
+                    self.imageDataURIs[url] = uri
+                } else { self.imageCache[url] = .some(nil) }
+                self.imageStamps[url] = stamp
+            } else { self.imageCache[url] = .some(nil) }
+            self.scheduleRemoteRestyle()
+        }
+        return imageCache[url]?.map(ImageContent.image) ?? .placeholder("Loading image — \(url.lastPathComponent)")
     }
 
     private func remoteImageLoaded() {
@@ -1817,6 +1916,7 @@ class MarkdownTextView: NSTextView {
     }
 
     private var remoteRestyleScheduled = false
+    func scheduleRenderRestyle() { scheduleRemoteRestyle() }
     /// Every style pass asks again for each image still loading, so one arrival can carry many callbacks,
     /// and several images arrive together: they share one restyle on the next turn of the run loop.
     private func scheduleRemoteRestyle() {
@@ -2451,6 +2551,13 @@ class MarkdownTextView: NSTextView {
 
 /// ImageIO decodes only a display-sized bitmap, on a worker, even for enormous source dimensions.
 nonisolated enum ImagePreparation {
+    static func png(_ image: CGImage) -> Data? {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, image, nil)
+        return CGImageDestinationFinalize(destination) ? data as Data : nil
+    }
+
     static func decode(_ data: Data) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary) else { return nil }
         return CGImageSourceCreateThumbnailAtIndex(source, 0, [
@@ -2470,7 +2577,6 @@ nonisolated enum ImagePreparation {
     private var waiting: [URL: [ObjectIdentifier: () -> Void]] = [:]
     private var tasks: [URL: Task<Void, Never>] = [:]
     private var queue: [URL] = []
-    private var original: [URL: (data: Data, mime: String)] = [:]
     private var dataURIs: [URL: String] = [:]
     private var costs: [URL: Int] = [:]
     private var encodings: [URL: Task<Void, Never>] = [:]
@@ -2483,12 +2589,14 @@ nonisolated enum ImagePreparation {
 
     func dataURI(of url: URL) -> String? {
         if let uri = dataURIs[url] { return uri }
-        guard let bytes = original[url], encodings[url] == nil else { return nil }
-        let work = Task.detached(priority: .utility) { "data:\(bytes.mime);base64," + bytes.data.base64EncodedString() }
+        guard case .loaded(let image) = states[url], encodings[url] == nil,
+              let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let work = Task.detached(priority: .utility) { ImagePreparation.png(bitmap).map { "data:image/png;base64," + $0.base64EncodedString() } }
         encodings[url] = Task { [weak self] in
-            let uri = await work.value
+            let prepared = await work.value
             guard let self, !Task.isCancelled, self.states[url] != nil else { return }
             self.encodings[url] = nil
+            guard let uri = prepared else { return }
             if self.costs.values.reduce(0, +) + uri.utf8.count <= self.budget {
                 self.dataURIs[url] = uri
                 self.costs[url, default: 0] += uri.utf8.count
@@ -2508,7 +2616,6 @@ nonisolated enum ImagePreparation {
                 queue.removeAll { $0 == url }
                 states[url] = nil
                 waiting[url] = nil
-                original[url] = nil
                 dataURIs[url] = nil
                 costs[url] = nil
             }
@@ -2534,23 +2641,22 @@ nonisolated enum ImagePreparation {
         while tasks.count < 4, !queue.isEmpty {
             let url = queue.removeFirst()
             let session = session
-            let work = Task.detached(priority: .utility) { () -> (Data, String, CGImage)? in
+            let work = Task.detached(priority: .utility) { () -> CGImage? in
                 var request = URLRequest(url: url)
                 request.timeoutInterval = 20
                 guard let (data, response) = try? await session.boundedData(for: request, maximumBytes: 10_000_000),
                       let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
                       !Task.isCancelled, let image = ImagePreparation.decode(data) else { return nil }
-                return (data, response.mimeType ?? "application/octet-stream", image)
+                return image
             }
             tasks[url] = Task { [weak self] in
                 let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
                 guard let self, !Task.isCancelled else { return }
                 self.tasks[url] = nil
-                if let (data, mime, image) = result {
-                    let cost = image.bytesPerRow * image.height + data.count
+                if let image = result {
+                    let cost = image.bytesPerRow * image.height
                     if self.costs.values.reduce(0, +) + cost <= self.budget {
                         self.states[url] = .loaded(NSImage(cgImage: image, size: .zero))
-                        self.original[url] = (data, mime)
                         self.costs[url] = cost
                     } else { self.states[url] = .failed }
                 } else { self.states[url] = .failed }
@@ -2690,7 +2796,7 @@ final class TableCellPresentation: NSView {
         thumbnail.image = nil
         if let image = spans.first(where: { if case .image = $0.kind { return true }; return false }),
            case .image(let path, _) = image.kind {
-            if case .image(let content) = owner.image(for: path) { thumbnail.image = content }
+            if case .image(let content) = reading.image(for: path) { thumbnail.image = content }
             mediaSummary = (thumbnail.image == nil ? "▧ " : "") + ((path.removingPercentEncoding ?? path).components(separatedBy: "/").last ?? path)
         } else if let diagram = spans.first(where: { if case .codeBlock(let language?, _) = $0.kind { return language.lowercased() == "mermaid" }; return false }) {
             let content = (reading.string as NSString).substring(with: diagram.content)
