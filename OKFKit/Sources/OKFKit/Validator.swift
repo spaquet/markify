@@ -35,7 +35,12 @@ public enum OKFValidator {
 
     /// Every document, plus broken links as information.
     public static func validate(bundle: OKFBundle, now: Date = Date()) -> [OKFDiagnostic] {
-        (version(bundle.okfVersion).map { [$0] } ?? []) + bundle.documents.flatMap { validate(document: $0, in: bundle, now: now) }
+        var issues = version(bundle.okfVersion).map { [$0] } ?? []
+        for document in bundle.documents {
+            guard !Task.isCancelled else { break }
+            issues += validate(document: document, in: bundle, now: now)
+        }
+        return issues
     }
 
     /// A notice when the bundle targets a version this reader does not know; it is still read best effort (§12).

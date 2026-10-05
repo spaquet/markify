@@ -63,18 +63,24 @@ public struct OKFBundle: Sendable {
     public let truncated: Bool
 
     /// Reads every `.md` file under `root`, skipping hidden files and packages.
-    public static func load(root: URL, limit: Int = 5000) -> OKFBundle {
+    public static func load(root: URL, limit: Int = 5000, maximumBytes: Int = 50_000_000) -> OKFBundle {
         let root = root.standardizedFileURL
         var documents: [OKFDocument] = []
         var truncated = false
+        var bytes = 0
         let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey],
                                                         options: [.skipsHiddenFiles, .skipsPackageDescendants])
         while let url = enumerator?.nextObject() as? URL {
+            guard !Task.isCancelled else { truncated = true; break }
             guard url.pathExtension.lowercased() == "md",
                   (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
             guard documents.count < limit else { truncated = true; break }
+            guard let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+                  size <= maximumBytes - bytes else { truncated = true; break }
             guard let source = try? String(contentsOf: url, encoding: .utf8),
                   let path = OKFLinks.bundlePath(of: url, root: root) else { continue }
+            guard source.utf8.count <= maximumBytes - bytes else { truncated = true; break }
+            bytes += source.utf8.count
             documents.append(OKFDocument(url: url.standardizedFileURL, path: path, source: source, root: root))
         }
         documents.sort { $0.path.localizedStandardCompare($1.path) == .orderedAscending }

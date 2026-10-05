@@ -8,6 +8,42 @@ struct KnowledgeState: Sendable {
     let issues: [OKFDiagnostic]
 }
 
+/// Concurrent windows share one immutable scan per root; the last departing consumer cancels it.
+private actor KnowledgeLoader {
+    static let shared = KnowledgeLoader()
+    private struct Job {
+        let task: Task<KnowledgeState, Never>
+        var consumers: Set<UUID>
+    }
+    private var jobs: [URL: Job] = [:]
+
+    func load(root: URL) async -> KnowledgeState {
+        let root = root.standardizedFileURL
+        let consumer = UUID()
+        if jobs[root] == nil {
+            let task = Task.detached(priority: .utility) {
+                let bundle = OKFBundle.load(root: root)
+                return KnowledgeState(bundle: bundle, issues: OKFValidator.validate(bundle: bundle))
+            }
+            jobs[root] = Job(task: task, consumers: [])
+        }
+        jobs[root]?.consumers.insert(consumer)
+        let task = jobs[root]!.task
+        let state = await withTaskCancellationHandler { await task.value } onCancel: {
+            Task { await self.release(root: root, consumer: consumer) }
+        }
+        release(root: root, consumer: consumer)
+        return state
+    }
+
+    private func release(root: URL, consumer: UUID) {
+        jobs[root]?.consumers.remove(consumer)
+        if jobs[root]?.consumers.isEmpty == true {
+            jobs.removeValue(forKey: root)?.task.cancel()
+        }
+    }
+}
+
 /// OKF support in the app: bundle discovery, link following and the files Markify writes for a bundle.
 @MainActor enum Knowledge {
     /// Settings › General › Knowledge: recorded as `human:<id>` when marking a concept verified.
@@ -27,10 +63,7 @@ struct KnowledgeState: Sendable {
     }
 
     static func load(root: URL) async -> KnowledgeState {
-        await Task.detached(priority: .utility) {
-            let bundle = OKFBundle.load(root: root)
-            return KnowledgeState(bundle: bundle, issues: OKFValidator.validate(bundle: bundle))
-        }.value
+        await KnowledgeLoader.shared.load(root: root)
     }
 
     /// Findings for the text being edited, so they track unsaved changes.

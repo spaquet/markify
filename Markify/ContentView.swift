@@ -448,6 +448,10 @@ struct ContentView: View {
             }
         }
         .onDisappear {
+            knowledgeTask?.cancel()
+            humanStampTask?.cancel()
+            aiTask?.cancel()
+            formatBarTask?.cancel()
             if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             rememberDocumentLens()
             libraryFolder?.stopAccessingSecurityScopedResource()
