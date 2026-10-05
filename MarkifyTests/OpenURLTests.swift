@@ -4,6 +4,36 @@ import Testing
 @testable import Markify
 
 @Suite(.serialized) @MainActor struct OpenURLTests {
+    @Test func remoteImagesCancelWithoutConsumersAndRespectCacheBounds() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [PublicURLFixture.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let images = RemoteImages(session: session)
+        let owner = MarkdownTextView(usingTextLayoutManager: true)
+        let url = URL(string: "https://example.com/image.png")!
+        _ = images.state(of: url, owner: owner, onChange: {})
+        _ = images.state(of: url, owner: owner, onChange: {})
+        #expect(images.pendingCount == 1)
+        images.release(owner: owner)
+        #expect(images.pendingCount == 0)
+        #expect(images.memoryCost == 0)
+        _ = images.state(of: url, owner: owner, onChange: {})
+        for _ in 0..<100 where images.pendingCount > 0 { try await Task.sleep(for: .milliseconds(10)) }
+        if case .loaded(let image) = images.state(of: url, owner: owner, onChange: {}) {
+            #expect(image.size.width > 0)
+        } else { Issue.record("Remote PNG did not decode") }
+        #expect(images.memoryCost < 64_000_000)
+        #expect(images.dataURI(of: url) == nil)
+        for _ in 0..<100 {
+            if images.dataURI(of: url) != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(images.dataURI(of: url)?.hasPrefix("data:image/png;base64,") == true)
+        images.release(owner: owner)
+        #expect(images.memoryCost == 0)
+    }
+
     @Test func streamingResponsesStopAtTheirByteLimit() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [PublicURLFixture.self]
@@ -123,6 +153,13 @@ private final class PublicURLFixture: URLProtocol, @unchecked Sendable {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
         let url = request.url!
+        if url.path == "/image.png" {
+            let data = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=")!
+            client?.urlProtocol(self, didReceive: HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "image/png"])!, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+            return
+        }
         let body: String
         var status = 200
         var headers = ["Content-Type": "application/json"]

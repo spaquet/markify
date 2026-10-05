@@ -5,6 +5,7 @@ import SwaTex
 import SwaTexRender
 import SwiftUI
 import UniformTypeIdentifiers
+import ImageIO
 
 enum SlashKey { case up, down, insert, dismiss }
 
@@ -201,6 +202,21 @@ struct NativeEditor: NSViewRepresentable {
             if !markdownLens { collapse(range) }
         }
         let model = (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
+        if let styling {
+            let urls = Set(model.spans.compactMap { span -> URL? in
+                guard case .image(let path, _) = span.kind else { return nil }
+                return MarkdownTextView.imageURL(path, document: styling.documentURL, baseDirectory: styling.baseDirectory)
+            })
+            // HTML image subscribers are kept until their block disappears as well.
+            let htmlURLs = model.spans.filter { $0.kind == .htmlBlock }.flatMap { span -> [URL] in
+                let html = (model.source as NSString).substring(with: span.content)
+                let regex = try! NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
+                return regex.matches(in: html, range: NSRange(location: 0, length: (html as NSString).length)).compactMap {
+                    MarkdownTextView.htmlAttribute("src", in: (html as NSString).substring(with: $0.range))
+                }.map { MarkdownTextView.imageURL($0, document: styling.documentURL, baseDirectory: styling.baseDirectory) }
+            }
+            RemoteImages.shared.release(owner: styling, keeping: styling.loadRemoteImages ? urls.union(htmlURLs) : [])
+        }
         let secondary = NSColor.secondaryLabelColor
         var hidden: [NSRange] = []
         /// Link and image destinations in the Markdown lens, colored after their dimmed markers.
@@ -820,7 +836,10 @@ class MarkdownTextView: NSTextView {
     /// A theme change restyles the text, which redraws its fragments; renders made with the old one are dropped.
     var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:] } } }
     var loadRemoteImages = true {
-        didSet { if loadRemoteImages != oldValue { remoteImageLoaded() } }
+        didSet {
+            if !loadRemoteImages { RemoteImages.shared.release(owner: self) }
+            if loadRemoteImages != oldValue { remoteImageLoaded() }
+        }
     }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
     /// Restyles the text, for results that arrive later, such as a rendered diagram.
@@ -846,6 +865,7 @@ class MarkdownTextView: NSTextView {
 
     /// SwiftUI teardown can precede AppKit releasing its text view.
     func stopObserving() {
+        RemoteImages.shared.release(owner: self)
         if let editingObserver { NotificationCenter.default.removeObserver(editingObserver) }
         editingObserver = nil
         clipObservers.forEach(NotificationCenter.default.removeObserver)
@@ -1774,7 +1794,7 @@ class MarkdownTextView: NSTextView {
             let remote = resolved
             let host = remote.host() ?? path
             guard loadRemoteImages else { return .placeholder("Remote image — \(host)") }
-            switch RemoteImages.shared.state(of: remote, onChange: { [weak self] in self?.scheduleRemoteRestyle() }) {
+            switch RemoteImages.shared.state(of: remote, owner: self, onChange: { [weak self] in self?.scheduleRemoteRestyle() }) {
             case .loaded(let image): return .image(image)
             case .loading: return .placeholder("Loading image — \(host)")
             case .failed: return .placeholder("Image unavailable — \(host)")
@@ -2429,36 +2449,115 @@ class MarkdownTextView: NSTextView {
     }
 }
 
-/// Remote images for the Rendered lens, fetched once per URL and shared by every window.
+/// ImageIO decodes only a display-sized bitmap, on a worker, even for enormous source dimensions.
+nonisolated enum ImagePreparation {
+    static func decode(_ data: Data) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary) else { return nil }
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: 2048,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true
+        ] as CFDictionary)
+    }
+}
+
+/// Bounded remote images, shared by windows; subscribers are deduplicated by editor identity.
 @MainActor final class RemoteImages {
     static let shared = RemoteImages()
     enum State { case loading, loaded(NSImage), failed }
     private var states: [URL: State] = [:]
-    private var waiting: [URL: [() -> Void]] = [:]
-    /// Each loaded image's bytes as a data URI, for HTML blocks.
+    private var waiting: [URL: [ObjectIdentifier: () -> Void]] = [:]
+    private var tasks: [URL: Task<Void, Never>] = [:]
+    private var queue: [URL] = []
+    private var original: [URL: (data: Data, mime: String)] = [:]
     private var dataURIs: [URL: String] = [:]
+    private var costs: [URL: Int] = [:]
+    private var encodings: [URL: Task<Void, Never>] = [:]
+    private let session: URLSession
+    private let budget = 64_000_000
+    var pendingCount: Int { tasks.count + queue.count }
+    var memoryCost: Int { costs.values.reduce(0, +) }
 
-    func dataURI(of url: URL) -> String? { dataURIs[url] }
+    init(session: URLSession = .shared) { self.session = session }
 
-    /// The image's state, starting a download on first request; `onChange` runs once when it settles.
-    func state(of url: URL, onChange: @escaping () -> Void) -> State {
+    func dataURI(of url: URL) -> String? {
+        if let uri = dataURIs[url] { return uri }
+        guard let bytes = original[url], encodings[url] == nil else { return nil }
+        let work = Task.detached(priority: .utility) { "data:\(bytes.mime);base64," + bytes.data.base64EncodedString() }
+        encodings[url] = Task { [weak self] in
+            let uri = await work.value
+            guard let self, !Task.isCancelled, self.states[url] != nil else { return }
+            self.encodings[url] = nil
+            if self.costs.values.reduce(0, +) + uri.utf8.count <= self.budget {
+                self.dataURIs[url] = uri
+                self.costs[url, default: 0] += uri.utf8.count
+                self.waiting[url]?.values.forEach { $0() }
+            }
+        }
+        return nil
+    }
+
+    func release(owner: MarkdownTextView, keeping urls: Set<URL> = []) {
+        let id = ObjectIdentifier(owner)
+        for url in Array(waiting.keys) where !urls.contains(url) {
+            waiting[url]?.removeValue(forKey: id)
+            if waiting[url]?.isEmpty == true {
+                tasks.removeValue(forKey: url)?.cancel()
+                encodings.removeValue(forKey: url)?.cancel()
+                queue.removeAll { $0 == url }
+                states[url] = nil
+                waiting[url] = nil
+                original[url] = nil
+                dataURIs[url] = nil
+                costs[url] = nil
+            }
+        }
+        start()
+    }
+
+    func state(of url: URL, owner: MarkdownTextView, onChange: @escaping () -> Void) -> State {
+        guard url.absoluteString.utf8.count <= 8192 else { return .failed }
         if let state = states[url] {
-            if case .loading = state { waiting[url, default: []].append(onChange) }
+            waiting[url, default: [:]][ObjectIdentifier(owner)] = onChange
             return state
         }
+        guard states.count < 64 else { return .failed }
         states[url] = .loading
-        waiting[url] = [onChange]
-        Task {
-            let response = try? await URLSession.shared.data(from: url)
-            let ok = (response?.1 as? HTTPURLResponse).map { (200..<300).contains($0.statusCode) } ?? true
-            states[url] = ok ? response.flatMap { NSImage(data: $0.0) }.map { .loaded($0) } ?? .failed : .failed
-            if case .loaded = states[url], let response {
-                let mime = response.1.mimeType.flatMap { $0.hasPrefix("image/") ? $0 : nil } ?? "application/octet-stream"
-                dataURIs[url] = "data:\(mime);base64," + response.0.base64EncodedString()
-            }
-            waiting.removeValue(forKey: url)?.forEach { $0() }
-        }
+        waiting[url] = [ObjectIdentifier(owner): onChange]
+        queue.append(url)
+        start()
         return .loading
+    }
+
+    private func start() {
+        while tasks.count < 4, !queue.isEmpty {
+            let url = queue.removeFirst()
+            let session = session
+            let work = Task.detached(priority: .utility) { () -> (Data, String, CGImage)? in
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 20
+                guard let (data, response) = try? await session.boundedData(for: request, maximumBytes: 10_000_000),
+                      let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
+                      !Task.isCancelled, let image = ImagePreparation.decode(data) else { return nil }
+                return (data, response.mimeType ?? "application/octet-stream", image)
+            }
+            tasks[url] = Task { [weak self] in
+                let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+                guard let self, !Task.isCancelled else { return }
+                self.tasks[url] = nil
+                if let (data, mime, image) = result {
+                    let cost = image.bytesPerRow * image.height + data.count
+                    if self.costs.values.reduce(0, +) + cost <= self.budget {
+                        self.states[url] = .loaded(NSImage(cgImage: image, size: .zero))
+                        self.original[url] = (data, mime)
+                        self.costs[url] = cost
+                    } else { self.states[url] = .failed }
+                } else { self.states[url] = .failed }
+                self.waiting[url]?.values.forEach { $0() }
+                self.start()
+            }
+        }
     }
 }
 
