@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markify Help — User guide for the Mac Markdown editor</title>
@@ -8,23 +27,29 @@
 <meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0C0C0E" media="(prefers-color-scheme: dark)">
 <script>(()=>{const r=document.documentElement;r.classList.add('js');let t=null;try{t=localStorage.getItem('markify.theme')}catch{}if(t==='light'||t==='dark')r.dataset.theme=t;r.dataset.resolved=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')})()</script>
-<link rel="canonical" href="https://spaquet.github.io/markify/help/index.html">
+<link rel="canonical" href="https://spaquet.github.io/markify/help/">
 <meta property="og:site_name" content="Markify">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://spaquet.github.io/markify/help/index.html">
+<meta property="og:url" content="https://spaquet.github.io/markify/help/">
 <meta property="og:title" content="Markify Help — User guide for the Mac Markdown editor">
 <meta property="og:description" content="Learn to write, format, organize and export Markdown in Markify, the one-page Markdown editor for macOS.">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
 <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Markify Help — User guide for the Mac Markdown editor">
+<meta name="twitter:description" content="Learn to write, format, organize and export Markdown in Markify, the one-page Markdown editor for macOS.">
+<meta name="twitter:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
 <link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
 <link rel="apple-touch-icon" href="../images/app-icon.png?v=2">
-<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/index.md" title="Markdown source">
+<link rel="alternate" type="text/markdown" href="https://spaquet.github.io/markify/help/index.md" title="Markdown version">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/pages.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/index.html","name":"Help","position":2}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-30","description":"Learn to write, format, organize and export Markdown in Markify, the one-page Markdown editor for macOS.","headline":"Markify Help","inLanguage":"en","keywords":"help, guide, markdown editor, mac","url":"https://spaquet.github.io/markify/help/index.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","item":"https://spaquet.github.io/markify/","name":"Markify","position":1},{"@type":"ListItem","item":"https://spaquet.github.io/markify/help/","name":"Help","position":2}]},{"@type":"TechArticle","about":{"@type":"SoftwareApplication","applicationCategory":"ProductivityApplication","name":"Markify","operatingSystem":"macOS 26","url":"https://spaquet.github.io/markify/"},"author":{"@type":"Person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},"dateModified":"2026-09-30","description":"Learn to write, format, organize and export Markdown in Markify, the one-page Markdown editor for macOS.","headline":"Markify Help","inLanguage":"en","keywords":"help, guide, markdown editor, mac","url":"https://spaquet.github.io/markify/help/"}]}</script>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -114,11 +139,14 @@
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="../known-issues.html">Known issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="../legal.html">Legal &amp; privacy</a>
+      <a href="../legal.html">Legal</a>
+      <a href="../privacy.html">Privacy</a>
+      <a href="../terms.html">Terms</a>
+      <button type="button" data-consent-open>Cookie settings</button>
     </nav>
   </div>
 </footer>
-<script src="../assets/site.js?v=3" defer></script>
+<script src="../assets/site.js?v=4" defer></script>
 <script>
 (() => {
   const input = document.getElementById('topic-filter'), items = [...document.querySelectorAll('.topics li')], count = document.getElementById('topic-count');

@@ -1,11 +1,5 @@
----
-title: Legal
-description: Markify's license, privacy statement, and the third-party software, fonts and specifications it uses.
-order: 14
-keywords: license, legal, privacy, acknowledgements, third party, open source, trademarks, commons clause, mit
-web: legal.html
-license: true
----
+<!-- Legal — Markify Help. Web page: https://spaquet.github.io/markify/legal.html -->
+
 # Legal
 
 ## License
@@ -31,7 +25,7 @@ Markify connects to the internet only in these cases:
 
 **Apple Intelligence** features run on your Mac through Apple's on-device model and system Writing Tools; Markify sends no text to cloud services. Apple's handling of Apple Intelligence is described in [Apple's privacy policy](https://www.apple.com/legal/privacy/).
 
-**This website** has its own [privacy policy](privacy.md) and [terms of use](terms.md). In short: it's hosted on GitHub Pages and loads its typefaces from Google Fonts, and it uses Google Analytics only if you accept cookies in its banner. The app itself has no analytics.
+**This website** has its own [privacy policy](https://spaquet.github.io/markify/privacy.md) and [terms of use](https://spaquet.github.io/markify/terms.md). In short: it's hosted on GitHub Pages and loads its typefaces from Google Fonts, and it uses Google Analytics only if you accept cookies in its banner. The app itself has no analytics.
 
 ## Third-party software and specifications
 

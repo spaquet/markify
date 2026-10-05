@@ -1,6 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Formatting — Markify Help</title>
@@ -14,12 +33,18 @@
 <meta property="og:url" content="https://spaquet.github.io/markify/help/formatting.html">
 <meta property="og:title" content="Formatting — Markify Help">
 <meta property="og:description" content="Format text with the floating format bar, block styles, the slash menu and keyboard shortcuts.">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
 <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Formatting — Markify Help">
+<meta name="twitter:description" content="Format text with the floating format bar, block styles, the slash menu and keyboard shortcuts.">
+<meta name="twitter:image" content="https://spaquet.github.io/markify/images/og-image.jpg">
 <link rel="icon" type="image/png" sizes="64x64" href="../images/favicon.png?v=2">
 <link rel="apple-touch-icon" href="../images/app-icon.png?v=2">
-<link rel="alternate" type="text/markdown" href="https://github.com/spaquet/markify/blob/main/help/formatting.md" title="Markdown source">
+<link rel="alternate" type="text/markdown" href="https://spaquet.github.io/markify/help/formatting.md" title="Markdown version">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -158,10 +183,13 @@
       <a href="https://github.com/spaquet/markify/issues">Issues</a>
       <a href="../known-issues.html">Known issues</a>
       <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-      <a href="../legal.html">Legal &amp; privacy</a>
+      <a href="../legal.html">Legal</a>
+      <a href="../privacy.html">Privacy</a>
+      <a href="../terms.html">Terms</a>
+      <button type="button" data-consent-open>Cookie settings</button>
     </nav>
   </div>
 </footer>
-<script src="../assets/site.js?v=3" defer></script>
+<script src="../assets/site.js?v=4" defer></script>
 </body>
 </html>

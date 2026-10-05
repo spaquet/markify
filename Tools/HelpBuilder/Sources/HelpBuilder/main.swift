@@ -25,11 +25,15 @@ struct Page {
     let web: String
     let schema: String?
     let license: Bool
+    /// False for website-only pages (frontmatter `app: false`), which the Help Book leaves out.
+    let inApp: Bool
     /// The Markdown without its frontmatter.
     let body: String
     let lastModified: String
 
     var app: String { slug + ".html" }
+    /// The page's Markdown copy under docs/, served beside the HTML for AI assistants.
+    var markdown: String { String(web.dropLast(".html".count)) + ".md" }
 }
 
 // MARK: Reading
@@ -66,10 +70,11 @@ let pages: [Page] = try fm.contentsOfDirectory(at: helpFolder, includingProperti
         guard let title = fields["title"], let description = fields["description"] else { fatalError("\(url.lastPathComponent) needs a title and a description") }
         return Page(slug: slug, title: title, description: description, order: Int(fields["order"] ?? "") ?? 99,
                     keywords: fields["keywords"] ?? "", web: fields["web"] ?? "help/\(slug).html", schema: fields["schema"],
-                    license: fields["license"] == "true", body: body, lastModified: lastModified(url))
+                    license: fields["license"] == "true", inApp: fields["app"] != "false", body: body, lastModified: lastModified(url))
     }
     .sorted { ($0.order, $0.slug) < ($1.order, $1.slug) }
 let bySlug = Dictionary(uniqueKeysWithValues: pages.map { ($0.slug, $0) })
+let bookPages = pages.filter(\.inApp)
 
 let licenseText = try String(contentsOf: root.appendingPathComponent("LICENSE"), encoding: .utf8)
 
@@ -104,6 +109,7 @@ func render(_ page: Page, for target: Target) -> String {
             let parts = destination.split(separator: "#", maxSplits: 1).map(String.init)
             guard let file = parts.first, file.hasSuffix(".md"), let linked = bySlug[String(file.dropLast(3))] else { return destination }
             let fragment = parts.count > 1 ? "#" + parts[1] : ""
+            if target == .app, !linked.inApp { return site + linked.web + fragment }
             return (target == .app ? linked.app : relative(linked.web, from: page.web)) + fragment
         })
     var html = MarkdownHTML.render(page.body, options: options).body
@@ -174,8 +180,8 @@ func faqEntries(_ page: Page) -> [(question: String, answer: String)] {
 // MARK: The Help Book
 
 func appPage(_ page: Page, index: Int) -> String {
-    let previous = index > 0 ? pages[index - 1] : nil
-    let next = index + 1 < pages.count ? pages[index + 1] : nil
+    let previous = index > 0 ? bookPages[index - 1] : nil
+    let next = index + 1 < bookPages.count ? bookPages[index + 1] : nil
     var head = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
     if page.slug == "index" {
         head += "<meta name=\"AppleTitle\" content=\"Markify Help\">\n<meta name=\"AppleIcon\" content=\"images/icon.png\">\n"
@@ -196,7 +202,7 @@ func appPage(_ page: Page, index: Int) -> String {
 
 func topics(for target: Target, from page: Page) -> String {
     var html = "<h2 id=\"topics\">Topics</h2>\n<ul class=\"topics\">\n"
-    for topic in pages where topic.slug != "index" {
+    for topic in pages where topic.slug != "index" && topic.inApp {
         let href = target == .app ? topic.app : relative(topic.web, from: page.web)
         let data = target == .web ? " data-search=\"\(MarkdownHTML.escape((topic.title + " " + topic.description + " " + topic.keywords).lowercased()))\"" : ""
         html += "<li\(data)><a href=\"\(href)\"><strong>\(MarkdownHTML.escape(topic.title))</strong><span>\(MarkdownHTML.escape(topic.description))</span></a></li>\n"
@@ -208,7 +214,7 @@ let book = root.appendingPathComponent("Markify/Resources/Markify.help")
 let bookResources = book.appendingPathComponent("Contents/Resources/en.lproj")
 try? fm.removeItem(at: book)
 try fm.createDirectory(at: bookResources.appendingPathComponent("images"), withIntermediateDirectories: true)
-for (index, page) in pages.enumerated() {
+for (index, page) in bookPages.enumerated() {
     try appPage(page, index: index).write(to: bookResources.appendingPathComponent(page.app), atomically: true, encoding: .utf8)
 }
 try helpCSS.write(to: bookResources.appendingPathComponent("help.css"), atomically: true, encoding: .utf8)
@@ -241,8 +247,32 @@ let themeIcons = """
 <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></g></svg>
 """
 
+/// Google Analytics for the website only; the app's Help Book stays offline. The hand-written pages carry the same tag.
+let googleTag = """
+<!-- Google tag (gtag.js) with Consent Mode: Google Analytics loads and sets cookies only after the visitor accepts
+     in the cookie banner (assets/site.js). A choice is kept for 12 months. -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  window.markifyAnalytics = function () {
+    if (window.markifyAnalytics.on) return;
+    window.markifyAnalytics.on = true;
+    gtag('consent', 'update', {analytics_storage: 'granted'});
+    gtag('js', new Date());
+    gtag('config', 'G-VND77GCQET', {cookie_expires: 34128000});
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VND77GCQET';
+    document.head.appendChild(s);
+  };
+  try { var c = JSON.parse(localStorage.getItem('markify.consent')); if (c && c.choice === 'granted' && Date.now() - c.at < 365 * 864e5) window.markifyAnalytics(); } catch (e) {}
+</script>
+
+"""
+
 func webPage(_ page: Page, index: Int) -> String {
-    let url = site + page.web
+    let url = page.web == "help/index.html" ? site + "help/" : site + page.web
     let isIndex = page.slug == "index"
     let docTitle = isIndex ? "Markify Help — User guide for the Mac Markdown editor" : "\(page.title) — Markify Help"
     let up = relative("index.html", from: page.web)
@@ -281,12 +311,18 @@ func webPage(_ page: Page, index: Int) -> String {
     <meta property="og:url" content="\(url)">
     <meta property="og:title" content="\(MarkdownHTML.escape(docTitle))">
     <meta property="og:description" content="\(MarkdownHTML.escape(page.description))">
+    <meta property="og:locale" content="en_US">
     <meta property="og:image" content="\(site)images/og-image.jpg">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="640">
     <meta property="og:image:alt" content="Markify — Markdown, without the markup. A single-page Markdown editor for Mac.">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="\(MarkdownHTML.escape(docTitle))">
+    <meta name="twitter:description" content="\(MarkdownHTML.escape(page.description))">
+    <meta name="twitter:image" content="\(site)images/og-image.jpg">
     <link rel="icon" type="image/png" sizes="64x64" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/favicon.png?v=2">
     <link rel="apple-touch-icon" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/app-icon.png?v=2">
-    <link rel="alternate" type="text/markdown" href="\(repository)/blob/main/help/\(page.slug).md" title="Markdown source">
+    <link rel="alternate" type="text/markdown" href="\(site)\(page.markdown)" title="Markdown version">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -297,7 +333,7 @@ func webPage(_ page: Page, index: Int) -> String {
 
     let assetBase = up.replacingOccurrences(of: "index.html", with: "")
     var nav = "<nav class=\"toc\" aria-label=\"Help topics\">\n<p class=\"toc-title\"><a href=\"\(helpHome)\">Markify Help</a></p>\n<ul>\n"
-    for topic in pages where topic.slug != "index" {
+    for topic in pages where topic.slug != "index" && topic.inApp {
         let current = topic.slug == page.slug ? " aria-current=\"page\"" : ""
         nav += "<li><a href=\"\(relative(topic.web, from: page.web))\"\(current)>\(MarkdownHTML.escape(topic.title))</a></li>\n"
     }
@@ -376,7 +412,7 @@ func webPage(_ page: Page, index: Int) -> String {
     <!doctype html>
     <html lang="en">
     <head>
-    \(head)</head>
+    \(googleTag)\(head)</head>
     <body>
     <a class="skip" href="#content">Skip to content</a>
     <header class="nav">
@@ -409,11 +445,14 @@ func webPage(_ page: Page, index: Int) -> String {
           <a href="\(repository)/issues">Issues</a>
           <a href="\(relative("known-issues.html", from: page.web))">Known issues</a>
           <a href="https://github.com/sponsors/spaquet">Sponsor</a>
-          <a href="\(relative("legal.html", from: page.web))">Legal &amp; privacy</a>
+          <a href="\(relative("legal.html", from: page.web))">Legal</a>
+          <a href="\(relative("privacy.html", from: page.web))">Privacy</a>
+          <a href="\(relative("terms.html", from: page.web))">Terms</a>
+          <button type="button" data-consent-open>Cookie settings</button>
         </nav>
       </div>
     </footer>
-    <script src="\(relative("assets/site.js", from: page.web))?v=3" defer></script>
+    <script src="\(relative("assets/site.js", from: page.web))?v=4" defer></script>
     \(scripts)</body>
     </html>
 
@@ -429,19 +468,38 @@ for (index, page) in pages.enumerated() {
     try webPage(page, index: index).write(to: docs.appendingPathComponent(page.web), atomically: true, encoding: .utf8)
 }
 try pagesCSS.write(to: docs.appendingPathComponent("assets/pages.css"), atomically: true, encoding: .utf8)
+// Each page's Markdown beside its HTML (docs/.nojekyll serves it as written), with links made absolute so the
+// copy reads on its own: page links go to the other Markdown copies, screenshots to the website's images.
+for page in pages {
+    var body = page.body.replacingOccurrences(of: "(screens/", with: "(\(site)images/screens/")
+    for other in pages {
+        body = body.replacingOccurrences(of: "](\(other.slug).md", with: "](\(site)\(other.markdown)")
+    }
+    let copy = "<!-- \(page.title) — Markify Help. Web page: \(site)\(page.web == "help/index.html" ? "help/" : page.web) -->\n\n"
+        + body.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+    try copy.write(to: docs.appendingPathComponent(page.markdown), atomically: true, encoding: .utf8)
+}
 
 // MARK: Crawlers and AI assistants
 
-let homeModified = lastModified(docs.appendingPathComponent("index.html"))
-var sitemap = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
-sitemap += "<url><loc>\(site)</loc><lastmod>\(homeModified)</lastmod><priority>1.0</priority></url>\n"
-sitemap += "<url><loc>\(site)okf.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("okf.html")))</lastmod><priority>0.8</priority></url>\n"
-sitemap += "<url><loc>\(site)compare.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("compare.html")))</lastmod><priority>0.7</priority></url>\n"
-sitemap += "<url><loc>\(site)known-issues.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("known-issues.html")))</lastmod><priority>0.5</priority></url>\n"
-sitemap += "<url><loc>\(site)media-kit.html</loc><lastmod>\(lastModified(docs.appendingPathComponent("media-kit.html")))</lastmod><priority>0.5</priority></url>\n"
-for page in pages {
-    let loc = page.web == "help/index.html" ? site + "help/" : site + page.web
-    sitemap += "<url><loc>\(loc)</loc><lastmod>\(page.lastModified)</lastmod><priority>\(page.slug == "index" || page.schema == "faq" ? "0.8" : "0.6")</priority></url>\n"
+// Each page lists its product screenshots for image search; Google ignores <priority>, so it is left out.
+func screenshots(_ file: URL) -> [String] {
+    guard let html = try? String(contentsOf: file, encoding: .utf8),
+          let pattern = try? NSRegularExpression(pattern: #"<img[^>]*\ssrc="(?:\.\./)?(images/screens/[^"?#]+)"#) else { return [] }
+    var seen = Set<String>()
+    return pattern.matches(in: html, range: NSRange(html.startIndex..., in: html)).compactMap {
+        let path = String(html[Range($0.range(at: 1), in: html)!])
+        return seen.insert(path).inserted ? site + path : nil
+    }
+}
+let sitemapPages = [("", "index.html"), ("okf.html", "okf.html"), ("compare.html", "compare.html"),
+                    ("known-issues.html", "known-issues.html"), ("media-kit.html", "media-kit.html")]
+    .map { (loc: site + $0.0, file: docs.appendingPathComponent($0.1), modified: lastModified(docs.appendingPathComponent($0.1))) }
+    + pages.map { (loc: $0.web == "help/index.html" ? site + "help/" : site + $0.web, file: docs.appendingPathComponent($0.web), modified: $0.lastModified) }
+var sitemap = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:image=\"http://www.google.com/schemas/sitemap-image/1.1\">\n"
+for page in sitemapPages {
+    let images = screenshots(page.file).map { "<image:image><image:loc>\($0)</image:loc></image:image>" }.joined()
+    sitemap += "<url><loc>\(page.loc)</loc><lastmod>\(page.modified)</lastmod>\(images)</url>\n"
 }
 sitemap += "</urlset>\n"
 try sitemap.write(to: docs.appendingPathComponent("sitemap.xml"), atomically: true, encoding: .utf8)

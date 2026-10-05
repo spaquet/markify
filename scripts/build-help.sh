@@ -13,7 +13,7 @@ LPROJ=Markify/Resources/Markify.help/Contents/Resources/en.lproj
 hiutil -I corespotlight -Caf "$LPROJ/Markify.helpindex" "$LPROJ"
 # The index lists each page's anchor; every page in help/ must be there.
 INDEXED=$(hiutil -I corespotlight -Af "$LPROJ/Markify.helpindex" | wc -l | tr -d ' ')
-PAGES=$(ls help/*.md | wc -l | tr -d ' ')
+PAGES=$(grep -L "^app: false" help/*.md | wc -l | tr -d ' ')  # website-only pages stay out of the Help Book
 [ "$INDEXED" -ge "$PAGES" ] || { echo "The help index has $INDEXED anchors for $PAGES pages." >&2; exit 1; }
 
 if [ "${1:-}" = "--check" ]; then
