@@ -1,6 +1,6 @@
-# Performance audit — 4 October 2026
+# Performance audit — completed 5 October 2026
 
-This is a gap-discovery audit for the upcoming release. It does not change application behavior or certify release performance. Findings distinguish synchronous work and missing resource bounds visible in the code from measured delays and scenarios still requiring profiling.
+This report preserves the 4 October baseline and records the verified optimization results on `optimize`. The fifteen original findings below describe baseline source, including historical line numbers; the implementation-status table records what changed. This audit does not certify whole-app responsiveness, memory or energy behavior.
 
 Baseline: `b0d6ee6539169ed5dd4b03eaf076f9f3cd3ee3dd`, including the existing uncommitted document-refresh and project changes. Measurements use an Apple M1 Max, macOS 27.2 (26B5091g), Xcode 27.1 (27A9269), arm64, Release optimization with `ENABLE_TESTABILITY=YES`. Existing changes were preserved.
 
@@ -8,7 +8,7 @@ Baseline: `b0d6ee6539169ed5dd4b03eaf076f9f3cd3ee3dd`, including the existing unc
 
 `MarkifyTests/PerformanceAuditTests.swift` is an opt-in diagnostic. It measures synchronous operations on MainActor using `ContinuousClock`, normally with three samples. It uses the actual `MarkdownTextView`, model, style implementation, table overlays and document-refresh implementation. Synthetic prose includes emphasis and links; tables contain three columns with numeric values and formatted links. No network images or Mermaid renders run in these workloads.
 
-The edit measurement inserts a character in text storage, then calls the same incremental style pass used by `Coordinator.textDidChange`. The table edit additionally runs `refreshTables()`. This measures synchronous work, not the complete key-to-screen latency: SwiftUI updates, queued refreshes, drawing, autosave and telemetry are excluded. Full-style samples reuse an editor; the first is cold and subsequent samples reuse its parsed model. Initial table overlays and cold HTML import have one sample. All workloads run sequentially in one test host, without draining the run loop between workloads; accumulated notification registrations, autoreleased objects and later importer reentrancy can affect timings. These are diagnostic observations, not regression thresholds or statistically stable percentiles.
+The edit measurement inserts a character in text storage, then calls the same incremental style pass used by `Coordinator.textDidChange`. The table edit additionally runs `refreshTables()`. This measures synchronous work, not the complete key-to-screen latency: SwiftUI updates, queued refreshes, drawing, autosave and telemetry are excluded. Full-style samples reuse an editor; the first is cold and subsequent samples reuse its parsed model. Initial table overlays and cold HTML import have one sample. The baseline ran all workloads sequentially in one host without draining the run loop; accumulated objects and importer reentrancy can affect timings. After measurements isolate HTML in a separate host. Editor workloads still run sequentially, and the table viewport is at the top of the document. These are diagnostic observations, not regression thresholds or statistically stable percentiles.
 
 Reproduce from the repository root:
 
@@ -16,16 +16,18 @@ Reproduce from the repository root:
 TEST_RUNNER_MARKIFY_PERFORMANCE_AUDIT=1 xcodebuild -quiet \
   -project Markify.xcodeproj -scheme Markify -configuration Release \
   -destination 'platform=macOS,arch=arm64' \
-  -only-testing:MarkifyTests/PerformanceAuditTests \
+  '-only-testing:MarkifyTests/PerformanceAuditTests/measureHTMLImport()' \
   -parallel-testing-enabled NO \
   test CODE_SIGNING_ALLOWED=NO ENABLE_TESTABILITY=YES
 ```
 
-Use Xcode's default DerivedData, per AGENTS.md. The probe writes `/private/tmp/markify-performance-audit.json`. `TEST_RUNNER_` forwards the flag into the test host as `MARKIFY_PERFORMANCE_AUDIT`; ordinary test runs skip this diagnostic. Release normally disables testability, so the explicit override is necessary. This build override does not change project settings.
+Run that command again in a separate invocation with `measureEditorWork()` in place of `measureHTMLImport()`. The parentheses are part of Swift Testing's identifier: omitting them selected zero tests despite exit 0. Confirm `totalTestCount > 0`, `result: Passed` and zero failures with `xcrun xcresulttool get test-results summary --path <bundle>`.
+
+Use Xcode's default DerivedData, per AGENTS.md. Editor samples go to `/private/tmp/markify-performance-audit.json`; HTML samples go to `/private/tmp/markify-performance-html-audit.json`. `TEST_RUNNER_` forwards the flag into the test host as `MARKIFY_PERFORMANCE_AUDIT`; ordinary test runs skip this diagnostic. Release normally disables testability, so the explicit override is necessary. This build override does not change project settings.
 
 Apple describes noticeable discrete-interaction delays at approximately 50–100 ms and recommends keeping main-thread screen-update work below roughly 5 ms. These are useful responsiveness reference points, not hardware-independent guarantees. [Apple: Improving app responsiveness](https://developer.apple.com/documentation/xcode/improving-app-responsiveness), [Apple: Understanding user interface responsiveness](https://developer.apple.com/documentation/xcode/understanding-user-interface-responsiveness).
 
-The diagnostic passed: **1 test, 0 failures**, in `/private/tmp/markify-performance-audit-progress.xcresult`. Raw samples are preserved in [performance-audit-results.json](performance-audit-results.json). Times below are median milliseconds unless marked as a single sample. Sizes are UTF-8 bytes, with KB shown in decimal units.
+The baseline diagnostic passed: **1 test, 0 failures**, in `/private/tmp/markify-performance-audit-progress.xcresult`. Raw samples are preserved in [performance-audit-results.json](performance-audit-results.json). Times below are median milliseconds unless marked as a single sample. Sizes are UTF-8 bytes, with KB shown in decimal units.
 
 | Workload | Size | Operation | Time |
 | --- | --- | --- | ---: |
@@ -48,9 +50,77 @@ The strongest confirmed blockers are table maintenance, whole-document edit styl
 
 The first Release attempt could not compile tests because Release disables testability. A subsequent run ended with `Test crashed with signal term` and a launch-session expiry in Xcode's logs; its cause was not established and no timings from that run are reported. After persisting results per workload, the full diagnostic completed successfully. No production settings or app code were changed to obtain these results.
 
-Validation after the diagnostic: all **3 existing IncrementalStyleTests passed**, and the diagnostic was **skipped without its opt-in flag**, in `/private/tmp/markify-performance-audit-checks.xcresult`. These cover equality with a full style pass, unchanged attributes above the edit, and stable viewport/page height while typing. The individual fixture performance filter did not select a test in that invocation; the fixture guard discussed below was inspected in source, not executed. No claim is made that the full test suite was run. `git diff --check` passed.
+Validation after the diagnostic: all **3 existing IncrementalStyleTests passed**, and the diagnostic was **skipped without its opt-in flag**, in `/private/tmp/markify-performance-audit-checks.xcresult`. These cover equality with a full style pass, unchanged attributes above the edit, and stable viewport/page height while typing. The individual fixture performance filter did not select a test in that invocation; the fixture guard discussed below was inspected in source, not executed. At baseline, the full test suite was not run; the final checks above supersede that validation limit. `git diff --check` passed.
 
-## Ranked gaps
+## Verified after-results — 5 October
+
+Successful samples are saved separately in [performance-audit-results-after.json](performance-audit-results-after.json), leaving [performance-audit-results.json](performance-audit-results.json) unchanged. The after file contains 37 editor measurements and two HTML measurements. Production changes through `f20421e` and the corrected diagnostic in `e09a13b` were exercised; the pending user version and ReportTests edits were preserved. The host and Release/testability settings match the baseline.
+
+| Workload / operation | Baseline median | After median |
+| --- | ---: | ---: |
+| 100 rich paragraphs, edit + incremental style | 37.31 ms | 4.98 ms |
+| 1,000 rich paragraphs, edit + incremental style | 370.78 ms | 42.48 ms |
+| 5,000 rich paragraphs, edit + incremental style | 2,370.01 ms | 209.27 ms |
+| 5,000 rich paragraphs, full style | 1,057.78 ms | 1,075.88 ms |
+| 5,000 rich paragraphs, parse | 179.73 ms | 172.32 ms |
+| 500 inline groups on one line, parse | 149.77 ms | 9.02 ms |
+| 1,500 inline groups on one line, parse | 1,293.57 ms | 27.19 ms |
+| 50 table rows, edit + style + overlays | 133.91 ms | 7.02 ms |
+| 200 table rows, edit + style + overlays | 1,320.10 ms | 17.31 ms |
+| 500 table rows, edit + style + overlays | 7,418.85 ms | 38.19 ms |
+| 500 table rows, unchanged overlays | 5,145.64 ms | 3.01 ms |
+| 500 table rows, initial overlays (one sample) | 9,509.33 ms | 74.25 ms |
+| 1,500 inline formulas, warm full style | 59.26 ms | 53.02 ms |
+| Unchanged local file, explicit refresh (10 samples) | 0.087 ms | 0.003 ms |
+
+The original uncached word-count probe remains approximately 91 ms for 5,000 paragraphs. ContentView now caches against its String binding: a cold count is 22.61 ms and a warm lookup is below 0.001 ms in this diagnostic. The cached probes capture the binding-equivalent String outside the clock; repeatedly fetching `NSTextView.string` would measure a different operation. The refresh probe calls the explicit synchronous test path: its first sample reads the baseline, subsequent samples return at the identity gate. It does not measure scheduled worker turnaround, timer wakeups or idle energy.
+
+Cold HTML submission took **92.55 ms**, and style-to-import completion took **253.28 ms**, each one sample in the isolated host. Baseline synchronous HTML style took 364.7 ms; asynchronous submission and completion are different operations, so this is not a like-for-like speedup claim. Completion includes the polling interval and is not key-to-frame latency.
+
+Result bundles in default DerivedData (`Markify-fgujxgddrpvorxeunwaujojtnrqa/Logs/Test`):
+
+- `Test-Markify-2026.10.05_00-53-15--0700.xcresult`: isolated Release HTML, **1 passed, 0 failed, 0 skipped**, no runtime warnings.
+- `Test-Markify-2026.10.05_01-03-30--0700.xcresult`: isolated Release editor, **1 passed, 0 failed, 0 skipped**, no runtime warnings.
+
+The earlier mixed-workload Release attempt crashed while yielding for HTML completion (`Test-Markify-2026.10.05_00-17-37--0700.xcresult`; `Markify-2026-10-05-002012.ips`). Its main-thread stack included Swift executor checks and WebKit RemoteLayerTree frames. The crash did not reproduce in the isolated HTML run; no root cause or production crash fix is claimed. Its partial timings are excluded from the after file. A subsequent isolated editor attempt stalled during polling setup and was stopped: the diagnostic used abstract `NSDocument`, whose default `fileWrapper` is unsuitable for the new native-baseline path. Supplying a concrete fixture implementation made the complete editor diagnostic pass; this is a diagnostic correction, not an application change. The sample also showed a swallowed exception thread, without identifying the earlier WebKit crash.
+
+Table maintenance and long-line conversion improved substantially in these workloads. Whole-model parsing remains synchronous: the 5,000-paragraph edit is still about 209 ms, above the 50–100 ms interaction reference. Full style is not faster. Three samples cannot establish p95 or worst-case latency, and viewport-limited table results do not certify scrolling near the end, resizing or animated hover.
+
+## Final required checks
+
+- Complete Debug `MarkifyTests` target: **172 top-level tests passed, 0 failures**, **2 opt-in diagnostics skipped**, no runtime warnings. Parameterized executions produce 175 passes in the device summary. Bundle: `Test-Markify-2026.10.05_01-05-03--0700.xcresult`; log: `/private/tmp/markify-resumed-final-app.log`. The test tree confirms both `measureEditorWork()` and `measureHTMLImport()` skipped without the flag.
+- `swift test --package-path MarkifyMarkdown`: **46 passed**, log `/private/tmp/markify-resumed-final-markdown.log`.
+- `swift test --package-path OKFKit`: **37 passed**, log `/private/tmp/markify-resumed-final-okf.log`.
+- `scripts/build-help.sh --check`: **passed**, regenerated/indexed the current 19-page help source set, log `/private/tmp/markify-resumed-final-help.log`. Concurrent user website/legal changes were preserved; generated date/index output accompanies this report.
+- `git diff --check`: **passed**. Baseline JSON SHA-256 remains `0fb08df3dd138f5573c216ce1bc08ff67926ffb0359a40d6e9adff1170a6fb0f`.
+
+Release HTML/editor build logs are `/private/tmp/markify-resumed-release-html.log` and `/private/tmp/markify-resumed-release-editor-verified.log`. Builds still emit the existing Sentry script-output and test-source Swift concurrency warnings; successful result bundles have no runtime warnings. These checks do not include UI automation or Instruments, Intel/macOS 26, battery or normally launched telemetry/update measurements. No push or deployment was performed.
+
+## Implementation status of all fifteen findings
+
+“Implemented” means the source change and relevant automated checks are present; the scenario measurements in the release-follow-up table remain necessary.
+
+| ID | Status and implementation | Remaining ceiling / validation |
+| --- | --- | --- |
+| 1 | Partial: safe prose edits style a translated paragraph slice; inline formulas and code tokens reuse bounded caches (`a3ef7e8`, `17c6d7c`). | The full new model still parses synchronously. Block/container, Find, multiple-edit and context changes fall back to full style; cold inline math remains synchronous. |
+| 2 | Implemented: widths/row lookups cached, unchanged cell presentations reused, overlays limited to viewport neighbors, footnote context invalidated, hover heights limited to affected rows (`afd433a`, `73346c8`, `483779c`, `86fd9c0`, `6ddb24e`). | Row enumeration still runs during hover; bottom scrolling, resize, navigation and memory plateau need profiling. |
+| 3 | Implemented: indexed Unicode source boundaries and occupied extension ranges (`a34f52f`, `5ee257d`). | Long-line samples improve from superlinear to approximately linear in this workload; complete parsing remains synchronous. Unicode/source-offset package regressions remain covered. |
+| 4 | Partial: identity-gated, coalesced off-main polling and disk baseline; five-second fallback with tolerance (`5de2453`, `56ab78b`, `f95d6bf`). | Attachment metadata, explicit test/manual refresh, prompt rereads, merge validation, Versions and native revert retain synchronous work. No slow-volume or idle-energy trace. |
+| 5 | Implemented: bounded streamed image reads, 2048-pixel thumbnails, four jobs, consumer cancellation and 64-entry/64 MB caches (`4f9048a`). | Repeated-document memory plateau and decoded-resource lifetimes have not been measured. |
+| 6 | Partial: async local image preparation and supported async HTML import; weak/stale completions, source/count/byte budgets; bounded worker display math (`797f9df`, `17c6d7c`, `6ddb24e`). | HTML submission still costs 92.55 ms cold on this host; previous mixed-host crash remains unexplained. File copy, paste conversion and cold inline math are synchronous. |
+| 7 | Implemented: editor/table-cell observer teardown (`afd433a`, `73346c8`). | No retained-observer allocation graph or repeated-open/close plateau measurement. |
+| 8 | Partial: shared in-flight bundle scans, consumer cancellation, immutable results, bounded cancellable chunk reads and 50 MB aggregate source budget (`cb78c0b`, `4913d7e`, `f95d6bf`). | Cancellation within a single parse/validation is coarse; snapshots are not a persistent cross-refresh cache. A file growing past preflight can be skipped without marking the bundle truncated. |
+| 9 | Implemented: unchanged notes reused by file identity/configuration, reconciliation retained and progress publication throttled (`2565709`). | Enumeration remains a full pass; large-library event bursts, metadata reliability and snapshot-copy cost need profiling. |
+| 10 | Partial: cancellation between enrichment files and enrichment outside the indexing actor (`2565709`). | A single file read/parse is not interruptible or newly bounded; sorting, result mapping and eager view construction remain profiling targets. |
+| 11 | Implemented: consumer-aware bounded Mermaid queues/source/SVG/dimensions/cache, 15-second deadlines and engine recovery (`797f9df`, `a3ef7e8`). | Failure/recovery tests pass; repeated edit/export memory and helper-process CPU are unmeasured. |
+| 12 | Implemented: cancellable off-main bounded 2 MB source preparation, stale-install gates, no remote preview images; image XPC startup/cancellation serialized (`fc8f1e2`, `27d865e`). | Rapid Finder navigation and provider/helper/WebKit process profiling remain outstanding. |
+| 13 | Partial: off-main diagram preparation and HTML writes, bounded preflight/chunk image reads and 50 MB URI embedding budget; owned export jobs, PDF deadlines and staged destination writes (`19d7c0b`, `f95d6bf`). | Native printing has no public cancel API: one hung native job/delegate is retained until callback and can block later PDF exports until restart. Cancellation cannot write the selected destination. |
+| 14 | Partial: version-keyed word/Find/outline/link data, off-main root discovery/knowledge validation and coordinated backlink writes from current disk contents (`b64b14d`, `f95d6bf`). | Inspector grouping and scroll-driven view construction still need profiles; single-document parsing is synchronous. |
+| 15 | Implemented: header-only link checks, bounded streaming summaries/local reads, shared four-probe budget, pruned async caches and owned cancellation; serialized summary JSON fits the 4 MB reload cap (`348ff33`, `410930b`, `6ddb24e`). | Summary memory updates precede disk success and do not roll back on write failure; errors are reported. Multiwindow throughput and persistence stalls need scenario measurement. |
+
+Web-link following is also fixed (`80802df`): cached Markdown spans cover inline/reference links, angle autolinks and balanced-parenthesis destinations, skip code and route through `Knowledge.follow`/NSWorkspace. Bare URLs are not model link spans. Automated checks cover extraction/follow behavior without launching a browser.
+
+## Baseline ranked gaps
 
 P1 means prioritize before release; P2 means follow up with targeted profiling and a scoped fix. Priority reflects frequency, resource growth and potential impact, not a claim that every document currently hangs.
 

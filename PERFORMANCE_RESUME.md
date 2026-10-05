@@ -1,6 +1,6 @@
 # Performance handoff — 5 October 2026
 
-The user requested a context handoff. Stop here until they resume. The task is **not finished**.
+This historical handoff was resumed and completed on 5 October. See the completion record below and PERFORMANCE_AUDIT.md; the pending steps described in the original handoff are no longer outstanding.
 
 Original task: finish the performance audit and web-link fixes, preserve pending edits, stay on **optimize**, commit each coherent verified step, regenerate help, run the full relevant tests, and record measured Release audit results. Do not push or deploy. Read AGENTS.md and PERFORMANCE_AUDIT.md. Ponytail full remains active; no subagents are authorized. Use default Xcode DerivedData for Markify, never `-derivedDataPath`. Xcode/Swift caches have needed tool escalation. Git add/commit is authorized.
 
@@ -158,3 +158,11 @@ Safe prose styling still parses the new complete model once, then styles a trans
 Media budgets: remote/local image reads 10 MB, thumbnails max dimension 2048, caches max 64 entries / 64 MB; four image jobs concurrently. HTML uses native asynchronous `NSAttributedString.loadFromHTML`, timeout five seconds, two imports per editor, bounded source/cache, stale completion gates. Mermaid has bounded queues/source/SVG/dimensions/cache, 15-second load/render deadlines and recovery. Quick Look source is bounded at 2 MB and disables remote preview images. Export embeds bounded images with a 50 MB aggregate URI budget and falls back to paths.
 
 Latest math work: display drawing only requests/reads worker results, four jobs per editor. Source limit 8,192 UTF-8 bytes; raster metrics max 2,048 points per dimension / one million square points before allocating at 2x scale; settled image cache max 64 entries / estimated 64 MB. Deleted formulas, theme changes and teardown cancel/prune cache entries. Inline formulas reuse up to 256 cached values; code tokens up to 32 blocks / roughly 2 MB source. Inline formulas still prepare synchronously when uncached; only display raster preparation moved off-main. Async math reuse/oversized-source test is committed and passed. There are no final memory-plateau measurements yet.
+
+## Completion record — 5 October 2026
+
+- `e09a13b` commits the isolated diagnostics, concrete NSDocument fixture and successful `performance-audit-results-after.json`; the baseline is unchanged.
+- Isolated Release HTML and editor diagnostics each passed exactly one test, with zero failures/skips/runtime warnings. The prior mixed-host WebKit crash did not reproduce; no root cause or production crash fix is claimed. The editor fixture stall was resolved.
+- Final Debug app target: 172 passed, two diagnostic skips, zero failures/runtime warnings. Markdown: 46 passed. OKF: 37 passed. Help freshness and diff whitespace checks passed.
+- PERFORMANCE_AUDIT.md now records measured comparisons, all fifteen implementation statuses, precise checks and remaining performance/measurement ceilings.
+- The pending project 2.2.0 version changes and ReportTests edits remain uncommitted. Concurrent user website/legal work was preserved. No push, deployment or agents.
