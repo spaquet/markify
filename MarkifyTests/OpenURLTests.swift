@@ -4,6 +4,17 @@ import Testing
 @testable import Markify
 
 @Suite(.serialized) @MainActor struct OpenURLTests {
+    @Test func streamingResponsesStopAtTheirByteLimit() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [PublicURLFixture.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let request = URLRequest(url: URL(string: "https://example.com/README.md")!)
+        let (data, _) = try await session.boundedData(for: request, maximumBytes: 100)
+        #expect(String(decoding: data, as: UTF8.self) == "# Public README\n")
+        await #expect(throws: URLError.self) { try await session.boundedData(for: request, maximumBytes: 4) }
+    }
+
     @Test func publicHTTPSAndRawFileURLs() throws {
         for address in ["http://example.com/a.md", "https://user:password@example.com/a.md", "file:///tmp/a.md"] {
             #expect(throws: RemoteOpenError.self) { try PublicURLClient.validate(URL(string: address)!) }

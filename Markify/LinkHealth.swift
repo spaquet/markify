@@ -159,11 +159,13 @@ enum LocalLinkCheck {
             return request
         }
         do {
-            var (_, response) = try await session.data(for: request("HEAD"))
+            var (bytes, response) = try await session.bytes(for: request("HEAD"))
+            bytes.task.cancel()
             var code = (response as? HTTPURLResponse)?.statusCode ?? 200
             // Some servers refuse HEAD; ask for one byte instead.
             if code >= 400 {
-                (_, response) = try await session.data(for: request("GET"))
+                (bytes, response) = try await session.bytes(for: request("GET"))
+                bytes.task.cancel()
                 code = (response as? HTTPURLResponse)?.statusCode ?? 200
             }
             switch code {

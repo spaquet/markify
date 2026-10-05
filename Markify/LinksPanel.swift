@@ -189,12 +189,18 @@ struct SelectableLinkText: NSViewRepresentable {
         switch target {
         case let .file(url?, _):
             guard ["md", "markdown", "mdx"].contains(url.pathExtension.lowercased()) else { throw SummaryError.unsupported }
-            let source = try openTexts[url.standardizedFileURL] ?? String(contentsOf: url, encoding: .utf8)
+            let source: String
+            if let open = openTexts[url.standardizedFileURL] { source = open }
+            else {
+                let data = try FileRead.data(at: url, maximumBytes: 2_000_000)
+                guard let decoded = String(data: data, encoding: .utf8) else { throw SummaryError.unsupported }
+                source = decoded
+            }
             return (ReadableText.fromMarkdown(source, mdx: url.pathExtension.lowercased() == "mdx"), LinkSummaryStore.fingerprint(source))
         case let .web(url):
             var request = URLRequest(url: url)
             request.timeoutInterval = 20
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.boundedData(for: request, maximumBytes: 1_000_000)
             guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else { throw SummaryError.unavailable }
             guard response.mimeType == "text/html" || response.mimeType == "text/plain", data.count <= 1_000_000,
                   let decoded = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else { throw SummaryError.unsupported }

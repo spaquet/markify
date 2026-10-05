@@ -2,6 +2,22 @@ import AppKit
 import SwiftUI
 import Security
 
+extension URLSession {
+    /// Cancel as soon as a server ignores a size/range limit; never buffer an unlimited response.
+    nonisolated func boundedData(for request: URLRequest, maximumBytes: Int) async throws -> (Data, URLResponse) {
+        let (bytes, response) = try await bytes(for: request)
+        defer { bytes.task.cancel() }
+        guard response.expectedContentLength <= maximumBytes else { throw URLError(.dataLengthExceedsMaximum) }
+        var data = Data()
+        for try await byte in bytes {
+            try Task.checkCancellation()
+            guard data.count < maximumBytes else { throw URLError(.dataLengthExceedsMaximum) }
+            data.append(byte)
+        }
+        return (data, response)
+    }
+}
+
 /// Redirects are followed explicitly so every hop stays HTTPS and secrets stay at their origin.
 final class PublicURLClient: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     private let configuration: URLSessionConfiguration
