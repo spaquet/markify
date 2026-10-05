@@ -668,6 +668,22 @@ struct MarkifyTests {
         #expect(image?.size.width ?? 0 < 100)
     }
 
+    @Test @MainActor func displayMathPreparesOffTheDrawingPathAndReusesTheResult() async throws {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        let latex = #"\frac{1}{2}"#
+        #expect(editor.displayMath(latex, dark: false) == nil)
+        var result: NSImage?
+        for _ in 0..<100 {
+            result = editor.displayMath(latex, dark: false)
+            if result != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let image = try #require(result)
+        #expect(editor.displayMath(latex, dark: false) === image)
+        #expect(editor.renderMath(String(repeating: "x", count: 8193), dark: false) == nil)
+        editor.stopObserving()
+    }
+
     @Test func aiAcceptanceKeepsOneFrontmatterBlock() {
         let source = "---\ntags: [old]\n---\n# Title\n"
         let replacement = "---\ntitle: New\ntags: [new]\n---\n"

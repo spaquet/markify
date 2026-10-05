@@ -248,6 +248,7 @@ struct NativeEditor: NSViewRepresentable {
                 return "\(dark):\((model.source as NSString).substring(with: span.content))"
             })
             MermaidRenderer.shared.release(owner: styling, keeping: diagramKeys)
+            styling.retainMath(model: model, dark: dark)
         }
         let secondary = NSColor.secondaryLabelColor
         var hidden: [NSRange] = []
@@ -349,7 +350,7 @@ struct NativeEditor: NSViewRepresentable {
                 }
                 hide(span.markers)
                 let code = source.substring(with: span.content)
-                for (token, kind) in CodeToken.tokens(in: code) {
+                for (token, kind) in textView?.codeTokens(code) ?? CodeToken.tokens(in: code) {
                     guard let color = theme.code(kind) else { continue }
                     storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.location, length: token.length))
                 }
@@ -425,7 +426,7 @@ struct NativeEditor: NSViewRepresentable {
                 let font = storage.attribute(.font, at: span.content.location, effectiveRange: nil) as? NSFont ?? theme.prose(18)
                 // Typeset unless the caret is in it: then the LaTeX shows, to be edited in place.
                 if !markdownLens, let textView, !textView.isEditing(span),
-                   let formula = InlineFormula(latex: source.substring(with: span.content), size: font.pointSize, dark: dark) {
+                   let formula = textView.inlineFormula(source.substring(with: span.content), size: font.pointSize, dark: dark) {
                     textView.inlineFormulas[span.range.location] = formula
                     formulas.append((span, font, formula.width))
                     hide([span.range])
@@ -887,7 +888,7 @@ class MarkdownTextView: NSTextView {
     weak var tableDocument: MarkdownTextView?
     var tableSourceRange: NSRange?
     /// A theme change restyles the text, which redraws its fragments; renders made with the old one are dropped.
-    var theme = EditorTheme() { didSet { if theme != oldValue { mathCache = [:] } } }
+    var theme = EditorTheme() { didSet { if theme != oldValue { releaseMath() } } }
     var loadRemoteImages = true {
         didSet {
             if !loadRemoteImages { RemoteImages.shared.release(owner: self) }
@@ -935,7 +936,78 @@ class MarkdownTextView: NSTextView {
     func releaseLocalImages(keeping urls: Set<URL>) {
         for url in Set(imageCache.keys).union(imageRequests.keys).subtracting(urls) { removeLocalImage(url) }
     }
-    private var mathCache: [String: NSImage] = [:]
+    private struct FormulaKey: Hashable {
+        let latex: String
+        let size: CGFloat
+        let dark: Bool
+    }
+    private var mathCache: [FormulaKey: NSImage?] = [:]
+    private var mathRequests: [FormulaKey: Task<Void, Never>] = [:]
+    private var formulaCache: [FormulaKey: InlineFormula] = [:]
+    private var tokenCache: [String: [(NSRange, CodeToken)]] = [:]
+
+    func codeTokens(_ code: String) -> [(NSRange, CodeToken)] {
+        if let tokens = tokenCache[code] { return tokens }
+        let tokens = CodeToken.tokens(in: code)
+        if code.utf8.count <= 256_000 {
+            if tokenCache.count >= 32 || tokenCache.keys.reduce(0, { $0 + $1.utf8.count }) > 2_000_000 { tokenCache = [:] }
+            tokenCache[code] = tokens
+        }
+        return tokens
+    }
+
+    func inlineFormula(_ latex: String, size: CGFloat, dark: Bool) -> InlineFormula? {
+        let key = FormulaKey(latex: latex.trimmingCharacters(in: .whitespacesAndNewlines), size: size, dark: dark)
+        if let formula = formulaCache[key] { return formula }
+        guard let formula = InlineFormula(latex: key.latex, size: size, dark: dark) else { return nil }
+        if formulaCache.count >= 256 { formulaCache = [:] }
+        formulaCache[key] = formula
+        return formula
+    }
+
+    func retainMath(model: MarkdownModel, dark: Bool) {
+        let source = model.source as NSString
+        let formulas = Set(model.spans.filter { $0.kind == .mathBlock || $0.kind == .inlineMath }
+            .map { source.substring(with: $0.content).trimmingCharacters(in: .whitespacesAndNewlines) })
+        for key in Set(mathCache.keys).union(mathRequests.keys) where !formulas.contains(key.latex) || key.dark != dark {
+            mathRequests.removeValue(forKey: key)?.cancel()
+            mathCache[key] = nil
+        }
+        formulaCache = formulaCache.filter { formulas.contains($0.key.latex) && $0.key.dark == dark }
+        let codes = Set(model.spans.compactMap { span -> String? in
+            guard case .codeBlock = span.kind else { return nil }
+            return source.substring(with: span.content)
+        })
+        tokenCache = tokenCache.filter { codes.contains($0.key) }
+    }
+
+    private func releaseMath() {
+        mathRequests.values.forEach { $0.cancel() }
+        mathRequests = [:]
+        mathCache = [:]
+        formulaCache = [:]
+        inlineFormulas = [:]
+    }
+
+    /// Visible blocks request bounded worker renders; drawing itself only reads completed images.
+    func displayMath(_ latex: String, dark: Bool) -> NSImage? {
+        let key = FormulaKey(latex: latex, size: 22 * theme.scale, dark: dark)
+        if let settled = mathCache[key] { return settled }
+        guard mathRequests[key] == nil, mathRequests.count < 4, latex.utf8.count <= 8192 else { return nil }
+        let work = Task.detached(priority: .userInitiated) { Self.mathPNG(latex, size: key.size, dark: dark) }
+        mathRequests[key] = Task { [weak self] in
+            let data = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard !Task.isCancelled, let self else { return }
+            self.mathRequests[key] = nil
+            let image = data.flatMap { NSImage(data: $0) }
+            image?.size = NSSize(width: (image?.size.width ?? 0) / 2, height: (image?.size.height ?? 0) / 2)
+            let cost = self.mathCache.values.compactMap { $0 }.reduce(0) { $0 + $1.size.width * $1.size.height * 16 }
+            if self.mathCache.count >= 64 || cost + (image.map { $0.size.width * $0.size.height * 16 } ?? 0) > 64_000_000 { self.mathCache = [:] }
+            self.mathCache[key] = .some(image)
+            self.needsDisplay = true
+        }
+        return nil
+    }
     private(set) var tableOverlays: [Int: TableRowView] = [:]
     private var modelCache: (version: Int, model: MarkdownModel)?
     /// Bumped whenever the characters change (not their attributes), so caches check validity without comparing the text.
@@ -972,6 +1044,8 @@ class MarkdownTextView: NSTextView {
 
     /// SwiftUI teardown can precede AppKit releasing its text view.
     func stopObserving() {
+        releaseMath()
+        tokenCache = [:]
         RemoteImages.shared.release(owner: self)
         MermaidRenderer.shared.release(owner: self)
         releaseLocalImages(keeping: [])
@@ -2070,9 +2144,7 @@ class MarkdownTextView: NSTextView {
             let rect = NSRect(x: 0, y: line.midY - 40, width: columnWidth, height: 80)
             guard rect.intersects(dirtyRect) else { continue }
             let latex = source.substring(with: span.content).trimmingCharacters(in: .whitespacesAndNewlines)
-            let key = "\(dark):\(latex)"
-            if let image = mathCache[key] ?? renderMath(latex, dark: dark) {
-                mathCache[key] = image
+            if let image = displayMath(latex, dark: dark) {
                 let frame = NSRect(x: rect.midX - image.size.width / 2, y: rect.midY - image.size.height / 2,
                                    width: image.size.width, height: image.size.height)
                 image.draw(in: frame)
@@ -2122,11 +2194,20 @@ class MarkdownTextView: NSTextView {
     }
 
     func renderMath(_ latex: String, dark: Bool) -> NSImage? {
-        guard let list = try? SwaTexEngine.displayList(for: latex, style: .display, color: dark ? .white : .black),
-              let data = ImageRenderer.png(for: list, options: RenderOptions(fontSize: 22 * theme.scale, padding: 2)),
+        guard let data = Self.mathPNG(latex, size: 22 * theme.scale, dark: dark),
               let image = NSImage(data: data) else { return nil }
         image.size = NSSize(width: image.size.width / 2, height: image.size.height / 2)
         return image
+    }
+
+    nonisolated private static func mathPNG(_ latex: String, size: CGFloat, dark: Bool) -> Data? {
+        guard !Task.isCancelled, latex.utf8.count <= 8192,
+              let list = try? SwaTexEngine.displayList(for: latex, style: .display, color: dark ? .white : .black) else { return nil }
+        let options = RenderOptions(fontSize: size, padding: 2)
+        let metrics = DisplayListRenderer.metrics(for: list, options: options)
+        guard !Task.isCancelled, metrics.width.isFinite, metrics.height.isFinite,
+              metrics.width <= 2048, metrics.height <= 2048, metrics.width * metrics.height <= 1_000_000 else { return nil }
+        return ImageRenderer.png(for: list, options: options)
     }
 
     /// Callout titles, code language labels, the footnotes rule and the frontmatter chip row.
@@ -3525,7 +3606,7 @@ struct InlineFormula {
 
     init?(latex: String, size: CGFloat, dark: Bool) {
         let latex = latex.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !latex.isEmpty, let list = try? SwaTexEngine.displayList(for: latex, style: .text, color: dark ? .white : .black) else { return nil }
+        guard !latex.isEmpty, latex.utf8.count <= 8192, let list = try? SwaTexEngine.displayList(for: latex, style: .text, color: dark ? .white : .black) else { return nil }
         self.list = list
         options = RenderOptions(fontSize: size, padding: 1)
         metrics = DisplayListRenderer.metrics(for: list, options: options)
