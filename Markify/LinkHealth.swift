@@ -75,9 +75,9 @@ enum LocalLinkCheck {
 /// Web link checks shared by every window, kept on disk for 24 hours. A click on a link checks it again at once.
 @MainActor @Observable final class WebLinkChecks {
     static let shared = WebLinkChecks()
-    static let lifetime: TimeInterval = 24 * 60 * 60
+    nonisolated static let lifetime: TimeInterval = 24 * 60 * 60
 
-    struct Entry: Codable, Equatable {
+    struct Entry: Codable, Equatable, Sendable {
         /// The reason a link is broken; nil when it answered.
         var broken: String?
         var date: Date
@@ -87,15 +87,33 @@ enum LocalLinkCheck {
     private(set) var inFlight: Set<String> = []
     @ObservationIgnored let location: URL
     @ObservationIgnored private let session: URLSession
+    @ObservationIgnored private var loading: Task<Void, Never>?
+    @ObservationIgnored private var worker: Task<Void, Never>?
+    @ObservationIgnored private var pending: [String: URL] = [:]
+    @ObservationIgnored private var persistence: Task<Void, Never>?
 
     init(location: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("Markify/link-checks.json")) {
+        .appendingPathComponent("Markify/link-checks.json"), session: URLSession? = nil) {
         self.location = location
-        entries = (try? JSONDecoder().decode([String: Entry].self, from: Data(contentsOf: location))) ?? [:]
+        entries = [:]
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 10
         configuration.httpMaximumConnectionsPerHost = 2
-        session = URLSession(configuration: configuration)
+        self.session = session ?? URLSession(configuration: configuration)
+        let read = Task.detached(priority: .utility) {
+            let data = try? FileRead.data(at: location, maximumBytes: 2_000_000)
+            let decoded = data.flatMap { try? JSONDecoder().decode([String: Entry].self, from: $0) } ?? [:]
+            return Self.pruned(decoded)
+        }
+        loading = Task { [weak self] in
+            self?.entries = await read.value
+            self?.loading = nil
+        }
+    }
+
+    nonisolated private static func pruned(_ entries: [String: Entry]) -> [String: Entry] {
+        Dictionary(uniqueKeysWithValues: entries.filter { Date.now.timeIntervalSince($0.value.date) < lifetime * 7 }
+            .sorted { $0.value.date > $1.value.date }.prefix(2048).map { ($0.key, $0.value) })
     }
 
     nonisolated static func key(_ url: URL) -> String {
@@ -111,40 +129,49 @@ enum LocalLinkCheck {
 
     func date(of url: URL) -> Date? { entries[Self.key(url)]?.date }
 
+    func waitForLoad() async { await loading?.value }
+
     /// Checks links whose result is missing or older than a day, or all of them when `force` is set; at most four at a time.
     func check(_ urls: [URL], force: Bool) async {
-        var seen = Set<String>()
-        let due = urls.filter { url in
+        await loading?.value
+        for url in urls {
             let key = Self.key(url)
-            guard seen.insert(key).inserted, !inFlight.contains(key) else { return false }
-            return force || entries[key].map { Date.now.timeIntervalSince($0.date) > Self.lifetime } ?? true
+            guard !inFlight.contains(key), key.utf8.count <= 8192, pending.count < 1000,
+                  force || (entries[key].map({ Date.now.timeIntervalSince($0.date) > Self.lifetime }) ?? true) else { continue }
+            inFlight.insert(key)
+            pending[key] = url
         }
-        guard !due.isEmpty else { return }
-        inFlight.formUnion(due.map(Self.key))
+        guard !pending.isEmpty else { return }
+        if worker == nil { worker = Task { await drain() } }
+        await worker?.value
+    }
+
+    /// The singleton owns the group, so simultaneous windows share four slots.
+    private func drain() async {
         let session = session
         await withTaskGroup(of: (String, String??).self) { group in
-            var pending = due.makeIterator()
-            func next() -> Bool {
-                guard let url = pending.next() else { return false }
-                group.addTask { (Self.key(url), await Self.probe(url, session: session)) }
-                return true
+            @MainActor func next() {
+                guard let (key, url) = pending.first else { return }
+                pending[key] = nil
+                group.addTask { (key, await Self.probe(url, session: session)) }
             }
-            for _ in 0..<4 { _ = next() }
-            for await (key, result) in group {
+            for _ in 0..<4 { next() }
+            while let (key, result) = await group.next() {
                 inFlight.remove(key)
-                // An outer nil means the answer says nothing about the link (offline, rate limited): keep what was known.
                 if let result { entries[key] = Entry(broken: result, date: .now) }
-                _ = next()
+                next()
             }
         }
         save()
+        worker = nil
     }
 
     private func save() {
-        let data = try? JSONEncoder().encode(entries)
-        let location = location
-        Task.detached(priority: .utility) {
-            guard let data else { return }
+        entries = Self.pruned(entries)
+        let entries = entries, location = location, previous = persistence
+        persistence = Task.detached(priority: .utility) {
+            await previous?.value
+            guard let data = try? JSONEncoder().encode(entries) else { return }
             try? FileManager.default.createDirectory(at: location.deletingLastPathComponent(), withIntermediateDirectories: true)
             try? data.write(to: location, options: .atomic)
         }

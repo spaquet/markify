@@ -239,7 +239,7 @@ struct MarkifyTests {
         #expect(DocumentHeading.extract(from: MarkdownModel("Just text.\n")).isEmpty)
     }
 
-    @Test @MainActor func linkSummaryCacheSurvivesReloadAndDetectsTargetChanges() throws {
+    @Test @MainActor func linkSummaryCacheSurvivesReloadAndDetectsTargetChanges() async throws {
         let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
         defer { try? FileManager.default.removeItem(at: location) }
         let document = URL(fileURLWithPath: "/tmp/notes/current.md")
@@ -247,11 +247,26 @@ struct MarkifyTests {
         let source = "# Original"
         let saved = LinkSummary(text: "Original summary", fingerprint: LinkSummaryStore.fingerprint(source), date: .now)
         let store = LinkSummaryStore(location: location)
-        try store.save(saved, for: key)
-        #expect(LinkSummaryStore(location: location).entries[key] == saved)
+        try await store.save(saved, for: key)
+        let reloaded = LinkSummaryStore(location: location)
+        await reloaded.waitForLoad()
+        #expect(reloaded.entries[key] == saved)
         #expect(!LinkSummaryStore.isStale(saved, source: source))
         #expect(LinkSummaryStore.isStale(saved, source: "# Changed"))
         #expect(LinkSummaryStore.key("other.md#section", from: document, root: nil) == key)
+    }
+
+    @Test @MainActor func concurrentSummarySavesPreserveBothEntries() async throws {
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: location) }
+        let store = LinkSummaryStore(location: location)
+        let summary = LinkSummary(text: "Summary", fingerprint: "source", date: .now)
+        async let first: Void = store.save(summary, for: "first")
+        async let second: Void = store.save(summary, for: "second")
+        _ = try await (first, second)
+        let reloaded = LinkSummaryStore(location: location)
+        await reloaded.waitForLoad()
+        #expect(reloaded.entries == ["first": summary, "second": summary])
     }
 
     @Test @MainActor func linksPanelGroupsResolvedDestinationsAndTracksSourceLines() throws {
@@ -728,7 +743,7 @@ struct MarkifyTests {
         #expect(Shortcuts.keyboardShortcut("italic", stored: Shortcuts.assigning(spec, to: "bold", stored: legacy)) == nil)
     }
 
-    @Test @MainActor func remoteImageSettingRefreshesCachedRendering() {
+    @Test @MainActor func remoteImageSettingRefreshesCachedRendering() async throws {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         let source = "<img src=\"https://example.com/settings.png\">"
         editor.string = source
@@ -747,6 +762,7 @@ struct MarkifyTests {
         defer { editor.restyle = nil }
         editor.loadRemoteImages = false
         #expect(refreshes == 1)
+        for _ in 0..<250 where editor.htmlBlocks[0] == nil { try await Task.sleep(for: .milliseconds(20)) }
         #expect(editor.htmlBlocks[0]?.text.string.contains("Remote image") == true)
         #expect(editor.htmlBlocks[0]?.text.string.contains("example.com") == true)
         guard case .placeholder(let message) = editor.image(for: "https://example.com/settings.png") else {
@@ -754,14 +770,15 @@ struct MarkifyTests {
             return
         }
         #expect(message == "Remote image — example.com")
+        let settledRefreshes = refreshes
         editor.loadRemoteImages = false
-        #expect(refreshes == 1)
+        #expect(refreshes == settledRefreshes)
         editor.loadRemoteImages = true
-        #expect(refreshes == 2)
+        #expect(refreshes == settledRefreshes + 1)
         #expect(editor.string == source)
     }
 
-    @Test @MainActor func htmlBlocksDecodeUTF8AndRestylesWaitForTheCurrentPass() {
+    @Test @MainActor func htmlBlocksDecodeUTF8AndRestylesWaitForTheCurrentPass() async throws {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         let source = "<p align=\"center\">Markify — one page</p>\n"
         editor.string = source
@@ -769,6 +786,9 @@ struct MarkifyTests {
             findQuery: "", matchCase: false, selectedRange: .constant(NSRange(location: 0, length: 0)),
             textView: .constant(editor), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
         native.style(editor)
+        editor.restyle = { native.style(editor) }
+        defer { editor.restyle = nil }
+        for _ in 0..<250 where editor.htmlBlocks[0] == nil { try await Task.sleep(for: .milliseconds(20)) }
         #expect(editor.htmlBlocks[0]?.text.string.contains("Markify — one page") == true)
         // A restyle asked for while a pass runs (WebKit's HTML import spins the run loop) waits for it.
         editor.isStyling = true
