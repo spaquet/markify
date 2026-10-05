@@ -2154,7 +2154,7 @@ class MarkdownTextView: NSTextView {
             return
         }
         // ⌘-click follows a link, resolving `/…` against the OKF bundle root.
-        if event.modifierFlags.contains(.command), let link = OKFLinks.link(at: characterIndexForInsertion(at: point), in: string) {
+        if event.modifierFlags.contains(.command), let link = link(at: characterIndexForInsertion(at: point)) {
             // A link to a heading in this document moves there.
             if link.target.hasPrefix("#") {
                 if !revealAnchor(LinkTarget.fragment(link.target) ?? "") { NSSound.beep() }
@@ -2168,6 +2168,15 @@ class MarkdownTextView: NSTextView {
             return
         }
         super.mouseDown(with: event)
+    }
+
+    /// Use the same CommonMark/GFM reading as styling, including reference links and autolinks.
+    func link(at location: Int) -> (target: String, text: String)? {
+        for span in model.spans where NSLocationInRange(location, span.range) {
+            guard case .link(let target) = span.kind else { continue }
+            return (target, (string as NSString).substring(with: span.content))
+        }
+        return nil
     }
 
     /// Flips a task's `[ ]`/`[x]` as one undoable edit. The caret and the page stay put: `insertText` would move the
@@ -3189,4 +3198,3 @@ struct InlineFormula {
         context.restoreGState()
     }
 }
-
