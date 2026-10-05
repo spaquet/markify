@@ -1856,7 +1856,8 @@ class MarkdownTextView: NSTextView {
         htmlInputs[key] = raw
         htmlCosts[key] = key.utf8.count
         // WebKit's supported asynchronous importer keeps its work outside the typing/style call.
-        NSAttributedString.loadFromHTML(string: html as String, options: [.timeout: 5]) { [weak self] parsed, _, _ in
+        // Cold WebKit startup and a busy main thread can exceed five seconds.
+        NSAttributedString.loadFromHTML(string: html as String, options: [.timeout: 30]) { [weak self] parsed, _, _ in
             let imported = HTMLImportResult(parsed)
             // WebKit delivers this completion through its main-queue navigation callbacks and timeout.
             MainActor.assumeIsolated {

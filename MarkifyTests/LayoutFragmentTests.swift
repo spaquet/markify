@@ -119,7 +119,8 @@ import Testing
             guard let editor else { return }
             IncrementalStyleTests.native(editor.string).style(editor)
         }
-        for _ in 0..<250 {
+        let deadline = ContinuousClock.now + .seconds(35)
+        while ContinuousClock.now < deadline {
             editor.restyle?()
             if let html = editor.htmlBlocks[0], html.text.size().height > 100 { break }
             try await Task.sleep(for: .milliseconds(20))

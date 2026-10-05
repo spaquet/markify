@@ -778,7 +778,8 @@ struct MarkifyTests {
         defer { editor.restyle = nil }
         editor.loadRemoteImages = false
         #expect(refreshes == 1)
-        for _ in 0..<250 where editor.htmlBlocks[0] == nil { try await Task.sleep(for: .milliseconds(20)) }
+        let deadline = ContinuousClock.now + .seconds(35)
+        while editor.htmlBlocks[0] == nil, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
         #expect(editor.htmlBlocks[0]?.text.string.contains("Remote image") == true)
         #expect(editor.htmlBlocks[0]?.text.string.contains("example.com") == true)
         guard case .placeholder(let message) = editor.image(for: "https://example.com/settings.png") else {
@@ -804,7 +805,8 @@ struct MarkifyTests {
         native.style(editor)
         editor.restyle = { native.style(editor) }
         defer { editor.restyle = nil }
-        for _ in 0..<250 where editor.htmlBlocks[0] == nil { try await Task.sleep(for: .milliseconds(20)) }
+        let deadline = ContinuousClock.now + .seconds(35)
+        while editor.htmlBlocks[0] == nil, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
         #expect(editor.htmlBlocks[0]?.text.string.contains("Markify — one page") == true)
         // A restyle asked for while a pass runs (WebKit's HTML import spins the run loop) waits for it.
         editor.isStyling = true
