@@ -1030,24 +1030,26 @@ class MarkdownTextView: NSTextView {
         guard hoveredTableRow != start else { return }
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            let previous = self.hoveredTableRow
             self.hoveredTableRow = start
-            self.animateTableHeights()
+            self.animateTableHeights(changed: Set([previous, start].compactMap { $0 }))
         }
         tableHoverWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + (start == nil ? 0.06 : hoveredTableRow == nil ? 0.12 : 0.06), execute: work)
     }
 
-    private func animateTableHeights() {
+    private func animateTableHeights(changed: Set<Int>) {
         tableAnimation?.cancel()
-        let rows = model.tables.flatMap { table in table.rows.filter { !$0.separator }.map { ($0, table) } }
+        let changed = changed.union(tableAnimatedHeights.keys)
+        let rows = model.tables.flatMap { table in table.rows.filter { !$0.separator && changed.contains($0.start) }.map { ($0, table) } }
         let from = Dictionary(uniqueKeysWithValues: rows.map { row, _ in
             (row.start, tableAnimatedHeights[row.start] ?? tableRowIndices[row.start].flatMap { tableOverlays[$0]?.frame.height } ?? 43)
         })
         tableAnimatedHeights = [:]
         let to = Dictionary(uniqueKeysWithValues: rows.map { ($0.0.start, tableRowHeight($0.0, table: $0.1)) })
-        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, from != to else { refreshTableHeights(); return }
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, from != to else { refreshTableHeights(changed: changed); return }
         tableAnimatedHeights = from
-        refreshTableHeights()
+        refreshTableHeights(changed: changed)
         let began = Date.timeIntervalSinceReferenceDate
         let version = textVersion
         tableAnimation = Task { [weak self] in
@@ -1064,17 +1066,17 @@ class MarkdownTextView: NSTextView {
                 self.tableAnimatedHeights = to
                 for (start, target) in to { self.tableAnimatedHeights[start] = (from[start] ?? 43) + (target - (from[start] ?? 43)) * eased }
                 if t == 1 { self.tableAnimatedHeights = [:] }
-                self.refreshTableHeights()
+                self.refreshTableHeights(changed: changed)
                 if t == 1 { return }
             }
         }
     }
 
-    func refreshTableHeights() {
+    func refreshTableHeights(changed: Set<Int>? = nil) {
         guard rendered, let storage = textStorage else { return }
         storage.beginEditing()
         for table in model.tables {
-            for row in table.rows where !row.separator {
+            for row in table.rows where !row.separator && (changed?.contains(row.start) ?? true) {
                 let style = NSMutableParagraphStyle()
                 style.minimumLineHeight = tableRowHeight(row, table: table)
                 style.maximumLineHeight = style.minimumLineHeight
@@ -1180,7 +1182,7 @@ class MarkdownTextView: NSTextView {
                 wanted = Set(visible.flatMap { max(0, $0 - 5)...min(rows.count - 1, $0 + 5) })
             } else { wanted = Set(rows.indices.prefix(32)) }
             // Keep the field editor alive if its row scrolls out of view.
-            wanted.formUnion(tableOverlays.compactMap { $0.value.fields.contains { $0.currentEditor() != nil } ? $0.key : nil })
+            wanted.formUnion(tableOverlays.compactMap { rows.indices.contains($0.key) && $0.value.fields.contains { $0.currentEditor() != nil } ? $0.key : nil })
         } else if let last = rows.last { settleLayout(through: last.0.end) }
         for (index, (row, header, table, ordinal)) in rows.enumerated() {
             guard wanted.contains(index) else { continue }
