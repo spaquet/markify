@@ -167,6 +167,88 @@ import Testing
         withExtendedLifetime(window) {}
     }
 
+    @Test func scatteredTablesRefreshWhenScrollingAndRowsShrink() async throws {
+        let (window, editor) = makeEditor()
+        let padding = String(repeating: "A paragraph above the next table.\n\n", count: 15)
+        let source = (0..<20).map { index in
+            padding + "| ID | Notes |\n| --- | --- |\n| \(index) | " + String(repeating: "Long content wraps. ", count: 15) + " |\n\n"
+        }.joined()
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        let tables = editor.model.tables
+        #expect(tables.count == 20)
+        let clip = try #require(editor.enclosingScrollView?.contentView)
+        let table = tables[10]
+        let header = table.rows[0]
+        editor.settleLayout(through: table.rows.last!.end)
+        clip.scroll(to: NSPoint(x: 0, y: editor.textRect(NSRange(location: header.start, length: 1)).minY - 100))
+        editor.enclosingScrollView?.reflectScrolledClipView(clip)
+        // Scrolling must create these overlays without an explicit refreshTables call.
+        try await Task.sleep(for: .milliseconds(100))
+        let overlay = try #require(editor.tableOverlays.values.first { $0.rowStart == header.start })
+        #expect(abs(overlay.frame.minY - settledY(editor, header.start)) < 1)
+        let row = table.rows[2]
+        editor.hoverTableRow(row.start)
+        for _ in 0..<100 {
+            if editor.tableRowHeight(row, table: table) > 43 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(editor.tableRowHeight(row, table: table) > 43)
+        editor.hoverTableRow(nil)
+        for _ in 0..<100 {
+            if editor.tableRowHeight(row, table: table) == 43 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(editor.tableRowHeight(row, table: table) == 43)
+        for overlay in editor.tableOverlays.values {
+            #expect(abs(overlay.frame.minY - settledY(editor, overlay.rowStart)) < 1)
+        }
+        #expect(editor.string == source)
+        window.contentView = nil
+    }
+
+    @Test func diagramCompletionKeepsAdjacentVirtualizedTableBelowIt() async throws {
+        let (window, editor) = makeEditor()
+        let diagram = "flowchart TD\n" + (0..<15).map { "N\($0)[Step \($0)] --> N\($0 + 1)" }.joined(separator: "\n")
+        let tableSource = "| ID | Notes |\n| --- | --- |\n| 1 | Next to the diagram |\n\n"
+        let source = "```mermaid\n" + diagram + "\n```\n\n" + String(repeating: tableSource, count: 20)
+        editor.string = source
+        editor.restyle = { [weak editor] in
+            guard let editor else { return }
+            self.style(editor)
+        }
+        style(editor)
+        editor.refreshTables()
+        let firstTable = try #require(editor.model.tables.first)
+        let initialY = editor.textRect(NSRange(location: firstTable.rows[0].start, length: 1)).minY
+        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        for _ in 0..<200 {
+            if case .rendered = MermaidRenderer.shared.cached(diagram, dark: dark) { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        guard case .rendered(let image) = MermaidRenderer.shared.cached(diagram, dark: dark) else {
+            Issue.record("The adjacent diagram did not render")
+            return
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        // The finished diagram pushes the table below the viewport; scrolling must recreate it.
+        let clip = try #require(editor.enclosingScrollView?.contentView)
+        clip.scroll(to: NSPoint(x: 0, y: editor.textRect(NSRange(location: firstTable.rows[0].start, length: 1)).minY - 100))
+        editor.enclosingScrollView?.reflectScrolledClipView(clip)
+        try await Task.sleep(for: .milliseconds(100))
+        let header = try #require(editor.tableOverlays.values.first { $0.rowStart == firstTable.rows[0].start })
+        #expect(header.frame.minY > initialY)
+        #expect(header.frame.minY >= editor.textContainerOrigin.y + MarkdownTextView.fitted(image.size, width: editor.columnWidth).height + MarkdownTextView.diagramPadding * 2)
+        for overlay in editor.tableOverlays.values {
+            #expect(abs(overlay.frame.minY - settledY(editor, overlay.rowStart)) < 1)
+            #expect(overlay.frame.height == 43)
+        }
+        #expect(editor.string == source)
+        window.contentView = nil
+        editor.stopObserving()
+    }
+
     @Test func tableHoverDelayCancelsAndKeyboardEditingExpands() async throws {
         let (window, editor) = makeEditor()
         editor.string = "| Name | Notes |\n| --- | --- |\n| First | " + String(repeating: "Long content ", count: 30) + " |"
@@ -184,6 +266,73 @@ import Testing
         #expect(editor.tableRowExpanded(row))
         try await Task.sleep(for: .milliseconds(50))
         #expect(editor.tableOverlays[1]!.frame.height > 43)
+    }
+
+    @Test func tableAlignmentsReachHeadersRichCellsAndEditing() async throws {
+        let (window, editor) = makeEditor()
+        let source = "| ID | Left | Center | Right |\n| :---: | :--- | :---: | ---: |\n| 1 | **Draft** | $x^2$ | 1,024 |\n| 2 | Next | A / B | -42 |"
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        let expected: [NSTextAlignment] = [.center, .left, .center, .right]
+        for overlay in editor.tableOverlays.values {
+            #expect(overlay.fields.map(\.alignment) == expected)
+            for field in overlay.fields.dropFirst() {
+                let presentation = try #require(editor.tablePresentations[field.sourceRange.location])
+                let index = try #require(overlay.fields.firstIndex(of: field))
+                let paragraph = try #require(presentation.reading.textStorage?.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle)
+                #expect(paragraph.alignment == expected[index])
+                #expect(presentation.summary.alignment == expected[index])
+            }
+        }
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        #expect(window.makeFirstResponder(field))
+        let fieldEditor = try #require(field.currentEditor() as? NSTextView)
+        #expect(fieldEditor.alignment == .right)
+        window.makeFirstResponder(editor)
+        editor.hoverTableRow(editor.model.tables[0].rows[2].start)
+        try await Task.sleep(for: .milliseconds(450))
+        #expect(editor.tableOverlays[1]?.fields.map(\.alignment) == expected)
+        #expect(editor.string == source)
+        window.contentView = nil
+    }
+
+    @Test func stressDocumentScrollsAndDrawsThroughCodeBlocks() async throws {
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/render-stress-test.md")
+        let source = try String(contentsOf: fixture, encoding: .utf8)
+        let (window, editor) = makeEditor()
+        editor.documentURL = fixture.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("render-stress-test.md")
+        editor.string = source
+        editor.restyle = { [weak editor] in
+            guard let editor else { return }
+            self.style(editor)
+        }
+        style(editor)
+        let manager = try #require(editor.textLayoutManager)
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 980, pixelsHigh: 660, bitsPerSample: 8,
+                                                  samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                                                  bytesPerRow: 0, bitsPerPixel: 0))
+        let context = try #require(NSGraphicsContext(bitmapImageRep: bitmap)?.cgContext)
+        for heading in ["### Small alignment table", "### Connection attempt with retry and failure paths", "## 6. Code blocks and long lines", "### Python", "### JSON and an intentionally long string", "## END OF STRESS TEST"] {
+            let range = (source as NSString).range(of: heading)
+            try #require(range.location != NSNotFound)
+            editor.settleLayout(through: NSMaxRange(range))
+            editor.reveal(range)
+            try await Task.sleep(for: .milliseconds(100))
+            editor.refreshTables()
+            manager.ensureLayout(for: editor.visibleRect)
+            let elapsed = ContinuousClock().measure {
+                NSGraphicsContext.saveGraphicsState()
+                NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+                context.translateBy(x: 0, y: -editor.visibleRect.minY)
+                editor.draw(editor.visibleRect)
+                NSGraphicsContext.restoreGraphicsState()
+            }
+            #expect(elapsed < .seconds(2), "Drawing \(heading) stalled for \(elapsed)")
+            #expect(editor.string == source)
+        }
+        editor.stopObserving()
+        window.contentView = nil
     }
 
     @Test func idAndNumericColumnsHandleRaggedRows() throws {

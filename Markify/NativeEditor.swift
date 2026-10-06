@@ -97,7 +97,7 @@ struct NativeEditor: NSViewRepresentable {
         editor.delegate = context.coordinator
         editor.restyle = { [weak coordinator = context.coordinator, weak editor] in
             guard let coordinator, let editor else { return }
-            coordinator.parent.style(editor)
+            coordinator.parent.style(editor, incremental: true)
         }
         editor.onSlashKey = { [weak coordinator = context.coordinator] key, slash in
             coordinator?.handleSlashKey(key, slash) ?? false
@@ -1226,9 +1226,21 @@ class MarkdownTextView: NSTextView {
         let presentation = tablePresentations[range.location] ?? TableCellPresentation()
         tablePresentations[range.location] = presentation
         presentation.reading.tableSourceRange = range
-        let header = model.tables.contains { $0.rows.first?.cells.contains(range) == true }
-        presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header)
+        let table = model.tables.first { $0.rows.contains { $0.cells.contains(range) } }
+        let column = table?.rows.first(where: { $0.cells.contains(range) })?.cells.firstIndex(of: range) ?? 0
+        let header = table?.rows.first?.cells.contains(range) == true
+        presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header,
+                            alignment: table.map { tableAlignment(column, table: $0) } ?? .left)
         return presentation
+    }
+
+    func tableAlignment(_ column: Int, table: MarkdownModel.Table) -> NSTextAlignment {
+        switch table.alignments.indices.contains(column) ? table.alignments[column] : nil {
+        case .left: .left
+        case .center: .center
+        case .right: .right
+        case nil: column == tableIDColumn(table) ? .center : .left
+        }
     }
 
     func refreshTables() {
@@ -1257,7 +1269,10 @@ class MarkdownTextView: NSTextView {
             } else { wanted = Set(rows.indices.prefix(32)) }
             // Keep the field editor alive if its row scrolls out of view.
             wanted.formUnion(tableOverlays.compactMap { rows.indices.contains($0.key) && $0.value.fields.contains { $0.currentEditor() != nil } ? $0.key : nil })
-        } else if let last = rows.last { settleLayout(through: last.0.end) }
+        }
+        // Rows shrink and diagrams finish asynchronously. Settle the prefix before reading any
+        // overlay frames, so every row uses the same positions rather than estimated heights.
+        if let last = wanted.max() { settleLayout(through: rows[last].0.end) }
         for (index, (row, header, table, ordinal)) in rows.enumerated() {
             guard wanted.contains(index) else { continue }
             let line = textRect(NSRange(location: row.start, length: 1))
@@ -1268,6 +1283,7 @@ class MarkdownTextView: NSTextView {
             overlay.owner = self
             overlay.rowStart = row.start
             overlay.widths = tableWidths(table)
+            overlay.alignments = overlay.widths.indices.map { tableAlignment($0, table: table) }
             overlay.idColumn = tableIDColumn(table)
             overlay.expanded = !header && tableRowExpanded(row)
             overlay.striped = ordinal % 2 == 0
@@ -1562,7 +1578,7 @@ class MarkdownTextView: NSTextView {
     /// Overlays placed while outside the visible area are not painted when it grows to include them.
     private func visibleAreaChanged() {
         for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
-        guard !tableRefreshScheduled, !refreshingTables, model.tables.contains(where: { $0.rows.count > 32 }) else { return }
+        guard !tableRefreshScheduled, !refreshingTables, !model.tables.isEmpty else { return }
         tableRefreshScheduled = true
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -2834,6 +2850,7 @@ final class TableCellPresentation: NSView {
     private var expanded = false
     private var mediaSummary: String?
     private var header = false
+    private var alignment: NSTextAlignment = .left
     private var contextDefinitions: [String] = []
     private var footnoteContext: [String] = []
     private(set) var fullHeight: CGFloat = 21
@@ -2866,12 +2883,12 @@ final class TableCellPresentation: NSView {
             .replacingOccurrences(of: "\\|", with: "|")
     }
 
-    func update(source: String, width: CGFloat, owner: MarkdownTextView, header: Bool) {
+    func update(source: String, width: CGFloat, owner: MarkdownTextView, header: Bool, alignment: NSTextAlignment) {
         self.owner = owner
         reading.tableDocument = owner
         let definitions = reading.referenceDefinitions()
         let footnotes = reading.footnoteDefinitions()
-        let changed = contextDefinitions != definitions || self.header != header || self.source != source || self.width != width || theme != owner.theme
+        let changed = contextDefinitions != definitions || self.header != header || self.alignment != alignment || self.source != source || self.width != width || theme != owner.theme
             || footnoteContext != footnotes || reading.bundleRoot != owner.bundleRoot
             || reading.documentURL != owner.documentURL || reading.baseDirectory != owner.baseDirectory
             || reading.loadRemoteImages != owner.loadRemoteImages || reading.effectiveAppearance.name != owner.effectiveAppearance.name
@@ -2879,6 +2896,8 @@ final class TableCellPresentation: NSView {
         contextDefinitions = definitions
         footnoteContext = footnotes
         self.header = header
+        self.alignment = alignment
+        summary.alignment = alignment
         self.source = source
         self.width = max(1, width)
         theme = owner.theme
@@ -2926,10 +2945,13 @@ final class TableCellPresentation: NSView {
             }
             var changes: [(NSRange, NSParagraphStyle)] = []
             storage.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
-                guard let paragraph = value as? NSParagraphStyle, paragraph.maximumLineHeight == 0,
+                guard let paragraph = value as? NSParagraphStyle,
                       let copy = paragraph.mutableCopy() as? NSMutableParagraphStyle else { return }
-                copy.lineSpacing = 0
-                copy.minimumLineHeight = 21
+                copy.alignment = alignment
+                if paragraph.maximumLineHeight == 0 {
+                    copy.lineSpacing = 0
+                    copy.minimumLineHeight = 21
+                }
                 changes.append((range, copy))
             }
             for (range, paragraph) in changes { storage.addAttribute(.paragraphStyle, value: paragraph, range: range) }
@@ -3082,6 +3104,7 @@ final class TableRowView: NSView {
     var rowStart = 0
     var hoveredColumn: Int?
     var widths: [CGFloat] = []
+    var alignments: [NSTextAlignment] = []
     var idColumn: Int?
     var expanded = false
     var striped = false
@@ -3129,13 +3152,15 @@ final class TableRowView: NSView {
             let cellX = x
             let value = (source as NSString).substring(with: range)
             let badgeWidth = Self.badgeWidth(value, available: width - 28)
-            field.frame = NSRect(x: index == idColumn ? cellX + (width - badgeWidth) / 2 : x + 14, y: 11, width: index == idColumn ? badgeWidth : max(1, width - 28), height: index == idColumn ? min(bounds.height - 22, expanded ? Self.cellHeight((source as NSString).substring(with: range), width: badgeWidth, id: true) : 21) : bounds.height - 22)
+            let alignment = alignments.indices.contains(index) ? alignments[index] : .left
+            let badgeInset = alignment == .right ? width - 14 - badgeWidth : alignment == .center ? (width - badgeWidth) / 2 : 14
+            field.frame = NSRect(x: index == idColumn ? cellX + badgeInset : x + 14, y: 11, width: index == idColumn ? badgeWidth : max(1, width - 28), height: index == idColumn ? min(bounds.height - 22, expanded ? Self.cellHeight((source as NSString).substring(with: range), width: badgeWidth, id: true) : 21) : bounds.height - 22)
             x += width
             field.maximumNumberOfLines = expanded ? 0 : 1
             field.cell?.wraps = expanded
             field.cell?.isScrollable = !expanded
             field.cell?.lineBreakMode = expanded ? .byWordWrapping : .byTruncatingTail
-            field.alignment = index == idColumn ? .center : .left
+            field.alignment = alignment
             field.drawsBackground = expanded && index == idColumn
             field.backgroundColor = .controlAccentColor
             field.wantsLayer = true
@@ -3242,7 +3267,9 @@ final class TableCellField: NSTextField, NSTextFieldDelegate {
             editor.isHorizontallyResizable = false
             editor.textContainer?.widthTracksTextView = true
             editor.textContainer?.lineBreakMode = .byWordWrapping
-            editor.defaultParagraphStyle = TableRowView.textParagraph
+            let paragraph = TableRowView.textParagraph.mutableCopy() as! NSMutableParagraphStyle
+            paragraph.alignment = alignment
+            editor.defaultParagraphStyle = paragraph
         }
     }
     func controlTextDidEndEditing(_ obj: Notification) {
