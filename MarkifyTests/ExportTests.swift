@@ -104,8 +104,12 @@ import Testing
     }
 
     @Test func diagramsExportAsSVG() async {
-        let page = await DocumentExport.page(context("```mermaid\ngraph TD\n  A --> B\n```\n"), for: .html)
-        #expect(page.contains("<figure class=\"diagram\"><svg"))
+        let source = "```mermaid\nflowchart TD\n  A --> B\n```\n\n~~~MERMAID\nsequenceDiagram\n Alice->>Bob: Hello\n~~~\n"
+        for format in [DocumentExport.Format.html, .pdf] {
+            let page = await DocumentExport.page(context(source), for: format)
+            #expect(page.components(separatedBy: "<figure class=\"diagram\"><svg").count == 3)
+            #expect(!page.contains("<code class=\"language-"))
+        }
     }
 
     @Test func pdfIsPaginated() async throws {

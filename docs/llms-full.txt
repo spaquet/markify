@@ -257,16 +257,38 @@ Write `[^1]` where the note belongs and `[^1]: The note.` anywhere in the docume
 
 ## Mermaid diagrams
 
-A fenced block with the language `mermaid` renders as a diagram in the Rendered lens:
+A fenced block with the language `mermaid` renders as a diagram in the Rendered lens. Use `mermaid` on the opening fence for every diagram type; the first line inside chooses the type. For a flowchart:
 
 ````markdown
 ```mermaid
-graph TD
-  Draft --> Review --> Publish
+flowchart TD
+  Draft --> Review{Ready?}
+  Review -->|Yes| Publish
+  Review -->|No| Draft
 ```
 ````
 
-If Mermaid can't read the diagram, Markify shows the source with Mermaid's error message. Diagrams render offline with a copy of Mermaid bundled in the app.
+For a sequence diagram, use the same fence and start with `sequenceDiagram`:
+
+````markdown
+```mermaid
+sequenceDiagram
+  participant Author
+  participant Editor
+  Author->>Editor: Review draft
+  Editor-->>Author: Feedback
+```
+````
+
+Flowcharts also accept `graph TD` or `graph LR`; `TD` runs from top to bottom and `LR` from left to right. Flowcharts support decision shapes, labeled arrows and subgraphs. Sequence diagrams support participants, messages, notes, activation, loops and alternatives. A fence labeled `flowchart` or `sequence` is an ordinary code block: those names do not replace `mermaid`.
+
+The bundled Mermaid 12 engine also handles class (`classDiagram`), state (`stateDiagram-v2`), entity relationship (`erDiagram`), Gantt (`gantt`), pie (`pie`), journey (`journey`), Git (`gitGraph`), mind map (`mindmap`), timeline (`timeline`), quadrant (`quadrantChart`), XY (`xychart-beta`), block (`block-beta`) and Sankey (`sankey-beta`) diagrams. See Mermaid's [flowchart syntax](https://mermaid.js.org/syntax/flowchart.html) and [sequence syntax](https://mermaid.js.org/syntax/sequenceDiagram.html) for details. Syntax from a newer Mermaid release may require a future Markify update.
+
+Requirements (`requirementDiagram`), packets (`packet-beta`), architecture (`architecture-beta`), Kanban (`kanban`) and C4 (`C4Context`) are supported too. Mermaid YAML frontmatter inside the fence can set a diagram title and configuration; it is separate from the document's frontmatter.
+
+Choose **Mermaid** in the `/` menu to insert a starter flowchart. Switch to the Markdown lens (⌘/) to edit the source; the Rendered lens shows the diagram again. Diagrams follow the light or dark appearance and scale to the column. HTML and PDF exports include vector diagrams, and Finder's Quick Look preview renders them too.
+
+If Mermaid can't read the diagram, Markify shows the source with Mermaid's error message. A failed diagram stays as code in exports. Diagrams render offline with a copy of Mermaid bundled in the app; external images and clickable links inside diagrams are disabled. Each diagram is limited to 64 KB of source and a 15-second rendering timeout; editor images also have size and memory limits.
 
 ## Frontmatter
 

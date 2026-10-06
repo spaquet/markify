@@ -120,6 +120,7 @@ public struct MarkdownModel: Sendable {
     }
 
     public struct Table: Hashable, Sendable {
+        public enum Alignment: Hashable, Sendable { case left, center, right }
         public struct Row: Hashable, Sendable {
             public let start: Int
             /// End of the line's contents, before the newline.
@@ -129,6 +130,7 @@ public struct MarkdownModel: Sendable {
         }
         public let range: NSRange
         public let rows: [Row]
+        public let alignments: [Alignment?]
     }
 
     public struct List: Hashable, Sendable {
@@ -515,7 +517,15 @@ private struct Walker {
             rows.append(row(at: range.location, separator: false))
         }
         let end = rows.last.map { $0.end } ?? NSMaxRange(whole)
-        tables.append(.init(range: NSRange(location: head.location, length: end - head.location), rows: rows))
+        let alignments: [MarkdownModel.Table.Alignment?] = table.columnAlignments.map { alignment in
+            switch alignment {
+            case .left: .left
+            case .center: .center
+            case .right: .right
+            case nil: nil
+            }
+        }
+        tables.append(.init(range: NSRange(location: head.location, length: end - head.location), rows: rows, alignments: alignments))
     }
 
     /// Cell contents between unescaped pipes, trimmed; an empty cell is an empty range at its closing pipe.

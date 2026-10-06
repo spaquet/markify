@@ -1,9 +1,38 @@
 import AppKit
+import SwiftUI
 import Testing
 @testable import Markify
 
 /// Typing restyles only what changed, so TextKit keeps the layout of the rest of the document.
 @MainActor struct IncrementalStyleTests {
+    @Test func renderRefreshLeavesUnchangedTextUntouched() throws {
+        let host = NSHostingView(rootView: Self.native(Self.source))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 500), styleMask: [.titled], backing: .buffered, defer: false)
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        func editor(in view: NSView) -> MarkdownTextView? {
+            if let editor = view as? MarkdownTextView { return editor }
+            return view.subviews.lazy.compactMap { editor(in: $0) }.first
+        }
+        let editor = try #require(editor(in: host))
+        let storage = try #require(editor.textStorage)
+        var edited: [NSRange] = []
+        let watched = ObjectIdentifier(storage)
+        let observer = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: nil, queue: nil) { notification in
+            guard let changed = notification.object as? NSTextStorage, ObjectIdentifier(changed) == watched else { return }
+            let range = changed.editedRange
+            MainActor.assumeIsolated { edited.append(range) }
+        }
+        defer {
+            NotificationCenter.default.removeObserver(observer)
+            editor.stopObserving()
+            window.contentView = nil
+        }
+        editor.restyle?()
+        #expect(edited.isEmpty)
+        #expect(editor.string == Self.source)
+    }
+
     @Test func paragraphFastPathMatchesFullStylingAcrossInlineAndBlockChanges() {
         for insertion in ["text", "**bold** ", "[web](https://example.com) ", "\n", "## ", "[ref]: https://example.com\n"] {
             let editor = MarkdownTextView(usingTextLayoutManager: true)

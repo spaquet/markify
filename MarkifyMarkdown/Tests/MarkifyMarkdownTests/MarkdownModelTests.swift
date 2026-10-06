@@ -85,6 +85,11 @@ struct FixtureModelTests {
         #expect(rows.map { $0.cells.map(probe.text) } == [["Name", "Code"], ["---", "---"], ["pipe", "`a"], ["plain", "text"]])
     }
 
+    @Test func tableColumnAlignmentsComeFromTheSeparator() {
+        let model = MarkdownModel("| ID | Left | Center | Right | Default |\n| :---: | :--- | :---: | ---: | --- |\n| 1 | a | b | c | d |")
+        #expect(model.tables.first?.alignments == [.center, .left, .center, .right, nil])
+    }
+
     @Test func codeBlocks() {
         #expect(probe.spans(isCode).map(\.kind) == [.codeBlock(language: "swift", fenced: true), .codeBlock(language: nil, fenced: true), .codeBlock(language: nil, fenced: false)])
         #expect(probe.contents(isCode) == ["let x = 1", "tilde fence", "    indented code"])
