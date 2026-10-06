@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: Release a new Markify version end to end — ask for the version and build, make sure Sparkle signing is set up, update and rebuild the help, bump and tag, watch the release workflow, check the published DMGs and Sparkle feed, then update the website. Use when the user asks to deploy, release, ship or publish a new version.
+description: Release a new Markify version end to end — ask for the version and build, make sure Sparkle signing is set up, update and rebuild the help, bump and tag, watch the release workflow, check the published DMGs and Sparkle feed, then update the Homebrew cask and the website. Use when the user asks to deploy, release, ship or publish a new version.
 disable-model-invocation: true
 ---
 
@@ -72,7 +72,7 @@ The help is written once in `help/*.md` and built into the app's Help Book (`Mar
    ```
 
 3. If `Markify/Resources/Welcome.md` (the first-launch tour) changed since the last tag, add the previous version's hash to `MarkifyAppDelegate.previousWelcomes` so untouched copies in users' libraries get the new tour: `git show <last tag>:Markify/Resources/Welcome.md | shasum -a 256`.
-4. Commit only what ships in the app: `git add help Markify/Resources/Markify.help Markify/Resources/Welcome.md Markify/MarkifyApp.swift Markify/AboutView.swift` and commit as `Update help for <version>` (skip if there is nothing to commit). Leave the regenerated `docs/` files uncommitted (`git stash push -- docs` if they're in the way): any push under `docs/` redeploys the website, which must wait for the published release in step 8.
+4. Commit only what ships in the app: `git add help Markify/Resources/Markify.help Markify/Resources/Welcome.md Markify/MarkifyApp.swift Markify/AboutView.swift` and commit as `Update help for <version>` (skip if there is nothing to commit). Leave the regenerated `docs/` files uncommitted (`git stash push -- docs` if they're in the way): any push under `docs/` redeploys the website, which must wait for the published release in step 9.
 
 ## 5. Bump, commit, push
 
@@ -107,7 +107,21 @@ scripts/check-release.sh v<version> <build>
 
 It checks the six assets, that the tag is Latest, that the live appcast names this version and build, and that the update archive verifies against `SUPublicEDKey`, has a valid code signature and holds the right build. Don't continue until it passes.
 
-## 8. Update the website
+## 8. Update the Homebrew cask
+
+`Casks/markify.rb` pins the version and both DMG hashes, so Homebrew users stay on the old release until it changes (HOMEBREW.md). With the release checked:
+
+```bash
+scripts/set-cask-version.sh <version>   # downloads both DMGs (slow: run in the background), checks them against the .sha256 files, rewrites version and hashes, runs brew style
+git diff Casks                           # version and the two sha256 values only
+git commit -m "Update Homebrew cask to <version>" Casks/markify.rb
+scripts/set-cask-version.sh --audit     # brew audit --strict --online, both architectures, from a temporary tap of the committed cask
+git push
+```
+
+If the audit fails, fix the cask, amend the commit and rerun before pushing. Never use `sha256 :no_check` or a `latest/download` URL. Optionally confirm what users get after the push: `brew update && brew info --cask spaquet/markify/markify` (only if the user has the tap).
+
+## 9. Update the website
 
 Only now, with the DMGs published:
 
@@ -120,6 +134,6 @@ git diff --stat docs     # the hero line, download section and softwareVersion i
 
 Commit everything under `docs/` as `Update website to version <version>` and push to main. The Pages workflow deploys `docs/`; confirm it succeeded (`gh run list --workflow pages.yml --limit 1`) and that https://spaquet.github.io/markify/ shows the new version (`curl -s https://spaquet.github.io/markify/ | grep -o "Version [0-9.]*"`; the CDN can lag a minute).
 
-## 9. Report
+## 10. Report
 
-Tell the user: the release URL, the checks that passed, the help pages updated (or that none needed it), the website commit, and anything skipped. Remind them that the private Sparkle key must stay backed up.
+Tell the user: the release URL, the checks that passed, the cask commit, the help pages updated (or that none needed it), the website commit, and anything skipped. Remind them that the private Sparkle key must stay backed up.

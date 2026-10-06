@@ -111,7 +111,7 @@ scripts/set-website-version.sh 1.27     # hero line, download section and struct
 
 Commit and push the `docs/` changes to `main`; the Pages workflow deploys it. The download buttons use `releases/latest/download/…`, so they already point to the new DMGs.
 
-Update `Casks/markify.rb` to the published version and both verified DMG SHA-256 hashes, validate both architecture branches, and commit the cask change to `main`. See [HOMEBREW.md](HOMEBREW.md). Homebrew updates use this pinned cask; publishing a GitHub release alone does not update it.
+Update `Casks/markify.rb` to the published version and both verified DMG SHA-256 hashes with `scripts/set-cask-version.sh <version>`, commit, validate both architecture branches with `scripts/set-cask-version.sh --audit`, and push the cask change to `main`. See [HOMEBREW.md](HOMEBREW.md). Homebrew updates use this pinned cask; publishing a GitHub release alone does not update it.
 
 ### Release assets
 
