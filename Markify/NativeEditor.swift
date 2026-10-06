@@ -162,6 +162,7 @@ struct NativeEditor: NSViewRepresentable {
         // HTML blocks are imported through WebKit, which spins the run loop: an image or diagram arriving then
         // asks for a restyle in the middle of this pass. It runs once this pass is done instead of inside it.
         let styling = editor as? MarkdownTextView
+        styling?.observeEdits()
         if let styling, styling.isStyling { styling.restyleAfterStyling = true; return }
         let styleKey = StyleKey(native: self, editor: editor)
         if incremental, findQuery.isEmpty, let styling,
@@ -1013,6 +1014,7 @@ class MarkdownTextView: NSTextView {
     /// Bumped whenever the characters change (not their attributes), so caches check validity without comparing the text.
     private(set) var textVersion = 0
     private var editingObserver: NSObjectProtocol?
+    private weak var observedStorage: NSTextStorage?
     private var pendingCharacterEdit: (range: NSRange, delta: Int)?
     private var multipleCharacterEdits = false
     private var styledSource: String?
@@ -1053,6 +1055,7 @@ class MarkdownTextView: NSTextView {
         htmlLoads = [:]
         if let editingObserver { NotificationCenter.default.removeObserver(editingObserver) }
         editingObserver = nil
+        observedStorage = nil
         clipObservers.forEach(NotificationCenter.default.removeObserver)
         clipObservers = []
         if let frontmatterPopoverClose { NotificationCenter.default.removeObserver(frontmatterPopoverClose) }
@@ -1061,12 +1064,29 @@ class MarkdownTextView: NSTextView {
         tableAnimation?.cancel()
         tableOfContentsUpdate?.cancel()
         for presentation in tablePresentations.values { presentation.reading.stopObserving() }
+        for presentation in reusableTablePresentations { presentation.reading.stopObserving() }
+        reusableTablePresentations = []
     }
 
-    private func observeEdits() {
+    override var textContainer: NSTextContainer? {
+        didSet { observeEdits() }
+    }
+
+    fileprivate func observeEdits() {
         textLayoutManager?.delegate = layoutDelegate
-        // Any storage: TextKit 2 may give the view a different storage than the one it has during init.
-        editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: nil, queue: nil) { [weak self] notification in
+        // TextKit can replace the text network after init. Observe only our storage,
+        // so styling a table cell doesn't notify every other cell in the document.
+        let storage = textStorage
+        guard storage !== observedStorage || editingObserver == nil else { return }
+        if let editingObserver { NotificationCenter.default.removeObserver(editingObserver) }
+        editingObserver = nil
+        if observedStorage != nil, storage !== observedStorage {
+            textVersion += 1
+            multipleCharacterEdits = true
+        }
+        observedStorage = storage
+        guard let storage else { return }
+        editingObserver = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: storage, queue: nil) { [weak self] notification in
             guard let storage = notification.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
             let edited = ObjectIdentifier(storage)
             let range = storage.editedRange, delta = storage.changeInLength
@@ -1090,6 +1110,7 @@ class MarkdownTextView: NSTextView {
     }
 
     private(set) var tablePresentations: [Int: TableCellPresentation] = [:]
+    private var reusableTablePresentations: [TableCellPresentation] = []
     private var hoveredTableRow: Int?
     private var tableHoverWork: DispatchWorkItem?
     private var tableAnimation: Task<Void, Never>?
@@ -1098,6 +1119,17 @@ class MarkdownTextView: NSTextView {
     private var tableRowIndices: [Int: Int] = [:]
     private var refreshingTables = false
     private var tableRefreshScheduled = false
+    private var tableHeightRefreshScheduled = false
+
+    func scheduleTableHeightRefresh() {
+        guard !tableHeightRefreshScheduled else { return }
+        tableHeightRefreshScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.tableHeightRefreshScheduled = false
+            autoreleasepool { self.refreshTableHeights() }
+        }
+    }
 
     func hoverTableRow(_ start: Int?) {
         tableHoverWork?.cancel()
@@ -1223,15 +1255,19 @@ class MarkdownTextView: NSTextView {
     }
 
     func tablePresentation(_ range: NSRange, width: CGFloat) -> TableCellPresentation {
-        let presentation = tablePresentations[range.location] ?? TableCellPresentation()
-        tablePresentations[range.location] = presentation
-        presentation.reading.tableSourceRange = range
-        let table = model.tables.first { $0.rows.contains { $0.cells.contains(range) } }
-        let column = table?.rows.first(where: { $0.cells.contains(range) })?.cells.firstIndex(of: range) ?? 0
-        let header = table?.rows.first?.cells.contains(range) == true
-        presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header,
-                            alignment: table.map { tableAlignment(column, table: $0) } ?? .left)
-        return presentation
+        // Scrolling can keep the main queue busy across many refreshes. Drain TextKit's
+        // temporary views here instead of retaining discarded cells until that queue idles.
+        autoreleasepool {
+            let presentation = tablePresentations[range.location] ?? reusableTablePresentations.popLast() ?? TableCellPresentation()
+            tablePresentations[range.location] = presentation
+            presentation.reading.tableSourceRange = range
+            let table = model.tables.first { $0.rows.contains { $0.cells.contains(range) } }
+            let column = table?.rows.first(where: { $0.cells.contains(range) })?.cells.firstIndex(of: range) ?? 0
+            let header = table?.rows.first?.cells.contains(range) == true
+            presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header,
+                                alignment: table.map { tableAlignment(column, table: $0) } ?? .left)
+            return presentation
+        }
     }
 
     func tableAlignment(_ column: Int, table: MarkdownModel.Table) -> NSTextAlignment {
@@ -1247,6 +1283,10 @@ class MarkdownTextView: NSTextView {
         guard window != nil, !refreshingTables else { return }
         refreshingTables = true
         defer { refreshingTables = false }
+        autoreleasepool { refreshTableOverlays() }
+    }
+
+    private func refreshTableOverlays() {
         if !rendered {
             tableHoverWork?.cancel()
             tableAnimation?.cancel()
@@ -1269,6 +1309,13 @@ class MarkdownTextView: NSTextView {
             } else { wanted = Set(rows.indices.prefix(32)) }
             // Keep the field editor alive if its row scrolls out of view.
             wanted.formUnion(tableOverlays.compactMap { rows.indices.contains($0.key) && $0.value.fields.contains { $0.currentEditor() != nil } ? $0.key : nil })
+        }
+        if let hoveredTableRow, !wanted.contains(where: { rows[$0].0.start == hoveredTableRow }) {
+            self.hoveredTableRow = nil
+            tableHoverWork?.cancel()
+            tableAnimation?.cancel()
+            tableAnimatedHeights = [:]
+            scheduleTableHeightRefresh()
         }
         // Rows shrink and diagrams finish asynchronously. Settle the prefix before reading any
         // overlay frames, so every row uses the same positions rather than estimated heights.
@@ -1316,8 +1363,11 @@ class MarkdownTextView: NSTextView {
         let locations = Set(rows.enumerated().filter { wanted.contains($0.offset) }.flatMap { $0.element.0.cells.map(\.location) })
         for location in tablePresentations.keys.filter({ !locations.contains($0) }) {
             if let presentation = tablePresentations.removeValue(forKey: location) {
-                presentation.reading.stopObserving()
                 presentation.removeFromSuperview()
+                presentation.prepareForReuse()
+                // Reuse native text views instead of churning their AppKit observers on every scroll.
+                if reusableTablePresentations.count < 64 { reusableTablePresentations.append(presentation) }
+                else { presentation.reading.textContainer = nil }
             }
         }
         for index in tableOverlays.keys.filter({ !wanted.contains($0) }) {
@@ -1613,7 +1663,7 @@ class MarkdownTextView: NSTextView {
         let reflows = newSize.width != frame.width
         super.setFrameSize(newSize)
         // A new width rewraps the text above a table, moving its rows.
-        if reflows, !tableOverlays.isEmpty { DispatchQueue.main.async { [weak self] in self?.refreshTableHeights() } }
+        if reflows, !tableOverlays.isEmpty { scheduleTableHeightRefresh() }
     }
 
     /// Selects `range` and scrolls its first line near the top of the page, even when it is already on screen,
@@ -2087,7 +2137,7 @@ class MarkdownTextView: NSTextView {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             remoteRestyleScheduled = false
-            remoteImageLoaded()
+            autoreleasepool { remoteImageLoaded() }
         }
     }
 
@@ -2868,6 +2918,8 @@ final class TableCellPresentation: NSView {
         reading.presentation = self
         summary.font = .systemFont(ofSize: 14)
         summary.lineBreakMode = .byTruncatingTail
+        summary.postsFrameChangedNotifications = false
+        thumbnail.postsFrameChangedNotifications = false
         addSubview(reading)
         addSubview(summary)
         thumbnail.imageScaling = .scaleProportionallyUpOrDown
@@ -2878,6 +2930,17 @@ final class TableCellPresentation: NSView {
     }
     required init?(coder: NSCoder) { fatalError("Table presentations are created in code") }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        reading.stopObserving()
+        reading.restyle = nil
+        reading.tableDocument = nil
+        reading.tableSourceRange = nil
+        owner = nil
+        field = nil
+        theme = nil
+    }
+
     static func documentSource(_ source: String) -> String {
         source.replacingOccurrences(of: "<br\\s*/?>", with: "\n", options: .regularExpression)
             .replacingOccurrences(of: "\\|", with: "|")
@@ -2885,6 +2948,7 @@ final class TableCellPresentation: NSView {
 
     func update(source: String, width: CGFloat, owner: MarkdownTextView, header: Bool, alignment: NSTextAlignment) {
         self.owner = owner
+        reading.observeEdits()
         reading.tableDocument = owner
         let definitions = reading.referenceDefinitions()
         let footnotes = reading.footnoteDefinitions()
@@ -2967,7 +3031,7 @@ final class TableCellPresentation: NSView {
             fullHeight = ceil(height) + 2
             if old != fullHeight, let range = reading.tableSourceRange,
                owner.model.tables.contains(where: { table in table.rows.contains { $0.cells.contains(range) && owner.tableRowExpanded($0) } }) {
-                DispatchQueue.main.async { [weak owner] in owner?.refreshTableHeights() }
+                owner.scheduleTableHeightRefresh()
             }
         }
         let spans = reading.model.spans
@@ -2991,12 +3055,15 @@ final class TableCellPresentation: NSView {
         summary.isHidden = !useSummary
         reading.isHidden = useSummary
         thumbnail.isHidden = !useSummary || thumbnail.image == nil
-        thumbnail.frame = NSRect(x: 0, y: 0, width: 34, height: 21)
+        let thumbnailFrame = NSRect(x: 0, y: 0, width: 34, height: 21)
+        if thumbnail.frame != thumbnailFrame { thumbnail.frame = thumbnailFrame }
         let inset: CGFloat = thumbnail.isHidden ? 0 : 42
-        summary.frame = NSRect(x: inset, y: 0, width: max(1, width - inset), height: 21)
+        let summaryFrame = NSRect(x: inset, y: 0, width: max(1, width - inset), height: 21)
+        if summary.frame != summaryFrame { summary.frame = summaryFrame }
         reading.textContainer?.maximumNumberOfLines = expanded ? 0 : 1
         reading.textContainer?.lineBreakMode = expanded ? .byWordWrapping : .byTruncatingTail
-        reading.frame = NSRect(x: 0, y: 0, width: width, height: max(21, fullHeight))
+        let readingFrame = NSRect(x: 0, y: 0, width: width, height: max(21, fullHeight))
+        if reading.frame != readingFrame { reading.frame = readingFrame }
         needsDisplay = true
     }
 

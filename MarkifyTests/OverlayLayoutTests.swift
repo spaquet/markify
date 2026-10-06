@@ -297,6 +297,59 @@ import Testing
         window.contentView = nil
     }
 
+    @Test func stressDocumentRapidlyReversesScrollingWhileRendering() async throws {
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/render-stress-test.md")
+        let source = try String(contentsOf: fixture, encoding: .utf8)
+        let (window, editor) = makeEditor()
+        defer { editor.stopObserving(); window.contentView = nil }
+        editor.documentURL = fixture.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("render-stress-test.md")
+        editor.string = source
+        editor.restyle = { [weak editor] in
+            guard let editor else { return }
+            IncrementalStyleTests.native(source).style(editor, incremental: true)
+        }
+        IncrementalStyleTests.native(source).style(editor)
+        let scroll = try #require(editor.enclosingScrollView)
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 980, pixelsHigh: 660, bitsPerSample: 8,
+                                                  samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                                                  bytesPerRow: 0, bitsPerPixel: 0))
+        let context = try #require(NSGraphicsContext(bitmapImageRep: bitmap))
+        var readings = Set<ObjectIdentifier>()
+        var peakPresentations = 0
+        // Start immediately, before diagrams finish or the document's prefix has settled.
+        for _ in 0..<3 {
+            for y in stride(from: 0, through: 9000, by: 450).map({ $0 }) + stride(from: 9000, through: 0, by: -900).map({ $0 }) {
+                let elapsed = ContinuousClock().measure {
+                    autoreleasepool {
+                        scroll.contentView.scroll(to: NSPoint(x: 0, y: y))
+                        scroll.reflectScrolledClipView(scroll.contentView)
+                        editor.layoutSubtreeIfNeeded()
+                        editor.refreshTables()
+                        NSGraphicsContext.saveGraphicsState()
+                        NSGraphicsContext.current = context
+                        context.cgContext.saveGState()
+                        context.cgContext.translateBy(x: 0, y: -editor.visibleRect.minY)
+                        editor.draw(editor.visibleRect)
+                        context.cgContext.restoreGState()
+                        NSGraphicsContext.restoreGraphicsState()
+                    }
+                }
+                #expect(elapsed < .seconds(2), "Rapid scrolling stalled at \(y) for \(elapsed)")
+                for presentation in editor.tablePresentations.values {
+                    readings.insert(ObjectIdentifier(presentation.reading))
+                }
+                peakPresentations = max(peakPresentations, editor.tablePresentations.count)
+                try await Task.sleep(for: .milliseconds(5))
+            }
+        }
+        // Allow the current viewport and the bounded reuse pool, not all cells
+        // created across repeated reversals. Native views may outlive a display pass.
+        #expect(peakPresentations > 0)
+        #expect(readings.count <= peakPresentations + 64,
+                "Table reading allocations must stay bounded across repeated scrolling")
+        #expect(editor.string == source)
+    }
+
     @Test func stressDocumentScrollsAndDrawsThroughCodeBlocks() async throws {
         let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/render-stress-test.md")
         let source = try String(contentsOf: fixture, encoding: .utf8)
