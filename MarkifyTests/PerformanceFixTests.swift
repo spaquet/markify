@@ -4,6 +4,27 @@ import Testing
 @testable import Markify
 
 @MainActor struct PerformanceFixTests {
+    @Test func textEditsAreObservedOncePerTextView() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "before"
+        let version = editor.textVersion
+        editor.textStorage?.replaceCharacters(in: NSRange(location: 0, length: 1), with: "B")
+        #expect(editor.textVersion == version + 1)
+        let oldStorage = editor.textStorage
+        let replacement = MarkdownTextView(usingTextLayoutManager: true)
+        replacement.string = "replacement"
+        let container = replacement.textContainer!
+        editor.textContainer = container
+        IncrementalStyleTests.native(editor.string).style(editor)
+        let reboundVersion = editor.textVersion
+        oldStorage?.replaceCharacters(in: NSRange(location: 0, length: 1), with: "b")
+        #expect(editor.textVersion == reboundVersion)
+        editor.textStorage?.replaceCharacters(in: NSRange(location: 0, length: 1), with: "R")
+        #expect(editor.textVersion == reboundVersion + 1)
+        editor.stopObserving()
+        replacement.stopObserving()
+    }
+
     @Test func derivedValuesInvalidateWithSourceAndFindOptions() {
         let cache = DocumentDerivedData()
         for text in ["", "one two\tthree\n", "café 😀\u{a0}four", "é\u{301} final"] {
