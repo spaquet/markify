@@ -129,7 +129,7 @@ Only now, with the DMGs published:
 git stash pop    # if step 4 stashed the regenerated docs
 scripts/build-help.sh
 scripts/set-website-version.sh <version>
-git diff --stat docs     # the hero line, download section and softwareVersion in index.html, plus the generated help, FAQ, legal, sitemap and llms.txt
+git diff --stat docs     # the download section and softwareVersion in index.html, plus the generated help, FAQ, legal, sitemap and llms.txt
 ```
 
 Commit everything under `docs/` as `Update website to version <version>` and push to main. The Pages workflow deploys `docs/`; confirm it succeeded (`gh run list --workflow pages.yml --limit 1`) and that https://spaquet.github.io/markify/ shows the new version (`curl -s https://spaquet.github.io/markify/ | grep -o "Version [0-9.]*"`; the CDN can lag a minute).

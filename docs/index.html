@@ -51,7 +51,7 @@
 <link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
 <link rel="icon" type="image/svg+xml" href="images/logo.svg?v=2">
 <link rel="apple-touch-icon" href="images/app-icon.png?v=2">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","@id":"https://spaquet.github.io/markify/#app","name":"Markify","description":"A Markdown editor for macOS that shows one page through two lenses — rendered and Markdown — with GitHub Flavored Markdown, math, Mermaid diagrams, footnotes, callouts, HTML and PDF export, on-device Apple Intelligence and Open Knowledge Format support.","operatingSystem":"macOS 26 or later","applicationCategory":"ProductivityApplication","applicationSubCategory":"Markdown editor","softwareVersion":"2.0.2","processorRequirements":"Apple silicon or Intel","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"downloadUrl":"https://github.com/spaquet/markify/releases/latest","releaseNotes":"https://github.com/spaquet/markify/releases","installUrl":"https://spaquet.github.io/markify/help/updates.html","softwareHelp":{"@type":"CreativeWork","url":"https://spaquet.github.io/markify/help/"},"screenshot":"https://spaquet.github.io/markify/images/screens/1a.webp","image":"https://spaquet.github.io/markify/images/app-icon.png","license":"https://spaquet.github.io/markify/legal.html","isAccessibleForFree":true,"featureList":["Rendered and Markdown lenses over one text (⌘/)","CommonMark and GitHub Flavored Markdown","LaTeX math","Mermaid diagrams","Footnotes and callouts","YAML frontmatter and MDX","Self-contained HTML and paginated PDF export","On-device Apple Intelligence: proofread, rewrite, generate","Open Knowledge Format (OKF) bundles","Open Markdown from HTTPS URLs and GitHub or GitLab repositories","Contents outline and Links inspector with on-device summaries","markify command line: view, OKF check and HTML export","Coding-agent plugins for Claude Code, Codex and OpenCode"],"author":{"@id":"https://github.com/spaquet#person"},"sameAs":["https://github.com/spaquet/markify"]},{"@type":"Person","@id":"https://github.com/spaquet#person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},{"@type":"WebSite","@id":"https://spaquet.github.io/markify/#site","url":"https://spaquet.github.io/markify/","name":"Markify","inLanguage":"en","publisher":{"@id":"https://github.com/spaquet#person"}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","@id":"https://spaquet.github.io/markify/#app","name":"Markify","description":"A Markdown editor for macOS that shows one page through two lenses — rendered and Markdown — with GitHub Flavored Markdown, math, Mermaid diagrams, footnotes, callouts, HTML and PDF export, on-device Apple Intelligence and Open Knowledge Format support.","operatingSystem":"macOS 26 or later","applicationCategory":"ProductivityApplication","applicationSubCategory":"Markdown editor","softwareVersion":"2.2.0","processorRequirements":"Apple silicon or Intel","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"downloadUrl":"https://github.com/spaquet/markify/releases/latest","releaseNotes":"https://github.com/spaquet/markify/releases","installUrl":"https://spaquet.github.io/markify/help/updates.html","softwareHelp":{"@type":"CreativeWork","url":"https://spaquet.github.io/markify/help/"},"screenshot":"https://spaquet.github.io/markify/images/screens/1a.webp","image":"https://spaquet.github.io/markify/images/app-icon.png","license":"https://spaquet.github.io/markify/legal.html","isAccessibleForFree":true,"featureList":["Rendered and Markdown lenses over one text (⌘/)","CommonMark and GitHub Flavored Markdown","LaTeX math","Mermaid diagrams","Footnotes and callouts","YAML frontmatter and MDX","Self-contained HTML and paginated PDF export","On-device Apple Intelligence: proofread, rewrite, generate","Open Knowledge Format (OKF) bundles","Open Markdown from HTTPS URLs and GitHub or GitLab repositories","Contents outline and Links inspector with on-device summaries","markify command line: view, OKF check and HTML export","Coding-agent plugins for Claude Code, Codex and OpenCode"],"author":{"@id":"https://github.com/spaquet#person"},"sameAs":["https://github.com/spaquet/markify"]},{"@type":"Person","@id":"https://github.com/spaquet#person","name":"Stéphane Paquet","url":"https://github.com/spaquet"},{"@type":"WebSite","@id":"https://spaquet.github.io/markify/#site","url":"https://spaquet.github.io/markify/","name":"Markify","inLanguage":"en","publisher":{"@id":"https://github.com/spaquet#person"}}]}</script>
 <link rel="alternate" type="text/plain" title="Markify for AI assistants" href="llms.txt">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -84,21 +84,6 @@
 .rotor span.on{transform:none;opacity:1}
 .rotor span.out{transform:translateY(-110%);opacity:0}
 html:not(.js) .rotor span:first-child{transform:none;opacity:1}
-
-/* Flash note (temporary): 2.0.0 and 2.0.1 don't open, issue #49. */
-.flash{display:flex;justify-content:center;margin:0 0 30px}
-.flash-in{display:inline-flex;align-items:center;gap:12px;max-width:100%;padding:6px 6px 6px 14px;border-radius:999px;font:14px/1.35 var(--ui);color:var(--ink);text-align:left}
-.flash-dot{position:relative;flex:none;width:8px;height:8px;border-radius:50%;background:var(--ink)}
-.flash-dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1.5px solid var(--ink);opacity:0;animation:flash-ping 2.4s var(--ease) infinite}
-@keyframes flash-ping{0%{transform:scale(.6);opacity:.6}80%,100%{transform:scale(1.8);opacity:0}}
-.flash-in b{font-weight:600}
-.flash-in .btn{height:30px;padding:0 13px;font-size:13px;flex:none}
-.flash-in a.more{color:var(--ink2);font-size:13px;white-space:nowrap;flex:none}
-.flash-in a.more:hover{color:var(--ink)}
-.flash-x{flex:none;width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--ink2);font:16px/1 var(--ui);cursor:pointer}
-.flash-x:hover{background:var(--field);color:var(--ink)}
-.flash[hidden]{display:none}
-@media (max-width:680px){.flash-in{flex-wrap:wrap;border-radius:20px;padding:12px 12px 12px 16px;row-gap:10px}.flash-in .msg{flex:1 1 calc(100% - 40px);min-width:0}}
 
 /* ---------- Live demo window ---------- */
 .stage{position:relative;max-width:1080px;margin:76px auto 0;padding:0 0 0}
@@ -396,17 +381,6 @@ html:not(.js) .case+.case{margin-top:96px}
   <header class="hero">
     <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="wrap">
-      <!-- Flash note (temporary): remove this block, its CSS and its script when 2.0.0/2.0.1 are no longer in circulation. -->
-      <aside class="flash fade-in" style="--d:.1s" id="flash" data-flash="v202" aria-label="Release notice">
-        <div class="flash-in glass">
-          <span class="flash-dot" aria-hidden="true"></span>
-          <span class="msg"><b>Markify 2.0.0 and 2.0.1 don’t open.</b> Version 2.0.2 fixes it.</span>
-          <a class="btn btn-ink" href="https://github.com/spaquet/markify/releases/tag/v2.0.2">Get 2.0.2</a>
-          <a class="more" href="known-issues.html">What happened →</a>
-          <button class="flash-x" type="button" aria-label="Dismiss notice">×</button>
-        </div>
-      </aside>
-
       <h1 class="display hero-title" aria-label="Markdown, without the markup."><span class="w" style="--i:0">Markdown,</span> <em class="br"><span class="w" style="--i:1">without</span> <span class="w" style="--i:2">the</span> <span class="w" style="--i:3">markup.</span></em></h1>
       <div class="ctas fade-in" style="--d:.55s">
         <a class="btn btn-ink btn-xl" data-dl href="https://github.com/spaquet/markify/releases/latest/download/markify-as.dmg" download>
@@ -759,7 +733,7 @@ html:not(.js) .case+.case{margin-top:96px}
           <span class="lbl"><span data-dl-name>Download for Mac</span><small data-dl-sub data-version="v2.0.2">Apple silicon · v2.0.2</small></span>
         </a>
       </div>
-      <p class="note rv"><span data-dl-other-label>Have an Intel Mac?</span> <a data-dl-alt href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg" download>Download for Intel</a> · <a href="https://github.com/spaquet/markify/releases/tag/v2.0.2">Release notes</a> · <a href="https://github.com/spaquet/markify/releases">All releases</a></p>
+      <p class="note rv"><span data-dl-other-label>Have an Intel Mac?</span> <a data-dl-alt href="https://github.com/spaquet/markify/releases/latest/download/markify-intel.dmg" download>Download for Intel</a> · <a href="https://github.com/spaquet/markify/releases/tag/v2.2.0">Release notes</a> · <a href="https://github.com/spaquet/markify/releases">All releases</a></p>
       <div class="install stagger" id="dl-req">
         <div class="rv"><span>01</span><strong>Open the disk image</strong>Drag Markify to Applications.</div>
         <div class="rv"><span>02</span><strong>Open Markify</strong>macOS can’t verify it yet, so click <b>Done</b>.</div>
@@ -1017,19 +991,6 @@ html:not(.js) .case+.case{margin-top:96px}
   new IntersectionObserver(([en]) => {
     if (en.isIntersecting && !timer && !picked) auto(); else if (!en.isIntersecting && timer) stop();
   }, { threshold: .35 }).observe(document.getElementById('intelligence'));
-})();
-</script>
-<script>
-// Flash note (temporary): remember a dismissal per notice.
-(() => {
-  const flash = document.getElementById('flash');
-  if (!flash) return;
-  const key = 'markify.flash.' + flash.dataset.flash;
-  try { if (localStorage.getItem(key)) flash.hidden = true; } catch {}
-  flash.querySelector('.flash-x').addEventListener('click', () => {
-    flash.hidden = true;
-    try { localStorage.setItem(key, '1'); } catch {}
-  });
 })();
 </script>
 </body>
