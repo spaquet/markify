@@ -71,6 +71,7 @@ struct ContentView: View {
     @State private var offeredTitleTags = false
     /// Frontmatter tags last mirrored onto the file's Finder tags.
     @State private var mirroredTags: [String] = []
+    @State private var tagsTask: Task<Void, Never>?
     @State private var showBlockMenu = false
     @State private var blockMenuQuery = ""
     @State private var blockMenuSelection = 0
@@ -456,6 +457,7 @@ struct ContentView: View {
             humanStampTask?.cancel()
             aiTask?.cancel()
             formatBarTask?.cancel()
+            mirrorTags()
             if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             rememberDocumentLens()
             libraryFolder?.stopAccessingSecurityScopedResource()
@@ -469,7 +471,7 @@ struct ContentView: View {
         }
         .onChange(of: concept != nil) { _, _ in refreshKnowledge() }
         .onChange(of: sidebarOpen) { _, open in if open { refreshLibrary(); refreshKnowledge() } }
-        .onChange(of: Frontmatter.parse(document.text)?.tags ?? []) { _, _ in mirrorTags() }
+        .onChange(of: Frontmatter.parse(document.text)?.tags ?? []) { _, _ in mirrorTagsAfterTyping() }
         .onChange(of: document.text) { _, _ in offerTitleTagsIfNeeded() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willBeginSheetNotification)) { notification in
             prepareSavePanel(notification.object as? NSWindow)
@@ -1574,7 +1576,17 @@ struct ContentView: View {
         LensMemory.write(markdownLens, to: fileURL)
     }
 
+    /// Mirrors tags once typing pauses, so editing `tags:` writes Finder tags once rather than per keystroke.
+    private func mirrorTagsAfterTyping() {
+        tagsTask?.cancel()
+        tagsTask = Task {
+            try? await Task.sleep(for: .milliseconds(750))
+            if !Task.isCancelled { mirrorTags() }
+        }
+    }
+
     private func mirrorTags() {
+        tagsTask?.cancel()
         guard let fileURL else { return }
         let tags = Frontmatter.parse(document.text)?.tags ?? []
         FinderTags.sync(fileURL, previous: mirroredTags, current: tags)
@@ -1994,7 +2006,14 @@ enum FinderTags {
         return result
     }
 
+    /// Tag writes go through Spotlight (`mds`) and wait for its reply, so they run here, in order, off the main thread.
+    private static let queue = DispatchQueue(label: "com.stephanepaquet.Markify.FinderTags", qos: .utility)
+
     static func sync(_ url: URL, previous: [String], current: [String]) {
+        queue.async { write(url, previous: previous, current: current) }
+    }
+
+    private static func write(_ url: URL, previous: [String], current: [String]) {
         var url = url
         let finder = (try? url.resourceValues(forKeys: [.tagNamesKey]).tagNames) ?? []
         let merged = merge(finder: finder, previous: previous, current: current)
