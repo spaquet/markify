@@ -2,7 +2,6 @@ import SwiftUI
 import Sentry
 import CoreSpotlight
 import AppKit
-import CryptoKit
 import MarkifyMarkdown
 
 @MainActor
@@ -240,7 +239,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: target.path) {
             try FileManager.default.copyItem(at: bundled, to: target)
-        } else if let data = try? Data(contentsOf: target), previousWelcomes.contains(SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()) {
+        } else if let data = try? Data(contentsOf: target), previousWelcomes.contains(data.sha256Hex) {
             // An untouched copy of an older tour is replaced by the current one; an edited copy is left alone.
             _ = try FileManager.default.replaceItemAt(target, withItemAt: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).copying(bundled))
         }

@@ -9,6 +9,8 @@ import WebKit
     enum State {
         case rendering
         case rendered(NSImage)
+        /// Rendered at this size, but its image was dropped to stay within the memory budget; drawing it renders it again.
+        case evicted(NSSize)
         /// Mermaid's message for a diagram it cannot parse.
         case failed(String)
     }
@@ -28,7 +30,32 @@ import WebKit
     private var currentRaster: String?
     private var currentSVG: (source: String, id: String, done: (String?) -> Void)?
     private var costs: [String: Int] = [:]
-    var pendingCount: Int { queue.count + svgJobs.count + (busy ? 1 : 0) }
+    /// When each diagram was last drawn, on a counter; the least recently drawn are evicted first.
+    private var lastUsed: [String: Int] = [:]
+    private var clock = 0
+    /// The bytes rendered diagrams may hold together, shared by every window.
+    var memoryBudget = 32_000_000
+    var pendingCount: Int { queue.count + svgJobs.count + loading.count + (busy ? 1 : 0) }
+    /// Rendered diagrams on disk, read before the web view renders one.
+    private let disk: DiagramDiskCache?
+    /// Diagrams being read from disk.
+    private var loading: Set<String> = []
+    /// Each diagram's disk digest, from its read until its render settles.
+    private var digests: [String: String] = [:]
+    /// Renders run in the web view, for tests.
+    private(set) var renderCount = 0
+    /// The diagrams each view shows or is about to show; eviction never drops them for another diagram.
+    private var leases: [ObjectIdentifier: Set<String>] = [:]
+    private var memoryPressure: DispatchSourceMemoryPressure?
+
+    init(disk: DiagramDiskCache? = .standard) {
+        self.disk = disk
+        super.init()
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        source.setEventHandler { [weak self] in MainActor.assumeIsolated { self?.relieveMemoryPressure() } }
+        source.activate()
+        memoryPressure = source
+    }
 
     /// The diagram's state, starting a render on first request; `onChange` runs once when it settles.
     func state(of source: String, dark: Bool, owner: AnyObject? = nil, onChange: @escaping () -> Void) -> State {
@@ -40,22 +67,89 @@ import WebKit
             return state
         }
         guard pendingCount < 32 else { return .failed("Too many diagrams are waiting to render.") }
-        // Each edit of a diagram renders anew; drop settled renders before the cache grows large.
+        // Renders requested without an owner are never released; drop the settled ones before the cache grows large.
         if states.count >= 64 {
-            for old in Array(states.keys) where old != currentRaster {
+            let renderer = ObjectIdentifier(self)
+            for old in Array(states.keys) where old != currentRaster && waiting[old, default: [:]].keys.allSatisfy({ $0 == renderer }) {
                 if case .rendering = states[old] { continue }
-                states[old] = nil; costs[old] = nil; waiting[old] = nil
+                states[old] = nil; costs[old] = nil; waiting[old] = nil; lastUsed[old] = nil
             }
         }
+        clock += 1
+        lastUsed[key] = clock
         states[key] = .rendering
         waiting[key] = [consumer: onChange]
-        queue.append((key, source, dark))
-        start()
+        request(key, source: source, dark: dark)
         return .rendering
     }
 
-    /// The settled state without starting a render.
-    func cached(_ source: String, dark: Bool) -> State? { states["\(dark):\(source)"] }
+    /// The settled state for drawing; it marks the diagram as recently drawn and renders an evicted one again.
+    func cached(_ source: String, dark: Bool) -> State? {
+        let key = "\(dark):\(source)"
+        guard let state = states[key] else { return nil }
+        clock += 1
+        lastUsed[key] = clock
+        reload(key, source: source, dark: dark)
+        return state
+    }
+
+    /// Leases the diagrams near `owner`'s visible area, replacing its earlier lease. Evicted ones load again at once,
+    /// so they are ready when scrolled to or when their window comes to the front.
+    func lease(_ diagrams: [(source: String, dark: Bool)], owner: AnyObject) {
+        var keys = Set<String>()
+        for diagram in diagrams {
+            let key = "\(diagram.dark):\(diagram.source)"
+            keys.insert(key)
+            clock += 1
+            lastUsed[key] = clock
+            reload(key, source: diagram.source, dark: diagram.dark)
+        }
+        leases[ObjectIdentifier(owner)] = keys.isEmpty ? nil : keys
+    }
+
+    func isLeased(_ source: String, dark: Bool) -> Bool { leases.values.contains { $0.contains("\(dark):\(source)") } }
+
+    /// Under memory pressure only leased diagrams keep their images.
+    func relieveMemoryPressure() { evict(to: 0) }
+
+    private func reload(_ key: String, source: String, dark: Bool) {
+        guard case .evicted = states[key], currentRaster != key, !loading.contains(key),
+              !queue.contains(where: { $0.key == key }), pendingCount < 32 else { return }
+        request(key, source: source, dark: dark)
+    }
+
+    /// Reads the diagram from disk, and renders it in the web view only when the disk has nothing usable.
+    private func request(_ key: String, source: String, dark: Bool) {
+        guard let disk else {
+            queue.append((key, source, dark))
+            start()
+            return
+        }
+        loading.insert(key)
+        Task { [weak self] in
+            let (digest, entry) = await disk.load(source, dark: dark)
+            // Released while reading: nobody draws it.
+            guard let self, self.loading.remove(key) != nil, self.waiting[key] != nil else { return }
+            self.digests[key] = digest
+            switch entry {
+            case .pdf(let data):
+                if let image = Self.image(pdf: data) { return self.finish(key, .rendered(image)) }
+                disk.remove(digest)
+            case .error(let message):
+                return self.finish(key, .failed(message))
+            case nil:
+                break
+            }
+            self.queue.append((key, source, dark))
+            self.start()
+        }
+    }
+
+    /// Keeps a settled render on disk for the next time the diagram is shown.
+    private func persist(_ entry: DiagramDiskCache.Entry, for key: String) {
+        guard let disk, let digest = digests[key] else { return }
+        disk.store(entry, for: digest)
+    }
 
     /// The diagram as SVG markup in the light theme, for export; nil when Mermaid cannot render it.
     func svg(for source: String) async -> String? {
@@ -79,12 +173,14 @@ import WebKit
 
     func release(owner: AnyObject, keeping sources: Set<String> = []) {
         let consumer = ObjectIdentifier(owner)
+        if let leased = leases[consumer]?.intersection(sources), !leased.isEmpty { leases[consumer] = leased } else { leases[consumer] = nil }
         for key in Array(waiting.keys) where !sources.contains(key) {
             waiting[key]?.removeValue(forKey: consumer)
             guard waiting[key]?.isEmpty == true else { continue }
             waiting[key] = nil
             queue.removeAll { $0.key == key }
-            if key != currentRaster { states[key] = nil; costs[key] = nil }
+            loading.remove(key)
+            if key != currentRaster { states[key] = nil; costs[key] = nil; lastUsed[key] = nil; digests[key] = nil }
         }
     }
 
@@ -126,7 +222,7 @@ import WebKit
             let view = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600), configuration: configuration)
             view.navigationDelegate = self
             view.setValue(false, forKey: "drawsBackground")
-            // Snapshots need the view in a window; this one never appears on screen.
+            // Rendering needs the view in a window; this one never appears on screen.
             let window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: 800, height: 600), styleMask: [.borderless], backing: .buffered, defer: false)
             window.contentView = view
             self.window = window
@@ -148,6 +244,7 @@ import WebKit
         busy = true
         let next = queue.removeFirst()
         currentRaster = next.key
+        renderCount += 1
         armDeadline()
         render(next)
     }
@@ -170,12 +267,15 @@ import WebKit
 
     private func render(_ job: (key: String, source: String, dark: Bool)) {
         let token = generation
+        // Diagrams that fill their container (gantt) otherwise take the previous diagram's width.
+        webView?.setFrameSize(NSSize(width: 800, height: 600))
+        window?.setContentSize(NSSize(width: 800, height: 600))
         webView?.callAsyncJavaScript("""
             mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'default' });
             const { svg } = await mermaid.render('diagram' + Date.now(), source);
             const box = document.getElementById('diagram');
             box.innerHTML = svg;
-            // Responsive SVGs otherwise inherit the previous diagram's snapshot width.
+            // Responsive SVGs otherwise inherit the previous diagram's width.
             const drawing = box.querySelector('svg');
             const bounds = drawing.viewBox.baseVal;
             if (bounds.width > 0 && bounds.height > 0) {
@@ -195,19 +295,31 @@ import WebKit
                           let view = self.webView else { throw CocoaError(.featureUnsupported) }
                     view.setFrameSize(size)
                     self.window?.setContentSize(size)
-                    let configuration = WKSnapshotConfiguration()
+                    let configuration = WKPDFConfiguration()
                     configuration.rect = NSRect(origin: .zero, size: size)
-                    configuration.snapshotWidth = NSNumber(value: min(2048, size.width))
-                    configuration.afterScreenUpdates = true
-                    view.takeSnapshot(with: configuration) { [weak self] image, error in
+                    // A PDF keeps the diagram as vectors: sharp at any column width, and a fraction of a bitmap's memory.
+                    view.createPDF(configuration: configuration) { [weak self] result in
                         guard let self, self.generation == token else { return }
-                        self.finish(job.key, image.map(State.rendered) ?? .failed(error?.localizedDescription ?? "Diagram snapshot failed."))
+                        switch result {
+                        case .success(let data):
+                            if let image = Self.image(pdf: data, size: size) {
+                                self.persist(.pdf(data), for: job.key)
+                                self.finish(job.key, .rendered(image))
+                            } else {
+                                self.finish(job.key, .failed("Diagram PDF could not be read."))
+                            }
+                        case .failure(let error):
+                            self.finish(job.key, .failed(error.localizedDescription))
+                        }
                         self.currentRaster = nil
                         self.completed()
                     }
                 } catch {
-                    let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String ?? error.localizedDescription
-                    self.finish(job.key, .failed(String(message.prefix(2000)).replacingOccurrences(of: "Error: ", with: "")))
+                    // Mermaid's own message is the same every time, so it is kept; other failures are retried.
+                    let mermaid = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String
+                    let message = String((mermaid ?? error.localizedDescription).prefix(2000)).replacingOccurrences(of: "Error: ", with: "")
+                    if mermaid != nil { self.persist(.error(message), for: job.key) }
+                    self.finish(job.key, .failed(message))
                     self.currentRaster = nil
                     self.completed()
                 }
@@ -222,15 +334,48 @@ import WebKit
     }
 
     private func finish(_ key: String, _ state: State) {
-        var state = state
-        if case .rendered(let image) = state,
-           let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
-            let cost = bitmap.bytesPerRow * bitmap.height
-            if costs.values.reduce(0, +) + cost <= 64_000_000 { costs[key] = cost }
-            else { state = .failed("Diagram cache exceeds its memory limit.") }
+        digests[key] = nil
+        // Released while rendering: nobody draws it, so it holds no memory.
+        guard waiting[key] != nil else { states[key] = nil; costs[key] = nil; lastUsed[key] = nil; return }
+        if case .rendered(let image) = state {
+            costs[key] = Self.cost(of: image)
+            clock += 1
+            lastUsed[key] = clock
+            evict(to: memoryBudget, sparing: key)
         }
         states[key] = state
         waiting[key]?.values.forEach { $0() }
+    }
+
+    /// The diagram's PDF as an image of its rendered size (the page's, when read from disk).
+    /// It is drawn from the vectors each time, so it holds no bitmap.
+    static func image(pdf data: Data, size: NSSize? = nil) -> NSImage? {
+        guard let representation = NSPDFImageRep(data: data), representation.bounds.width > 0, representation.bounds.height > 0 else { return nil }
+        let image = NSImage(size: size ?? representation.bounds.size)
+        image.addRepresentation(representation)
+        image.cacheMode = .never
+        return image
+    }
+
+    /// The bytes an image holds: its PDF data, or its pixels.
+    static func cost(of image: NSImage) -> Int {
+        if let pdf = image.representations.lazy.compactMap({ $0 as? NSPDFImageRep }).first { return pdf.pdfRepresentation.count }
+        guard let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return 0 }
+        return bitmap.bytesPerRow * bitmap.height
+    }
+
+    /// Drops the least recently drawn unleased images until the cache fits `limit`. A new render is never refused:
+    /// when only leased diagrams remain, the cache goes over. Evicted diagrams keep their size, so layout stays put,
+    /// and load again when they are drawn or leased.
+    private func evict(to limit: Int, sparing key: String? = nil) {
+        var total = costs.values.reduce(0, +)
+        let leased = leases.values.reduce(into: Set<String>()) { $0.formUnion($1) }
+        for old in costs.keys.sorted(by: { lastUsed[$0, default: 0] < lastUsed[$1, default: 0] }) {
+            guard total > limit else { return }
+            guard old != key, !leased.contains(old), case .rendered(let image) = states[old] else { continue }
+            states[old] = .evicted(image.size)
+            total -= costs.removeValue(forKey: old) ?? 0
+        }
     }
 
     private func finishAll(_ state: State) {

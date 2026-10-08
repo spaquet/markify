@@ -815,6 +815,43 @@ struct MarkifyTests {
         #expect(editor.string == source)
     }
 
+    @Test func invisibleHTMLBlocksAreRecognized() {
+        #expect(MarkdownTextView.isInvisibleHTML("<!-- <Main description>   -->"))
+        #expect(MarkdownTextView.isInvisibleHTML("</details>"))
+        #expect(MarkdownTextView.isInvisibleHTML("<div align=\"center\">\n<!-- a\nb -->\n</div>"))
+        #expect(MarkdownTextView.isInvisibleHTML("<!-- unterminated"))
+        #expect(!MarkdownTextView.isInvisibleHTML("<p>Text</p>"))
+        #expect(!MarkdownTextView.isInvisibleHTML("<img src=\"a.png\">"))
+        #expect(!MarkdownTextView.isInvisibleHTML("<br>"))
+        #expect(!MarkdownTextView.isInvisibleHTML("<a href=\"x\"><svg width=\"10\"></svg></a>"))
+    }
+
+    @Test @MainActor func htmlCommentsTakeNoRoomAndInlineSVGRenders() async throws {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        let svg = ##"<svg width="40" height="20" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="20" fill="#00A298"/></svg>"##
+        let source = "Intro\n\n<!-- note -->\n\n<a href=\"https://example.com\">\n\(svg)\n</a>\n\n</details>\n"
+        editor.string = source
+        let native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false,
+            findQuery: "", matchCase: false, selectedRange: .constant(NSRange(location: 0, length: 0)),
+            textView: .constant(editor), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+        native.style(editor)
+        editor.restyle = { native.style(editor) }
+        defer { editor.restyle = nil }
+        let ns = source as NSString
+        for hidden in ["<!-- note -->", "</details>"] {
+            let style = editor.textStorage?.attribute(.paragraphStyle, at: ns.range(of: hidden).location, effectiveRange: nil) as? NSParagraphStyle
+            #expect(style?.maximumLineHeight == 0.01, "\(hidden)")
+        }
+        let link = ns.range(of: "<a href").location
+        let deadline = ContinuousClock.now + .seconds(35)
+        while editor.htmlBlocks[link] == nil, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
+        let rendered = try #require(editor.htmlBlocks[link])
+        var attachments = 0
+        rendered.text.enumerateAttribute(.attachment, in: NSRange(location: 0, length: rendered.text.length)) { value, _, _ in if value != nil { attachments += 1 } }
+        #expect(attachments == 1)
+        #expect(editor.string == source)
+    }
+
     @Test @MainActor func htmlBlocksDecodeUTF8AndRestylesWaitForTheCurrentPass() async throws {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
         let source = "<p align=\"center\">Markify — one page</p>\n"

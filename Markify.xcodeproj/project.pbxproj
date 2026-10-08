@@ -18,6 +18,7 @@
 		B10000000000000000000004 /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
 		B10000000000000000000005 /* Markify/MathSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* Markify/MathSVG.swift */; };
 		B10000000000000000000007 /* Markify/Mermaid.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* Markify/Mermaid.swift */; };
+		B10000000000000000000019 /* Markify/DiagramCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* Markify/DiagramCache.swift */; };
 		B10000000000000000000009 /* Markify/Resources/Mermaid/mermaid.html in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */; };
 		B1000000000000000000000B /* Markify/Resources/Mermaid/mermaid.min.js in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */; };
 		C10000000000000000000001 /* PreviewImages.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* PreviewImages.xpc */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -88,6 +89,7 @@
 		B10000000000000000000002 /* MarkifyQuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MarkifyQuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000006 /* Markify/MathSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/MathSVG.swift; sourceTree = SOURCE_ROOT; };
 		B10000000000000000000008 /* Markify/Mermaid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/Mermaid.swift; sourceTree = SOURCE_ROOT; };
+		B1000000000000000000001A /* Markify/DiagramCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/DiagramCache.swift; sourceTree = SOURCE_ROOT; };
 		B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Markify/Resources/Mermaid/mermaid.html; sourceTree = SOURCE_ROOT; };
 		B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Markify/Resources/Mermaid/mermaid.min.js; sourceTree = SOURCE_ROOT; };
 		C10000000000000000000002 /* PreviewImages.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; path = PreviewImages.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -226,6 +228,7 @@
 			children = (
 				B10000000000000000000006 /* Markify/MathSVG.swift */,
 				B10000000000000000000008 /* Markify/Mermaid.swift */,
+				B1000000000000000000001A /* Markify/DiagramCache.swift */,
 				B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */,
 				B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */,
 			);
@@ -496,6 +499,7 @@
 			files = (
 				B10000000000000000000005 /* Markify/MathSVG.swift in Sources */,
 				B10000000000000000000007 /* Markify/Mermaid.swift in Sources */,
+				B10000000000000000000019 /* Markify/DiagramCache.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -666,7 +670,7 @@
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 322;
+				CURRENT_PROJECT_VERSION = 327;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -686,7 +690,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -704,7 +708,7 @@
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 322;
+				CURRENT_PROJECT_VERSION = 327;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -724,7 +728,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -811,7 +815,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 322;
+				CURRENT_PROJECT_VERSION = 327;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -819,7 +823,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickLook/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.QuickLook;
 				PRODUCT_MODULE_NAME = MarkifyQuickLook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -834,7 +838,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 322;
+				CURRENT_PROJECT_VERSION = 327;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -842,7 +846,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickLook/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.QuickLook;
 				PRODUCT_MODULE_NAME = MarkifyQuickLook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -855,7 +859,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 322;
+				CURRENT_PROJECT_VERSION = 327;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -866,7 +870,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.PreviewImages;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -878,7 +882,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 322;
+				CURRENT_PROJECT_VERSION = 327;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -889,7 +893,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.PreviewImages;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

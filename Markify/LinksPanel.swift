@@ -1,5 +1,4 @@
 import AppKit
-import CryptoKit
 import FoundationModels
 import MarkifyMarkdown
 import OKFKit
@@ -156,7 +155,7 @@ private actor LinkSummaryWriter {
     }
 
     nonisolated static func fingerprint(_ text: String) -> String {
-        SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
+        Data(text.utf8).sha256Hex
     }
 
     nonisolated static func isStale(_ summary: LinkSummary, source: String) -> Bool {

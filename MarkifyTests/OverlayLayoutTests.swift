@@ -459,6 +459,28 @@ import Testing
         withExtendedLifetime(window) {}
     }
 
+    /// Only the diagrams near the viewport are leased, so eviction drops the ones scrolled far away first.
+    @Test func diagramLeasesFollowTheViewport() async throws {
+        let (window, editor) = makeEditor()
+        let top = "graph TD\n Top --> Lease", bottom = "graph TD\n Bottom --> Lease"
+        editor.string = "```mermaid\n\(top)\n```\n\n" + String(repeating: "Filler paragraph for the lease test.\n\n", count: 2000)
+            + "```mermaid\n\(bottom)\n```\n"
+        style(editor)
+        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        editor.textLayoutManager?.textViewportLayoutController.layoutViewport()
+        editor.leaseDiagrams()
+        #expect(MermaidRenderer.shared.isLeased(top, dark: dark))
+        #expect(!MermaidRenderer.shared.isLeased(bottom, dark: dark))
+        editor.scrollToEndOfDocument(nil)
+        editor.textLayoutManager?.textViewportLayoutController.layoutViewport()
+        editor.leaseDiagrams()
+        #expect(!MermaidRenderer.shared.isLeased(top, dark: dark))
+        #expect(MermaidRenderer.shared.isLeased(bottom, dark: dark))
+        editor.stopObserving()
+        #expect(!MermaidRenderer.shared.isLeased(bottom, dark: dark))
+        withExtendedLifetime(window) {}
+    }
+
     @Test func tableMermaidUsesTheBundledRenderer() async throws {
         let (window, editor) = makeEditor()
         editor.string = "| ID | Flow |\n| --- | --- |\n| 1 | ```mermaid<br>flowchart TD<br>A[Start] --> B[End]<br>``` |"

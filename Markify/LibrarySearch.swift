@@ -1,6 +1,5 @@
 import AppKit
 import CoreSpotlight
-import CryptoKit
 import MarkifyMarkdown
 import OKFKit
 import Observation
@@ -39,7 +38,7 @@ struct SearchNote: Identifiable, Sendable {
     var id: String { Self.identifier(url) }
 
     static func identifier(_ url: URL) -> String {
-        SHA256.hash(data: Data(url.standardizedFileURL.resolvingSymlinksInPath().path.utf8)).map { String(format: "%02x", $0) }.joined()
+        Data(url.standardizedFileURL.resolvingSymlinksInPath().path.utf8).sha256Hex
     }
     static func contains(_ root: URL, _ url: URL) -> Bool {
         let parts = root.standardizedFileURL.resolvingSymlinksInPath().pathComponents
@@ -257,8 +256,7 @@ actor SpotlightWorker {
                     }
                     let (note, text) = try SearchNote.read(url, roots: accessible, options: options)
                     snapshot.notes.append(note)
-                    let digest = SHA256.hash(data: Data((text + note.title + note.description + note.scopes.joined() + note.tags.joined() + (note.type ?? "") + optionKey + note.modified.description).utf8))
-                    let fingerprint = digest.map { String(format: "%02x", $0) }.joined()
+                    let fingerprint = Data((text + note.title + note.description + note.scopes.joined() + note.tags.joined() + (note.type ?? "") + optionKey + note.modified.description).utf8).sha256Hex
                     if let stamp, FileStamp(at: url) == stamp {
                         cachedNotes[id] = CachedNote(stamp: stamp, configuration: configuration, note: note, fingerprint: fingerprint)
                     }

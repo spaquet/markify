@@ -260,6 +260,7 @@ struct NativeEditor: NSViewRepresentable {
                 return "\(dark):\((model.source as NSString).substring(with: span.content))"
             })
             MermaidRenderer.shared.release(owner: styling, keeping: diagramKeys)
+            styling.scheduleDiagramLeases()
             styling.retainMath(model: model, dark: dark)
         }
         let secondary = NSColor.secondaryLabelColor
@@ -366,6 +367,13 @@ struct NativeEditor: NSViewRepresentable {
                     guard let color = theme.code(kind) else { continue }
                     storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.location, length: token.length))
                 }
+            case .htmlBlock where !markdownLens && MarkdownTextView.isInvisibleHTML(source.substring(with: span.range)):
+                // Comments and bare tags such as `</details>` show nothing in a browser, so they take no room.
+                let collapsed = NSMutableParagraphStyle()
+                collapsed.minimumLineHeight = 0.01
+                collapsed.maximumLineHeight = 0.01
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear, .paragraphStyle: collapsed],
+                                      range: source.lineRange(for: span.range))
             case .htmlBlock where !markdownLens && textView != nil:
                 if let rendered = textView?.renderHTML(source.substring(with: span.range), width: columnWidth) {
                     textView?.htmlBlocks[span.range.location] = rendered
@@ -762,6 +770,7 @@ struct NativeEditor: NSViewRepresentable {
         switch state {
         case .rendering: return MarkdownTextView.diagramPadding * 2 + 88
         case .rendered(let image): return MarkdownTextView.fitted(image.size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
+        case .evicted(let size): return MarkdownTextView.fitted(size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
         case .failed: return nil
         }
     }
@@ -1063,6 +1072,8 @@ class MarkdownTextView: NSTextView {
         tokenCache = [:]
         RemoteImages.shared.release(owner: self)
         MermaidRenderer.shared.release(owner: self)
+        if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
+        keyObserver = nil
         releaseLocalImages(keeping: [])
         imageValidation?.cancel()
         htmlLoads = [:]
@@ -1640,6 +1651,7 @@ class MarkdownTextView: NSTextView {
 
     /// Overlays placed while outside the visible area are not painted when it grows to include them.
     private func visibleAreaChanged() {
+        scheduleDiagramLeases()
         for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
         guard !tableRefreshScheduled, !refreshingTables, !model.tables.isEmpty else { return }
         tableRefreshScheduled = true
@@ -1653,8 +1665,53 @@ class MarkdownTextView: NSTextView {
     /// Table overlays need a window to place themselves; the first style pass can run before the view has one.
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        guard window != nil else { return }
+        if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
+        keyObserver = nil
+        scheduleDiagramLeases()
+        guard let window else { return }
+        // The window brought to the front renews its lease, loading again the diagrams other windows evicted.
+        keyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.scheduleDiagramLeases() }
+        }
         DispatchQueue.main.async { [weak self] in self?.refreshTables() }
+    }
+
+    private var keyObserver: NSObjectProtocol?
+    private var diagramLeasesScheduled = false
+
+    /// Leases the diagrams near the visible text once the current scroll, resize or style pass settles.
+    func scheduleDiagramLeases() {
+        guard !diagramLeasesScheduled else { return }
+        diagramLeasesScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.diagramLeasesScheduled = false
+            self.leaseDiagrams()
+        }
+    }
+
+    /// Leases the Mermaid diagrams within about a screen of the viewport, so eviction drops those nobody is about to see.
+    func leaseDiagrams() {
+        // Leasing never lays out text: laying out the viewport here can resize the view while the user types.
+        // Before the first layout there is no lease; the next scroll, style pass or focus brings one.
+        guard rendered, window != nil, let manager = textLayoutManager, let content = manager.textContentManager,
+              let viewport = manager.textViewportLayoutController.viewportRange else {
+            MermaidRenderer.shared.lease([], owner: self)
+            return
+        }
+        let start = content.offset(from: content.documentRange.location, to: viewport.location)
+        let end = content.offset(from: content.documentRange.location, to: viewport.endLocation)
+        // The viewport's own length in characters stands in for a screen above and below, so no text outside it is laid out.
+        let margin = max(end - start, 2000)
+        let near = NSRange(location: max(0, start - margin), length: end - max(0, start - margin) + margin)
+        let source = string as NSString
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        let diagrams = model.spans.compactMap { span -> (source: String, dark: Bool)? in
+            guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid",
+                  NSIntersectionRange(span.range, near).length > 0 else { return nil }
+            return (source.substring(with: span.content), dark)
+        }
+        MermaidRenderer.shared.lease(diagrams, owner: self)
     }
 
     override func viewDidMoveToSuperview() {
@@ -1902,6 +1959,17 @@ class MarkdownTextView: NSTextView {
         return (html as NSString).substring(with: match.range(at: 2))
     }
 
+    private static let invisibleHTML = try! NSRegularExpression(
+        pattern: #"<!--.*?-->|<!--.*$|</?(?!(?:img|br|hr|svg|input|video|audio|iframe|object|embed|canvas|picture|meter|progress|textarea|select|button)\b)[a-z][a-z0-9-]*\b[^>]*>"#,
+        options: [.caseInsensitive, .dotMatchesLineSeparators])
+    private static let inlineSVG = try! NSRegularExpression(pattern: #"<svg\b.*?</svg\s*>"#, options: [.caseInsensitive, .dotMatchesLineSeparators])
+
+    /// HTML a browser shows nothing for: comments and tags without text or media.
+    static func isInvisibleHTML(_ html: String) -> Bool {
+        invisibleHTML.stringByReplacingMatches(in: html, range: NSRange(location: 0, length: (html as NSString).length), withTemplate: "")
+            .allSatisfy(\.isWhitespace)
+    }
+
     func renderHTML(_ raw: String, width: CGFloat) -> HTMLBlockRender? {
         let imageTag = try? NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
         let html = NSMutableString(string: raw)
@@ -1922,6 +1990,13 @@ class MarkdownTextView: NSTextView {
             }
             let updated = tag.replacingOccurrences(of: path, with: replacement)
             html.replaceCharacters(in: match.range, with: updated)
+        }
+        // WebKit's text import drops inline SVG but keeps images, so each drawing becomes an image of itself.
+        for match in Self.inlineSVG.matches(in: html as String, range: NSRange(location: 0, length: html.length)).reversed() {
+            let svg = html.substring(with: match.range)
+            let opening = String(svg.prefix { $0 != ">" })
+            let size = ["width", "height"].compactMap { name in Self.htmlAttribute(name, in: opening).map { " \(name)=\"\(MarkdownHTML.escape($0))\"" } }
+            html.replaceCharacters(in: match.range, with: "<img src=\"data:image/svg+xml;base64,\(Data(svg.utf8).base64EncodedString())\"\(size.joined())>")
         }
         // Importing HTML goes through WebKit and is slow; a restyle reuses every block whose HTML, images included, is unchanged.
         let key = "\(width)|\(theme.accent)|\(html)"
