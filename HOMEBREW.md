@@ -2,7 +2,7 @@
 
 Markify's project-owned tap lives in this repository at [`Casks/markify.rb`](Casks/markify.rb). It uses the existing immutable GitHub release DMGs, selecting Apple silicon or Intel with a separate SHA-256 checksum for each. The minimum is macOS 26 (Tahoe); Sparkle provides in-app updates.
 
-This is a third-party tap, maintained by Markify, without Homebrew endorsement. The instructions below become available after the cask is merged into the repository's default branch. The initial cask packages the latest published release, **2.0.2**, rather than the unreleased 2.2.0 milestone in [issue #69](https://github.com/spaquet/markify/issues/69).
+This is a third-party tap, maintained by Markify, without Homebrew endorsement. The cask pins the latest published release and is updated after each one (see [Maintain the cask](#maintain-the-cask)); `version` in [`Casks/markify.rb`](Casks/markify.rb) is the release Homebrew installs.
 
 ## Install and update
 
@@ -29,9 +29,17 @@ brew uninstall --cask spaquet/markify/markify
 
 ## Maintain the cask
 
-After publishing each release, update `version` and both `sha256` values in the cask, then commit the change to the default branch. Keep downloads pinned to `releases/download/v<version>/…`; do not use a moving `latest/download` URL or `sha256 :no_check`.
+After publishing each release (and once `scripts/check-release.sh` passes), update `version` and both `sha256` values in the cask, then commit the change to the default branch. `/deploy` does this in its Homebrew step. Keep downloads pinned to `releases/download/v<version>/…`; do not use a moving `latest/download` URL or `sha256 :no_check`.
 
-Download the release's two DMGs and checksum files using `gh release download <tag> --pattern 'markify-*.dmg*'`. Run `shasum -a 256 -c markify-as.dmg.sha256` and `shasum -a 256 -c markify-intel.dmg.sha256` in the download directory. Put the verified hashes into the cask.
+```sh
+scripts/set-cask-version.sh <version>   # downloads both DMGs, checks them against the release's .sha256 files, rewrites version and hashes, runs brew style
+git diff Casks                           # version and the two sha256 values only
+git commit -m "Update Homebrew cask to <version>" Casks/markify.rb
+scripts/set-cask-version.sh --audit     # brew audit --strict --online, both architectures, from a temporary tap of the committed cask
+git push
+```
+
+By hand: download the release's two DMGs and checksum files using `gh release download <tag> --pattern 'markify-*.dmg*'`. Run `shasum -a 256 -c markify-as.dmg.sha256` and `shasum -a 256 -c markify-intel.dmg.sha256` in the download directory. Put the verified hashes into the cask.
 
 After adding the tap, validate both architecture branches (from a checkout of this repository for the style command):
 

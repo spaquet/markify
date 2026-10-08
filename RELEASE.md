@@ -65,7 +65,7 @@ To check, build Debug with the local file, run the app, and confirm with `/usr/l
 
 ## How to Create a Release
 
-In Claude Code, `/deploy` runs these steps: it asks for the version and build, checks the Sparkle key, updates and rebuilds the help, bumps and tags, watches the workflow, checks the published release, and then updates the website. The skill is in `.claude/skills/deploy/SKILL.md`. By hand:
+In Claude Code, `/deploy` runs these steps: it asks for the version and build, checks the Sparkle key and the Sentry secrets, updates and rebuilds the help, bumps and tags, watches the workflow, checks the published release and its Sentry dSYM uploads, and then updates the Homebrew cask and the website. The skill is in `.claude/skills/deploy/SKILL.md`. By hand:
 
 ### Step 0: Update the help
 

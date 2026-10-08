@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: Release a new Markify version end to end — ask for the version and build, make sure Sparkle signing is set up, update and rebuild the help, bump and tag, watch the release workflow, check the published DMGs and Sparkle feed, then update the Homebrew cask and the website. Use when the user asks to deploy, release, ship or publish a new version.
+description: Release a new Markify version end to end — ask for the version and build, make sure Sparkle signing and the Sentry secrets are set up, update and rebuild the help, bump and tag, watch the release workflow, check the published DMGs, Sparkle feed and Sentry dSYM upload, then update the Homebrew cask and the website. Use when the user asks to deploy, release, ship or publish a new version.
 disable-model-invocation: true
 ---
 
@@ -16,16 +16,23 @@ git status --short            # must be empty
 gh auth status
 grep -m2 -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION" Markify.xcodeproj/project.pbxproj
 gh release list --limit 3
+curl -fsSL https://github.com/spaquet/markify/releases/latest/download/appcast.xml \
+  | xmllint --xpath 'string(//*[local-name()="version"])' -   # last released build
+gh run list --workflow tests.yml --branch main --limit 1  # must be completed/success
+gh pr list --state open
+git branch --no-merged main
 ```
 
-The first `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` lines belong to the Markify target (the test targets use 1.0 and 1). Note the current version, build and latest release tag. If the working tree isn't clean or main can't fast-forward, stop and ask.
+The first `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` lines belong to the Markify target (the test targets use 1.0 and 1). Note the project's version and build, the latest release tag and the last released build. They often differ: development bumps the build per phase and may set the next version early, so the project can already be ahead of the release (e.g. 2.5.0 (328) against v2.2.2 (322)).
+
+Stop and ask if the working tree isn't clean, main can't fast-forward, or the Tests run on main is failing or still running (wait for it). List open PRs and unmerged branches and ask whether any of them should be in this release before going on.
 
 ## 2. Ask for the version and build
 
-Use AskUserQuestion. Offer the next patch and minor versions and the current build + 1, marking a recommendation. Then check the answer:
+Use AskUserQuestion. Offer the next patch and minor versions after the latest release tag and, if the project is already ahead, its current version; for the build offer the project's current build if it is above the last released build, otherwise current build + 1. Mark a recommendation. Then check the answer:
 
 - The version must be greater than the latest release when compared component by component: 1.6 is *lower* than 1.42. Say so and ask again if it isn't.
-- The build must be greater than the current `CURRENT_PROJECT_VERSION`. Sparkle compares builds, not versions, so an installed copy never sees a release with a lower build.
+- The build must be greater than the last released build (the live appcast's `sparkle:version`): Sparkle compares builds, not versions, so an installed copy never sees a release with a lower or equal build. It must also not be lower than the project's current `CURRENT_PROJECT_VERSION`.
 - The tag `v<version>` must not exist yet (`git tag -l v<version>`, `gh release view v<version>`).
 
 Also ask whether they want hand-written release notes. Sparkle shows the release body as Markdown in the update window. If yes, have them write it (or draft it from `git log <last tag>..main --oneline` for them to approve) and save it as a draft in step 6; otherwise the workflow uses GitHub's generated notes.
@@ -50,7 +57,17 @@ swift scripts/verify-update-signature.swift "$(/usr/libexec/PlistBuddy -c 'Print
 
 A mismatch means the secret may be stale too: ask, then rerun `scripts/setup-sparkle-keys.sh`. Never replace a key that has shipped without the user's explicit go-ahead: installed copies only accept updates signed with the key they shipped with.
 
-Also check `gh secret list | grep -E 'SENTRY_DSN|SENTRY_AUTH_TOKEN'`: a tag build fails without either (the DSN sends reports, the token uploads the dSYMs that symbolicate them). If one is missing, stop and point the user to RELEASE.md › Crash Reporting (Sentry); never paste a DSN or token into the repository.
+### Sentry
+
+Release builds must report to Sentry (`production` environment); Debug builds report to `development` only when the git-ignored `Config/Sentry.local.xcconfig` holds a DSN.
+
+```bash
+gh secret list | grep -E 'SENTRY_DSN|SENTRY_AUTH_TOKEN'
+git ls-files Config | grep -v -x -e Config/Sentry.xcconfig -e Config/Sentry.local.xcconfig.example   # must print nothing
+grep -E '^SENTRY_DSN *= *$' Config/Sentry.xcconfig                                                   # the tracked DSN stays empty
+```
+
+A tag build fails without either secret (the DSN sends reports, the token uploads the dSYMs that symbolicate them to `markify-ax/markify`). If one is missing, stop and point the user to RELEASE.md › Crash Reporting (Sentry). If a DSN is tracked anywhere, stop: it must be rotated (RELEASE.md, step 1). Never paste a DSN or token into the repository, a commit or the release notes.
 
 ## 4. Help, tour and website pages
 
@@ -76,15 +93,22 @@ The help is written once in `help/*.md` and built into the app's Help Book (`Mar
 
 ## 5. Bump, commit, push
 
-Replace only the Markify target's values (both Debug and Release lines):
+The app, its Quick Look extension and the PreviewImages helper share one version and build (Debug and Release each: six lines per setting); the test targets stay at 1.0 and 1. Skip either substitution if the value is already the chosen one.
 
 ```bash
 sed -i '' -e "s/CURRENT_PROJECT_VERSION = $OLD_BUILD;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/" \
           -e "s/MARKETING_VERSION = $OLD_VERSION;/MARKETING_VERSION = $NEW_VERSION;/" Markify.xcodeproj/project.pbxproj
-git diff --stat   # project.pbxproj: 4 lines, plus Info.plist if step 3 changed it
+grep -cE "CURRENT_PROJECT_VERSION = $NEW_BUILD;|MARKETING_VERSION = $NEW_VERSION;" Markify.xcodeproj/project.pbxproj   # 12
+git diff --stat   # project.pbxproj (up to 12 lines changed), plus Info.plist if step 3 changed it
 ```
 
-Build once to make sure it compiles (`xcodebuild -quiet -project Markify.xcodeproj -scheme Markify -configuration Release build`). Commit as `Markify <version> (<build>)` and push to main. The website is not touched yet.
+Build once to make sure it compiles. Pass an empty DSN so this local Release build, which would otherwise pick up `Config/Sentry.local.xcconfig` and report as `production`, can't send events if someone launches it:
+
+```bash
+xcodebuild -quiet -project Markify.xcodeproj -scheme Markify -configuration Release SENTRY_DSN= build
+```
+
+If nothing changed (version and build were already set), there is nothing to commit; otherwise commit as `Markify <version> (<build>)` and push to main. The website is not touched yet.
 
 ## 6. Tag and release
 
@@ -97,7 +121,7 @@ gh run list --workflow release-dmg.yml --limit 1          # the run for the tag
 gh run watch <run id> --exit-status --interval 30         # run in the background; about 10 minutes
 ```
 
-If the run fails, show the failing step's log (`gh run view <id> --log-failed | tail -50`) and stop. Common causes: `SPARKLE_PRIVATE_KEY` missing, or the signature not matching `SUPublicEDKey` (step 3). A published release is immutable; fixing a failure after publishing means a new patch version.
+If the run fails, show the failing step's log (`gh run view <id> --log-failed | tail -50`) and stop. Common causes: `SPARKLE_PRIVATE_KEY`, `SENTRY_DSN` or `SENTRY_AUTH_TOKEN` missing, the signature not matching `SUPublicEDKey` (step 3), or `sentry-cli debug-files upload` failing (an expired or under-scoped token). A published release is immutable; fixing a failure after publishing means a new patch version.
 
 ## 7. Check the release
 
@@ -105,7 +129,17 @@ If the run fails, show the failing step's log (`gh run view <id> --log-failed | 
 scripts/check-release.sh v<version> <build>
 ```
 
-It checks the six assets, that the tag is Latest, that the live appcast names this version and build, and that the update archive verifies against `SUPublicEDKey`, has a valid code signature and holds the right build. Don't continue until it passes.
+It checks the six assets, that the tag is Latest, that the live appcast names this version and build, and that the update archive verifies against `SUPublicEDKey`, has a valid code signature, holds the right build, and bundles the `markify` CLI in `Contents/Helpers`. Don't continue until it passes.
+
+Then confirm the dSYMs reached Sentry: each of the three build jobs (`as`, `intel`, `update`) must have run its upload step.
+
+```bash
+gh run view <run id> --json jobs \
+  -q '.jobs[] | select(.name|startswith("build")) | [.name, (.steps[] | select(.name=="Upload debug symbols to Sentry") | .conclusion)] | @tsv'
+# three lines, each ending in "success"
+```
+
+The step exits early without a token, but tag builds fail before that, so `success` means `sentry-cli --wait` uploaded them. If the Sentry MCP tools are available, optionally confirm that the update archive's UUIDs (`dwarfdump --uuid Markify.app/Contents/MacOS/Markify`) appear as debug files in `markify-ax/markify`.
 
 ## 8. Update the Homebrew cask
 
@@ -132,8 +166,12 @@ scripts/set-website-version.sh <version>
 git diff --stat docs     # the download section and softwareVersion in index.html, plus the generated help, FAQ, legal, sitemap and llms.txt
 ```
 
-Commit everything under `docs/` as `Update website to version <version>` and push to main. The Pages workflow deploys `docs/`; confirm it succeeded (`gh run list --workflow pages.yml --limit 1`) and that https://spaquet.github.io/markify/ shows the new version (`curl -s https://spaquet.github.io/markify/ | grep -o "Version [0-9.]*"`; the CDN can lag a minute).
+`set-website-version.sh` rewrites `docs/index.html`, `docs/compare.html` and `docs/okf.html` (the buttons' `data-version`, the ` · v<version>` label, the `releases/tag/v<version>` link and `softwareVersion`). Check that no page still names the previous release: `grep -rn "v$OLD_VERSION\b" docs/*.html` should list only `docs/known-issues.html`, which names past releases on purpose.
+
+Ask whether this release fixes or introduces a problem worth recording; if so, add or update an `.issue` card in `docs/known-issues.html` (the permanent record; no landing-page banner unless the user asks).
+
+Commit everything under `docs/` as `Update website to version <version>` and push to main. The Pages workflow deploys `docs/`; confirm it succeeded (`gh run list --workflow pages.yml --limit 1`) and that https://spaquet.github.io/markify/ shows the new version (`curl -s https://spaquet.github.io/markify/ | grep -o '"softwareVersion":"[0-9.]*"\|data-version="v[0-9.]*"' | sort -u`; the CDN can lag a minute).
 
 ## 10. Report
 
-Tell the user: the release URL, the checks that passed, the cask commit, the help pages updated (or that none needed it), the website commit, and anything skipped. Remind them that the private Sparkle key must stay backed up.
+Tell the user: the release URL, the checks that passed (including the three Sentry dSYM uploads), the cask commit, the help pages updated (or that none needed it), the website commit, and anything skipped. Remind them that the private Sparkle key must stay backed up.
