@@ -34,9 +34,7 @@ import WebKit
     private var lastUsed: [String: Int] = [:]
     private var clock = 0
     /// The bytes rendered diagrams may hold together, shared by every window.
-    var memoryBudget = 64_000_000
-    /// The most points a diagram snapshot covers, about 8 MB of pixels on a Retina display.
-    private static let snapshotArea: CGFloat = 524_288
+    var memoryBudget = 32_000_000
     var pendingCount: Int { queue.count + svgJobs.count + (busy ? 1 : 0) }
 
     /// The diagram's state, starting a render on first request; `onChange` runs once when it settles.
@@ -148,7 +146,7 @@ import WebKit
             let view = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600), configuration: configuration)
             view.navigationDelegate = self
             view.setValue(false, forKey: "drawsBackground")
-            // Snapshots need the view in a window; this one never appears on screen.
+            // Rendering needs the view in a window; this one never appears on screen.
             let window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: 800, height: 600), styleMask: [.borderless], backing: .buffered, defer: false)
             window.contentView = view
             self.window = window
@@ -200,7 +198,7 @@ import WebKit
             const { svg } = await mermaid.render('diagram' + Date.now(), source);
             const box = document.getElementById('diagram');
             box.innerHTML = svg;
-            // Responsive SVGs otherwise inherit the previous diagram's snapshot width.
+            // Responsive SVGs otherwise inherit the previous diagram's width.
             const drawing = box.querySelector('svg');
             const bounds = drawing.viewBox.baseVal;
             if (bounds.width > 0 && bounds.height > 0) {
@@ -220,16 +218,17 @@ import WebKit
                           let view = self.webView else { throw CocoaError(.featureUnsupported) }
                     view.setFrameSize(size)
                     self.window?.setContentSize(size)
-                    let configuration = WKSnapshotConfiguration()
+                    let configuration = WKPDFConfiguration()
                     configuration.rect = NSRect(origin: .zero, size: size)
-                    // The editor draws diagrams no wider than its column, so large ones are kept at a lower resolution.
-                    let scale = min(1, 2048 / size.width, (Self.snapshotArea / (size.width * size.height)).squareRoot())
-                    configuration.snapshotWidth = NSNumber(value: floor(size.width * scale))
-                    configuration.afterScreenUpdates = true
-                    view.takeSnapshot(with: configuration) { [weak self] image, error in
+                    // A PDF keeps the diagram as vectors: sharp at any column width, and a fraction of a bitmap's memory.
+                    view.createPDF(configuration: configuration) { [weak self] result in
                         guard let self, self.generation == token else { return }
-                        image?.size = size
-                        self.finish(job.key, image.map(State.rendered) ?? .failed(error?.localizedDescription ?? "Diagram snapshot failed."))
+                        switch result {
+                        case .success(let data):
+                            self.finish(job.key, Self.image(pdf: data, size: size).map(State.rendered) ?? .failed("Diagram PDF could not be read."))
+                        case .failure(let error):
+                            self.finish(job.key, .failed(error.localizedDescription))
+                        }
                         self.currentRaster = nil
                         self.completed()
                     }
@@ -252,15 +251,30 @@ import WebKit
     private func finish(_ key: String, _ state: State) {
         // Released while rendering: nobody draws it, so it holds no memory.
         guard waiting[key] != nil else { states[key] = nil; costs[key] = nil; lastUsed[key] = nil; return }
-        if case .rendered(let image) = state,
-           let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
-            costs[key] = bitmap.bytesPerRow * bitmap.height
+        if case .rendered(let image) = state {
+            costs[key] = Self.cost(of: image)
             clock += 1
             lastUsed[key] = clock
             evict(sparing: key)
         }
         states[key] = state
         waiting[key]?.values.forEach { $0() }
+    }
+
+    /// The diagram's PDF as an image of its rendered size. It is drawn from the vectors each time, so it holds no bitmap.
+    static func image(pdf data: Data, size: NSSize) -> NSImage? {
+        guard let representation = NSPDFImageRep(data: data) else { return nil }
+        let image = NSImage(size: size)
+        image.addRepresentation(representation)
+        image.cacheMode = .never
+        return image
+    }
+
+    /// The bytes an image holds: its PDF data, or its pixels.
+    static func cost(of image: NSImage) -> Int {
+        if let pdf = image.representations.lazy.compactMap({ $0 as? NSPDFImageRep }).first { return pdf.pdfRepresentation.count }
+        guard let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return 0 }
+        return bitmap.bytesPerRow * bitmap.height
     }
 
     /// Drops the least recently drawn images until the cache fits its budget. A new render is never refused:

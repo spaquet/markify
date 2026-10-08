@@ -81,7 +81,9 @@ Each step ships on its own and keeps the tests green.
 - Remove the `states.count >= 64` sweep in `state(of:)` in favor of the same eviction.
 - Tests: a full budget evicts an unleased entry; a leased entry survives; no `.failed` state is ever stored for the budget; after another owner releases, a previously over-budget diagram renders.
 
-### 2. PDF payload and the T0 split
+### 2. PDF payload and the T0 split — done, build 325
+
+Results: a 360 × 3340 pt flowchart is 18 KB of PDF in the light theme and 62 KB in the dark one (the bitmap was capped at ~8 MB); it draws into a 1216 px square in 10–16 ms. Flowchart labels from `<foreignObject>` are in the PDF as text, and the background stays transparent in both themes, so `mermaid.html` is unchanged. In memory, T0 is `State.evicted(size)`: an evicted entry keeps only its size, and step 3 persists it. The memory budget is now 32 MB.
 
 - Render with `createPDF`; `State.rendered` carries the PDF image and its intrinsic size.
 - Keep T0 (size or parse error) apart from T2 (the PDF), so dropping T2 keeps heights.

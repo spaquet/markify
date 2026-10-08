@@ -1,4 +1,5 @@
 import AppKit
+import PDFKit
 import Testing
 @testable import Markify
 
@@ -93,9 +94,8 @@ import Testing
         defer { renderer.recover("Test complete") }
         let first = "graph TD\n A --> B", second = "graph TD\n C --> D", third = "graph TD\n E --> F"
         guard case .rendered(let image) = await render(first, renderer: renderer),
-              let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { Issue.record("not rendered"); return }
-        renderer.memoryBudget = bitmap.bytesPerRow * bitmap.height * 5 / 2
-        guard case .rendered(let secondImage) = await render(second, renderer: renderer) else { Issue.record("not rendered"); return }
+              case .rendered(let secondImage) = await render(second, renderer: renderer) else { Issue.record("not rendered"); return }
+        renderer.memoryBudget = MermaidRenderer.cost(of: image) + MermaidRenderer.cost(of: secondImage)
         _ = renderer.cached(first, dark: false)
         guard case .rendered = await render(third, renderer: renderer) else { Issue.record("refused"); return }
         guard case .evicted(let size) = renderer.state(of: second, dark: false, onChange: {}) else { Issue.record("not evicted"); return }
@@ -127,14 +127,32 @@ import Testing
         #expect(MarkdownTextView.fitted(NSSize(width: 300, height: 100), width: 640) == NSSize(width: 300, height: 100))
     }
 
-    /// A large diagram keeps its size but caps its pixels, so a document's diagrams fit the cache together.
-    @Test func largeDiagramsKeepTheirSizeAtLowerResolution() async {
+    /// Diagrams are kept as PDF: full size, sharp at any width, with labels as text and a clear background.
+    @Test func diagramsRenderAsVectors() async throws {
         let renderer = MermaidRenderer()
+        defer { renderer.recover("Test complete") }
         let nodes = (0..<30).map { "  N\($0)[Node \($0) with a fairly long label] --> M\($0)[Another long label \($0)]" }
-        guard case .rendered(let image) = await render("flowchart LR\n" + nodes.joined(separator: "\n"), renderer: renderer),
-              let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { Issue.record("not rendered"); renderer.recover("Test complete"); return }
-        #expect(image.size.width * image.size.height > 524_288, "\(image.size) \(bitmap.width)x\(bitmap.height)")
-        #expect(bitmap.width * bitmap.height <= 2 * 2 * 524_288 + 4096)
-        renderer.recover("Test complete")
+        for dark in [false, true] {
+            guard case .rendered(let image) = await render("flowchart LR\n" + nodes.joined(separator: "\n"), dark: dark, renderer: renderer) else {
+                Issue.record("not rendered (dark: \(dark))"); continue
+            }
+            let pdf = try #require(image.representations.first as? NSPDFImageRep)
+            #expect(image.size.width * image.size.height > 524_288, "\(image.size)")
+            #expect(MermaidRenderer.cost(of: image) < 1_000_000, "\(MermaidRenderer.cost(of: image)) bytes")
+            // Mermaid draws flowchart labels in <foreignObject>; they must survive into the PDF.
+            let text = try #require(PDFDocument(data: pdf.pdfRepresentation)?.string)
+            #expect(text.contains("Node 29 with a") && text.contains("label 29"))
+            let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 1216, pixelsHigh: 1216, bitsPerSample: 8, samplesPerPixel: 4,
+                                                       hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+            let clock = ContinuousClock()
+            let elapsed = clock.measure { image.draw(in: NSRect(x: 0, y: 0, width: 1216, height: 1216)) }
+            NSGraphicsContext.restoreGraphicsState()
+            // Mermaid pads the diagram, so the corners show the background.
+            #expect(bitmap.colorAt(x: 0, y: 0)?.alphaComponent == 0, "The page background is painted (dark: \(dark))")
+            #expect(bitmap.colorAt(x: 1215, y: 1215)?.alphaComponent == 0, "The page background is painted (dark: \(dark))")
+            #expect(elapsed < .milliseconds(50), "Drawing took \(elapsed)")
+        }
     }
 }
