@@ -21,7 +21,7 @@ Sharing one store between windows is right (a diagram open twice renders once); 
 
 | Tier | Holds | Where | Size | Eviction |
 |---|---|---|---|---|
-| **T0 metadata** | key → intrinsic size, or Mermaid's parse error | RAM, plus a JSON sidecar on disk | ~100 B per entry | capped at ~10,000 entries, oldest first |
+| **T0 metadata** | key → intrinsic size, or Mermaid's parse error | RAM (`State.evicted`, `.failed`); on disk, the PDF's page size and `<sha256>.error` files | ~100 B per entry | with its diagram |
 | **T1 disk** | one PDF per key | `~/Library/Caches/<bundle id>/Mermaid/<sha256>.pdf` | 20–200 KB each, 50 MB cap | least recently used (file modification date), pruned at launch and when idle |
 | **T2 memory** | PDF data / `NSPDFImageRep` | `MermaidRenderer.shared` | 32 MB budget | least recently drawn, leased entries pinned |
 | **T3 raster** (only if profiling asks for it) | bitmap at column width × backing scale | per `MarkdownTextView`, visible diagrams only | small | dropped when scrolled off screen |
@@ -97,7 +97,12 @@ Results: a 360 × 3340 pt flowchart is 18 KB of PDF in the light theme and 62 KB
 - Remove `snapshotArea` and the downscale.
 - Tests: pixel test that a rendered diagram draws (dark and light), height unchanged after T2 eviction.
 
-### 3. T1 disk tier
+### 3. T1 disk tier — done, build 326
+
+As built (`Markify/DiagramCache.swift`, `DiagramDiskCache`): no JSON sidecar. A cached PDF's page size is the diagram's size, and a parse error is a `<sha256>.error` file holding Mermaid's message, so T0 needs nothing beside T1. The renderer version is the SHA-256 of the bundled `mermaid.min.js` and `mermaid.html`, hashed once on the cache's queue, rather than a version string. Pruning runs when the cache is first used and whenever a write takes it over 50 MB, and stops at three quarters of the limit. Under tests the cache is a throwaway folder. The Quick Look extension compiles the same file and keeps its own cache in its container.
+
+The plan as written:
+
 
 - Add the shared SHA-256 hex helper; switch the three existing call sites to it.
 - Read `mermaidVersion` from the bundled script once; add `renderVersion`.

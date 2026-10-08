@@ -35,7 +35,20 @@ import WebKit
     private var clock = 0
     /// The bytes rendered diagrams may hold together, shared by every window.
     var memoryBudget = 32_000_000
-    var pendingCount: Int { queue.count + svgJobs.count + (busy ? 1 : 0) }
+    var pendingCount: Int { queue.count + svgJobs.count + loading.count + (busy ? 1 : 0) }
+    /// Rendered diagrams on disk, read before the web view renders one.
+    private let disk: DiagramDiskCache?
+    /// Diagrams being read from disk.
+    private var loading: Set<String> = []
+    /// Each diagram's disk digest, from its read until its render settles.
+    private var digests: [String: String] = [:]
+    /// Renders run in the web view, for tests.
+    private(set) var renderCount = 0
+
+    init(disk: DiagramDiskCache? = .standard) {
+        self.disk = disk
+        super.init()
+    }
 
     /// The diagram's state, starting a render on first request; `onChange` runs once when it settles.
     func state(of source: String, dark: Bool, owner: AnyObject? = nil, onChange: @escaping () -> Void) -> State {
@@ -59,8 +72,7 @@ import WebKit
         lastUsed[key] = clock
         states[key] = .rendering
         waiting[key] = [consumer: onChange]
-        queue.append((key, source, dark))
-        start()
+        request(key, source: source, dark: dark)
         return .rendering
     }
 
@@ -70,11 +82,43 @@ import WebKit
         guard let state = states[key] else { return nil }
         clock += 1
         lastUsed[key] = clock
-        if case .evicted = state, currentRaster != key, !queue.contains(where: { $0.key == key }), pendingCount < 32 {
-            queue.append((key, source, dark))
-            start()
+        if case .evicted = state, currentRaster != key, !loading.contains(key), !queue.contains(where: { $0.key == key }), pendingCount < 32 {
+            request(key, source: source, dark: dark)
         }
         return state
+    }
+
+    /// Reads the diagram from disk, and renders it in the web view only when the disk has nothing usable.
+    private func request(_ key: String, source: String, dark: Bool) {
+        guard let disk else {
+            queue.append((key, source, dark))
+            start()
+            return
+        }
+        loading.insert(key)
+        Task { [weak self] in
+            let (digest, entry) = await disk.load(source, dark: dark)
+            // Released while reading: nobody draws it.
+            guard let self, self.loading.remove(key) != nil, self.waiting[key] != nil else { return }
+            self.digests[key] = digest
+            switch entry {
+            case .pdf(let data):
+                if let image = Self.image(pdf: data) { return self.finish(key, .rendered(image)) }
+                disk.remove(digest)
+            case .error(let message):
+                return self.finish(key, .failed(message))
+            case nil:
+                break
+            }
+            self.queue.append((key, source, dark))
+            self.start()
+        }
+    }
+
+    /// Keeps a settled render on disk for the next time the diagram is shown.
+    private func persist(_ entry: DiagramDiskCache.Entry, for key: String) {
+        guard let disk, let digest = digests[key] else { return }
+        disk.store(entry, for: digest)
     }
 
     /// The diagram as SVG markup in the light theme, for export; nil when Mermaid cannot render it.
@@ -104,7 +148,8 @@ import WebKit
             guard waiting[key]?.isEmpty == true else { continue }
             waiting[key] = nil
             queue.removeAll { $0.key == key }
-            if key != currentRaster { states[key] = nil; costs[key] = nil; lastUsed[key] = nil }
+            loading.remove(key)
+            if key != currentRaster { states[key] = nil; costs[key] = nil; lastUsed[key] = nil; digests[key] = nil }
         }
     }
 
@@ -168,6 +213,7 @@ import WebKit
         busy = true
         let next = queue.removeFirst()
         currentRaster = next.key
+        renderCount += 1
         armDeadline()
         render(next)
     }
@@ -225,7 +271,12 @@ import WebKit
                         guard let self, self.generation == token else { return }
                         switch result {
                         case .success(let data):
-                            self.finish(job.key, Self.image(pdf: data, size: size).map(State.rendered) ?? .failed("Diagram PDF could not be read."))
+                            if let image = Self.image(pdf: data, size: size) {
+                                self.persist(.pdf(data), for: job.key)
+                                self.finish(job.key, .rendered(image))
+                            } else {
+                                self.finish(job.key, .failed("Diagram PDF could not be read."))
+                            }
                         case .failure(let error):
                             self.finish(job.key, .failed(error.localizedDescription))
                         }
@@ -233,8 +284,11 @@ import WebKit
                         self.completed()
                     }
                 } catch {
-                    let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String ?? error.localizedDescription
-                    self.finish(job.key, .failed(String(message.prefix(2000)).replacingOccurrences(of: "Error: ", with: "")))
+                    // Mermaid's own message is the same every time, so it is kept; other failures are retried.
+                    let mermaid = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String
+                    let message = String((mermaid ?? error.localizedDescription).prefix(2000)).replacingOccurrences(of: "Error: ", with: "")
+                    if mermaid != nil { self.persist(.error(message), for: job.key) }
+                    self.finish(job.key, .failed(message))
                     self.currentRaster = nil
                     self.completed()
                 }
@@ -249,6 +303,7 @@ import WebKit
     }
 
     private func finish(_ key: String, _ state: State) {
+        digests[key] = nil
         // Released while rendering: nobody draws it, so it holds no memory.
         guard waiting[key] != nil else { states[key] = nil; costs[key] = nil; lastUsed[key] = nil; return }
         if case .rendered(let image) = state {
@@ -261,10 +316,11 @@ import WebKit
         waiting[key]?.values.forEach { $0() }
     }
 
-    /// The diagram's PDF as an image of its rendered size. It is drawn from the vectors each time, so it holds no bitmap.
-    static func image(pdf data: Data, size: NSSize) -> NSImage? {
-        guard let representation = NSPDFImageRep(data: data) else { return nil }
-        let image = NSImage(size: size)
+    /// The diagram's PDF as an image of its rendered size (the page's, when read from disk).
+    /// It is drawn from the vectors each time, so it holds no bitmap.
+    static func image(pdf data: Data, size: NSSize? = nil) -> NSImage? {
+        guard let representation = NSPDFImageRep(data: data), representation.bounds.width > 0, representation.bounds.height > 0 else { return nil }
+        let image = NSImage(size: size ?? representation.bounds.size)
         image.addRepresentation(representation)
         image.cacheMode = .never
         return image

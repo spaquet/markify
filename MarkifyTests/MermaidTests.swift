@@ -117,6 +117,71 @@ import Testing
         guard case .evicted = renderer.state(of: first, dark: false, onChange: {}) else { Issue.record("oldest kept"); return }
     }
 
+    /// A diagram rendered once is read back from disk by the next renderer, without the web view.
+    @Test func renderedDiagramsAndParseErrorsComeBackFromDisk() async {
+        let folder = DiagramDiskCache.temporary().directory
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let valid = "graph TD\n Disk --> Cache", invalid = "graph TD\n A -->"
+        let firstCache = DiagramDiskCache(directory: folder)
+        let first = MermaidRenderer(disk: firstCache)
+        guard case .rendered(let image) = await render(valid, dark: true, renderer: first),
+              case .failed(let message) = await render(invalid, renderer: first) else { Issue.record("first render"); return }
+        #expect(first.renderCount == 2)
+        await firstCache.flush()
+        first.recover("Test complete")
+
+        let second = MermaidRenderer(disk: DiagramDiskCache(directory: folder))
+        defer { second.recover("Test complete") }
+        guard case .rendered(let again) = await render(valid, dark: true, renderer: second) else { Issue.record("not read back"); return }
+        #expect(again.size == image.size)
+        guard case .failed(let againMessage) = await render(invalid, renderer: second) else { Issue.record("error not read back"); return }
+        #expect(againMessage == message)
+        // The other theme is another file.
+        guard case .rendered = await render(valid, dark: false, renderer: second) else { Issue.record("light not rendered"); return }
+        #expect(second.renderCount == 1)
+    }
+
+    @Test func unreadableFilesRenderAgain() async throws {
+        let cache = DiagramDiskCache.temporary()
+        defer { try? FileManager.default.removeItem(at: cache.directory) }
+        let source = "graph TD\n Broken --> File"
+        let (digest, _) = await cache.load(source, dark: false)
+        try FileManager.default.createDirectory(at: cache.directory, withIntermediateDirectories: true)
+        try Data("not a pdf".utf8).write(to: cache.directory.appendingPathComponent("\(digest).pdf"))
+        let renderer = MermaidRenderer(disk: cache)
+        defer { renderer.recover("Test complete") }
+        guard case .rendered = await render(source, renderer: renderer) else { Issue.record("not rendered"); return }
+        #expect(renderer.renderCount == 1)
+        await cache.flush()
+        guard case .pdf(let data)? = await cache.load(source, dark: false).entry else { Issue.record("not stored"); return }
+        #expect(NSPDFImageRep(data: data) != nil)
+    }
+
+    @Test func diskDigestsFollowSourceThemeAndRenderer() {
+        let digest = DiagramDiskCache.digest(of: "graph TD\n A --> B", dark: false, rendererVersion: "12.0.0")
+        #expect(digest.count == 64)
+        #expect(digest == DiagramDiskCache.digest(of: "graph TD\n A --> B", dark: false, rendererVersion: "12.0.0"))
+        #expect(digest != DiagramDiskCache.digest(of: "graph TD\n A --> C", dark: false, rendererVersion: "12.0.0"))
+        #expect(digest != DiagramDiskCache.digest(of: "graph TD\n A --> B", dark: true, rendererVersion: "12.0.0"))
+        #expect(digest != DiagramDiskCache.digest(of: "graph TD\n A --> B", dark: false, rendererVersion: "12.0.1"))
+    }
+
+    /// Over its limit, the disk cache removes the least recently used files.
+    @Test func diskCacheKeepsItsLimit() async throws {
+        let cache = DiagramDiskCache.temporary(limit: 4000)
+        defer { try? FileManager.default.removeItem(at: cache.directory) }
+        for index in 0..<5 {
+            cache.store(.pdf(Data(repeating: UInt8(index), count: 1000)), for: "entry\(index)")
+            await cache.flush()
+            let url = cache.directory.appendingPathComponent("entry\(index).pdf")
+            try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: Double(index - 10))], ofItemAtPath: url.path)
+        }
+        await cache.flush()
+        let names = Set(try FileManager.default.contentsOfDirectory(atPath: cache.directory.path))
+        // Pruning stops at three quarters of the limit.
+        #expect(names == ["entry2.pdf", "entry3.pdf", "entry4.pdf"], "\(names)")
+    }
+
     @Test func invalidDiagramsReportMermaidsMessage() async {
         guard case .failed(let message) = await render("graph TD\n  A -->") else { Issue.record("did not fail"); return }
         #expect(message.contains("Parse error"))
