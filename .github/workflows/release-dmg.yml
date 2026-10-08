@@ -60,10 +60,16 @@ jobs:
       - name: Build Markify for ${{ matrix.archs }}
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           if [ -z "$SENTRY_DSN" ]; then
             if [ "$GITHUB_REF_TYPE" = tag ]; then echo "::error::The SENTRY_DSN secret is not set."; exit 1; fi
             echo "::warning::The SENTRY_DSN secret is not set; this build reports no crashes."
+          fi
+          # Checked before the build so a tag fails early; the upload is the next step.
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            if [ "$GITHUB_REF_TYPE" = tag ]; then echo "::error::The SENTRY_AUTH_TOKEN secret is not set."; exit 1; fi
+            echo "::warning::The SENTRY_AUTH_TOKEN secret is not set; debug symbols won't be uploaded."
           fi
           xcodebuild \
             -project Markify.xcodeproj \
@@ -78,6 +84,20 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             SENTRY_DSN="$SENTRY_DSN" \
             clean build
+
+      # Without the dSYMs, Sentry shows Markify's own frames as <unknown>. Each matrix build has its own
+      # UUIDs (the two DMGs and the universal Sparkle update), so all three upload. Ad hoc signing later
+      # doesn't change them.
+      - name: Upload debug symbols to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: markify-ax
+          SENTRY_PROJECT: markify
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then exit 0; fi
+          brew install getsentry/tools/sentry-cli
+          sentry-cli debug-files upload --include-sources --wait \
+            "${{ matrix.derived_data_path }}/Build/Products/Release"
 
       - name: Build and bundle markify CLI
         run: |

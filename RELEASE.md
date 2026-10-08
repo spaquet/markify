@@ -51,7 +51,15 @@ In Sentry, pick the environment in the filter at the top of Issues or Performanc
    ```
 
    The release workflow passes it to `xcodebuild` as `SENTRY_DSN=…`. A tag build fails when the secret is missing, so a release never ships without crash reports; a manual run only warns.
-3. **Report from local builds (optional).** Copy `Config/Sentry.local.xcconfig.example` to `Config/Sentry.local.xcconfig` (git-ignored) and put the DSN in it. xcconfig files treat `//` as a comment, so write `https:/$()/` for `https://`. Without that file, local builds report nothing.
+3. **Upload debug symbols.** Release builds ship without symbols, so without their dSYMs Sentry shows Markify's own frames as `<unknown>`. In Sentry, open **Settings › Developer Settings › Organization Tokens** and create a token (Sentry shows it once), then store it as the `SENTRY_AUTH_TOKEN` repository secret:
+
+   ```bash
+   gh secret set SENTRY_AUTH_TOKEN
+   gh secret list | grep SENTRY_AUTH_TOKEN
+   ```
+
+   Each build job uploads its dSYMs with `sentry-cli debug-files upload`. As with the DSN, a tag build fails when the secret is missing and a manual run only warns. The target's **Upload Debug Symbols to Sentry** build phase does the same for local builds when `sentry-cli` is installed and logged in.
+4. **Report from local builds (optional).** Copy `Config/Sentry.local.xcconfig.example` to `Config/Sentry.local.xcconfig` (git-ignored) and put the DSN in it. xcconfig files treat `//` as a comment, so write `https:/$()/` for `https://`. Without that file, local builds report nothing.
 
 To check, build Debug with the local file, run the app, and confirm with `/usr/libexec/PlistBuddy -c 'Print :SentryDSN' <path>/Markify.app/Contents/Info.plist` that the DSN is in the bundle; an event from it appears under `development`.
 
