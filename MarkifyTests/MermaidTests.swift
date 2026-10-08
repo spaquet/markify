@@ -117,6 +117,46 @@ import Testing
         guard case .evicted = renderer.state(of: first, dark: false, onChange: {}) else { Issue.record("oldest kept"); return }
     }
 
+    /// Leased diagrams, near a view's visible area, outlast older unleased ones; memory pressure keeps only them.
+    @Test func leasedDiagramsSurviveEvictionAndMemoryPressure() async {
+        let renderer = MermaidRenderer(disk: nil)
+        defer { renderer.recover("Test complete") }
+        let visible = NSObject(), background = NSObject()
+        let near = "graph TD\n Near --> View", far = "graph TD\n Far --> Away", next = "graph TD\n Next --> One"
+        guard case .rendered(let nearImage) = await render(near, renderer: renderer),
+              case .rendered(let farImage) = await render(far, renderer: renderer) else { Issue.record("not rendered"); return }
+        _ = renderer.state(of: near, dark: false, owner: visible, onChange: {})
+        _ = renderer.state(of: far, dark: false, owner: background, onChange: {})
+        renderer.lease([(near, false)], owner: visible)
+        _ = renderer.cached(far, dark: false)
+        renderer.memoryBudget = MermaidRenderer.cost(of: nearImage) + MermaidRenderer.cost(of: farImage)
+        // The leased diagram is the least recently drawn, yet the unleased one goes.
+        guard case .rendered = await render(next, renderer: renderer) else { Issue.record("refused"); return }
+        guard case .rendered = renderer.state(of: near, dark: false, onChange: {}) else { Issue.record("leased diagram evicted"); return }
+        guard case .evicted = renderer.state(of: far, dark: false, onChange: {}) else { Issue.record("unleased diagram kept"); return }
+
+        renderer.relieveMemoryPressure()
+        guard case .rendered = renderer.state(of: near, dark: false, onChange: {}) else { Issue.record("leased diagram evicted under pressure"); return }
+        guard case .evicted = renderer.state(of: next, dark: false, onChange: {}) else { Issue.record("unleased diagram kept under pressure"); return }
+
+        // Leasing an evicted diagram, as a window brought to the front does, loads it again.
+        let restored: MermaidRenderer.State = await withCheckedContinuation { continuation in
+            var resumed = false
+            _ = renderer.state(of: far, dark: false, owner: background) {
+                guard !resumed else { return }
+                resumed = true
+                continuation.resume(returning: renderer.cached(far, dark: false) ?? .rendering)
+            }
+            renderer.lease([(far, false)], owner: background)
+        }
+        guard case .rendered = restored else { Issue.record("lease did not reload: \(restored)"); return }
+
+        // Releasing an owner ends its lease.
+        renderer.release(owner: visible)
+        renderer.relieveMemoryPressure()
+        guard case .evicted = renderer.state(of: near, dark: false, onChange: {}) else { Issue.record("released lease kept"); return }
+    }
+
     /// A diagram rendered once is read back from disk by the next renderer, without the web view.
     @Test func renderedDiagramsAndParseErrorsComeBackFromDisk() async {
         let folder = DiagramDiskCache.temporary().directory

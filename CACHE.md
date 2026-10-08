@@ -111,7 +111,12 @@ The plan as written:
 - Touch the file's modification date on read; prune to 50 MB at launch and when idle.
 - Tests: a T1 hit does not use the web view (render-count probe); the key changes with source, theme, Mermaid version and render version; pruning keeps the cap; a corrupt file is deleted and re-rendered.
 
-### 4. Viewport leases
+### 4. Viewport leases — done, build 327
+
+As built: leases sit beside ownership instead of replacing the `keeping:` set. A document still owns all its diagrams, so a style pass never re-requests one scrolled out of view, and only the lease decides what eviction may drop. `MarkdownTextView.leaseDiagrams()` leases the Mermaid blocks within the TextKit viewport's character range, widened on each side by the viewport's own length (at least 2,000 characters) to stand in for a screen above and below, so no text outside the viewport is laid out. It runs after each style pass, scroll and resize, and when the window becomes key; leasing an evicted diagram loads it again at once. Leased diagrams of every window are equal: none is evicted for another diagram, and the cache goes over its budget before refusing one. On memory pressure, `relieveMemoryPressure()` evicts every unleased image.
+
+The plan as written:
+
 
 - `MarkdownTextView` reports the diagram keys in its visible range plus one screen on scroll, resize and restyle; this replaces the document-wide `keeping:` set passed to `release(owner:keeping:)`.
 - Renew leases on `didBecomeKey`.

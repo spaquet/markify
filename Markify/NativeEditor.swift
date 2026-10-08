@@ -260,6 +260,7 @@ struct NativeEditor: NSViewRepresentable {
                 return "\(dark):\((model.source as NSString).substring(with: span.content))"
             })
             MermaidRenderer.shared.release(owner: styling, keeping: diagramKeys)
+            styling.scheduleDiagramLeases()
             styling.retainMath(model: model, dark: dark)
         }
         let secondary = NSColor.secondaryLabelColor
@@ -1071,6 +1072,8 @@ class MarkdownTextView: NSTextView {
         tokenCache = [:]
         RemoteImages.shared.release(owner: self)
         MermaidRenderer.shared.release(owner: self)
+        if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
+        keyObserver = nil
         releaseLocalImages(keeping: [])
         imageValidation?.cancel()
         htmlLoads = [:]
@@ -1648,6 +1651,7 @@ class MarkdownTextView: NSTextView {
 
     /// Overlays placed while outside the visible area are not painted when it grows to include them.
     private func visibleAreaChanged() {
+        scheduleDiagramLeases()
         for overlay in tableOverlays.values where overlay.frame.intersects(visibleRect) { overlay.needsDisplay = true }
         guard !tableRefreshScheduled, !refreshingTables, !model.tables.isEmpty else { return }
         tableRefreshScheduled = true
@@ -1661,8 +1665,56 @@ class MarkdownTextView: NSTextView {
     /// Table overlays need a window to place themselves; the first style pass can run before the view has one.
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        guard window != nil else { return }
+        if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
+        keyObserver = nil
+        scheduleDiagramLeases()
+        guard let window else { return }
+        // The window brought to the front renews its lease, loading again the diagrams other windows evicted.
+        keyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.scheduleDiagramLeases() }
+        }
         DispatchQueue.main.async { [weak self] in self?.refreshTables() }
+    }
+
+    private var keyObserver: NSObjectProtocol?
+    private var diagramLeasesScheduled = false
+
+    /// Leases the diagrams near the visible text once the current scroll, resize or style pass settles.
+    func scheduleDiagramLeases() {
+        guard !diagramLeasesScheduled else { return }
+        diagramLeasesScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.diagramLeasesScheduled = false
+            self.leaseDiagrams()
+        }
+    }
+
+    /// Leases the Mermaid diagrams within about a screen of the viewport, so eviction drops those nobody is about to see.
+    func leaseDiagrams() {
+        guard rendered, window != nil, let manager = textLayoutManager, let content = manager.textContentManager else {
+            MermaidRenderer.shared.lease([], owner: self)
+            return
+        }
+        // A window just opened may not have laid out its viewport yet.
+        if manager.textViewportLayoutController.viewportRange == nil { manager.textViewportLayoutController.layoutViewport() }
+        guard let viewport = manager.textViewportLayoutController.viewportRange else {
+            MermaidRenderer.shared.lease([], owner: self)
+            return
+        }
+        let start = content.offset(from: content.documentRange.location, to: viewport.location)
+        let end = content.offset(from: content.documentRange.location, to: viewport.endLocation)
+        // The viewport's own length in characters stands in for a screen above and below, so no text outside it is laid out.
+        let margin = max(end - start, 2000)
+        let near = NSRange(location: max(0, start - margin), length: end - max(0, start - margin) + margin)
+        let source = string as NSString
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        let diagrams = model.spans.compactMap { span -> (source: String, dark: Bool)? in
+            guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid",
+                  NSIntersectionRange(span.range, near).length > 0 else { return nil }
+            return (source.substring(with: span.content), dark)
+        }
+        MermaidRenderer.shared.lease(diagrams, owner: self)
     }
 
     override func viewDidMoveToSuperview() {

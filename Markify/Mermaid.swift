@@ -44,10 +44,17 @@ import WebKit
     private var digests: [String: String] = [:]
     /// Renders run in the web view, for tests.
     private(set) var renderCount = 0
+    /// The diagrams each view shows or is about to show; eviction never drops them for another diagram.
+    private var leases: [ObjectIdentifier: Set<String>] = [:]
+    private var memoryPressure: DispatchSourceMemoryPressure?
 
     init(disk: DiagramDiskCache? = .standard) {
         self.disk = disk
         super.init()
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        source.setEventHandler { [weak self] in MainActor.assumeIsolated { self?.relieveMemoryPressure() } }
+        source.activate()
+        memoryPressure = source
     }
 
     /// The diagram's state, starting a render on first request; `onChange` runs once when it settles.
@@ -82,10 +89,33 @@ import WebKit
         guard let state = states[key] else { return nil }
         clock += 1
         lastUsed[key] = clock
-        if case .evicted = state, currentRaster != key, !loading.contains(key), !queue.contains(where: { $0.key == key }), pendingCount < 32 {
-            request(key, source: source, dark: dark)
-        }
+        reload(key, source: source, dark: dark)
         return state
+    }
+
+    /// Leases the diagrams near `owner`'s visible area, replacing its earlier lease. Evicted ones load again at once,
+    /// so they are ready when scrolled to or when their window comes to the front.
+    func lease(_ diagrams: [(source: String, dark: Bool)], owner: AnyObject) {
+        var keys = Set<String>()
+        for diagram in diagrams {
+            let key = "\(diagram.dark):\(diagram.source)"
+            keys.insert(key)
+            clock += 1
+            lastUsed[key] = clock
+            reload(key, source: diagram.source, dark: diagram.dark)
+        }
+        leases[ObjectIdentifier(owner)] = keys.isEmpty ? nil : keys
+    }
+
+    func isLeased(_ source: String, dark: Bool) -> Bool { leases.values.contains { $0.contains("\(dark):\(source)") } }
+
+    /// Under memory pressure only leased diagrams keep their images.
+    func relieveMemoryPressure() { evict(to: 0) }
+
+    private func reload(_ key: String, source: String, dark: Bool) {
+        guard case .evicted = states[key], currentRaster != key, !loading.contains(key),
+              !queue.contains(where: { $0.key == key }), pendingCount < 32 else { return }
+        request(key, source: source, dark: dark)
     }
 
     /// Reads the diagram from disk, and renders it in the web view only when the disk has nothing usable.
@@ -143,6 +173,7 @@ import WebKit
 
     func release(owner: AnyObject, keeping sources: Set<String> = []) {
         let consumer = ObjectIdentifier(owner)
+        if let leased = leases[consumer]?.intersection(sources), !leased.isEmpty { leases[consumer] = leased } else { leases[consumer] = nil }
         for key in Array(waiting.keys) where !sources.contains(key) {
             waiting[key]?.removeValue(forKey: consumer)
             guard waiting[key]?.isEmpty == true else { continue }
@@ -310,7 +341,7 @@ import WebKit
             costs[key] = Self.cost(of: image)
             clock += 1
             lastUsed[key] = clock
-            evict(sparing: key)
+            evict(to: memoryBudget, sparing: key)
         }
         states[key] = state
         waiting[key]?.values.forEach { $0() }
@@ -333,13 +364,15 @@ import WebKit
         return bitmap.bytesPerRow * bitmap.height
     }
 
-    /// Drops the least recently drawn images until the cache fits its budget. A new render is never refused:
-    /// evicted diagrams keep their size, so layout stays put, and render again when they are drawn.
-    private func evict(sparing key: String) {
+    /// Drops the least recently drawn unleased images until the cache fits `limit`. A new render is never refused:
+    /// when only leased diagrams remain, the cache goes over. Evicted diagrams keep their size, so layout stays put,
+    /// and load again when they are drawn or leased.
+    private func evict(to limit: Int, sparing key: String? = nil) {
         var total = costs.values.reduce(0, +)
+        let leased = leases.values.reduce(into: Set<String>()) { $0.formUnion($1) }
         for old in costs.keys.sorted(by: { lastUsed[$0, default: 0] < lastUsed[$1, default: 0] }) {
-            guard total > memoryBudget else { return }
-            guard old != key, case .rendered(let image) = states[old] else { continue }
+            guard total > limit else { return }
+            guard old != key, !leased.contains(old), case .rendered(let image) = states[old] else { continue }
             states[old] = .evicted(image.size)
             total -= costs.removeValue(forKey: old) ?? 0
         }
