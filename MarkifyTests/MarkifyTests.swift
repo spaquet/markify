@@ -764,6 +764,8 @@ struct MarkifyTests {
         let stored = Shortcuts.encode(["bold": "ctrl cmd b", "italic": ""])
         #expect(Shortcuts.keyboardShortcut("bold", stored: stored) == KeyboardShortcut("b", modifiers: [.control, .command]))
         #expect(Shortcuts.keyboardShortcut("italic", stored: stored) == nil)
+        // Overrides are cached by stored value; a new value is decoded again.
+        #expect(Shortcuts.keyboardShortcut("bold", stored: "") == KeyboardShortcut("b", modifiers: .command))
         #expect(Set(Shortcuts.actions.map(\.key)).count == Shortcuts.actions.count)
     }
 
