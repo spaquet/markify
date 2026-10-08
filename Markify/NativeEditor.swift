@@ -1692,13 +1692,10 @@ class MarkdownTextView: NSTextView {
 
     /// Leases the Mermaid diagrams within about a screen of the viewport, so eviction drops those nobody is about to see.
     func leaseDiagrams() {
-        guard rendered, window != nil, let manager = textLayoutManager, let content = manager.textContentManager else {
-            MermaidRenderer.shared.lease([], owner: self)
-            return
-        }
-        // A window just opened may not have laid out its viewport yet.
-        if manager.textViewportLayoutController.viewportRange == nil { manager.textViewportLayoutController.layoutViewport() }
-        guard let viewport = manager.textViewportLayoutController.viewportRange else {
+        // Leasing never lays out text: laying out the viewport here can resize the view while the user types.
+        // Before the first layout there is no lease; the next scroll, style pass or focus brings one.
+        guard rendered, window != nil, let manager = textLayoutManager, let content = manager.textContentManager,
+              let viewport = manager.textViewportLayoutController.viewportRange else {
             MermaidRenderer.shared.lease([], owner: self)
             return
         }

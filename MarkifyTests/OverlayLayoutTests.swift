@@ -467,6 +467,7 @@ import Testing
             + "```mermaid\n\(bottom)\n```\n"
         style(editor)
         let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        editor.textLayoutManager?.textViewportLayoutController.layoutViewport()
         editor.leaseDiagrams()
         #expect(MermaidRenderer.shared.isLeased(top, dark: dark))
         #expect(!MermaidRenderer.shared.isLeased(bottom, dark: dark))
