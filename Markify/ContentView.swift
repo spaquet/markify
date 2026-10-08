@@ -96,6 +96,8 @@ struct ContentView: View {
     @State private var librarySubfolders: [URL] = []
     @State private var libraryNotes: [LibraryNote] = []
     @State private var knowledge: KnowledgeState?
+    /// The bundle's other documents, for link completion; worked out when the bundle loads, not on every body update.
+    @State private var linkTargets: [String] = []
     @State private var bundleRoot: URL?
     @State private var knowledgeTask: Task<Void, Never>?
     @State private var retargetTask: Task<Void, Never>?
@@ -150,6 +152,7 @@ struct ContentView: View {
     }
 
     var body: some View {
+        let _ = UpdateRate.tick("ContentView")
         GeometryReader { geometry in
             // Text fills the page between margins that grow with it (5% a side, 16–96pt), unless Settings limits the line width.
             // The side panes slide over the page and never move the text.
@@ -172,7 +175,7 @@ struct ContentView: View {
                     slashQuery = query
                 }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 },
                 theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil, bundleRoot: bundleRoot,
-                linkTargets: knowledge?.bundle.documents.filter { $0.url != fileURL?.standardizedFileURL }.map(\.path) ?? [], baseDirectory: reportBase,
+                linkTargets: linkTargets, baseDirectory: reportBase,
                 onWritingToolsBegin: { humanStampTask?.cancel() }, onWritingToolsEnd: { changed in
                     if changed {
                         stampAIGenerated()
@@ -634,9 +637,12 @@ struct ContentView: View {
                 watchedRoot = root
                 watcher.watch(root) { refreshKnowledge() }
             }
-            guard let root else { knowledge = nil; return }
+            guard let root else { knowledge = nil; linkTargets = []; return }
             let state = await Knowledge.load(root: root)
-            if !Task.isCancelled { knowledge = state }
+            guard !Task.isCancelled else { return }
+            knowledge = state
+            let own = file?.standardizedFileURL
+            linkTargets = state.bundle.documents.filter { $0.url != own }.map(\.path)
         }
     }
 

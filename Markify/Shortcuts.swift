@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import Synchronization
 
 /// Keyboard shortcuts the user can change in Settings › Shortcuts.
 /// A shortcut is stored as space-separated modifiers then a key, e.g. "cmd shift x" or "cmd return".
@@ -44,8 +45,14 @@ enum Shortcuts {
         .init(id: "generate", title: "Generate / Continue", section: "Apple Intelligence", key: "cmd return"),
     ]
 
+    /// The last stored value decoded. ContentView looks up about 35 shortcuts on every body update.
+    private static let decoded = Mutex<(stored: String, overrides: [String: String])?>(nil)
+
     static func overrides(_ stored: String) -> [String: String] {
-        (try? JSONDecoder().decode([String: String].self, from: Data(stored.utf8))) ?? [:]
+        if let cached = decoded.withLock({ $0 }), cached.stored == stored { return cached.overrides }
+        let overrides = (try? JSONDecoder().decode([String: String].self, from: Data(stored.utf8))) ?? [:]
+        decoded.withLock { $0 = (stored, overrides) }
+        return overrides
     }
 
     static func encode(_ overrides: [String: String]) -> String {
