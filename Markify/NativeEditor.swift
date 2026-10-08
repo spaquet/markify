@@ -769,6 +769,7 @@ struct NativeEditor: NSViewRepresentable {
         switch state {
         case .rendering: return MarkdownTextView.diagramPadding * 2 + 88
         case .rendered(let image): return MarkdownTextView.fitted(image.size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
+        case .evicted(let size): return MarkdownTextView.fitted(size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
         case .failed: return nil
         }
     }

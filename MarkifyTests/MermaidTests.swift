@@ -87,6 +87,36 @@ import Testing
         }
     }
 
+    /// A full cache evicts the least recently drawn diagram instead of refusing the new one.
+    @Test func fullCacheEvictsTheLeastRecentlyDrawnDiagram() async {
+        let renderer = MermaidRenderer()
+        defer { renderer.recover("Test complete") }
+        let first = "graph TD\n A --> B", second = "graph TD\n C --> D", third = "graph TD\n E --> F"
+        guard case .rendered(let image) = await render(first, renderer: renderer),
+              let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { Issue.record("not rendered"); return }
+        renderer.memoryBudget = bitmap.bytesPerRow * bitmap.height * 5 / 2
+        guard case .rendered(let secondImage) = await render(second, renderer: renderer) else { Issue.record("not rendered"); return }
+        _ = renderer.cached(first, dark: false)
+        guard case .rendered = await render(third, renderer: renderer) else { Issue.record("refused"); return }
+        guard case .evicted(let size) = renderer.state(of: second, dark: false, onChange: {}) else { Issue.record("not evicted"); return }
+        #expect(size == secondImage.size)
+        guard case .rendered = renderer.state(of: first, dark: false, onChange: {}) else { Issue.record("recent diagram evicted"); return }
+
+        // Drawing the evicted diagram renders it again, at the same size, and evicts the next oldest.
+        let restored: MermaidRenderer.State = await withCheckedContinuation { continuation in
+            var resumed = false
+            _ = renderer.state(of: second, dark: false) {
+                guard !resumed else { return }
+                resumed = true
+                continuation.resume(returning: renderer.cached(second, dark: false) ?? .rendering)
+            }
+            _ = renderer.cached(second, dark: false)
+        }
+        guard case .rendered(let again) = restored else { Issue.record("not rendered again: \(restored)"); return }
+        #expect(again.size == secondImage.size)
+        guard case .evicted = renderer.state(of: first, dark: false, onChange: {}) else { Issue.record("oldest kept"); return }
+    }
+
     @Test func invalidDiagramsReportMermaidsMessage() async {
         guard case .failed(let message) = await render("graph TD\n  A -->") else { Issue.record("did not fail"); return }
         #expect(message.contains("Parse error"))

@@ -9,6 +9,8 @@ import WebKit
     enum State {
         case rendering
         case rendered(NSImage)
+        /// Rendered at this size, but its image was dropped to stay within the memory budget; drawing it renders it again.
+        case evicted(NSSize)
         /// Mermaid's message for a diagram it cannot parse.
         case failed(String)
     }
@@ -28,6 +30,11 @@ import WebKit
     private var currentRaster: String?
     private var currentSVG: (source: String, id: String, done: (String?) -> Void)?
     private var costs: [String: Int] = [:]
+    /// When each diagram was last drawn, on a counter; the least recently drawn are evicted first.
+    private var lastUsed: [String: Int] = [:]
+    private var clock = 0
+    /// The bytes rendered diagrams may hold together, shared by every window.
+    var memoryBudget = 64_000_000
     /// The most points a diagram snapshot covers, about 8 MB of pixels on a Retina display.
     private static let snapshotArea: CGFloat = 524_288
     var pendingCount: Int { queue.count + svgJobs.count + (busy ? 1 : 0) }
@@ -42,13 +49,16 @@ import WebKit
             return state
         }
         guard pendingCount < 32 else { return .failed("Too many diagrams are waiting to render.") }
-        // Each edit of a diagram renders anew; drop settled renders before the cache grows large.
+        // Renders requested without an owner are never released; drop the settled ones before the cache grows large.
         if states.count >= 64 {
-            for old in Array(states.keys) where old != currentRaster {
+            let renderer = ObjectIdentifier(self)
+            for old in Array(states.keys) where old != currentRaster && waiting[old, default: [:]].keys.allSatisfy({ $0 == renderer }) {
                 if case .rendering = states[old] { continue }
-                states[old] = nil; costs[old] = nil; waiting[old] = nil
+                states[old] = nil; costs[old] = nil; waiting[old] = nil; lastUsed[old] = nil
             }
         }
+        clock += 1
+        lastUsed[key] = clock
         states[key] = .rendering
         waiting[key] = [consumer: onChange]
         queue.append((key, source, dark))
@@ -56,8 +66,18 @@ import WebKit
         return .rendering
     }
 
-    /// The settled state without starting a render.
-    func cached(_ source: String, dark: Bool) -> State? { states["\(dark):\(source)"] }
+    /// The settled state for drawing; it marks the diagram as recently drawn and renders an evicted one again.
+    func cached(_ source: String, dark: Bool) -> State? {
+        let key = "\(dark):\(source)"
+        guard let state = states[key] else { return nil }
+        clock += 1
+        lastUsed[key] = clock
+        if case .evicted = state, currentRaster != key, !queue.contains(where: { $0.key == key }), pendingCount < 32 {
+            queue.append((key, source, dark))
+            start()
+        }
+        return state
+    }
 
     /// The diagram as SVG markup in the light theme, for export; nil when Mermaid cannot render it.
     func svg(for source: String) async -> String? {
@@ -86,7 +106,7 @@ import WebKit
             guard waiting[key]?.isEmpty == true else { continue }
             waiting[key] = nil
             queue.removeAll { $0.key == key }
-            if key != currentRaster { states[key] = nil; costs[key] = nil }
+            if key != currentRaster { states[key] = nil; costs[key] = nil; lastUsed[key] = nil }
         }
     }
 
@@ -231,16 +251,28 @@ import WebKit
 
     private func finish(_ key: String, _ state: State) {
         // Released while rendering: nobody draws it, so it holds no memory.
-        guard waiting[key] != nil else { states[key] = nil; costs[key] = nil; return }
-        var state = state
+        guard waiting[key] != nil else { states[key] = nil; costs[key] = nil; lastUsed[key] = nil; return }
         if case .rendered(let image) = state,
            let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
-            let cost = bitmap.bytesPerRow * bitmap.height
-            if costs.values.reduce(0, +) + cost <= 64_000_000 { costs[key] = cost }
-            else { state = .failed("Diagram cache exceeds its memory limit.") }
+            costs[key] = bitmap.bytesPerRow * bitmap.height
+            clock += 1
+            lastUsed[key] = clock
+            evict(sparing: key)
         }
         states[key] = state
         waiting[key]?.values.forEach { $0() }
+    }
+
+    /// Drops the least recently drawn images until the cache fits its budget. A new render is never refused:
+    /// evicted diagrams keep their size, so layout stays put, and render again when they are drawn.
+    private func evict(sparing key: String) {
+        var total = costs.values.reduce(0, +)
+        for old in costs.keys.sorted(by: { lastUsed[$0, default: 0] < lastUsed[$1, default: 0] }) {
+            guard total > memoryBudget else { return }
+            guard old != key, case .rendered(let image) = states[old] else { continue }
+            states[old] = .evicted(image.size)
+            total -= costs.removeValue(forKey: old) ?? 0
+        }
     }
 
     private func finishAll(_ state: State) {
