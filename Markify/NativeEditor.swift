@@ -366,6 +366,13 @@ struct NativeEditor: NSViewRepresentable {
                     guard let color = theme.code(kind) else { continue }
                     storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.location, length: token.length))
                 }
+            case .htmlBlock where !markdownLens && MarkdownTextView.isInvisibleHTML(source.substring(with: span.range)):
+                // Comments and bare tags such as `</details>` show nothing in a browser, so they take no room.
+                let collapsed = NSMutableParagraphStyle()
+                collapsed.minimumLineHeight = 0.01
+                collapsed.maximumLineHeight = 0.01
+                storage.addAttributes([.font: NSFont.systemFont(ofSize: 1), .foregroundColor: NSColor.clear, .paragraphStyle: collapsed],
+                                      range: source.lineRange(for: span.range))
             case .htmlBlock where !markdownLens && textView != nil:
                 if let rendered = textView?.renderHTML(source.substring(with: span.range), width: columnWidth) {
                     textView?.htmlBlocks[span.range.location] = rendered
@@ -1902,6 +1909,17 @@ class MarkdownTextView: NSTextView {
         return (html as NSString).substring(with: match.range(at: 2))
     }
 
+    private static let invisibleHTML = try! NSRegularExpression(
+        pattern: #"<!--.*?-->|<!--.*$|</?(?!(?:img|br|hr|svg|input|video|audio|iframe|object|embed|canvas|picture|meter|progress|textarea|select|button)\b)[a-z][a-z0-9-]*\b[^>]*>"#,
+        options: [.caseInsensitive, .dotMatchesLineSeparators])
+    private static let inlineSVG = try! NSRegularExpression(pattern: #"<svg\b.*?</svg\s*>"#, options: [.caseInsensitive, .dotMatchesLineSeparators])
+
+    /// HTML a browser shows nothing for: comments and tags without text or media.
+    static func isInvisibleHTML(_ html: String) -> Bool {
+        invisibleHTML.stringByReplacingMatches(in: html, range: NSRange(location: 0, length: (html as NSString).length), withTemplate: "")
+            .allSatisfy(\.isWhitespace)
+    }
+
     func renderHTML(_ raw: String, width: CGFloat) -> HTMLBlockRender? {
         let imageTag = try? NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
         let html = NSMutableString(string: raw)
@@ -1922,6 +1940,13 @@ class MarkdownTextView: NSTextView {
             }
             let updated = tag.replacingOccurrences(of: path, with: replacement)
             html.replaceCharacters(in: match.range, with: updated)
+        }
+        // WebKit's text import drops inline SVG but keeps images, so each drawing becomes an image of itself.
+        for match in Self.inlineSVG.matches(in: html as String, range: NSRange(location: 0, length: html.length)).reversed() {
+            let svg = html.substring(with: match.range)
+            let opening = String(svg.prefix { $0 != ">" })
+            let size = ["width", "height"].compactMap { name in Self.htmlAttribute(name, in: opening).map { " \(name)=\"\(MarkdownHTML.escape($0))\"" } }
+            html.replaceCharacters(in: match.range, with: "<img src=\"data:image/svg+xml;base64,\(Data(svg.utf8).base64EncodedString())\"\(size.joined())>")
         }
         // Importing HTML goes through WebKit and is slow; a restyle reuses every block whose HTML, images included, is unchanged.
         let key = "\(width)|\(theme.accent)|\(html)"
