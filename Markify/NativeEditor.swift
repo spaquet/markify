@@ -14,6 +14,16 @@ nonisolated private struct HTMLImportResult: @unchecked Sendable {
     init(_ text: NSAttributedString?) { self.text = text.map { NSAttributedString(attributedString: $0) } }
 }
 
+extension String {
+    /// Literal UTF-16 equality. `==` tests canonical equivalence, which normalizes every non-ASCII character when the
+    /// two strings don't share storage: on a large document that took longer than a frame, and SwiftUI runs
+    /// `updateNSView` on every layout pass and animation frame. Same object or a different length answers at once.
+    func isSameText(as other: String) -> Bool {
+        let a = self as NSString, b = other as NSString
+        return a === b || (a.length == b.length && a.isEqual(to: other))
+    }
+}
+
 enum SlashKey { case up, down, insert, dismiss }
 
 struct SlashContext {
@@ -127,9 +137,10 @@ struct NativeEditor: NSViewRepresentable {
         context.coordinator.parent = self
         (editor as? MarkdownTextView)?.loadRemoteImages = loadRemoteImages
         // A render can still carry text the editor pushed a keystroke ago; replaying it would drop the newer typing.
-        let echo = context.coordinator.pushedText.contains(text)
-        if editor.string == text || !echo { context.coordinator.pushedText.removeAll() }
-        let sourceChanged = editor.string != text && !echo
+        let echo = context.coordinator.pushedText.contains { $0.isSameText(as: text) }
+        let inSync = editor.string.isSameText(as: text)
+        if inSync || !echo { context.coordinator.pushedText.removeAll() }
+        let sourceChanged = !inSync && !echo
         let styleChanged = context.coordinator.lastLens != markdownLens || context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
             || context.coordinator.lastTheme != theme || context.coordinator.lastCurrentMatch != currentMatch
         if sourceChanged || styleChanged {
@@ -794,9 +805,11 @@ struct NativeEditor: NSViewRepresentable {
         }
         func textDidChange(_ notification: Notification) {
             guard let editor else { return }
-            pushedText.append(editor.string)
+            // One copy for both: the binding hands this string back, and an identical string compares in O(1).
+            let source = editor.string
+            pushedText.append(source)
             if pushedText.count > 32 { pushedText.removeFirst() }
-            parent.text = editor.string
+            parent.text = source
             if writingToolsOriginalBody == nil, (editor as? MarkdownTextView)?.isRenumbering != true { parent.onType() }
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             if slash?.range.location != dismissedSlashLocation { dismissedSlashLocation = nil }

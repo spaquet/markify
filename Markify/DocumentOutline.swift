@@ -11,7 +11,7 @@ import MarkifyMarkdown
     private var find: (query: String, matchCase: Bool, ranges: [NSRange])?
 
     private func prepare(_ text: String) {
-        guard source != text else { return }
+        if let source, source.isSameText(as: text) { return }
         source = text
         words = nil; parsed = nil; outline = nil; links = nil; find = nil
     }
@@ -32,7 +32,7 @@ import MarkifyMarkdown
     func model(in text: String, mdx: Bool, editor: MarkdownTextView?) -> MarkdownModel {
         prepare(text)
         if let parsed, parsed.mdx == mdx { return parsed }
-        let model = editor.flatMap { $0.string == text ? $0.model : nil } ?? MarkdownModel(text, mdx: mdx)
+        let model = editor.flatMap { $0.string.isSameText(as: text) ? $0.model : nil } ?? MarkdownModel(text, mdx: mdx)
         parsed = model
         outline = nil; links = nil
         return model

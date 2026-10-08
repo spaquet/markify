@@ -6,6 +6,26 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test func editorTextComparisonIsLiteralAndFast() {
+        let storage = NSTextStorage(string: String(repeating: "Résumé — naïve café “quoted”, line\n", count: 6000))
+        var pushed: [String] = []
+        for _ in 0..<32 {
+            storage.replaceCharacters(in: NSRange(location: storage.length - 1, length: 0), with: "é")
+            pushed.append(storage.string)
+        }
+        let fromDisk = String(decoding: Array(storage.string.utf8), as: UTF8.self)
+        #expect("e\u{301}" == "é")
+        #expect(!"e\u{301}".isSameText(as: "é"))
+        #expect(!pushed[0].isSameText(as: pushed[1]))
+        // updateNSView's echo check, which SwiftUI runs on every layout pass: `==` took about half a second here.
+        let start = Date()
+        for _ in 0..<10 {
+            #expect(pushed.contains { $0.isSameText(as: pushed[31]) })
+            #expect(storage.string.isSameText(as: fromDisk))
+        }
+        #expect(Date().timeIntervalSince(start) < 0.5)
+    }
+
     @Test @MainActor func externalFilePromptUsesLatestContentsAndSavesBothVersions() async throws {
         for choice in [DocumentFileRefresh.Choice.reload, .merge, .keep] {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
