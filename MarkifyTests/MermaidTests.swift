@@ -96,4 +96,15 @@ import Testing
         #expect(MarkdownTextView.fitted(NSSize(width: 1216, height: 400), width: 640) == NSSize(width: 608, height: 200))
         #expect(MarkdownTextView.fitted(NSSize(width: 300, height: 100), width: 640) == NSSize(width: 300, height: 100))
     }
+
+    /// A large diagram keeps its size but caps its pixels, so a document's diagrams fit the cache together.
+    @Test func largeDiagramsKeepTheirSizeAtLowerResolution() async {
+        let renderer = MermaidRenderer()
+        let nodes = (0..<30).map { "  N\($0)[Node \($0) with a fairly long label] --> M\($0)[Another long label \($0)]" }
+        guard case .rendered(let image) = await render("flowchart LR\n" + nodes.joined(separator: "\n"), renderer: renderer),
+              let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { Issue.record("not rendered"); renderer.recover("Test complete"); return }
+        #expect(image.size.width * image.size.height > 524_288, "\(image.size) \(bitmap.width)x\(bitmap.height)")
+        #expect(bitmap.width * bitmap.height <= 2 * 2 * 524_288 + 4096)
+        renderer.recover("Test complete")
+    }
 }

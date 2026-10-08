@@ -28,6 +28,8 @@ import WebKit
     private var currentRaster: String?
     private var currentSVG: (source: String, id: String, done: (String?) -> Void)?
     private var costs: [String: Int] = [:]
+    /// The most points a diagram snapshot covers, about 8 MB of pixels on a Retina display.
+    private static let snapshotArea: CGFloat = 524_288
     var pendingCount: Int { queue.count + svgJobs.count + (busy ? 1 : 0) }
 
     /// The diagram's state, starting a render on first request; `onChange` runs once when it settles.
@@ -170,6 +172,9 @@ import WebKit
 
     private func render(_ job: (key: String, source: String, dark: Bool)) {
         let token = generation
+        // Diagrams that fill their container (gantt) otherwise take the previous diagram's width.
+        webView?.setFrameSize(NSSize(width: 800, height: 600))
+        window?.setContentSize(NSSize(width: 800, height: 600))
         webView?.callAsyncJavaScript("""
             mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'default' });
             const { svg } = await mermaid.render('diagram' + Date.now(), source);
@@ -197,10 +202,13 @@ import WebKit
                     self.window?.setContentSize(size)
                     let configuration = WKSnapshotConfiguration()
                     configuration.rect = NSRect(origin: .zero, size: size)
-                    configuration.snapshotWidth = NSNumber(value: min(2048, size.width))
+                    // The editor draws diagrams no wider than its column, so large ones are kept at a lower resolution.
+                    let scale = min(1, 2048 / size.width, (Self.snapshotArea / (size.width * size.height)).squareRoot())
+                    configuration.snapshotWidth = NSNumber(value: floor(size.width * scale))
                     configuration.afterScreenUpdates = true
                     view.takeSnapshot(with: configuration) { [weak self] image, error in
                         guard let self, self.generation == token else { return }
+                        image?.size = size
                         self.finish(job.key, image.map(State.rendered) ?? .failed(error?.localizedDescription ?? "Diagram snapshot failed."))
                         self.currentRaster = nil
                         self.completed()
@@ -222,6 +230,8 @@ import WebKit
     }
 
     private func finish(_ key: String, _ state: State) {
+        // Released while rendering: nobody draws it, so it holds no memory.
+        guard waiting[key] != nil else { states[key] = nil; costs[key] = nil; return }
         var state = state
         if case .rendered(let image) = state,
            let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
