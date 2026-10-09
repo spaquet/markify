@@ -104,6 +104,13 @@ import Testing
         #expect(Self.inked(rep, in: CGRect(x: 0, y: 0, width: rep.pixelsWide, height: rep.pixelsHigh)) > 20_000)
     }
 
+    @Test func blockImageFitsColumnWidthOnly() {
+        // Wider than the column: scaled down to it, aspect kept, height not capped.
+        #expect(MarkdownTextView.blockImageSize(NSSize(width: 2000, height: 1000), width: 640) == NSSize(width: 640, height: 320))
+        // Narrower than the column: drawn at its own size, never enlarged.
+        #expect(MarkdownTextView.blockImageSize(NSSize(width: 300, height: 600), width: 640) == NSSize(width: 300, height: 600))
+    }
+
     @Test func htmlBlockDrawsLocalImageWithoutChangingSource() async throws {
         let source = """
         <p align="center">
