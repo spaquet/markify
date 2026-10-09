@@ -139,10 +139,7 @@ struct SettingsView: View {
     }
 
     private var libraryURL: URL? {
-        var stale = false
-        if !libraryBookmark.isEmpty, let url = try? URL(resolvingBookmarkData: libraryBookmark, options: .withSecurityScope, bookmarkDataIsStale: &stale), !stale {
-            return url
-        }
+        if let url = Bookmarks.url(libraryBookmark) { return url }
         return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Markify")
     }
 

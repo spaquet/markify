@@ -71,12 +71,18 @@ jobs:
             if [ "$GITHUB_REF_TYPE" = tag ]; then echo "::error::The SENTRY_AUTH_TOKEN secret is not set."; exit 1; fi
             echo "::warning::The SENTRY_AUTH_TOKEN secret is not set; debug symbols won't be uploaded."
           fi
+          # The scheme Xcode generates turns coverage on for tests and passes it to `build` too, which
+          # instrumented every release up to 2.2.2. DEPLOYMENT_POSTPROCESSING makes `build` strip the
+          # binaries as `archive` would; the dSYMs are written before stripping and uploaded below.
           xcodebuild \
             -project Markify.xcodeproj \
             -scheme Markify \
             -configuration Release \
             ARCHS="${{ matrix.archs }}" \
             ONLY_ACTIVE_ARCH=NO \
+            CLANG_COVERAGE_MAPPING=NO \
+            ENABLE_CODE_COVERAGE=NO \
+            DEPLOYMENT_POSTPROCESSING=YES \
             -derivedDataPath ${{ matrix.derived_data_path }} \
             -allowProvisioningUpdates \
             CODE_SIGN_IDENTITY="" \
@@ -131,6 +137,12 @@ jobs:
             exit 1
           fi
           "$APP/Contents/Helpers/markify" --help | grep -q 'markify view'
+          for BINARY in "$EXECUTABLE" "$APP/Contents/PlugIns/MarkifyQuickLook.appex/Contents/MacOS/MarkifyQuickLook"; do
+            if size -m "$BINARY" | grep -q '__LLVM_COV\|__llvm_prf_cnts'; then
+              echo "::error::$BINARY is built with code coverage instrumentation."
+              exit 1
+            fi
+          done
 
       # The build is only linker-signed, which `codesign --verify` and Sparkle
       # reject. Preserve Quick Look’s sandbox while keeping the main app and

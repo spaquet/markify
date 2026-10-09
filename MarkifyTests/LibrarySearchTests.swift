@@ -47,6 +47,22 @@ struct LibrarySearchTests {
         #expect(SearchSession.filter(attribute: "markifyTags", value: "a\"b\\c") == "markifyTags == \"a\\\"b\\\\c\"")
     }
 
+    @Test func resolvedPathsFollowSymlinksAndRefreshOnReplace() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = root.appendingPathComponent("first"), second = root.appendingPathComponent("second")
+        try FileManager.default.createDirectory(at: first, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+        let link = root.appendingPathComponent("link")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: first)
+        #expect(SearchNote.identifier(link) == SearchNote.identifier(first))
+        #expect(SearchNote.contains(link, first.appendingPathComponent("a.md")))
+        try FileManager.default.removeItem(at: link)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: second)
+        ResolvedPaths.replace(with: [link])
+        #expect(SearchNote.identifier(link) == SearchNote.identifier(second))
+    }
+
     /// An isolated domain proves the actual Spotlight predicates, including multi-valued nested memberships.
     @Test @MainActor func spotlightLifecycleAndScopedFullTextSearch() async throws {
         let token = UUID().uuidString.replacingOccurrences(of: "-", with: "")

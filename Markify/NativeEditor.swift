@@ -1,6 +1,7 @@
 import AppKit
 import MarkifyMarkdown
 import OKFKit
+import os
 import SwaTex
 import SwaTexRender
 import SwiftUI
@@ -67,6 +68,8 @@ struct NativeEditor: NSViewRepresentable {
     /// Bundle-absolute paths offered while typing a link destination.
     var linkTargets: [String] = []
     var baseDirectory: URL? = nil
+    /// A ⌘ key pressed in this editor's window.
+    var onCommandKey: () -> Void = {}
     var onWritingToolsBegin: () -> Void = {}
     var onWritingToolsEnd: (Bool) -> Void = { _ in }
 
@@ -112,6 +115,7 @@ struct NativeEditor: NSViewRepresentable {
         editor.onSlashKey = { [weak coordinator = context.coordinator] key, slash in
             coordinator?.handleSlashKey(key, slash) ?? false
         }
+        editor.onCommandKey = { [weak coordinator = context.coordinator] in coordinator?.parent.onCommandKey() }
         editor.string = text
         editor.writingToolsBehavior = .complete
         editor.allowedWritingToolsResultOptions = [.plainText, .richText, .table, .list]
@@ -1074,6 +1078,9 @@ class MarkdownTextView: NSTextView {
         MermaidRenderer.shared.release(owner: self)
         if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
         keyObserver = nil
+        if let commandMonitor { NSEvent.removeMonitor(commandMonitor) }
+        commandMonitor = nil
+        onCommandKey = nil
         releaseLocalImages(keeping: [])
         imageValidation?.cancel()
         htmlLoads = [:]
@@ -1667,8 +1674,17 @@ class MarkdownTextView: NSTextView {
         super.viewDidMoveToWindow()
         if let keyObserver { NotificationCenter.default.removeObserver(keyObserver) }
         keyObserver = nil
+        if let commandMonitor { NSEvent.removeMonitor(commandMonitor) }
+        commandMonitor = nil
         scheduleDiagramLeases()
         guard let window else { return }
+        // Owned here, not by the window's SwiftUI view: a monitor that outlives the window keeps every editor it reaches.
+        commandMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            MainActor.assumeIsolated {
+                if let self, event.modifierFlags.contains(.command), event.window != nil, event.window === self.window { self.onCommandKey?() }
+            }
+            return event
+        }
         // The window brought to the front renews its lease, loading again the diagrams other windows evicted.
         keyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.scheduleDiagramLeases() }
@@ -1677,6 +1693,8 @@ class MarkdownTextView: NSTextView {
     }
 
     private var keyObserver: NSObjectProtocol?
+    private var commandMonitor: Any?
+    var onCommandKey: (() -> Void)?
     private var diagramLeasesScheduled = false
 
     /// Leases the diagrams near the visible text once the current scroll, resize or style pass settles.
@@ -3763,11 +3781,21 @@ struct Frontmatter {
         return parsed.formatted(date: .abbreviated, time: .omitted)
     }
 
+    private static let closingFence = try! NSRegularExpression(pattern: #"(?m)^---[ \t]*$"#)
+    /// The last reading, since window updates ask for the same text's title and tags several times a pass (MARKIFY-1H).
+    private static let last = OSAllocatedUnfairLock<(source: String, frontmatter: Frontmatter?)?>(initialState: nil)
+
     static func parse(_ source: String) -> Self? {
+        guard source.hasPrefix("---\n") else { return nil }
+        if let last = last.withLock({ $0 }), last.source.isSameText(as: source) { return last.frontmatter }
+        let frontmatter = read(source)
+        last.withLock { $0 = (source, frontmatter) }
+        return frontmatter
+    }
+
+    private static func read(_ source: String) -> Self? {
         let ns = source as NSString
-        guard source.hasPrefix("---\n"), let regex = try? NSRegularExpression(pattern: #"(?m)^---[ \t]*$"#) else { return nil }
-        let fences = regex.matches(in: source, range: NSRange(location: 4, length: ns.length - 4))
-        guard let close = fences.first?.range else { return nil }
+        guard let close = closingFence.firstMatch(in: source, range: NSRange(location: 4, length: ns.length - 4))?.range else { return nil }
         var end = NSMaxRange(close)
         if end < ns.length, ns.character(at: end) == 10 { end += 1 }
         let body = NSRange(location: 4, length: max(0, close.location - 4))

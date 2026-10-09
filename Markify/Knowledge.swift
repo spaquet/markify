@@ -515,11 +515,10 @@ private struct IssueRow: View {
         let bookmarks = UserDefaults.standard.array(forKey: key) as? [Data] ?? []
         var kept: [Data] = []
         for bookmark in bookmarks {
-            var stale = false
-            guard let url = try? URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, bookmarkDataIsStale: &stale),
-                  url.startAccessingSecurityScopedResource() else { continue }
+            guard let resolved = Bookmarks.resolve(bookmark), resolved.url.startAccessingSecurityScopedResource() else { continue }
+            let url = resolved.url
             folders.append(url)
-            kept.append(stale ? (try? url.bookmarkData(options: .withSecurityScope)) ?? bookmark : bookmark)
+            kept.append(resolved.stale ? (try? url.bookmarkData(options: .withSecurityScope)) ?? bookmark : bookmark)
         }
         UserDefaults.standard.set(kept, forKey: key)
     }
