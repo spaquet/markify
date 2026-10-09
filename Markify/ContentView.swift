@@ -601,12 +601,9 @@ struct ContentView: View {
     private func loadLibrary() {
         libraryFolder?.stopAccessingSecurityScopedResource()
         libraryFolder = nil
-        if !libraryBookmark.isEmpty {
-            var stale = false
-            if let url = try? URL(resolvingBookmarkData: libraryBookmark, options: .withSecurityScope, bookmarkDataIsStale: &stale), !stale {
-                libraryFolder = url
-                _ = url.startAccessingSecurityScopedResource()
-            }
+        if let url = Bookmarks.url(libraryBookmark) {
+            libraryFolder = url
+            _ = url.startAccessingSecurityScopedResource()
         }
         if libraryFolder == nil {
             let folder = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Markify")

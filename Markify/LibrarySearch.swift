@@ -224,11 +224,8 @@ actor SpotlightWorker {
         var accesses: [URL] = []
         defer { accesses.forEach { $0.stopAccessingSecurityScopedResource() } }
         for folder in folders {
-            var stale = false
-            let url: URL?
-            if folder.bookmark.isEmpty { url = URL(fileURLWithPath: folder.path) }
-            else { url = try? URL(resolvingBookmarkData: folder.bookmark, options: .withSecurityScope, bookmarkDataIsStale: &stale) }
-            guard let url, !stale else { snapshot.status[folder.id] = "Access expired"; continue }
+            let url = folder.bookmark.isEmpty ? URL(fileURLWithPath: folder.path) : Bookmarks.url(folder.bookmark)
+            guard let url else { snapshot.status[folder.id] = "Access expired"; continue }
             if url.startAccessingSecurityScopedResource() { accesses.append(url) }
             guard FileManager.default.isReadableFile(atPath: url.path) else { snapshot.status[folder.id] = "Access needed"; continue }
             accessible.append(folder)
@@ -352,6 +349,7 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
     @ObservationIgnored private var watchers: [BundleWatcher] = []
     @ObservationIgnored private var configuration = Data()
     @ObservationIgnored private var rootAccesses: [URL] = []
+    @ObservationIgnored private var configurationInputs: [AnyHashable] = []
     @ObservationIgnored private var observer: NSObjectProtocol?
     @ObservationIgnored private var acknowledgements: [() -> Void] = []
 
@@ -364,7 +362,17 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
         }
         refresh()
     }
+    /// The raw defaults `configuredFolders()` reads. Any defaults write posts
+    /// `didChangeNotification`, so compare these before resolving bookmarks (MARKIFY-1Q).
+    private func currentConfigurationInputs() -> [AnyHashable] {
+        let defaults = UserDefaults.standard
+        return [defaults.data(forKey: "searchFolders"), defaults.data(forKey: "libraryBookmark"),
+                defaults.array(forKey: "okfBundleBookmarks") as? [Data], defaults.stringArray(forKey: "searchExcludedRoots")]
+    }
     private func configurationChanged() {
+        let inputs = currentConfigurationInputs()
+        guard inputs != configurationInputs else { return }
+        configurationInputs = inputs
         let folders = configuredFolders()
         let current = (try? JSONEncoder().encode(folders)) ?? Data()
         if current != configuration { refresh() }
@@ -373,12 +381,11 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
         let defaults = UserDefaults.standard
         var folders = defaults.data(forKey: "searchFolders").flatMap { try? JSONDecoder().decode([SearchFolder].self, from: $0) } ?? []
         let library = defaults.data(forKey: "libraryBookmark") ?? Data()
-        var stale = false
         let libraryURL = library.isEmpty ? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Markify")
-            : try? URL(resolvingBookmarkData: library, options: .withSecurityScope, bookmarkDataIsStale: &stale)
+            : Bookmarks.resolve(library)?.url
         if let libraryURL { folders.insert(SearchFolder(path: libraryURL.path, bookmark: library, kind: "Library"), at: 0) }
         for bookmark in defaults.array(forKey: "okfBundleBookmarks") as? [Data] ?? [] {
-            if let url = try? URL(resolvingBookmarkData: bookmark, options: .withSecurityScope, bookmarkDataIsStale: &stale) {
+            if let url = Bookmarks.resolve(bookmark)?.url {
                 folders.append(SearchFolder(path: url.path, bookmark: bookmark, kind: "OKF bundle"))
             }
         }
@@ -457,10 +464,7 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
                 if configuration != nextConfiguration {
                     rootAccesses.forEach { $0.stopAccessingSecurityScopedResource() }
                     rootAccesses = folders.compactMap { folder in
-                        guard !folder.bookmark.isEmpty else { return nil }
-                        var stale = false
-                        guard let url = try? URL(resolvingBookmarkData: folder.bookmark, options: .withSecurityScope, bookmarkDataIsStale: &stale),
-                              !stale, url.startAccessingSecurityScopedResource() else { return nil }
+                        guard let url = Bookmarks.url(folder.bookmark), url.startAccessingSecurityScopedResource() else { return nil }
                         return url
                     }
                 }
