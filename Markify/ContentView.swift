@@ -76,7 +76,6 @@ struct ContentView: View {
     @State private var blockMenuQuery = ""
     @State private var blockMenuSelection = 0
     @State private var blockMenuHeight: CGFloat = 360
-    @State private var keyMonitor: Any?
     @FocusState private var blockMenuFocused: Bool
     @State private var showComposer = false
     @State private var composerPrompt = ""
@@ -176,6 +175,8 @@ struct ContentView: View {
                 }, onSlashKey: handleSlashKey, onSelectionRect: { selectionRect = $0 },
                 theme: theme, currentMatch: showFind && findMatches.contains(selectedRange) ? selectedRange : nil, bundleRoot: bundleRoot,
                 linkTargets: linkTargets, baseDirectory: reportBase,
+                // Any ⌘ shortcut brings faded chrome back.
+                onCommandKey: { if !chromeVisible { withAnimation(.easeOut(duration: 0.4)) { chromeVisible = true } } },
                 onWritingToolsBegin: { humanStampTask?.cancel() }, onWritingToolsEnd: { changed in
                     if changed {
                         stampAIGenerated()
@@ -445,13 +446,6 @@ struct ContentView: View {
                 sidebarOpen = true
             }
             loadLibrary()
-            // Any ⌘ shortcut brings faded chrome back.
-            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                if event.modifierFlags.contains(.command), event.window != nil, event.window === textView?.window, !chromeVisible {
-                    withAnimation(.easeOut(duration: 0.4)) { chromeVisible = true }
-                }
-                return event
-            }
         }
         .onDisappear {
             knowledgeTask?.cancel()
@@ -461,7 +455,6 @@ struct ContentView: View {
             aiTask?.cancel()
             formatBarTask?.cancel()
             mirrorTags()
-            if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             rememberDocumentLens()
             libraryFolder?.stopAccessingSecurityScopedResource()
             watcher.stop()
