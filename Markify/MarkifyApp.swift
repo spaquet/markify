@@ -304,6 +304,9 @@ struct MarkifyApp: App {
         DocumentGroup(newDocument: MarkifyDocument.newDocument()) { file in
             ContentView(document: file.$document, fileURL: file.fileURL)
         }
+        // A default, not a resize after the window opens: a new tab takes its group's size, and one
+        // opened in full screen fills the screen (#82).
+        .defaultSize(width: 980, height: 660)
         .defaultLaunchBehavior(.suppressed)
         .commands {
             DocumentCopyCommands()

@@ -40,6 +40,9 @@ struct ContentView: View {
     @State private var sidebarOpen = false
     @State private var linksOpen = false
     @State private var chromeVisible = true
+    /// How far the top controls and the page move down while the window tab bar shows (#82).
+    /// The page reaches under the titlebar and the controls share its row, so the tab bar would cover them.
+    @State private var tabBarInset: CGFloat = 0
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var selectionRect = CGRect.zero
     @State private var formatBarVisible = false
@@ -188,7 +191,7 @@ struct ContentView: View {
                 })
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.top, 56)
+                .padding(.top, 56 + tabBarInset)
 
                 if document.text.isEmpty {
                     VStack(alignment: .leading, spacing: 14) {
@@ -196,7 +199,7 @@ struct ContentView: View {
                         Text("Start writing, or type / to insert a block.").font(Font(theme.prose(18)))
                     }
                     .foregroundStyle(.tertiary)
-                    .padding(.top, 96)
+                    .padding(.top, 96 + tabBarInset)
                     .frame(width: columnWidth, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .top)
                     .allowsHitTesting(false)
@@ -221,6 +224,7 @@ struct ContentView: View {
                         .zIndex(1)
                     sidebar
                         .padding(12)
+                        .padding(.top, tabBarInset)
                         .ignoresSafeArea(.container, edges: .top)
                         .transition(.move(edge: .leading))
                         .zIndex(2)
@@ -247,6 +251,7 @@ struct ContentView: View {
                         follow: { link in Knowledge.follow(link.destination, title: link.text, from: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase) })
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
                     .padding(12)
+                    .padding(.top, tabBarInset)
                     .onAppear(perform: updateReading)
                     .onChange(of: document.text) { _, _ in updateReading() }
                     .ignoresSafeArea(.container, edges: .top)
@@ -344,7 +349,8 @@ struct ContentView: View {
                         .padding(3)
                         .chromeGlass(in: .capsule)
                     }
-                    .padding(.leading, 88).padding(.trailing, 12).padding(.top, 14)
+                    // Clear of the traffic lights, which sit above the tab bar when it shows.
+                    .padding(.leading, tabBarInset > 0 ? 12 : 88).padding(.trailing, 12).padding(.top, 14 + tabBarInset)
                 }
                 .opacity(chromeVisible ? 1 : 0)
                 .allowsHitTesting(chromeVisible)
@@ -361,7 +367,7 @@ struct ContentView: View {
                         .opacity(chromeVisible ? 1 : 0)
                         .allowsHitTesting(chromeVisible)
                 }
-                if showFind { findPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56).padding(.trailing, 12).zIndex(4) }
+                if showFind { findPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56 + tabBarInset).padding(.trailing, 12).zIndex(4) }
                 if let review, let frame = reviewFrame(review, geometry: geometry, columnWidth: columnWidth) {
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(aiGradient, lineWidth: 1.5)
@@ -382,7 +388,7 @@ struct ContentView: View {
                                   y: min(selectionRect.maxY + 10 + composerHeight / 2, geometry.size.height - composerHeight / 2 - 12))
                         .zIndex(6)
                 }
-                if showAI { aiPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56).padding(.trailing, 12).zIndex(4) }
+                if showAI { aiPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56 + tabBarInset).padding(.trailing, 12).zIndex(4) }
                 if formatBarVisible && slashQuery == nil {
                     let barX = min(max(selectionRect.midX, 210), geometry.size.width - 210)
                     let barY = max(62, selectionRect.minY - 26)
@@ -430,7 +436,7 @@ struct ContentView: View {
         .navigationTitle("")
         .toolbar(removing: .title)
         .toolbarBackground(.hidden, for: .windowToolbar)
-        .background(WindowConfiguration(text: $document.text))
+        .background(WindowConfiguration(text: $document.text, tabTitle: title, tabBarInset: $tabBarInset))
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
         .tint(accent)
         .onReceive(NotificationCenter.default.publisher(for: NSView.boundsDidChangeNotification)) { notification in
@@ -2099,6 +2105,40 @@ struct LibraryNote: Identifiable {
 
 final class DocumentWindowView: NSView {
     var text: Binding<String>?
+    var tabBarInset: Binding<CGFloat>?
+    private var layoutObservation: NSKeyValueObservation?
+    private var fullScreenObservers: [NSObjectProtocol] = []
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        layoutObservation = nil
+        fullScreenObservers.forEach(NotificationCenter.default.removeObserver)
+        fullScreenObservers = []
+        guard let window else { return }
+        // The tab bar shows and hides with tabs, and full screen hides the titlebar but keeps the tab bar;
+        // both change the content layout rect.
+        layoutObservation = window.observe(\.contentLayoutRect) { [weak self] _, _ in
+            DispatchQueue.main.async { self?.updateTabBarInset() }
+        }
+        fullScreenObservers = [NSWindow.didEnterFullScreenNotification, NSWindow.didExitFullScreenNotification].map {
+            NotificationCenter.default.addObserver(forName: $0, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateTabBarInset() }
+            }
+        }
+        updateTabBarInset()
+    }
+
+    /// While a tab bar shows, the top controls (normally 14pt from the top, beside the traffic lights)
+    /// move to 8pt below the window chrome: the titlebar and tab bar in a window, the tab bar alone in
+    /// full screen. The content layout rect's top inset covers both; it exceeds the bare titlebar
+    /// (32pt in a window, none in full screen) only when a tab bar shows.
+    func updateTabBarInset() {
+        guard let window, let contentView = window.contentView else { return }
+        let chrome = contentView.bounds.maxY - window.contentLayoutRect.maxY
+        let titlebar = NSWindow.frameRect(forContentRect: .zero, styleMask: window.styleMask.subtracting(.fullSizeContentView)).height
+        let inset = chrome > titlebar + 1 ? (chrome + 8 - 14).rounded() : 0
+        if tabBarInset?.wrappedValue != inset { tabBarInset?.wrappedValue = inset }
+    }
     lazy var fileRefresh = DocumentFileRefresh(
         readText: { [weak self] in self?.text?.wrappedValue ?? "" },
         writeText: { [weak self] in self?.text?.wrappedValue = $0 }
@@ -2117,9 +2157,13 @@ final class DocumentWindowView: NSView {
 
 private struct WindowConfiguration: NSViewRepresentable {
     @Binding var text: String
+    /// The window title stays empty so the titlebar shows nothing; tabs still need a name (#82).
+    let tabTitle: String
+    @Binding var tabBarInset: CGFloat
     func makeNSView(context: Context) -> NSView {
         let view = DocumentWindowView()
         view.text = $text
+        view.tabBarInset = $tabBarInset
         DispatchQueue.main.async {
             view.watchDocument()
             guard let window = view.window else { return }
@@ -2129,7 +2173,6 @@ private struct WindowConfiguration: NSViewRepresentable {
             window.styleMask.insert(.fullSizeContentView)
             // Settings › On launch decides which documents reopen, not system window restoration.
             window.isRestorable = false
-            window.setContentSize(NSSize(width: 980, height: 660))
         }
         return view
     }
@@ -2139,11 +2182,13 @@ private struct WindowConfiguration: NSViewRepresentable {
     }
     func updateNSView(_ nsView: NSView, context: Context) {
         (nsView as? DocumentWindowView)?.text = $text
+        (nsView as? DocumentWindowView)?.tabBarInset = $tabBarInset
         DispatchQueue.main.async {
             (nsView as? DocumentWindowView)?.watchDocument()
             nsView.window?.titleVisibility = .hidden
             nsView.window?.titlebarAppearsTransparent = true
             nsView.window?.title = ""
+            if nsView.window?.tab.title != tabTitle { nsView.window?.tab.title = tabTitle }
         }
     }
 }

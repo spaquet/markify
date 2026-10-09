@@ -103,7 +103,9 @@ struct LibrarySearchTests {
             try FileManager.default.moveItem(at: files[2], to: moved)
             let refreshed = try await worker.refresh(folders: folders, options: SearchOptions(), rebuild: false) { _ in }
             #expect(refreshed.notes.count == 2)
-            let afterMove = try await eventually(query: token, domain: domain, count: 2)
+            // Spotlight applies the deletions and the update asynchronously: until it has, two stale
+            // items can answer, so wait for the refreshed identifiers rather than any two.
+            let afterMove = try await eventually(query: token, domain: domain, count: 2, matching: Set(refreshed.notes.map(\.id)))
             #expect(Set(afterMove) == Set(refreshed.notes.map(\.id)))
             let removedRoot = try await worker.refresh(folders: [folders[0]], options: SearchOptions(), rebuild: false) { _ in }
             #expect(removedRoot.notes.allSatisfy { $0.roots == [folders[0].id] })
@@ -131,7 +133,7 @@ struct LibrarySearchTests {
         }
     }
 
-    @MainActor private func eventually(query text: String, domain: String, scope: String? = nil, type: String? = nil, tag: String? = nil, count: Int) async throws -> [String] {
+    @MainActor private func eventually(query text: String, domain: String, scope: String? = nil, type: String? = nil, tag: String? = nil, count: Int, matching expected: Set<String>? = nil) async throws -> [String] {
         var last: [String] = []
         for _ in 0..<60 {
             let context = CSUserQueryContext()
@@ -145,7 +147,7 @@ struct LibrarySearchTests {
             var results: [String] = []
             for try await result in query.results { results.append(result.item.uniqueIdentifier) }
             last = results
-            if results.count == count { return results }
+            if results.count == count && (expected == nil || Set(results) == expected) { return results }
             try await Task.sleep(for: .milliseconds(500))
         }
         Issue.record("Spotlight returned \(last.count) items, expected \(count); IDs: \(last)")
