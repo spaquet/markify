@@ -482,7 +482,7 @@ struct NativeEditor: NSViewRepresentable {
                 if !markdownLens { storage.addAttribute(.foregroundColor, value: accent, range: span.content) }
                 hide(span.markers)
                 if markdownLens, let tail = span.markers.last, tail.length > 3 { destinations.append(NSRange(location: tail.location + 2, length: tail.length - 3)) }
-            case .image(_, true):
+            case .image(let path, true):
                 guard !markdownLens else {
                     hide(span.markers)
                     if let tail = span.markers.last, tail.length > 3 { destinations.append(NSRange(location: tail.location + 2, length: tail.length - 3)) }
@@ -491,12 +491,13 @@ struct NativeEditor: NSViewRepresentable {
                 hide([span.range])
                 let style = NSMutableParagraphStyle()
                 style.alignment = .center
+                let height = textView?.blockImageRectSize(path).height ?? MarkdownTextView.imagePlaceholderHeight
                 // TextKit ignores paragraphSpacingBefore on the document's first paragraph.
                 if span.range.location == 0 {
-                    style.minimumLineHeight = 290
-                    style.maximumLineHeight = 290
+                    style.minimumLineHeight = height + 30
+                    style.maximumLineHeight = height + 30
                 } else {
-                    style.paragraphSpacingBefore = 270
+                    style.paragraphSpacingBefore = height + 10
                 }
                 style.paragraphSpacing = 34
                 storage.addAttribute(.paragraphStyle, value: style, range: span.range)
@@ -2123,13 +2124,29 @@ class MarkdownTextView: NSTextView {
         drawDecorations(in: .infinite)
     }
 
+    static let imagePlaceholderHeight: CGFloat = 120
+
+    /// A block image's drawn size: its own size, scaled down only when wider than the column.
+    static func blockImageSize(_ size: NSSize, width: CGFloat) -> NSSize {
+        guard size.width > 0, size.height > 0 else { return NSSize(width: width, height: imagePlaceholderHeight) }
+        let scale = min(1, width / size.width)
+        return NSSize(width: size.width * scale, height: size.height * scale)
+    }
+
+    /// The box a block image takes: the fitted image, or a full-width placeholder while it loads or is unavailable.
+    func blockImageRectSize(_ path: String) -> NSSize {
+        guard case .image(let image) = image(for: path, embed: true) else { return NSSize(width: columnWidth, height: Self.imagePlaceholderHeight) }
+        return Self.blockImageSize(image.size, width: columnWidth)
+    }
+
     private func drawImages(in dirtyRect: NSRect) {
         guard window != nil else { return }
         for span in drawingSpans {
             guard case .image(let path, true) = span.kind, NSLocationInRange(span.content.location, anchorRange) else { continue }
             let caption = textRect(span.content)
-            let y = span.range.location == 0 ? caption.minY + 8 : caption.minY - 268
-            let rect = NSRect(x: 0, y: y, width: columnWidth, height: 260)
+            let size = blockImageRectSize(path)
+            let y = span.range.location == 0 ? caption.minY + 8 : caption.minY - size.height - 8
+            let rect = NSRect(x: (columnWidth - size.width) / 2, y: y, width: size.width, height: size.height)
             guard rect.intersects(dirtyRect) else { continue }
             NSGraphicsContext.saveGraphicsState()
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
@@ -2137,9 +2154,7 @@ class MarkdownTextView: NSTextView {
             rect.fill()
             switch image(for: path, embed: true) {
             case .image(let image):
-                let ratio = min(rect.width / image.size.width, rect.height / image.size.height)
-                let size = NSSize(width: image.size.width * ratio, height: image.size.height * ratio)
-                image.draw(in: NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height))
+                image.draw(in: rect)
             case .placeholder(let text):
                 let label = NSAttributedString(string: text, attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor])
                 label.draw(at: NSPoint(x: rect.midX - label.size().width / 2, y: rect.midY - label.size().height / 2))
