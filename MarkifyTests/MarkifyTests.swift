@@ -749,6 +749,15 @@ struct MarkifyTests {
         #expect(Frontmatter.parse("---\nunclosed: yes\n") == nil)
     }
 
+    @Test func frontmatterCacheFollowsTheText() {
+        let source = "---\ntitle: One\n---\nBody\n---\n"
+        #expect(Frontmatter.parse(source)?.title == "One")
+        #expect(Frontmatter.parse(source)?.range == NSRange(location: 0, length: 19))
+        #expect(Frontmatter.parse(source.replacingOccurrences(of: "One", with: "Two"))?.title == "Two")
+        #expect(Frontmatter.parse("# Heading\n") == nil)
+        #expect(Frontmatter.parse(source)?.title == "One")
+    }
+
     @Test func blockStyleRestylesEveryLine() {
         #expect(BlockStyle.apply("Heading", to: "# Old\n- item") == "## Old\n## item")
         #expect(BlockStyle.apply("Numbered", to: "a\n\nb") == "1. a\n\n2. b")

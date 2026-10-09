@@ -3,6 +3,7 @@ import CoreSpotlight
 import MarkifyMarkdown
 import OKFKit
 import Observation
+import os
 import UniformTypeIdentifiers
 
 struct SearchFolder: Codable, Identifiable, Equatable, Sendable {
@@ -38,11 +39,11 @@ struct SearchNote: Identifiable, Sendable {
     var id: String { Self.identifier(url) }
 
     static func identifier(_ url: URL) -> String {
-        Data(url.standardizedFileURL.resolvingSymlinksInPath().path.utf8).sha256Hex
+        Data(ResolvedPaths.path(url).utf8).sha256Hex
     }
     static func contains(_ root: URL, _ url: URL) -> Bool {
-        let parts = root.standardizedFileURL.resolvingSymlinksInPath().pathComponents
-        return url.standardizedFileURL.resolvingSymlinksInPath().pathComponents.starts(with: parts)
+        let parts = URL(fileURLWithPath: ResolvedPaths.path(root)).pathComponents
+        return URL(fileURLWithPath: ResolvedPaths.path(url)).pathComponents.starts(with: parts)
     }
     static func searchableText(_ model: MarkdownModel) -> String {
         let text = NSMutableString(string: model.source)
@@ -156,6 +157,25 @@ struct SearchMatch: Identifiable, Sendable {
             .contains { $0.localizedCaseInsensitiveContains(query) }
         return Self(note: note, snippet: snippet, ranges: highlights, sourceRange: first, line: line, count: hits.count,
                     heading: heading, metadataMatch: metadataMatch)
+    }
+}
+
+/// Symlink-resolved paths behind note and folder identifiers. Resolving asks the file system, and views compute
+/// identifiers on every update (MARKIFY-1B, 1J), so each scan resolves its folders and notes off the main thread
+/// and replaces the table; a path it has not seen resolves once on first use. A retargeted symlink shows at the next scan.
+enum ResolvedPaths {
+    private static let table = OSAllocatedUnfairLock(initialState: [String: String]())
+
+    static func path(_ url: URL) -> String {
+        if let resolved = table.withLock({ $0[url.path] }) { return resolved }
+        let resolved = url.standardizedFileURL.resolvingSymlinksInPath().path
+        table.withLock { $0[url.path] = resolved }
+        return resolved
+    }
+    static func replace(with urls: [URL]) {
+        var next: [String: String] = [:]
+        for url in urls where next[url.path] == nil { next[url.path] = url.standardizedFileURL.resolvingSymlinksInPath().path }
+        table.withLock { [next] in $0 = next }
     }
 }
 
@@ -289,6 +309,7 @@ actor SpotlightWorker {
         }
         fingerprints = nextFingerprints; persist()
         snapshot.subfolders = Array(Set(snapshot.subfolders)).sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+        ResolvedPaths.replace(with: folders.map { URL(fileURLWithPath: $0.path) } + snapshot.subfolders + snapshot.notes.map(\.url))
         return snapshot
     }
     private func persist() { if let persistenceKey { UserDefaults.standard.set(fingerprints, forKey: persistenceKey) } }

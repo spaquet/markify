@@ -1,6 +1,7 @@
 import AppKit
 import MarkifyMarkdown
 import OKFKit
+import os
 import SwaTex
 import SwaTexRender
 import SwiftUI
@@ -3763,11 +3764,21 @@ struct Frontmatter {
         return parsed.formatted(date: .abbreviated, time: .omitted)
     }
 
+    private static let closingFence = try! NSRegularExpression(pattern: #"(?m)^---[ \t]*$"#)
+    /// The last reading, since window updates ask for the same text's title and tags several times a pass (MARKIFY-1H).
+    private static let last = OSAllocatedUnfairLock<(source: String, frontmatter: Frontmatter?)?>(initialState: nil)
+
     static func parse(_ source: String) -> Self? {
+        guard source.hasPrefix("---\n") else { return nil }
+        if let last = last.withLock({ $0 }), last.source.isSameText(as: source) { return last.frontmatter }
+        let frontmatter = read(source)
+        last.withLock { $0 = (source, frontmatter) }
+        return frontmatter
+    }
+
+    private static func read(_ source: String) -> Self? {
         let ns = source as NSString
-        guard source.hasPrefix("---\n"), let regex = try? NSRegularExpression(pattern: #"(?m)^---[ \t]*$"#) else { return nil }
-        let fences = regex.matches(in: source, range: NSRange(location: 4, length: ns.length - 4))
-        guard let close = fences.first?.range else { return nil }
+        guard let close = closingFence.firstMatch(in: source, range: NSRange(location: 4, length: ns.length - 4))?.range else { return nil }
         var end = NSMaxRange(close)
         if end < ns.length, ns.character(at: end) == 10 { end += 1 }
         let body = NSRange(location: 4, length: max(0, close.location - 4))
