@@ -10,18 +10,6 @@
             "state" : "new",
             "value" : "PreviewImages"
           }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PreviewImages"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PreviewImages"
-          }
         }
       }
     }

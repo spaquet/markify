@@ -3,6 +3,12 @@
   "strings" : {
     "" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -13,6 +19,12 @@
     },
     " ▍" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " ▍"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -23,6 +35,12 @@
     },
     "— Edited" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "— Modificado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -33,6 +51,12 @@
     },
     "./assets" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "./assets"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -43,6 +67,12 @@
     },
     "./images" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "./images"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -53,6 +83,12 @@
     },
     ".%@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".%@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -63,6 +99,12 @@
     },
     "·" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -73,6 +115,12 @@
     },
     "· %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -83,6 +131,12 @@
     },
     "#%@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "#%@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -96,6 +150,12 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "%1$@  %2$lld"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%1$@  %2$lld"
           }
         },
@@ -115,6 +175,12 @@
             "value" : "%1$@ · %2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,6 +195,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ · %2$lld concepts%3$@"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld conceptos%3$@"
           }
         },
         "fr" : {
@@ -147,6 +219,12 @@
             "value" : "%1$@ · checked %2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · comprobado %2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -157,6 +235,12 @@
     },
     "%@ accent" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color de contraste %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -167,6 +251,12 @@
     },
     "%@ Library" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -177,6 +267,12 @@
     },
     "%@ Markdown" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -187,6 +283,12 @@
     },
     "%@ theme" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -200,6 +302,12 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "%1$@, %2$lld"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%1$@, %2$lld"
           }
         },
@@ -219,6 +327,12 @@
             "value" : "%1$@: %2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: %2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -235,6 +349,12 @@
             "value" : "%1$@%2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@%2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -245,6 +365,12 @@
     },
     "%lld" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -261,6 +387,12 @@
             "value" : "%1$lld %2$@ in bundle"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld %2$@ en el paquete"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -271,6 +403,12 @@
     },
     "%lld found" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resultados: %lld"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -281,6 +419,12 @@
     },
     "%lld notes · ranked by Spotlight" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld notas · ordenadas por Spotlight"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -297,6 +441,12 @@
             "value" : "%1$lld of %2$lld"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld de %2$lld"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -307,6 +457,12 @@
     },
     "%lld percent" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld por ciento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -317,6 +473,12 @@
     },
     "%lld pt" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pt"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -327,6 +489,12 @@
     },
     "%lld%%" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld %%"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -337,6 +505,12 @@
     },
     "© 2025–2026 Stéphane Paquet · Free to use" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© 2025–2026 Stéphane Paquet · Uso gratuito"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -347,6 +521,12 @@
     },
     "↑↓ navigate" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ navegar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -357,6 +537,12 @@
     },
     "↗" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↗"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -367,6 +553,12 @@
     },
     "↩ insert · esc dismiss" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↩ insertar · esc cerrar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -377,6 +569,12 @@
     },
     "×%lld" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "×%lld"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -387,6 +585,12 @@
     },
     "⌘N" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘N"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -397,6 +601,12 @@
     },
     "⌘O Open file" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘O Abrir archivo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -407,6 +617,12 @@
     },
     "● Credentials required" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "● Credenciales necesarias"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -417,6 +633,12 @@
     },
     "● Credentials set" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "● Credenciales configuradas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -427,6 +649,12 @@
     },
     "● Public" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "● Público"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -437,6 +665,12 @@
     },
     "A Markdown file on the web, or a GitHub / GitLab repository." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un archivo Markdown de la web o un repositorio de GitHub / GitLab."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -447,6 +681,12 @@
     },
     "Aa" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aa"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -457,6 +697,12 @@
     },
     "About Markify" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acerca de Markify"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -467,6 +713,12 @@
     },
     "Accent color" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color de contraste"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -477,6 +729,12 @@
     },
     "Accept" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceptar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -487,6 +745,12 @@
     },
     "Access" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acceso"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -497,6 +761,12 @@
     },
     "Access to this folder expired. Its notes stay hidden until you grant access again." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El permiso de acceso a esta carpeta ha caducado. Sus notas permanecerán ocultas hasta que vuelvas a autorizar el acceso."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -507,6 +777,12 @@
     },
     "Acknowledgements & License" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agradecimientos y licencia"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -517,6 +793,12 @@
     },
     "Actual Size" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamaño real"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -527,6 +809,12 @@
     },
     "Add Folder" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir carpeta"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -537,6 +825,12 @@
     },
     "Add Folder…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir carpeta…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -547,6 +841,12 @@
     },
     "Add Log Entry…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir entrada al registro…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -557,6 +857,12 @@
     },
     "All" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -567,6 +873,12 @@
     },
     "All Folders" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas las carpetas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -577,6 +889,12 @@
     },
     "All levels" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los niveles"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -587,6 +905,12 @@
     },
     "All Tags" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas las etiquetas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -597,6 +921,12 @@
     },
     "All Types" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los tipos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -607,6 +937,12 @@
     },
     "Allows Spotlight to find related meaning when available on this Mac. Related results open at the top of the note." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permite que Spotlight encuentre resultados con un significado relacionado si esta función está disponible en este Mac. Estos resultados se abren al principio de la nota."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -617,6 +953,12 @@
     },
     "Also available as /write in the insert menu." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También disponible mediante /write en el menú de inserción."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -627,6 +969,12 @@
     },
     "Another app opens .md files." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otra app abre los archivos .md."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -637,6 +985,12 @@
     },
     "Appearance" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apariencia"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -647,6 +1001,12 @@
     },
     "Apple Intelligence" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -657,6 +1017,12 @@
     },
     "Apple Intelligence is unavailable." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence no está disponible."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -667,6 +1033,12 @@
     },
     "Ask each time" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preguntar siempre"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -677,6 +1049,12 @@
     },
     "Block style, %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estilo de bloque, %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -687,6 +1065,12 @@
     },
     "Bold" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Negrita"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -697,6 +1081,12 @@
     },
     "Browse" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explorar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -707,6 +1097,12 @@
     },
     "Browse All Versions…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explorar todas las versiones…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -717,6 +1113,12 @@
     },
     "Browse Repository" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explorar repositorio"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -727,6 +1129,12 @@
     },
     "Browser sign-in is not configured for this build. Use a personal access token below." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El inicio de sesión en el navegador no está configurado en esta versión. Utiliza un token de acceso personal a continuación."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -737,6 +1145,12 @@
     },
     "Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Mermaid, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creado con swift-markdown, cmark-gfm, SwaTex, las fuentes de KaTeX, Mermaid, Sparkle, Sentry y Yams. Compatible con Open Knowledge Format de Google Cloud."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -747,6 +1161,12 @@
     },
     "Cancel" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -763,6 +1183,12 @@
             "value" : "Changed %1$@%2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modificado %1$@%2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -773,6 +1199,12 @@
     },
     "Check for updates automatically" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar actualizaciones automáticamente"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -783,6 +1215,12 @@
     },
     "Check for Updates…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar actualizaciones…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -793,6 +1231,12 @@
     },
     "Check Links" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobar enlaces"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -809,6 +1253,12 @@
             "value" : "Checking %1$lld %2$@…"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobando %1$lld %2$@…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -819,6 +1269,12 @@
     },
     "Checking…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobando…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -829,6 +1285,12 @@
     },
     "Choose…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionar…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -839,6 +1301,12 @@
     },
     "Clear" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transparente"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -849,6 +1317,12 @@
     },
     "Clear filter" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar filtro"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -859,6 +1333,12 @@
     },
     "Clear search" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar búsqueda"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -869,6 +1349,12 @@
     },
     "Clear URL" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar URL"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -879,6 +1365,12 @@
     },
     "Code theme" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema del código"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -889,6 +1381,12 @@
     },
     "Coding Agents" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes de programación"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -899,6 +1397,12 @@
     },
     "Collapse %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraer %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -909,6 +1413,12 @@
     },
     "Comma-separated names, applied inside every indexed folder. Hidden files and symlinks are skipped." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombres separados por comas que se aplican en cada carpeta indexada. Se omiten los archivos ocultos y los enlaces simbólicos."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -919,6 +1429,12 @@
     },
     "Compare" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -929,6 +1445,12 @@
     },
     "Computation" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cálculo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -939,6 +1461,12 @@
     },
     "Contents and Links" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contenido y enlaces"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -949,6 +1477,12 @@
     },
     "Continue Writing" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar escribiendo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -959,6 +1493,12 @@
     },
     "Controls" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controles"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -969,6 +1509,12 @@
     },
     "Copied as Markdown" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado como Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -979,6 +1525,12 @@
     },
     "Copied for Medium" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado para Medium"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -989,6 +1541,12 @@
     },
     "Copy All as Markdown" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar todo como Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -999,6 +1557,12 @@
     },
     "Copy All for Medium" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar todo para Medium"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1009,6 +1573,12 @@
     },
     "Copy Source URL" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar URL de origen"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1019,6 +1589,12 @@
     },
     "Couldn’t copy as Markdown" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido copiar como Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1029,6 +1605,12 @@
     },
     "Couldn’t copy for Medium" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido copiar para Medium"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1039,6 +1621,12 @@
     },
     "Crash stack traces and the error that caused them" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las trazas de pila de los fallos y los errores que los causaron"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1049,6 +1637,12 @@
     },
     "Create a token…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear un token…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1059,6 +1653,12 @@
     },
     "Credentials are sent only to %@. Saved only when you choose." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las credenciales solo se envían a %@. Solo se guardan si lo decides."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1069,6 +1669,12 @@
     },
     "Current Library" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biblioteca actual"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1079,6 +1685,12 @@
     },
     "Current OKF bundle" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquete OKF actual"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1089,6 +1701,12 @@
     },
     "Default Markdown app" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App predeterminada para Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1099,6 +1717,12 @@
     },
     "Default scope" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ámbito predeterminado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1109,6 +1733,12 @@
     },
     "Default tone" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tono predeterminado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1119,6 +1749,12 @@
     },
     "Delete Index" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar índice"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1129,6 +1765,12 @@
     },
     "Delete Search Index?" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar el índice de búsqueda?"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1139,6 +1781,12 @@
     },
     "Delete Search Index…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar índice de búsqueda…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1149,6 +1797,12 @@
     },
     "Deprecated" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obsoleto"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1159,6 +1813,12 @@
     },
     "Describe a change to the document…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe un cambio para el documento…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1169,6 +1829,12 @@
     },
     "Describe what to write, or press ↩ to continue" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe qué escribir o pulsa ↩ para continuar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1179,6 +1845,12 @@
     },
     "Describe your change" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Describe el cambio"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1189,6 +1861,12 @@
     },
     "Destination" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destino"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1199,6 +1877,12 @@
     },
     "Discard" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1209,6 +1893,12 @@
     },
     "Discard Rewrite" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar reescritura"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1219,6 +1909,12 @@
     },
     "Documents" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1229,6 +1925,12 @@
     },
     "Double-click a shortcut to change it" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz doble clic en un atajo para cambiarlo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1239,6 +1941,12 @@
     },
     "Down to heading level %lld" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasta los encabezados de nivel %lld"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1249,6 +1957,12 @@
     },
     "Download and install updates automatically" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descargar e instalar actualizaciones automáticamente"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1259,6 +1973,12 @@
     },
     "Draft" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrador"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1269,6 +1989,12 @@
     },
     "Editing a concept's text sets its generated field to you, at most once a day." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al editar el texto de un concepto, su campo generated te identifica como autor, como máximo una vez al día."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1279,6 +2005,12 @@
     },
     "Editor" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1289,6 +2021,12 @@
     },
     "esc" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esc"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1299,6 +2037,12 @@
     },
     "Expand %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1309,6 +2053,12 @@
     },
     "Export" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1319,6 +2069,12 @@
     },
     "Fade toolbar while typing" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atenuar la barra de herramientas al escribir"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1329,6 +2085,12 @@
     },
     "Features" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funciones"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1339,6 +2101,12 @@
     },
     "File types" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipos de archivo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1349,6 +2117,12 @@
     },
     "File URL" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL del archivo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1359,6 +2133,12 @@
     },
     "Filter headings" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtrar encabezados"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1369,6 +2149,12 @@
     },
     "Find" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1379,6 +2165,12 @@
     },
     "Find Next" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar siguiente"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1389,6 +2181,12 @@
     },
     "Find Next %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar siguiente %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1399,6 +2197,12 @@
     },
     "Find Previous" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar anterior"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1409,6 +2213,12 @@
     },
     "Find Previous %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar anterior %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1419,6 +2229,12 @@
     },
     "Fix Link" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corregir enlace"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1429,6 +2245,12 @@
     },
     "Fix Link…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corregir enlace…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1439,6 +2261,12 @@
     },
     "Folders" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpetas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1449,6 +2277,12 @@
     },
     "Frequently Asked Questions" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preguntas frecuentes"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1459,6 +2293,12 @@
     },
     "General" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1469,6 +2309,12 @@
     },
     "Generate at caret with %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generar en el punto de inserción con %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1485,6 +2331,12 @@
             "value" : "Generated %1$@%2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generado %1$@%2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1495,6 +2347,12 @@
     },
     "Generation" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generación"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1505,6 +2363,12 @@
     },
     "GH" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GH"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1515,6 +2379,12 @@
     },
     "github_pat_…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "github_pat_…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1525,6 +2395,12 @@
     },
     "github.com/…/README.md" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "github.com/…/README.md"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1535,6 +2411,12 @@
     },
     "github.com/owner/repo" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "github.com/owner/repo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1545,6 +2427,12 @@
     },
     "GL" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GL"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1555,6 +2443,12 @@
     },
     "Glass style" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estilo de cristal"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1565,6 +2459,12 @@
     },
     "glpat-…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "glpat-…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1575,6 +2475,12 @@
     },
     "Goes to the link in the document." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va al enlace en el documento."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1585,6 +2491,12 @@
     },
     "Grant Access…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorizar acceso…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1595,6 +2507,12 @@
     },
     "Heading depth" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profundidad de los encabezados"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1611,6 +2529,12 @@
             "value" : "Heading level %1$lld, line %2$lld. Moves the caret to this heading."
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encabezado de nivel %1$lld, línea %2$lld. Mueve el punto de inserción a este encabezado."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1621,6 +2545,12 @@
     },
     "Help make Markify steadier" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda a mejorar la estabilidad de Markify"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1631,6 +2561,12 @@
     },
     "Helps generated text match your voice." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda a que el texto generado se adapte a tu estilo."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1641,6 +2577,12 @@
     },
     "Helps us find and fix crashes and slow spots. Takes effect at once." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nos ayuda a detectar y corregir fallos y problemas de rendimiento. Se aplica de inmediato."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1651,6 +2593,12 @@
     },
     "Hide Contents and Links" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar contenido y enlaces"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1661,6 +2609,12 @@
     },
     "Hide Library" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1671,6 +2625,12 @@
     },
     "Hide Summary" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar resumen"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1681,6 +2641,12 @@
     },
     "HTML" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTML"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1691,6 +2657,12 @@
     },
     "https://…/document.md" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://…/document.md"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1701,6 +2673,12 @@
     },
     "https://github.com/owner/repo" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://github.com/owner/repo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1711,6 +2689,12 @@
     },
     "In %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1721,6 +2705,12 @@
     },
     "Include related results" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluir resultados relacionados"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1731,6 +2721,12 @@
     },
     "Index headings as context" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indexar encabezados como contexto"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1741,6 +2737,12 @@
     },
     "Index OKF frontmatter" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indexar metadatos de cabecera OKF"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1751,6 +2753,12 @@
     },
     "Indexed folders" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpetas indexadas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1761,6 +2769,12 @@
     },
     "Indexing · %lld notes read. More results may appear." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indexando · %lld notas leídas. Pueden aparecer más resultados."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1771,6 +2785,12 @@
     },
     "Inline Code" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código en línea"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1781,6 +2801,12 @@
     },
     "Insert" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insertar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1791,6 +2817,12 @@
     },
     "Insert block" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insertar bloque"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1801,6 +2833,12 @@
     },
     "Insert Table of Contents" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Insertar tabla de contenido"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1811,6 +2849,12 @@
     },
     "Inserts a table of contents at the caret, with the headings shown at this depth; it then updates itself" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserta una tabla de contenido en el punto de inserción con los encabezados mostrados a esta profundidad; después se actualiza automáticamente"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1821,6 +2865,12 @@
     },
     "Intelligence" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inteligencia"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1831,6 +2881,12 @@
     },
     "IP addresses. Markify doesn't collect them" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las direcciones IP. Markify no las recopila"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1841,6 +2897,12 @@
     },
     "Italic" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cursiva"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1851,6 +2913,12 @@
     },
     "Join the Program" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Participar en el programa"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1861,6 +2929,12 @@
     },
     "Join the reports program. Crashes and slow spots reach us, so we can fix them faster, and nothing personal comes with them." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Participa en el programa de envío de informes. Recibiremos información sobre fallos y problemas de rendimiento para corregirlos antes, sin ningún dato personal."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1871,6 +2945,12 @@
     },
     "Keep" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conservar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1881,6 +2961,12 @@
     },
     "Keep %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conservar %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1891,6 +2977,12 @@
     },
     "Keeping AI text in a concept sets its generated field to Apple Intelligence." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al conservar texto de la IA en un concepto, su campo generated indica Apple Intelligence."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1901,6 +2993,12 @@
     },
     "Keyboard Shortcuts" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajos de teclado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1911,6 +3009,12 @@
     },
     "Knowledge" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conocimiento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1921,6 +3025,12 @@
     },
     "L%lld" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L%lld"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1937,6 +3047,12 @@
             "value" : "L%1$lld%2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L%1$lld%2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1947,6 +3063,12 @@
     },
     "Last used" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Último modo utilizado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1957,6 +3079,12 @@
     },
     "Lenses" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1967,6 +3095,12 @@
     },
     "Library" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1977,6 +3111,12 @@
     },
     "Library location" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubicación de la biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1987,6 +3127,12 @@
     },
     "Library Subfolders" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subcarpetas de la biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1997,6 +3143,12 @@
     },
     "Limit line width" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limitar el ancho de línea"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2007,6 +3159,12 @@
     },
     "Line width" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancho de línea"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2017,6 +3175,12 @@
     },
     "Link" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enlace"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2027,6 +3191,12 @@
     },
     "Link %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enlace %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2037,6 +3207,12 @@
     },
     "Linked from" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enlaces entrantes"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2047,6 +3223,12 @@
     },
     "Links in this document appear here." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los enlaces de este documento aparecen aquí."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2057,6 +3239,12 @@
     },
     "Load remote images" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargar imágenes remotas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2067,6 +3255,12 @@
     },
     "Loading files…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargando archivos…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2077,6 +3271,12 @@
     },
     "Make Concept…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear concepto…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2087,6 +3287,12 @@
     },
     "Make Default" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establecer por omisión"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2097,6 +3303,12 @@
     },
     "Mark Verified" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar como verificado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2107,6 +3319,12 @@
     },
     "Markdown" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2117,6 +3335,12 @@
     },
     "Markdown font" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipo de letra de Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2127,6 +3351,12 @@
     },
     "Markdown Guide" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guía de Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2137,6 +3367,12 @@
     },
     "Markdown text, titles, file names or paths" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto Markdown, los títulos, los nombres de archivo o las rutas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2147,6 +3383,12 @@
     },
     "Markify" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2157,6 +3399,12 @@
     },
     "Markify %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2167,6 +3415,12 @@
     },
     "Markify opens .md files." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify abre los archivos .md."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2177,6 +3431,12 @@
     },
     "Markify shows the contract; it doesn't run computations." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify muestra el contrato; no ejecuta cálculos."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2187,6 +3447,12 @@
     },
     "Markify Website" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitio web de Markify"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2197,6 +3463,12 @@
     },
     "Markify's version and macOS version, and your Mac's model" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La versión de Markify y de macOS, y el modelo de tu Mac"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2207,6 +3479,12 @@
     },
     "Match appearance" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según la apariencia"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2217,6 +3495,12 @@
     },
     "Match case" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distinguir mayúsculas y minúsculas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2227,6 +3511,12 @@
     },
     "MD" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MD"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2237,6 +3527,12 @@
     },
     "Menlo" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menlo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2247,6 +3543,12 @@
     },
     "Merge External Changes" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fusionar cambios externos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2257,6 +3559,12 @@
     },
     "Monochrome" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monocromo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2267,6 +3575,12 @@
     },
     "More" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2277,6 +3591,12 @@
     },
     "Move To…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trasladar a…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2287,6 +3607,12 @@
     },
     "Narrow" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estrecho"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2297,6 +3623,12 @@
     },
     "New document" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo documento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2307,6 +3639,12 @@
     },
     "New Document" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo documento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2317,6 +3655,12 @@
     },
     "New document in %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo documento en %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2327,6 +3671,12 @@
     },
     "New documents are saved to" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar los nuevos documentos en"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2337,6 +3687,12 @@
     },
     "New from Clipboard" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo documento desde el portapapeles"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2347,6 +3703,12 @@
     },
     "New York" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New York"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2357,6 +3719,12 @@
     },
     "Next match" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguiente coincidencia"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2367,6 +3735,12 @@
     },
     "No broken links" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay enlaces rotos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2377,6 +3751,12 @@
     },
     "No headings" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay encabezados"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2387,6 +3767,12 @@
     },
     "No headings at this depth" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay encabezados a esta profundidad"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2397,6 +3783,12 @@
     },
     "No headings match “%@”" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún encabezado coincide con «%@»"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2407,6 +3799,12 @@
     },
     "No links of this kind" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay enlaces de este tipo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2417,6 +3815,12 @@
     },
     "No Markdown files found." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se han encontrado archivos Markdown."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2427,6 +3831,12 @@
     },
     "No matches yet. Results will update when indexing finishes." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay coincidencias. Los resultados se actualizarán cuando termine la indexación."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2437,6 +3847,12 @@
     },
     "No matching concepts" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay conceptos coincidentes"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2447,6 +3863,12 @@
     },
     "No matching style" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay estilos coincidentes"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2457,6 +3879,12 @@
     },
     "No results" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin resultados"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2467,6 +3895,12 @@
     },
     "No results in %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin resultados en %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2477,6 +3911,12 @@
     },
     "No tags yet" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay etiquetas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2487,6 +3927,12 @@
     },
     "Not checked yet" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no se ha comprobado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2497,6 +3943,12 @@
     },
     "Not Now" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2507,6 +3959,12 @@
     },
     "Notes donated by Markify may also appear in system Spotlight for anyone using this Mac account. The index stays on this Mac. macOS manages Spotlight categories, privacy and ranking." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las notas que Markify envía a Spotlight también pueden aparecer en Spotlight para cualquier persona que utilice esta cuenta del Mac. El índice permanece en este Mac. macOS gestiona las categorías, la privacidad y la clasificación de Spotlight."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2517,6 +3975,12 @@
     },
     "OKF bundle contents or links between notes" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El contenido de los paquetes OKF o los enlaces entre notas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2527,6 +3991,12 @@
     },
     "OKF bundles" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquetes OKF"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2537,6 +4007,12 @@
     },
     "On launch" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al iniciar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2547,6 +4023,12 @@
     },
     "On this Mac" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En este Mac"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2557,6 +4039,12 @@
     },
     "On-device" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el dispositivo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2567,6 +4055,12 @@
     },
     "One page. Two lenses." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una página. Dos modos."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2577,6 +4071,12 @@
     },
     "Only a read request is sent to %@." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se envía una solicitud de lectura a %@."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2587,6 +4087,12 @@
     },
     "Open" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2597,6 +4103,12 @@
     },
     "Open as File" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir como archivo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2607,6 +4119,12 @@
     },
     "Open at line %lld" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir en la línea %lld"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2617,6 +4135,12 @@
     },
     "Open at the top of the note" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir al principio de la nota"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2627,6 +4151,12 @@
     },
     "Open Bundle Folder…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir carpeta del paquete…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2637,6 +4167,12 @@
     },
     "Open documents in" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir documentos en"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2647,6 +4183,12 @@
     },
     "Open File" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir archivo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2657,6 +4199,12 @@
     },
     "Open Files" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivos abiertos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2667,6 +4215,12 @@
     },
     "Open Folder…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir carpeta…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2677,6 +4231,12 @@
     },
     "Open from URL" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir desde URL"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2687,6 +4247,12 @@
     },
     "Open in Browser" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir en el navegador"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2697,6 +4263,12 @@
     },
     "Open Original in Browser" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir original en el navegador"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2707,6 +4279,12 @@
     },
     "Open URL" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir URL"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2717,6 +4295,12 @@
     },
     "Open URL…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir URL…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2727,6 +4311,12 @@
     },
     "Opening file…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abriendo archivo…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2737,6 +4327,12 @@
     },
     "Opens %@ in your browser" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre %@ en el navegador"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2747,6 +4343,12 @@
     },
     "Page color" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color de página"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2757,6 +4359,12 @@
     },
     "Paper" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Papel"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2767,6 +4375,12 @@
     },
     "Password" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseña"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2777,6 +4391,12 @@
     },
     "Paste" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2787,6 +4407,12 @@
     },
     "Paste a link to a file or repository." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega un enlace a un archivo o repositorio."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2797,6 +4423,12 @@
     },
     "PDF" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2807,6 +4439,12 @@
     },
     "Preparing on-device model…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparando el modelo en el dispositivo…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2817,6 +4455,12 @@
     },
     "Previous match" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coincidencia anterior"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2827,6 +4471,12 @@
     },
     "Privacy" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacidad"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2837,6 +4487,12 @@
     },
     "Projects" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proyectos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2847,6 +4503,12 @@
     },
     "Prose font" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipo de letra del texto"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2857,6 +4519,12 @@
     },
     "Read the full privacy details…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer todos los detalles sobre privacidad…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2867,6 +4535,12 @@
     },
     "Reading" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lectura"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2877,6 +4551,12 @@
     },
     "Reading %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leyendo %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2887,6 +4567,12 @@
     },
     "Reading progress" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progreso de lectura"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2897,6 +4583,12 @@
     },
     "Rebuild Index" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconstruir índice"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2907,6 +4599,12 @@
     },
     "Rebuilds the document's table of contents with the headings shown at this depth" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconstruye la tabla de contenido del documento con los encabezados mostrados a esta profundidad"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2917,6 +4615,12 @@
     },
     "Recent searches" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Búsquedas recientes"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2927,6 +4631,12 @@
     },
     "Record AI edits in OKF concepts" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrar cambios de la IA en los conceptos OKF"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2937,6 +4647,12 @@
     },
     "Record my edits in OKF concepts" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrar mis cambios en los conceptos OKF"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2947,6 +4663,12 @@
     },
     "Recorded as human:%@ when you mark an OKF concept verified." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se registra como human:%@ cuando marcas un concepto OKF como verificado."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2957,6 +4679,12 @@
     },
     "Refresh" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2967,6 +4695,12 @@
     },
     "Related" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relacionados"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2977,6 +4711,12 @@
     },
     "Release Notes" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas de la versión"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2987,6 +4727,12 @@
     },
     "Remember in Keychain for %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordar en el llavero para %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2997,6 +4743,12 @@
     },
     "Remember lens per document" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordar el modo de cada documento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3007,6 +4759,12 @@
     },
     "Remove" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3017,6 +4775,12 @@
     },
     "Remove selected folder from search" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar la carpeta seleccionada de la búsqueda"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3027,6 +4791,12 @@
     },
     "Removes Markify’s search entries and pauses indexing until you rebuild. Your files and macOS’s independent file index are untouched." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina las entradas de búsqueda de Markify y pausa la indexación hasta que reconstruyas el índice. Tus archivos y el índice independiente de macOS no se modifican."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3037,6 +4807,12 @@
     },
     "Removing a folder removes its search entries, never its files." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al quitar una carpeta, se eliminan sus entradas de búsqueda, nunca sus archivos."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3047,6 +4823,12 @@
     },
     "Rename…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renombrar…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3057,6 +4839,12 @@
     },
     "Rendered" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vista renderizada"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3067,6 +4855,12 @@
     },
     "Reopen last documents" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a abrir los últimos documentos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3077,6 +4871,12 @@
     },
     "Reopens each file the way you left it." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelve a abrir cada archivo en el modo en que lo dejaste."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3087,6 +4887,12 @@
     },
     "Replace" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reemplazar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3097,6 +4903,12 @@
     },
     "Replace All %lld" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reemplazar todo (%lld)"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3107,6 +4919,12 @@
     },
     "Report an Issue…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informar de un problema…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3117,6 +4935,12 @@
     },
     "Reports go to Sentry. As with any web request, Sentry's servers see the connection's address; Markify doesn't ask Sentry to keep it. Turning the program off stops all reports." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los informes se envían a Sentry. Como con cualquier solicitud web, los servidores de Sentry ven la dirección de la conexión; Markify no le pide a Sentry que la conserve. Al desactivar el programa, se detiene el envío de todos los informes."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3127,6 +4951,12 @@
     },
     "Repository URL" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL del repositorio"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3137,6 +4967,12 @@
     },
     "Restore Defaults" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurar valores por omisión"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3147,6 +4983,12 @@
     },
     "Runs on %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ejecuta en %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3157,6 +4999,12 @@
     },
     "Runs on this Mac with Apple Intelligence. Your text never leaves it." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ejecuta en este Mac con Apple Intelligence. Tu texto nunca sale de él."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3167,6 +5015,12 @@
     },
     "Same folder as document" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La misma carpeta que el documento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3177,6 +5031,12 @@
     },
     "Save pasted images to" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar las imágenes pegadas en"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3187,6 +5047,12 @@
     },
     "Search" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3197,6 +5063,12 @@
     },
     "Search All Folders" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en todas las carpetas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3207,6 +5079,12 @@
     },
     "Search can only reach folders you’ve granted." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se puede buscar en las carpetas a las que has autorizado el acceso."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3217,6 +5095,12 @@
     },
     "Search files" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar archivos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3227,6 +5111,12 @@
     },
     "Search index deleted" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Índice de búsqueda eliminado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3237,6 +5127,12 @@
     },
     "Search Library" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en la biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3247,6 +5143,12 @@
     },
     "Search notes" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar notas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3257,6 +5159,12 @@
     },
     "Search Settings" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de búsqueda"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3267,6 +5175,12 @@
     },
     "Search Settings…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de búsqueda…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3277,6 +5191,12 @@
     },
     "Searching" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3287,6 +5207,12 @@
     },
     "Searching Spotlight…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando en Spotlight…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3297,6 +5223,12 @@
     },
     "Selected Folder: %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpeta seleccionada: %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3313,6 +5245,12 @@
             "value" : "Selection · %1$lld %2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selección · %1$lld %2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3323,6 +5261,12 @@
     },
     "Send crash and performance reports" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar informes de fallos y rendimiento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3333,6 +5277,12 @@
     },
     "Settings" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3343,6 +5293,12 @@
     },
     "SF Mono" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SF Mono"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3353,6 +5309,12 @@
     },
     "SF Pro" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SF Pro"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3363,6 +5325,12 @@
     },
     "Share" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3373,6 +5341,12 @@
     },
     "Shortcuts" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3383,6 +5357,12 @@
     },
     "Show" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3393,6 +5373,12 @@
     },
     "Show Bundle" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar paquete"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3403,6 +5389,12 @@
     },
     "Show Contents and Links" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar contenido y enlaces"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3413,6 +5405,12 @@
     },
     "Show Library" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3423,6 +5421,12 @@
     },
     "Show Markdown" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3433,6 +5437,12 @@
     },
     "Show Markdown %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Markdown %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3443,6 +5453,12 @@
     },
     "Show Result" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar resultado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3453,6 +5469,12 @@
     },
     "Show status capsule" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar cápsula de estado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3463,6 +5485,12 @@
     },
     "Show word count" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar recuento de palabras"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3473,6 +5501,12 @@
     },
     "Show Word Count" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar recuento de palabras"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3483,6 +5517,12 @@
     },
     "Showing the first %lld files." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se muestran los primeros %lld archivos."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3493,6 +5533,12 @@
     },
     "Shows which section contains a literal match. Headings remain part of the note’s searchable text." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indica qué sección contiene una coincidencia literal. Los encabezados siguen formando parte del texto de la nota en el que se puede buscar."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3503,6 +5549,12 @@
     },
     "Skip folders named" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omitir carpetas llamadas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3513,6 +5565,12 @@
     },
     "Source" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Origen"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3523,6 +5581,12 @@
     },
     "Sources" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuentes"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3533,6 +5597,12 @@
     },
     "Spotlight may still be processing submitted notes. Try another phrase or a wider scope." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es posible que Spotlight aún esté procesando las notas enviadas. Prueba con otra expresión o amplía la búsqueda."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3543,6 +5613,12 @@
     },
     "Spotlight search index" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Índice de búsqueda de Spotlight"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3553,6 +5629,12 @@
     },
     "Spotlight search unavailable" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Búsqueda de Spotlight no disponible"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3563,6 +5645,12 @@
     },
     "Spotlight Settings…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de Spotlight…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3573,6 +5661,12 @@
     },
     "Stable" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estable"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3583,6 +5677,12 @@
     },
     "Start writing, or type / to insert a block." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empieza a escribir o pulsa / para insertar un bloque."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3593,6 +5693,12 @@
     },
     "Startup" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicio"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3603,6 +5709,12 @@
     },
     "Status" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3613,6 +5725,12 @@
     },
     "Still indexing" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indexación en curso"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3623,6 +5741,12 @@
     },
     "Stop" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3633,6 +5757,12 @@
     },
     "Strikethrough" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tachado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3643,6 +5773,12 @@
     },
     "Suggest title & tags for new documents" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerir título y etiquetas para los nuevos documentos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3653,6 +5789,12 @@
     },
     "Suggestions" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerencias"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3663,6 +5805,12 @@
     },
     "Summarize" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumir"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3673,6 +5821,12 @@
     },
     "Summarizing…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumiendo…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3683,6 +5837,12 @@
     },
     "Summary" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumen"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3693,6 +5853,12 @@
     },
     "System" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistema"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3703,6 +5869,12 @@
     },
     "System Settings…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes del Sistema…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3713,6 +5885,12 @@
     },
     "System Spotlight" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotlight del sistema"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3723,6 +5901,12 @@
     },
     "Tag" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etiqueta"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3733,6 +5917,12 @@
     },
     "Tags" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etiquetas"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3743,6 +5933,12 @@
     },
     "Theme" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3753,6 +5949,12 @@
     },
     "This links to a repository. Browse its files instead?" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este enlace lleva a un repositorio. ¿Quieres explorar sus archivos?"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3763,6 +5965,12 @@
     },
     "Timing for a sample of sessions, about one in ten" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las mediciones de tiempo de una muestra de sesiones, aproximadamente una de cada diez"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3773,6 +5981,12 @@
     },
     "Tinted" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tintado"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3783,6 +5997,12 @@
     },
     "Title / path" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título / ruta"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3793,6 +6013,12 @@
     },
     "Title, description, type and tags become searchable and filterable." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El título, la descripción, el tipo y las etiquetas se pueden buscar y filtrar."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3803,6 +6029,12 @@
     },
     "Toggle Library" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar u ocultar biblioteca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3813,6 +6045,12 @@
     },
     "Toggle Markdown" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar de modo Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3823,6 +6061,12 @@
     },
     "Token" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3833,6 +6077,12 @@
     },
     "Try" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3843,6 +6093,12 @@
     },
     "Try Again" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a intentar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3853,6 +6109,12 @@
     },
     "Turn on Apple Intelligence in System Settings" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activa Apple Intelligence en Ajustes del Sistema"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3863,6 +6125,12 @@
     },
     "Type" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3873,6 +6141,12 @@
     },
     "Types" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipos"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3883,6 +6157,12 @@
     },
     "Typography" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipografía"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3893,6 +6173,12 @@
     },
     "Untitled" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin título"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3903,6 +6189,12 @@
     },
     "Update Table of Contents" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar tabla de contenido"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3913,6 +6205,12 @@
     },
     "Updates" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizaciones"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3923,6 +6221,12 @@
     },
     "Updates install when you quit Markify." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las actualizaciones se instalan al salir de Markify."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3933,6 +6237,12 @@
     },
     "Updating Spotlight index…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizando el índice de Spotlight…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3943,6 +6253,12 @@
     },
     "Use a GitHub or GitLab repository address, or open this as a file." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliza la dirección de un repositorio de GitHub o GitLab, o abre este enlace como archivo."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3959,6 +6275,12 @@
             "value" : "Use saved %1$@ · %2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar credenciales guardadas %1$@ · %2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3969,6 +6291,12 @@
     },
     "Use surrounding section as context" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar la sección circundante como contexto"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3979,6 +6307,12 @@
     },
     "Username" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre de usuario"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3995,6 +6329,12 @@
             "value" : "Verified%1$@ by %2$@"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificado%1$@ por %2$@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4005,6 +6345,12 @@
     },
     "Verifier ID" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Identificador del verificador"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4015,6 +6361,12 @@
     },
     "Welcome to Markify" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te damos la bienvenida a Markify"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4025,6 +6377,12 @@
     },
     "What gets indexed" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué se indexa"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4035,6 +6393,12 @@
     },
     "What is never sent" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué no se envía nunca"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4045,6 +6409,12 @@
     },
     "What is sent" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qué se envía"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4055,6 +6425,12 @@
     },
     "White" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blanco"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4065,6 +6441,12 @@
     },
     "Whole document" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo el documento"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4075,6 +6457,12 @@
     },
     "Wide" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancho"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4085,6 +6473,12 @@
     },
     "Window" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventana"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4095,6 +6489,12 @@
     },
     "Writing on this Mac…" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribiendo en este Mac…"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4105,6 +6505,12 @@
     },
     "Writing Tools" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herramientas de Escritura"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4115,6 +6521,12 @@
     },
     "Writing Tools %@" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herramientas de Escritura %@"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4125,6 +6537,12 @@
     },
     "Writing Tools in the format bar" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herramientas de Escritura en la barra de formato"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4135,6 +6553,12 @@
     },
     "Written to frontmatter only after you accept." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se añade a los metadatos de cabecera solo después de que lo aceptes."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4145,6 +6569,12 @@
     },
     "You can change your mind anytime in Settings › Privacy." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes cambiar de opinión en cualquier momento en Ajustes › Privacidad."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4155,6 +6585,12 @@
     },
     "Your name, account or any device identifier" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu nombre, cuenta o cualquier identificador del dispositivo"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4165,6 +6601,12 @@
     },
     "Your notes stay on disk. Choose Rebuild Index to resume Library search." : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus notas permanecen en el disco. Selecciona Reconstruir índice para reanudar la búsqueda en la biblioteca."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4175,6 +6617,12 @@
     },
     "Zoom In" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ampliar"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4185,6 +6633,12 @@
     },
     "Zoom Out" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reducir"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",

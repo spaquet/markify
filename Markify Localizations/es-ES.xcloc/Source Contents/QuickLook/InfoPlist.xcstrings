@@ -10,18 +10,6 @@
             "state" : "new",
             "value" : "MarkifyQuickLook"
           }
-        },
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MarkifyQuickLook"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MarkifyQuickLook"
-          }
         }
       }
     }
