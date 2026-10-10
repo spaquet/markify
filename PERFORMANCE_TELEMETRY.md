@@ -2,6 +2,8 @@
 
 Status: proposal for future implementation. This document adds no instrumentation and changes no collection behavior.
 
+Local 2.5.0 measurements and implementation priorities are recorded in [PERFORMANCE_AUDIT_2.5.0.md](PERFORMANCE_AUDIT_2.5.0.md).
+
 ## Purpose
 
 Understand how document size and composition affect Markify's performance, without sending document content or identifying documents. Useful questions include:
@@ -15,7 +17,7 @@ Start with sampled document presentation and its parse/style work. Add renderer 
 
 ## Existing foundation
 
-[MarkifyApp.init](Markify/MarkifyApp.swift) starts Sentry when a DSN exists and the app is not running as a test host. It sets `sendDefaultPii = false`, `tracesSampleRate = 0.1`, and separately configures profiling with `sessionSampleRate = 0.1` and a trace lifecycle. These are separate sampling settings; the trace rate does not mean ten percent of users or document opens are currently measured.
+[Telemetry.startIfEnabled](Markify/Telemetry.swift), called at app startup, starts Sentry when reporting is enabled, a DSN exists and the app is not running as a test host. It sets `sendDefaultPii = false`, `tracesSampleRate = 0.1`, and separately configures profiling with `sessionSampleRate = 0.1` and a trace lifecycle. These are separate sampling settings; the trace rate does not mean ten percent of users or document opens are currently measured.
 
 The resolved Sentry Cocoa dependency is currently **9.30.0** in [Package.resolved](Markify.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved). There are no custom editor spans yet. Reuse this dependency and verify the tracing and query APIs against the installed SDK when implementing.
 
@@ -28,7 +30,7 @@ Partial refresh already exists, but parsing, styling and drawing have different 
 - **Parsing:** character edits increment `MarkdownTextView.textVersion`; `model` reuses the cached model until the version or MDX mode changes. The next model request after a text edit rebuilds the full model. Styling-only changes do not invalidate it. There is no incremental parser today.
 - **Typing:** `Coordinator.textDidChange` calls `style(..., incremental: true)`. `changedStyledParagraph(key:)` takes a paragraph-only styling path for a single eligible edit with unchanged style settings and suitable old/new paragraph models. Structural constructs and multiple edits fall back to full-document styling in a scratch text storage. `applyChangedAttributes` then writes only changed attribute runs to the live storage, preserving unaffected layout where possible. This reduces styling/layout work, but does not remove the full parse after a text edit.
 - **Drawing:** TextKit 2 lays out the viewport as needed; layout fragments draw their own decorations. This avoids eagerly drawing every paragraph in the document.
-- **Asset completion:** Mermaid, local images and HTML schedule a coalesced restyle on the next run-loop turn. The `restyle` callback installed by `makeNSView` calls ordinary full styling, so these updates are not currently block-only styling updates. Display math completion sets `needsDisplay` instead. Cached assets avoid repeated expensive renderer work during subsequent passes.
+- **Asset completion:** Mermaid, local images and HTML schedule a coalesced restyle on the next run-loop turn. In 2.5.0, the `restyle` callback installed by `makeNSView` requests incremental styling. Without an eligible character edit, this still styles and compares attributes across the full document; it is not a block-only update. Display math completion sets `needsDisplay` instead. Cached assets avoid repeated expensive renderer work during subsequent passes.
 
 | Cache | Key and lifetime |
 | --- | --- |

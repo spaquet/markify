@@ -1,0 +1,2249 @@
+{
+  "version": "2.5.0",
+  "build": "335",
+  "revision": "6210d2f30a918dd8884d9e021f28ef7522280a80",
+  "date": "2026-10-10",
+  "environment": {
+    "machine": "MacBook Pro (MacBookPro18,2)",
+    "chip": "Apple M1 Max",
+    "memory_gb": 32,
+    "macos": "27.2 (26B5101f)",
+    "xcode": "27.1 (27A9269)",
+    "architecture": "arm64"
+  },
+  "methodology": {
+    "clock": "ContinuousClock",
+    "unit": "milliseconds",
+    "samples": "3 per operation, except initial table overlays and cold HTML (1), file polling (10)",
+    "build": "CODE_SIGNING_ALLOWED=NO; Release ENABLE_TESTABILITY=YES; default DerivedData",
+    "historical_baselines": [
+      "performance-audit-results.json",
+      "performance-audit-results-after.json"
+    ],
+    "historical_environment": "Not recorded; historical comparisons are descriptive, not a controlled release A/B."
+  },
+  "runs": [
+    {
+      "configuration": "Debug",
+      "code_coverage": true,
+      "workload_group": "original-first",
+      "measurements": [
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            10.676041,
+            9.198333,
+            9.079834
+          ],
+          "operation": "parse",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            27.30675,
+            11.672583,
+            11.546917
+          ],
+          "operation": "full-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            12.024167,
+            10.330917,
+            9.971792
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            2.077208,
+            2.098375,
+            2.027917
+          ],
+          "operation": "word-count",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.476125,
+            0.482792,
+            0.485958
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.00075,
+            0.000125,
+            0.000125
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            88.372875,
+            88.815625,
+            87.599375
+          ],
+          "operation": "parse",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            212.121583,
+            120.30575,
+            118.594708
+          ],
+          "operation": "full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            96.41475,
+            95.1925,
+            96.904125
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            20.940042,
+            20.617166,
+            20.217042
+          ],
+          "operation": "word-count",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            4.644083,
+            4.643958,
+            4.695083
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.002042,
+            0.000125,
+            0.000125
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            438.31225,
+            436.563708,
+            444.847
+          ],
+          "operation": "parse",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1562.316417,
+            1093.71675,
+            1108.727125
+          ],
+          "operation": "full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            473.838458,
+            475.024417,
+            477.043375
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            103.041,
+            102.786708,
+            104.069625
+          ],
+          "operation": "word-count",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            24.148708,
+            24.141458,
+            24.078625
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.001791,
+            0.000125,
+            0.000125
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 3700,
+          "milliseconds": [
+            4.900459,
+            4.938541,
+            5.050667
+          ],
+          "operation": "parse",
+          "workload": "long-line-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            3.478792,
+            3.279167,
+            3.208625
+          ],
+          "operation": "parse",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            3.871584,
+            3.756666,
+            3.788291
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 18500,
+          "milliseconds": [
+            23.733125,
+            23.225625,
+            23.136792
+          ],
+          "operation": "parse",
+          "workload": "long-line-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            15.316917,
+            15.246542,
+            15.1085
+          ],
+          "operation": "parse",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            18.64525,
+            18.088917,
+            18.324958
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 55500,
+          "milliseconds": [
+            70.737417,
+            71.174208,
+            70.985458
+          ],
+          "operation": "parse",
+          "workload": "long-line-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            47.068958,
+            47.260209,
+            46.142958
+          ],
+          "operation": "parse",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            54.531084,
+            52.10875,
+            54.347583
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            67.457458
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            64.096833,
+            4.68575,
+            4.48825
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            13.495541,
+            12.33875,
+            12.392959
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            72.487334
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            92.003416,
+            10.016333,
+            9.561083
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            39.710125,
+            38.176833,
+            36.484125
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            88.385042
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            146.208791,
+            17.451917,
+            16.912042
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            85.121416,
+            83.915,
+            84.811166
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 1200000,
+          "milliseconds": [
+            0.257,
+            0.004875,
+            0.003167,
+            0.002958,
+            0.002917,
+            0.003,
+            0.006,
+            0.003,
+            0.002791,
+            0.003
+          ],
+          "operation": "refresh",
+          "workload": "poll-unchanged-local"
+        }
+      ],
+      "note": "Exploratory suite run also selected HTML in the same test host; later editor and HTML runs used separate invocations."
+    },
+    {
+      "configuration": "Debug",
+      "code_coverage": true,
+      "workload_group": "original-repeat",
+      "measurements": [
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            10.615125,
+            8.992041,
+            8.997
+          ],
+          "operation": "parse",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            24.409833,
+            10.983375,
+            10.886709
+          ],
+          "operation": "full-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            11.514708,
+            10.04575,
+            10.010833
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            2.069959,
+            2.037291,
+            2.064
+          ],
+          "operation": "word-count",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.477667,
+            0.470208,
+            0.47
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.000792,
+            0.000125,
+            8.3e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            86.987334,
+            85.488333,
+            85.903375
+          ],
+          "operation": "parse",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            209.763959,
+            118.891458,
+            118.334584
+          ],
+          "operation": "full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            99.906792,
+            98.906584,
+            99.706084
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            21.443167,
+            21.6415,
+            21.646
+          ],
+          "operation": "word-count",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            5.005708,
+            4.692625,
+            4.877291
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.002208,
+            0.000125,
+            0.000125
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            455.99675,
+            452.664459,
+            443.910666
+          ],
+          "operation": "parse",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1581.828209,
+            1135.686375,
+            1159.034875
+          ],
+          "operation": "full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            483.165167,
+            485.708416,
+            484.240625
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            107.021125,
+            106.17975,
+            106.398167
+          ],
+          "operation": "word-count",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            24.407333,
+            24.355,
+            24.4055
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.002167,
+            0.000125,
+            8.3e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 3700,
+          "milliseconds": [
+            4.896375,
+            4.707291,
+            4.699875
+          ],
+          "operation": "parse",
+          "workload": "long-line-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            3.218709,
+            3.11525,
+            3.091708
+          ],
+          "operation": "parse",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            3.668959,
+            3.603417,
+            3.60625
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 18500,
+          "milliseconds": [
+            23.30825,
+            24.411917,
+            24.890709
+          ],
+          "operation": "parse",
+          "workload": "long-line-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            16.017166,
+            15.856208,
+            15.698375
+          ],
+          "operation": "parse",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            18.302542,
+            18.005916,
+            17.258708
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 55500,
+          "milliseconds": [
+            70.3215,
+            71.478458,
+            70.044667
+          ],
+          "operation": "parse",
+          "workload": "long-line-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            47.59675,
+            47.821958,
+            47.330041
+          ],
+          "operation": "parse",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            54.810166,
+            52.461625,
+            53.001208
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            67.1165
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            62.62925,
+            4.776875,
+            4.515791
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            13.471583,
+            12.056917,
+            12.427
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            84.489208
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            96.666083,
+            9.74675,
+            9.3665
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            38.86175,
+            37.633458,
+            38.869208
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            89.628958
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            153.317792,
+            18.865542,
+            18.174583
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            86.262375,
+            87.083,
+            88.781125
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 1200000,
+          "milliseconds": [
+            0.249584,
+            0.00725,
+            0.003167,
+            0.003,
+            0.003,
+            0.003042,
+            0.002875,
+            0.002875,
+            0.002834,
+            0.003042
+          ],
+          "operation": "refresh",
+          "workload": "poll-unchanged-local"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "code_coverage": true,
+      "workload_group": "extended",
+      "measurements": [
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            313.894917,
+            302.747667,
+            305.27775
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            195.404334,
+            191.96875,
+            189.446625
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            400.868583,
+            397.505167,
+            397.280583
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            133.22,
+            132.49175,
+            132.601542
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.005333,
+            0.003542,
+            0.00325
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            362.452667,
+            347.081375,
+            348.541542
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            212.653292,
+            212.177667,
+            211.360083
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            463.553041,
+            441.223833,
+            441.413292
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            149.311167,
+            148.939167,
+            151.041541
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            0.138541,
+            0.004042,
+            0.003583
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            2069.896292,
+            2072.348084,
+            2048.008208
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1594.975417,
+            1574.738167,
+            1577.2759999999998
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            2506.044,
+            2508.644083,
+            2511.393708
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1286.374084,
+            1272.249875,
+            1257.31825
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.012833,
+            0.010625,
+            0.01075
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            2555.1219579999997,
+            2443.140417,
+            2418.83075
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            1640.924458,
+            1621.761125,
+            1624.1347500000002
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            3037.01275,
+            2926.397459,
+            2913.123791
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            1329.123875,
+            1331.118125,
+            1324.437042
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            0.618166,
+            0.011,
+            0.011
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-5000"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "code_coverage": false,
+      "workload_group": "original",
+      "measurements": [
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            11.347125,
+            9.262875,
+            9.513917
+          ],
+          "operation": "parse",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            26.05625,
+            11.677125,
+            11.304958
+          ],
+          "operation": "full-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            12.07,
+            10.683292,
+            10.886875
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            2.113459,
+            2.060584,
+            2.156
+          ],
+          "operation": "word-count",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.485958,
+            0.475958,
+            0.492125
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.001625,
+            0.000166,
+            0.000125
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            89.674708,
+            86.462083,
+            85.783916
+          ],
+          "operation": "parse",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            209.885875,
+            116.614416,
+            116.733333
+          ],
+          "operation": "full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            95.669791,
+            94.392416,
+            94.336125
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            19.909166,
+            19.930708,
+            19.898208
+          ],
+          "operation": "word-count",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            4.618916,
+            4.624041,
+            4.61625
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.000791,
+            0.000125,
+            0.000125
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            436.683417,
+            432.220375,
+            432.493292
+          ],
+          "operation": "parse",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1551.6012919999998,
+            1082.831625,
+            1123.475958
+          ],
+          "operation": "full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            488.538709,
+            486.973042,
+            485.646958
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            100.98525,
+            100.421417,
+            99.680834
+          ],
+          "operation": "word-count",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            23.259958,
+            23.434542,
+            23.307208
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.003292,
+            0.000125,
+            8.4e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 3700,
+          "milliseconds": [
+            4.941042,
+            4.735584,
+            4.732542
+          ],
+          "operation": "parse",
+          "workload": "long-line-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            3.205334,
+            3.109709,
+            3.086625
+          ],
+          "operation": "parse",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            3.667625,
+            3.588,
+            3.641333
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 18500,
+          "milliseconds": [
+            23.443417,
+            23.272583,
+            23.306
+          ],
+          "operation": "parse",
+          "workload": "long-line-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            15.081583,
+            14.981959,
+            14.952291
+          ],
+          "operation": "parse",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            17.6795,
+            17.590708,
+            17.472583
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 55500,
+          "milliseconds": [
+            69.778833,
+            69.534666,
+            69.559
+          ],
+          "operation": "parse",
+          "workload": "long-line-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            44.798833,
+            44.6465,
+            44.652375
+          ],
+          "operation": "parse",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            51.720417,
+            51.313125,
+            50.835458
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            64.396292
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            62.08975,
+            4.639,
+            4.448958
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            13.007458,
+            12.070292,
+            11.96225
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            70.621458
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            90.066584,
+            8.832417,
+            8.66125
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            37.43275,
+            36.234875,
+            35.991
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            87.452958
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            146.739583,
+            17.530375,
+            16.96675
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            84.601875,
+            83.87625,
+            83.701542
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 1200000,
+          "milliseconds": [
+            0.277584,
+            0.005208,
+            0.003208,
+            0.003166,
+            0.002875,
+            0.002958,
+            0.002916,
+            0.002833,
+            0.002834,
+            0.00325
+          ],
+          "operation": "refresh",
+          "workload": "poll-unchanged-local"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "code_coverage": false,
+      "workload_group": "extended",
+      "measurements": [
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            305.152083,
+            298.425125,
+            298.910042
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            193.906542,
+            190.080708,
+            189.493
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            395.922458,
+            392.096166,
+            391.43125
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            132.267416,
+            131.50275,
+            131.41325
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.005083,
+            0.003542,
+            0.003334
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            365.948375,
+            341.845917,
+            341.015959
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            213.108208,
+            210.387209,
+            212.55075
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            458.337083,
+            442.799708,
+            440.289209
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            150.497875,
+            150.152333,
+            149.85575
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            0.12975,
+            0.003875,
+            0.003417
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            2057.665417,
+            2061.435542,
+            2032.015125
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1654.2935830000001,
+            1631.842291,
+            1588.83075
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            2548.76275,
+            2586.264584,
+            2526.221708
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1337.087208,
+            1307.642375,
+            1262.609334
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.013042,
+            0.010333,
+            0.010625
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            2554.738458,
+            2425.171583,
+            2398.577959
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            1628.174666,
+            1628.038584,
+            1631.824583
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            3073.55875,
+            2906.464833,
+            2885.705125
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            1329.773709,
+            1330.611416,
+            1322.069375
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            0.617125,
+            0.011041,
+            0.011083
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-5000"
+        }
+      ]
+    },
+    {
+      "configuration": "Release",
+      "code_coverage": false,
+      "workload_group": "original",
+      "measurements": [
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            5.318125,
+            3.54125,
+            3.544
+          ],
+          "operation": "parse",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            17.35475,
+            9.694625,
+            9.706958
+          ],
+          "operation": "full-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            6.12725,
+            4.749042,
+            4.661917
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            1.70725,
+            1.684083,
+            1.684333
+          ],
+          "operation": "word-count",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.45175,
+            0.444917,
+            0.444792
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.000416,
+            4.1e-05,
+            8.3e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            34.421166,
+            33.82275,
+            33.695833
+          ],
+          "operation": "parse",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            144.241416,
+            105.88175,
+            104.421333
+          ],
+          "operation": "full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            41.829,
+            40.39725,
+            40.928291
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            16.829083,
+            16.599959,
+            16.587833
+          ],
+          "operation": "word-count",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            4.451834,
+            4.442375,
+            4.438667
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.000375,
+            8.4e-05,
+            8.4e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            167.29225,
+            169.372334,
+            173.275167
+          ],
+          "operation": "parse",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1238.3735,
+            1048.187667,
+            1029.068917
+          ],
+          "operation": "full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            204.676417,
+            202.64675,
+            209.636542
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            85.699125,
+            85.288541,
+            85.601125
+          ],
+          "operation": "word-count",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            22.385667,
+            22.457292,
+            22.4665
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.001208,
+            4.1e-05,
+            4.2e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 3700,
+          "milliseconds": [
+            2.024375,
+            1.933833,
+            1.93825
+          ],
+          "operation": "parse",
+          "workload": "long-line-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            1.425125,
+            1.351208,
+            1.345791
+          ],
+          "operation": "parse",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            3.4165,
+            3.312125,
+            3.262417
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 18500,
+          "milliseconds": [
+            9.280917,
+            9.269584,
+            9.255625
+          ],
+          "operation": "parse",
+          "workload": "long-line-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            6.473917,
+            6.344,
+            6.374
+          ],
+          "operation": "parse",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            15.151708,
+            15.802208,
+            15.703958
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 55500,
+          "milliseconds": [
+            27.819291,
+            27.136875,
+            27.479416
+          ],
+          "operation": "parse",
+          "workload": "long-line-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            18.98225,
+            18.726709,
+            19.066584
+          ],
+          "operation": "parse",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            47.856542,
+            46.402791,
+            46.751791
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            69.307291
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            68.833625,
+            2.953375,
+            2.799541
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            8.394792,
+            7.357541,
+            9.675542
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            72.652167
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            99.462667,
+            4.215416,
+            3.700459
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            19.353208,
+            18.875084,
+            18.434708
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            88.992084
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            139.228375,
+            5.61675,
+            4.661084
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            41.771,
+            40.247208,
+            40.215334
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 1200000,
+          "milliseconds": [
+            0.244708,
+            0.005333,
+            0.004042,
+            0.003541,
+            0.003583,
+            0.003125,
+            0.003083,
+            0.003083,
+            0.002541,
+            0.003167
+          ],
+          "operation": "refresh",
+          "workload": "poll-unchanged-local"
+        }
+      ]
+    },
+    {
+      "configuration": "Release",
+      "code_coverage": false,
+      "workload_group": "extended",
+      "measurements": [
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            301.638958,
+            296.90825,
+            302.925375
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            187.289958,
+            177.124291,
+            174.487417
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            334.433625,
+            327.720042,
+            320.721875
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            118.029625,
+            115.953833,
+            116.675208
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.004833,
+            0.003208,
+            0.003125
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            339.039667,
+            316.9245,
+            319.428291
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            183.153958,
+            187.451917,
+            183.214958
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            376.9305,
+            372.655333,
+            366.716209
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            129.178709,
+            127.551375,
+            127.259625
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            0.132375,
+            0.003667,
+            0.00325
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1920.4850000000001,
+            1920.7336249999998,
+            1889.312917
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1454.1735410000001,
+            1450.7939999999999,
+            1462.105542
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            2249.636208,
+            2148.712791,
+            2132.423
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            1182.894666,
+            1191.485042,
+            1177.983375
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.011458,
+            0.010542,
+            0.010292
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            2454.84425,
+            2307.3014590000002,
+            2290.919917
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            1483.633167,
+            1515.638917,
+            1525.678083
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            2727.4536669999998,
+            2515.647083,
+            2657.02675
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            1266.975833,
+            1313.135958,
+            1247.133083
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            0.642042,
+            0.011584,
+            0.011417
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-5000"
+        }
+      ]
+    },
+    {
+      "configuration": "Debug",
+      "code_coverage": true,
+      "workload_group": "html-isolated",
+      "measurements": [
+        {
+          "bytes": 106,
+          "milliseconds": [
+            79.598708
+          ],
+          "operation": "style-submission",
+          "workload": "html-cold"
+        },
+        {
+          "bytes": 106,
+          "milliseconds": [
+            234.76825
+          ],
+          "operation": "style-to-import-completion",
+          "workload": "html-cold"
+        }
+      ]
+    }
+  ],
+  "verification": [
+    {
+      "name": "app-regressions",
+      "result": "Passed",
+      "passed": 196,
+      "failed": 0,
+      "skipped": 3,
+      "runtime_warnings": []
+    },
+    {
+      "name": "selected-ui",
+      "result": "Passed",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "runtime_warnings": [
+        {
+          "issueType": "Runtime Warning",
+          "message": "[Internal] Thread running at User-interactive quality-of-service class waiting on a lower QoS thread running at Default quality-of-service class. Investigate ways to avoid priority inversions"
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "[Internal] Thread running at User-interactive quality-of-service class waiting on a lower QoS thread running at Utility quality-of-service class. Investigate ways to avoid priority inversions"
+        }
+      ]
+    },
+    {
+      "name": "release-editor-diagnostics",
+      "result": "Passed",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "runtime_warnings": []
+    },
+    {
+      "name": "debug-no-coverage-editor-diagnostics",
+      "result": "Passed",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "runtime_warnings": []
+    },
+    {
+      "name": "debug-isolated-html",
+      "result": "Passed",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "runtime_warnings": []
+    },
+    {
+      "name": "MarkifyMarkdown",
+      "result": "Passed",
+      "passed": 47,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "OKFKit",
+      "result": "Passed",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0
+    }
+  ]
+}

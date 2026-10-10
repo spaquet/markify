@@ -50,8 +50,8 @@ import Testing
     static let source = "# Title\n\n<!-- toc -->\n- [Title](#title)\n  - [Part](#part)\n<!-- /toc -->\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n"
         + String(repeating: "Paragraph with **bold** and [a link](https://example.com).\n\n", count: 40) + "## Part\n\nLast line.\n"
 
-    static func native(_ text: String) -> NativeEditor {
-        NativeEditor(text: .constant(text), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+    static func native(_ text: String, markdownLens: Bool = false, findQuery: String = "") -> NativeEditor {
+        NativeEditor(text: .constant(text), fileURL: nil, columnWidth: 640, markdownLens: markdownLens, findQuery: findQuery, matchCase: false,
                      selectedRange: .constant(NSRange(location: 0, length: 0)),
                      textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
     }
