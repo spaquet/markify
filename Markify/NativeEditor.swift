@@ -2561,10 +2561,12 @@ class MarkdownTextView: NSTextView {
         } else {
             top = textRect(NSRange(location: span.content.location, length: 1)).minY - 12 * theme.scale
         }
-        return NSRect(x: columnWidth - 8 - size, y: top + labelHeight / 2 - size / 2, width: size, height: size)
+        // Clear of the vertical scroller, which overlays the column's right edge; its legacy width also covers an expanded overlay one.
+        let scroller = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
+        return NSRect(x: columnWidth - scroller - 6 - size, y: top + labelHeight / 2 - size / 2, width: size, height: size)
     }
 
-    /// The code block whose copy button was just clicked, drawn in the accent color until the flash ends.
+    /// The code block whose copy button was just clicked, drawn in green until the flash ends.
     private var copiedCodeBlock: Int?
     private var copiedCodeTask: Task<Void, Never>?
     /// The code block whose copy button is under the pointer.
@@ -2578,10 +2580,11 @@ class MarkdownTextView: NSTextView {
         let copied = copiedCodeBlock == span.range.location
         let hovered = hoveredCodeBlock == span.range.location
         if copied || hovered {
-            (copied ? theme.accent.withAlphaComponent(0.16) : NSColor.labelColor.withAlphaComponent(0.1)).setFill()
+            (copied ? NSColor.systemGreen.withAlphaComponent(0.2) : NSColor.labelColor.withAlphaComponent(0.1)).setFill()
             NSBezierPath(roundedRect: button, xRadius: 5 * theme.scale, yRadius: 5 * theme.scale).fill()
         }
-        let color: NSColor = copied ? theme.accent : hovered ? .labelColor : .secondaryLabelColor
+        // systemGreen adapts to light and dark appearances.
+        let color: NSColor = copied ? .systemGreen : hovered ? .labelColor : .secondaryLabelColor
         if let symbol = NSImage(systemSymbolName: copied ? "checkmark" : "doc.on.doc", accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: 13 * theme.scale, weight: .semibold).applying(.init(paletteColors: [color]))) {
             symbol.draw(in: NSRect(x: button.midX - symbol.size.width / 2, y: button.midY - symbol.size.height / 2,
@@ -2614,14 +2617,27 @@ class MarkdownTextView: NSTextView {
         onCodeCopied?(copied)
         guard copied else { return }
         copiedCodeTask?.cancel()
+        let previous = copiedCodeBlock
         copiedCodeBlock = span.range.location
-        needsDisplay = true
+        redrawCodeHeader(previous)
+        redrawCodeHeader(span.range.location)
         copiedCodeTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1.2))
+            // As long as the copy notice stays up.
+            try? await Task.sleep(for: .seconds(1.8))
             guard !Task.isCancelled, let self else { return }
             self.copiedCodeBlock = nil
-            self.needsDisplay = true
+            self.redrawCodeHeader(span.range.location)
         }
+    }
+
+    /// Repaints the copy button of the code block starting at `location`; the fragment views beneath it repaint with it.
+    private func redrawCodeHeader(_ location: Int?) {
+        guard let location, let span = model.spans.first(where: { span in
+                  guard case .codeBlock = span.kind else { return false }
+                  return span.range.location == location
+              }),
+              let button = codeCopyButtonRect(span)?.insetBy(dx: -4, dy: -4) else { return }
+        setNeedsDisplay(button)
     }
 
     /// Callout titles, code headers, the footnotes rule and the frontmatter chip row.
@@ -2729,17 +2745,19 @@ class MarkdownTextView: NSTextView {
         let code = codeBlock(withCopyButtonAt: point)?.range.location
         if code != nil { NSCursor.pointingHand.set() }
         if code != hoveredCodeBlock {
+            let previous = hoveredCodeBlock
             hoveredCodeBlock = code
-            needsDisplay = true
+            redrawCodeHeader(previous)
+            redrawCodeHeader(code)
         }
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
         closeImagePreview()
-        if hoveredCodeBlock != nil {
+        if let hovered = hoveredCodeBlock {
             hoveredCodeBlock = nil
-            needsDisplay = true
+            redrawCodeHeader(hovered)
         }
     }
 

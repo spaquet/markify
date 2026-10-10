@@ -270,7 +270,8 @@ import Testing
             let button = try #require(editor.codeCopyButtonRect(block), "\(code) has a copy button")
             let line = editor.textRect(NSRange(location: ns.range(of: code).location, length: 1))
             #expect(button.maxY <= line.minY + 4, "\(code): the button sits in the box's top padding")
-            #expect(button.maxX <= editor.columnWidth, "\(code): the button stays inside the column")
+            // The vertical scroller overlays the column's right edge; the button stays clear of it.
+            #expect(button.maxX <= editor.columnWidth - NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy), "\(code): the button clears the scroller")
             // Drawn where clicks land: the first line's fragment inks the button rect, moved into its coordinates.
             let fragment = Self.fragment(editor, at: ns.range(of: code).location)!
             let (rep, point) = Self.render(fragment)
@@ -307,6 +308,52 @@ import Testing
         #expect(pasteboard.string(forType: .string) == "let a = 1\nlet b = 2")
         #expect(reported == true)
         #expect(CopyNotice(kind: .code, failed: false).message == "Copied code")
+    }
+
+    @Test(arguments: [NSAppearance.Name.aqua, .darkAqua]) func copiedButtonTurnsGreenAndRepaintsItsFragment(appearance: NSAppearance.Name) throws {
+        let source = "Intro\n\n```swift\nlet a = 1\n```\n"
+        let (window, editor) = Self.makeEditor(source)
+        window.appearance = NSAppearance(named: appearance)
+        // Off screen, so nothing shows; TextKit makes fragment views once the window displays.
+        window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        window.orderBack(nil)
+        defer { window.orderOut(nil) }
+        editor.textLayoutManager?.textViewportLayoutController.layoutViewport()
+        window.displayIfNeeded()
+        let block = try #require(editor.model.spans.first { if case .codeBlock = $0.kind { true } else { false } })
+        let button = try #require(editor.codeCopyButtonRect(block))
+        // TextKit 2 draws fragments in subviews; the flash must reach the one under the button, not only the text view.
+        func descendants(_ view: NSView) -> [NSView] { view.subviews + view.subviews.flatMap(descendants) }
+        let covering = descendants(editor).filter { $0.bounds.intersects($0.convert(button, from: editor)) }
+        let fragmentViews = covering.filter { "\(type(of: $0))".contains("ViewportElement") }
+        #expect(!fragmentViews.isEmpty, "fragments draw in their own views")
+        window.displayIfNeeded()
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("markify-test-\(UUID().uuidString)"))
+        defer { pasteboard.releaseGlobally() }
+        editor.copyCode(block, to: pasteboard)
+        #expect(fragmentViews.contains { $0.needsDisplay || $0.layer?.needsDisplay() == true }, "the fragment's view under the button repaints")
+        // The flashed button draws in the appearance's green.
+        let location = (source as NSString).range(of: "let a").location
+        let fragment = Self.fragment(editor, at: location)!
+        var green = NSColor.systemGreen
+        (NSAppearance(named: appearance) ?? .currentDrawing()).performAsCurrentDrawingAppearance {
+            green = NSColor.systemGreen.usingColorSpace(.deviceRGB)!
+        }
+        var greenPixels = 0
+        NSAppearance(named: appearance)!.performAsCurrentDrawingAppearance {
+            let (rep, point) = Self.render(fragment)
+            let offset = CGPoint(x: fragment.layoutFragmentFrame.minX - point.x + editor.textContainerOrigin.x,
+                                 y: fragment.layoutFragmentFrame.minY - point.y + editor.textContainerOrigin.y)
+            let drawn = button.offsetBy(dx: -offset.x, dy: -offset.y)
+            for x in Int(drawn.minX)..<Int(drawn.maxX) {
+                for y in Int(drawn.minY)..<Int(drawn.maxY) {
+                    guard let pixel = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                    if abs(pixel.redComponent - green.redComponent) + abs(pixel.greenComponent - green.greenComponent)
+                        + abs(pixel.blueComponent - green.blueComponent) < 0.25 { greenPixels += 1 }
+                }
+            }
+        }
+        #expect(greenPixels > 10, "the checkmark is green")
     }
 
     @Test func selectedCodeStaysVisibleThroughTheFill() {
