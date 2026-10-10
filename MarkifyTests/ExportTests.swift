@@ -41,7 +41,20 @@ import Testing
         #expect(page.contains("<title>Frontmatter Title</title>"))
         #expect(page.contains("<span class=\"chip\">a</span><span class=\"chip\">b</span>"))
         #expect(page.contains("<main>") && page.contains("prefers-color-scheme:dark") && page.contains("@media print"))
-        #expect(!page.contains("Content-Security-Policy"))
+        #expect(page.contains("<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data: https: http:; font-src data:\">"))
+    }
+
+    @Test func htmlExportBlocksScriptsAndHandlers() async {
+        let page = await DocumentExport.page(context("# Hi\n\n<script>window.injected = true</script>\n\n<img src=\"x.png\" onerror=\"window.injected = true\">\n"), for: .html)
+        #expect(page.contains("<script>window.injected = true</script>"))
+        #expect(page.contains("default-src 'none'"))
+    }
+
+    @Test func htmlExportAllowsRemoteImagesOnlyWhenSettingsDo() async {
+        let remote = DocumentExport.render(context("![Logo](https://example.com/logo.png)"), diagrams: [:], remoteImages: true)
+        let local = DocumentExport.render(context("![Logo](https://example.com/logo.png)"), diagrams: [:], remoteImages: false)
+        #expect(remote.contains("img-src data: https: http:"))
+        #expect(local.contains("img-src data:;"))
     }
 
     @Test func mathIsVectorSVGInTextColor() {
@@ -74,7 +87,7 @@ import Testing
         // Shared CI runners render alongside the other tests; allow headroom for CPU contention.
         #expect(elapsed < .seconds(30), "Math-heavy export took \(elapsed)")
         let detached = await Task.detached {
-            DocumentExport.render(export, diagrams: [:], pdf: false, remoteImages: true)
+            DocumentExport.render(export, diagrams: [:], remoteImages: true)
         }.value
         #expect(detached == page)
     }
