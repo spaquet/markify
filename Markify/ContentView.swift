@@ -193,7 +193,7 @@ struct ContentView: View {
                     } else {
                         scheduleHumanStamp()
                     }
-                })
+                }, onCodeCopied: { copied in showCopyNotice(.code, copied: copied) })
                 .frame(width: columnWidth)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 56 + tabBarInset)
@@ -1448,15 +1448,15 @@ struct ContentView: View {
         if medium {
             let mdx = MarkdownTextView.isMDX(fileURL)
             // The notice waits for the pasteboard write, after the HTML renders off the main thread.
-            Task { showCopyNotice(medium: true, copied: await DocumentExport.copyForMedium(source, mdx: mdx)) }
+            Task { showCopyNotice(.medium, copied: await DocumentExport.copyForMedium(source, mdx: mdx)) }
         } else {
-            showCopyNotice(medium: false, copied: DocumentExport.copyAll(source))
+            showCopyNotice(.markdown, copied: DocumentExport.copyAll(source))
         }
     }
 
     /// Shows the copy result briefly over the page and announces it to VoiceOver; editing carries on underneath.
-    private func showCopyNotice(medium: Bool, copied: Bool) {
-        let notice = CopyNotice(medium: medium, failed: !copied)
+    private func showCopyNotice(_ kind: CopyNotice.Kind, copied: Bool) {
+        let notice = CopyNotice(kind: kind, failed: !copied)
         copyNoticeTask?.cancel()
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { copyNotice = notice }
         AccessibilityNotification.Announcement(notice.message).post()
@@ -1961,17 +1961,21 @@ struct AIReview {
     var comparing = false
 }
 
-/// The result of Copy All as Markdown or Copy All for Medium, shown briefly over the page.
+/// The result of Copy All as Markdown, Copy All for Medium or a code block's copy button, shown briefly over the page.
 struct CopyNotice: Equatable {
-    let medium: Bool
+    enum Kind { case markdown, medium, code }
+
+    let kind: Kind
     let failed: Bool
 
     var message: String {
-        switch (medium, failed) {
-        case (false, false): String(localized: "Copied as Markdown")
-        case (true, false): String(localized: "Copied for Medium")
-        case (false, true): String(localized: "Couldn’t copy as Markdown")
-        case (true, true): String(localized: "Couldn’t copy for Medium")
+        switch (kind, failed) {
+        case (.markdown, false): String(localized: "Copied as Markdown")
+        case (.medium, false): String(localized: "Copied for Medium")
+        case (.code, false): String(localized: "Copied code")
+        case (.markdown, true): String(localized: "Couldn’t copy as Markdown")
+        case (.medium, true): String(localized: "Couldn’t copy for Medium")
+        case (.code, true): String(localized: "Couldn’t copy code")
         }
     }
 }

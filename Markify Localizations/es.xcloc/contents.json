@@ -1,0 +1,12 @@
+{
+  "developmentRegion" : "en",
+  "project" : "Markify.xcodeproj",
+  "targetLocale" : "es",
+  "toolInfo" : {
+    "toolBuildNumber" : "27A9269",
+    "toolID" : "com.apple.dt.xcode",
+    "toolName" : "Xcode",
+    "toolVersion" : "27.1"
+  },
+  "version" : "1.0"
+}

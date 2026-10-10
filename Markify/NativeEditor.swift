@@ -72,6 +72,8 @@ struct NativeEditor: NSViewRepresentable {
     var onCommandKey: () -> Void = {}
     var onWritingToolsBegin: () -> Void = {}
     var onWritingToolsEnd: (Bool) -> Void = { _ in }
+    /// A code block's copy button was clicked; false when the pasteboard write failed.
+    var onCodeCopied: (Bool) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -116,6 +118,7 @@ struct NativeEditor: NSViewRepresentable {
             coordinator?.handleSlashKey(key, slash) ?? false
         }
         editor.onCommandKey = { [weak coordinator = context.coordinator] in coordinator?.parent.onCommandKey() }
+        editor.onCodeCopied = { [weak coordinator = context.coordinator] copied in coordinator?.parent.onCodeCopied(copied) }
         editor.string = text
         editor.writingToolsBehavior = .complete
         editor.allowedWritingToolsResultOptions = [.plainText, .richText, .table, .list]
@@ -1210,6 +1213,8 @@ class MarkdownTextView: NSTextView {
         if let commandMonitor { NSEvent.removeMonitor(commandMonitor) }
         commandMonitor = nil
         onCommandKey = nil
+        onCodeCopied = nil
+        copiedCodeTask?.cancel()
         releaseLocalImages(keeping: [])
         imageValidation?.cancel()
         htmlLoads = [:]
@@ -2212,11 +2217,11 @@ class MarkdownTextView: NSTextView {
             case .image(_, false), .mathBlock, .inlineMath, .frontmatter: anchors.append((span.range.location, span))
             case .htmlBlock, .inlineHTML: anchors.append((span.range.location, span))
             case .callout(_, let token): anchors.append((token.location, span))
-            case .codeBlock(let language?, true):
-                anchors.append((span.range.location, span))
+            case .codeBlock(let language, let fenced):
+                // Every block with code draws its copy button from its first line; Mermaid also draws from the fences.
+                if language != nil, fenced { anchors.append((span.range.location, span)) }
                 if span.content.length > 0 { anchors.append((span.content.location, span)) }
-                anchors.append((max(span.range.location, NSMaxRange(span.range) - 1), span))
-                _ = language
+                if language != nil, fenced { anchors.append((max(span.range.location, NSMaxRange(span.range) - 1), span)) }
             case .footnoteDefinition where firstFootnote:
                 firstFootnote = false
                 anchors.append((span.range.location, span))
@@ -2422,13 +2427,9 @@ class MarkdownTextView: NSTextView {
         for span in drawingSpans {
             guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid",
                   let state = MermaidRenderer.shared.cached(source.substring(with: span.content), dark: dark) else { continue }
-            let label = NSAttributedString(string: "mermaid", attributes: [.font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
             if case .failed(let message) = state {
                 // The message belongs to the closing fence's line, the label to the first line of code.
-                if span.content.length > 0, NSLocationInRange(span.content.location, anchorRange) {
-                    let body = rect(NSRange(location: span.content.location, length: 1))
-                    label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: body.minY - 12 * theme.scale))
-                }
+                if span.content.length > 0, NSLocationInRange(span.content.location, anchorRange) { drawCodeHeader(span, language: language) }
                 guard NSLocationInRange(max(span.range.location, NSMaxRange(span.range) - 1), anchorRange) else { continue }
                 let last = rect(NSRange(location: max(span.range.location, NSMaxRange(span.range) - 1), length: 1))
                 let body = span.content.length > 0 ? rect(NSRange(location: span.content.location, length: 1)).minX : last.minX
@@ -2445,7 +2446,7 @@ class MarkdownTextView: NSTextView {
             guard container.intersects(dirtyRect) else { continue }
             NSColor.codeFill.setFill()
             NSBezierPath(roundedRect: container, xRadius: 12, yRadius: 12).fill()
-            label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: container.minY + 8))
+            drawCodeHeader(span, language: language)
             switch state {
             case .rendered(let image):
                 let size = Self.fitted(image.size, width: columnWidth)
@@ -2541,7 +2542,113 @@ class MarkdownTextView: NSTextView {
         return ImageRenderer.png(for: list, options: options)
     }
 
-    /// Callout titles, code language labels, the footnotes rule and the frontmatter chip row.
+    /// A fenced Mermaid block's settled render, failure included; nil for other code or a diagram not yet requested.
+    private func mermaidState(_ span: MarkdownModel.Span) -> MermaidRenderer.State? {
+        guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { return nil }
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        return MermaidRenderer.shared.cached((string as NSString).substring(with: span.content), dark: dark)
+    }
+
+    /// The copy button in a code block's top padding, at the box's right edge; drawing and clicks share it.
+    /// A rendered diagram's button sits in its container, which replaces the code.
+    func codeCopyButtonRect(_ span: MarkdownModel.Span) -> NSRect? {
+        guard rendered, case .codeBlock = span.kind, span.content.length > 0 else { return nil }
+        let size = 18 * theme.scale
+        let labelHeight = ("Ag" as NSString).size(withAttributes: [.font: theme.ui(11, weight: .medium)]).height
+        let top: CGFloat
+        if let state = mermaidState(span), !{ if case .failed = state { true } else { false } }() {
+            top = textRect(NSRange(location: span.range.location, length: 1)).minY + 8
+        } else {
+            top = textRect(NSRange(location: span.content.location, length: 1)).minY - 12 * theme.scale
+        }
+        // Clear of the vertical scroller, which overlays the column's right edge; its legacy width also covers an expanded overlay one.
+        let scroller = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
+        return NSRect(x: columnWidth - scroller - 6 - size, y: top + labelHeight / 2 - size / 2, width: size, height: size)
+    }
+
+    /// The code block whose copy button was just clicked, drawn in green until the flash ends.
+    private var copiedCodeBlock: Int?
+    private var copiedCodeTask: Task<Void, Never>?
+    /// The code block whose copy button is under the pointer.
+    private var hoveredCodeBlock: Int?
+    /// Reports a code block copy, so the window shows the same notice as Copy All.
+    var onCodeCopied: ((Bool) -> Void)?
+
+    /// The copy button and, right-aligned against it, the language label; a long name truncates rather than reach the code.
+    private func drawCodeHeader(_ span: MarkdownModel.Span, language: String?) {
+        guard let button = codeCopyButtonRect(span) else { return }
+        let copied = copiedCodeBlock == span.range.location
+        let hovered = hoveredCodeBlock == span.range.location
+        if copied || hovered {
+            (copied ? NSColor.systemGreen.withAlphaComponent(0.2) : NSColor.labelColor.withAlphaComponent(0.1)).setFill()
+            NSBezierPath(roundedRect: button, xRadius: 5 * theme.scale, yRadius: 5 * theme.scale).fill()
+        }
+        // systemGreen adapts to light and dark appearances.
+        let color: NSColor = copied ? .systemGreen : hovered ? .labelColor : .secondaryLabelColor
+        if let symbol = NSImage(systemSymbolName: copied ? "checkmark" : "doc.on.doc", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 13 * theme.scale, weight: .semibold).applying(.init(paletteColors: [color]))) {
+            symbol.draw(in: NSRect(x: button.midX - symbol.size.width / 2, y: button.midY - symbol.size.height / 2,
+                                   width: symbol.size.width, height: symbol.size.height))
+        }
+        guard let language, !language.isEmpty else { return }
+        let label = NSAttributedString(string: language, attributes: [
+            .font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
+        let width = min(ceil(label.size().width), max(40, columnWidth / 2))
+        let height = label.size().height
+        label.draw(with: NSRect(x: button.minX - 6 * theme.scale - width, y: button.midY - height / 2, width: width, height: height),
+                   options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
+    }
+
+    /// The code block with a copy button at `point`, in the Rendered lens.
+    private func codeBlock(withCopyButtonAt point: NSPoint) -> MarkdownModel.Span? {
+        guard rendered else { return nil }
+        // The button sits in the padding above the first line of code, so only the blocks at or just below the point qualify.
+        let near = [point, NSPoint(x: point.x, y: point.y + 20 * theme.scale)].map { characterIndexForInsertion(at: $0) }
+        return model.spans.first { span in
+            guard case .codeBlock = span.kind, near.contains(where: { NSLocationInRange($0, span.range) }) else { return false }
+            return codeCopyButtonRect(span)?.insetBy(dx: -4, dy: -4).contains(point) == true
+        }
+    }
+
+    /// Copies a code block's content as written, without its fences, and flashes its button.
+    func copyCode(_ span: MarkdownModel.Span, to pasteboard: NSPasteboard = .general) {
+        let code = (string as NSString).substring(with: span.content)
+        let copied = DocumentExport.copyAll(code, to: pasteboard)
+        onCodeCopied?(copied)
+        guard copied else { return }
+        copiedCodeTask?.cancel()
+        let previous = copiedCodeBlock
+        copiedCodeBlock = span.range.location
+        redrawCodeHeader(previous)
+        redrawCodeHeader(span.range.location)
+        copiedCodeTask = Task { [weak self] in
+            // As long as the copy notice stays up.
+            try? await Task.sleep(for: .seconds(1.8))
+            guard !Task.isCancelled, let self else { return }
+            self.copiedCodeBlock = nil
+            self.redrawCodeHeader(span.range.location)
+        }
+    }
+
+    /// Repaints the copy button of the code block starting at `location`. TextKit 2 draws each layout fragment in its own
+    /// layer-backed subview, which marking this view alone leaves as it was.
+    private func redrawCodeHeader(_ location: Int?) {
+        guard let location, let span = model.spans.first(where: { span in
+                  guard case .codeBlock = span.kind else { return false }
+                  return span.range.location == location
+              }),
+              let button = codeCopyButtonRect(span)?.insetBy(dx: -4, dy: -4) else { return }
+        func mark(_ view: NSView) {
+            let rect = view.convert(button, from: self)
+            guard view.bounds.intersects(rect) else { return }
+            view.setNeedsDisplay(rect)
+            view.subviews.forEach(mark)
+        }
+        setNeedsDisplay(button)
+        subviews.forEach(mark)
+    }
+
+    /// Callout titles, code headers, the footnotes rule and the frontmatter chip row.
     private func drawDecorations(in dirtyRect: NSRect) {
         guard window != nil else { return }
         func rect(_ range: NSRange) -> NSRect { textRect(range) }
@@ -2569,14 +2676,11 @@ class MarkdownTextView: NSTextView {
                 let text = NSAttributedString(string: alt.isEmpty ? (path as NSString).lastPathComponent : alt,
                                               attributes: [.font: theme.ui(11.5, weight: .medium), .foregroundColor: NSColor.secondaryLabelColor])
                 if !alt.isEmpty { text.draw(at: NSPoint(x: rect(span.content).minX, y: frame.midY - text.size().height / 2)) }
-            case .codeBlock(let language?, true) where span.content.length > 0 && language.lowercased() != "mermaid":
-                guard NSLocationInRange(span.content.location, anchorRange) else { continue }
-                let line = rect(NSRange(location: span.content.location, length: 1))
-                guard line.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
-                let label = NSAttributedString(string: language, attributes: [
-                    .font: theme.ui(11, weight: .medium), .foregroundColor: NSColor.tertiaryLabelColor])
-                // In the box's top padding, right-aligned.
-                label.draw(at: NSPoint(x: columnWidth - label.size().width - 12, y: line.minY - 12 * theme.scale))
+            case .codeBlock(let language, _) where span.content.length > 0 && mermaidState(span) == nil:
+                // Mermaid blocks with a render (or its message) draw their header in `drawDiagrams`.
+                guard NSLocationInRange(span.content.location, anchorRange),
+                      let button = codeCopyButtonRect(span), button.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
+                drawCodeHeader(span, language: language)
             default:
                 break
             }
@@ -2646,11 +2750,23 @@ class MarkdownTextView: NSTextView {
             return inlineImageChipFrame(span)?.contains(point) == true
         }
         if let hit { showImagePreview(for: hit) } else { closeImagePreview() }
+        let code = codeBlock(withCopyButtonAt: point)?.range.location
+        if code != nil { NSCursor.pointingHand.set() }
+        if code != hoveredCodeBlock {
+            let previous = hoveredCodeBlock
+            hoveredCodeBlock = code
+            redrawCodeHeader(previous)
+            redrawCodeHeader(code)
+        }
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
         closeImagePreview()
+        if let hovered = hoveredCodeBlock {
+            hoveredCodeBlock = nil
+            redrawCodeHeader(hovered)
+        }
     }
 
     /// Hovering an inline image chip previews the image in a popover.
@@ -2805,6 +2921,7 @@ class MarkdownTextView: NSTextView {
             if let link = hit.chip.link { return Knowledge.follow(link, title: nil, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) }
             return editFrontmatter(frontmatter, at: hit.frame)
         }
+        if let code = codeBlock(withCopyButtonAt: point) { return copyCode(code) }
         if event.modifierFlags.contains(.command), followFootnote(at: characterIndexForInsertion(at: point)) { return }
         // In the Rendered lens, a click on a Contents card entry goes to its heading, as in a book's contents.
         if rendered, !event.modifierFlags.contains(.shift), let link = tableOfContentsLink(at: point) {
