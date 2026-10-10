@@ -1,0 +1,2111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 http://docs.oasis-open.org/xliff/v1.2/os/xliff-core-1.2-strict.xsd">
+  <file original="Markify/InfoPlist.xcstrings" source-language="en" target-language="fr" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="27.1" build-num="27A9269"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleDisplayName" xml:space="preserve">
+        <source>Markify</source>
+        <target state="translated">Markify</target>
+        <note>Bundle display name</note>
+      </trans-unit>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>Markify</source>
+        <target state="translated">Markify</target>
+        <note>Bundle name</note>
+      </trans-unit>
+      <trans-unit id="MDX Document" xml:space="preserve">
+        <source>MDX Document</source>
+        <target state="translated">Document MDX</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markdown Document" xml:space="preserve">
+        <source>Markdown Document</source>
+        <target state="translated">Document Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="NSHumanReadableCopyright" xml:space="preserve">
+        <source>Stephane Paquet</source>
+        <target state="translated">Stephane Paquet</target>
+        <note>Copyright (human-readable)</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="Markify/Localizable.xcstrings" source-language="en" target-language="fr" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="27.1" build-num="27A9269"/>
+    </header>
+    <body>
+      <trans-unit id="" xml:space="preserve">
+        <source/>
+        <target state="translated"></target>
+        <note/>
+      </trans-unit>
+      <trans-unit id=" ▍" xml:space="preserve">
+        <source> ▍</source>
+        <target state="translated"> ▍</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="#%@" xml:space="preserve">
+        <source>#%@</source>
+        <target state="translated">#%@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@  %lld" xml:space="preserve">
+        <source>%1$@  %2$lld</source>
+        <target state="translated">%1$@  %2$lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@ Library" xml:space="preserve">
+        <source>%@ Library</source>
+        <target state="translated">%@ Bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@ Markdown" xml:space="preserve">
+        <source>%@ Markdown</source>
+        <target state="translated">%@ Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@ accent" xml:space="preserve">
+        <source>%@ accent</source>
+        <target state="translated">Couleur d’accentuation %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@ theme" xml:space="preserve">
+        <source>%@ theme</source>
+        <target state="translated">Thème %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@ · %@" xml:space="preserve">
+        <source>%1$@ · %2$@</source>
+        <target state="translated">%1$@ · %2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@ · %lld concepts%@" xml:space="preserve">
+        <source>%1$@ · %2$lld concepts%3$@</source>
+        <target state="translated">%1$@ · %2$lld concepts%3$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@ · checked %@" xml:space="preserve">
+        <source>%1$@ · checked %2$@</source>
+        <target state="translated">%1$@ · vérifié %2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@%@" xml:space="preserve">
+        <source>%1$@%2$@</source>
+        <target state="translated">%1$@%2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@, %lld" xml:space="preserve">
+        <source>%1$@, %2$lld</source>
+        <target state="translated">%1$@, %2$lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%@: %@" xml:space="preserve">
+        <source>%1$@: %2$@</source>
+        <target state="translated">%1$@ : %2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld" xml:space="preserve">
+        <source>%lld</source>
+        <target state="translated">%lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld %@ in bundle" xml:space="preserve">
+        <source>%1$lld %2$@ in bundle</source>
+        <target state="translated">%1$lld %2$@ dans le paquet</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld found" xml:space="preserve">
+        <source>%lld found</source>
+        <target state="translated">Résultats : %lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld notes · ranked by Spotlight" xml:space="preserve">
+        <source>%lld notes · ranked by Spotlight</source>
+        <target state="translated">%lld notes · classées par Spotlight</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld of %lld" xml:space="preserve">
+        <source>%1$lld of %2$lld</source>
+        <target state="translated">%1$lld sur %2$lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld percent" xml:space="preserve">
+        <source>%lld percent</source>
+        <target state="translated">%lld pour cent</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld pt" xml:space="preserve">
+        <source>%lld pt</source>
+        <target state="translated">%lld pt</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="%lld%%" xml:space="preserve">
+        <source>%lld%%</source>
+        <target state="translated">%lld %%</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id=".%@" xml:space="preserve">
+        <source>.%@</source>
+        <target state="translated">.%@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="./assets" xml:space="preserve">
+        <source>./assets</source>
+        <target state="translated">./assets</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="./images" xml:space="preserve">
+        <source>./images</source>
+        <target state="translated">./images</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="A Markdown file on the web, or a GitHub / GitLab repository." xml:space="preserve">
+        <source>A Markdown file on the web, or a GitHub / GitLab repository.</source>
+        <target state="translated">Un fichier Markdown sur le Web ou un dépôt GitHub / GitLab.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Aa" xml:space="preserve">
+        <source>Aa</source>
+        <target state="translated">Aa</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="About Markify" xml:space="preserve">
+        <source>About Markify</source>
+        <target state="translated">À propos de Markify</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Accent color" xml:space="preserve">
+        <source>Accent color</source>
+        <target state="translated">Couleur d’accentuation</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Accept" xml:space="preserve">
+        <source>Accept</source>
+        <target state="translated">Accepter</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Access" xml:space="preserve">
+        <source>Access</source>
+        <target state="translated">Accès</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Access to this folder expired. Its notes stay hidden until you grant access again." xml:space="preserve">
+        <source>Access to this folder expired. Its notes stay hidden until you grant access again.</source>
+        <target state="translated">L’autorisation d’accès à ce dossier a expiré. Ses notes restent masquées jusqu’à ce que vous autorisiez à nouveau l’accès.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Acknowledgements &amp; License" xml:space="preserve">
+        <source>Acknowledgements &amp; License</source>
+        <target state="translated">Remerciements et licence</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Actual Size" xml:space="preserve">
+        <source>Actual Size</source>
+        <target state="translated">Taille réelle</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Add Folder" xml:space="preserve">
+        <source>Add Folder</source>
+        <target state="translated">Ajouter un dossier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Add Folder…" xml:space="preserve">
+        <source>Add Folder…</source>
+        <target state="translated">Ajouter un dossier…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Add Log Entry…" xml:space="preserve">
+        <source>Add Log Entry…</source>
+        <target state="translated">Ajouter une entrée au journal…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="All" xml:space="preserve">
+        <source>All</source>
+        <target state="translated">Tout</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="All Folders" xml:space="preserve">
+        <source>All Folders</source>
+        <target state="translated">Tous les dossiers</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="All Tags" xml:space="preserve">
+        <source>All Tags</source>
+        <target state="translated">Tous les tags</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="All Types" xml:space="preserve">
+        <source>All Types</source>
+        <target state="translated">Tous les types</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="All levels" xml:space="preserve">
+        <source>All levels</source>
+        <target state="translated">Tous les niveaux</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Allows Spotlight to find related meaning when available on this Mac. Related results open at the top of the note." xml:space="preserve">
+        <source>Allows Spotlight to find related meaning when available on this Mac. Related results open at the top of the note.</source>
+        <target state="translated">Permet à Spotlight de trouver des résultats de sens proche si cette fonction est disponible sur ce Mac. Ces résultats s’ouvrent au début de la note.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Also available as /write in the insert menu." xml:space="preserve">
+        <source>Also available as /write in the insert menu.</source>
+        <target state="translated">Également disponible avec /write dans le menu d’insertion.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Another app opens .md files." xml:space="preserve">
+        <source>Another app opens .md files.</source>
+        <target state="translated">Une autre app ouvre les fichiers .md.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Appearance" xml:space="preserve">
+        <source>Appearance</source>
+        <target state="translated">Apparence</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Apple Intelligence" xml:space="preserve">
+        <source>Apple Intelligence</source>
+        <target state="translated">Apple Intelligence</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Apple Intelligence is unavailable." xml:space="preserve">
+        <source>Apple Intelligence is unavailable.</source>
+        <target state="translated">Apple Intelligence n’est pas disponible.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Ask each time" xml:space="preserve">
+        <source>Ask each time</source>
+        <target state="translated">Demander à chaque fois</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Block style, %@" xml:space="preserve">
+        <source>Block style, %@</source>
+        <target state="translated">Style de bloc, %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Bold" xml:space="preserve">
+        <source>Bold</source>
+        <target state="translated">Gras</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Browse" xml:space="preserve">
+        <source>Browse</source>
+        <target state="translated">Parcourir</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Browse All Versions…" xml:space="preserve">
+        <source>Browse All Versions…</source>
+        <target state="translated">Parcourir toutes les versions…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Browse Repository" xml:space="preserve">
+        <source>Browse Repository</source>
+        <target state="translated">Parcourir le dépôt</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Browser sign-in is not configured for this build. Use a personal access token below." xml:space="preserve">
+        <source>Browser sign-in is not configured for this build. Use a personal access token below.</source>
+        <target state="translated">La connexion par navigateur n’est pas configurée dans cette version. Utilisez un jeton d’accès personnel ci-dessous.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Mermaid, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format." xml:space="preserve">
+        <source>Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Mermaid, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format.</source>
+        <target state="translated">Conçu avec swift-markdown, cmark-gfm, SwaTex, les polices KaTeX, Mermaid, Sparkle, Sentry et Yams. Prend en charge le format Open Knowledge Format de Google Cloud.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Cancel" xml:space="preserve">
+        <source>Cancel</source>
+        <target state="translated">Annuler</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Changed %@%@" xml:space="preserve">
+        <source>Changed %1$@%2$@</source>
+        <target state="translated">Modifié %1$@%2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Check Links" xml:space="preserve">
+        <source>Check Links</source>
+        <target state="translated">Vérifier les liens</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Check for Updates…" xml:space="preserve">
+        <source>Check for Updates…</source>
+        <target state="translated">Rechercher des mises à jour…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Check for updates automatically" xml:space="preserve">
+        <source>Check for updates automatically</source>
+        <target state="translated">Rechercher automatiquement les mises à jour</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Checking %lld %@…" xml:space="preserve">
+        <source>Checking %1$lld %2$@…</source>
+        <target state="translated">Vérification de %1$lld %2$@…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Checking…" xml:space="preserve">
+        <source>Checking…</source>
+        <target state="translated">Vérification…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Choose…" xml:space="preserve">
+        <source>Choose…</source>
+        <target state="translated">Choisir…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Clear" xml:space="preserve">
+        <source>Clear</source>
+        <target state="translated">Effacer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Clear URL" xml:space="preserve">
+        <source>Clear URL</source>
+        <target state="translated">Effacer l’URL</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Clear filter" xml:space="preserve">
+        <source>Clear filter</source>
+        <target state="translated">Effacer le filtre</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Clear search" xml:space="preserve">
+        <source>Clear search</source>
+        <target state="translated">Effacer la recherche</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Code theme" xml:space="preserve">
+        <source>Code theme</source>
+        <target state="translated">Thème du code</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Coding Agents" xml:space="preserve">
+        <source>Coding Agents</source>
+        <target state="translated">Agents de programmation</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Collapse %@" xml:space="preserve">
+        <source>Collapse %@</source>
+        <target state="translated">Réduire %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Comma-separated names, applied inside every indexed folder. Hidden files and symlinks are skipped." xml:space="preserve">
+        <source>Comma-separated names, applied inside every indexed folder. Hidden files and symlinks are skipped.</source>
+        <target state="translated">Noms séparés par des virgules, pris en compte dans chaque dossier indexé. Les fichiers masqués et les liens symboliques sont ignorés.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Compare" xml:space="preserve">
+        <source>Compare</source>
+        <target state="translated">Comparer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Computation" xml:space="preserve">
+        <source>Computation</source>
+        <target state="translated">Calcul</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Contents and Links" xml:space="preserve">
+        <source>Contents and Links</source>
+        <target state="translated">Sommaire et liens</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Continue Writing" xml:space="preserve">
+        <source>Continue Writing</source>
+        <target state="translated">Poursuivre la rédaction</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Controls" xml:space="preserve">
+        <source>Controls</source>
+        <target state="translated">Commandes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Copied as Markdown" xml:space="preserve">
+        <source>Copied as Markdown</source>
+        <target state="translated">Copié au format Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Copied for Medium" xml:space="preserve">
+        <source>Copied for Medium</source>
+        <target state="translated">Copié pour Medium</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Copy All as Markdown" xml:space="preserve">
+        <source>Copy All as Markdown</source>
+        <target state="translated">Tout copier au format Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Copy All for Medium" xml:space="preserve">
+        <source>Copy All for Medium</source>
+        <target state="translated">Tout copier pour Medium</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Copy Source URL" xml:space="preserve">
+        <source>Copy Source URL</source>
+        <target state="translated">Copier l’URL source</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Couldn’t copy as Markdown" xml:space="preserve">
+        <source>Couldn’t copy as Markdown</source>
+        <target state="translated">Impossible de copier au format Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Couldn’t copy for Medium" xml:space="preserve">
+        <source>Couldn’t copy for Medium</source>
+        <target state="translated">Impossible de copier pour Medium</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Crash stack traces and the error that caused them" xml:space="preserve">
+        <source>Crash stack traces and the error that caused them</source>
+        <target state="translated">Les traces de pile des plantages et les erreurs à leur origine</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Create a token…" xml:space="preserve">
+        <source>Create a token…</source>
+        <target state="translated">Créer un jeton…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Credentials are sent only to %@. Saved only when you choose." xml:space="preserve">
+        <source>Credentials are sent only to %@. Saved only when you choose.</source>
+        <target state="translated">Les identifiants sont envoyés uniquement à %@. Ils ne sont enregistrés que si vous le choisissez.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Current Library" xml:space="preserve">
+        <source>Current Library</source>
+        <target state="translated">Bibliothèque actuelle</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Current OKF bundle" xml:space="preserve">
+        <source>Current OKF bundle</source>
+        <target state="translated">Paquet OKF actuel</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Default Markdown app" xml:space="preserve">
+        <source>Default Markdown app</source>
+        <target state="translated">App Markdown par défaut</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Default scope" xml:space="preserve">
+        <source>Default scope</source>
+        <target state="translated">Périmètre par défaut</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Default tone" xml:space="preserve">
+        <source>Default tone</source>
+        <target state="translated">Ton par défaut</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Delete Index" xml:space="preserve">
+        <source>Delete Index</source>
+        <target state="translated">Supprimer l’index</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Delete Search Index?" xml:space="preserve">
+        <source>Delete Search Index?</source>
+        <target state="translated">Supprimer l’index de recherche ?</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Delete Search Index…" xml:space="preserve">
+        <source>Delete Search Index…</source>
+        <target state="translated">Supprimer l’index de recherche…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Deprecated" xml:space="preserve">
+        <source>Deprecated</source>
+        <target state="translated">Obsolète</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Describe a change to the document…" xml:space="preserve">
+        <source>Describe a change to the document…</source>
+        <target state="translated">Décrivez une modification à apporter au document…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Describe what to write, or press ↩ to continue" xml:space="preserve">
+        <source>Describe what to write, or press ↩ to continue</source>
+        <target state="translated">Décrivez le texte à rédiger ou appuyez sur ↩ pour continuer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Describe your change" xml:space="preserve">
+        <source>Describe your change</source>
+        <target state="translated">Décrivez votre modification</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Destination" xml:space="preserve">
+        <source>Destination</source>
+        <target state="translated">Destination</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Discard" xml:space="preserve">
+        <source>Discard</source>
+        <target state="translated">Abandonner</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Discard Rewrite" xml:space="preserve">
+        <source>Discard Rewrite</source>
+        <target state="translated">Abandonner la réécriture</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Documents" xml:space="preserve">
+        <source>Documents</source>
+        <target state="translated">Documents</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Double-click a shortcut to change it" xml:space="preserve">
+        <source>Double-click a shortcut to change it</source>
+        <target state="translated">Double-cliquez sur un raccourci pour le modifier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Down to heading level %lld" xml:space="preserve">
+        <source>Down to heading level %lld</source>
+        <target state="translated">Jusqu’aux titres de niveau %lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Download and install updates automatically" xml:space="preserve">
+        <source>Download and install updates automatically</source>
+        <target state="translated">Télécharger et installer automatiquement les mises à jour</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Draft" xml:space="preserve">
+        <source>Draft</source>
+        <target state="translated">Brouillon</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Editing a concept's text sets its generated field to you, at most once a day." xml:space="preserve">
+        <source>Editing a concept's text sets its generated field to you, at most once a day.</source>
+        <target state="translated">Lorsque vous modifiez le texte d’un concept, son champ generated vous désigne comme auteur, au plus une fois par jour.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Editor" xml:space="preserve">
+        <source>Editor</source>
+        <target state="translated">Éditeur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Expand %@" xml:space="preserve">
+        <source>Expand %@</source>
+        <target state="translated">Développer %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Export" xml:space="preserve">
+        <source>Export</source>
+        <target state="translated">Exporter</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Fade toolbar while typing" xml:space="preserve">
+        <source>Fade toolbar while typing</source>
+        <target state="translated">Estomper la barre d’outils pendant la saisie</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Features" xml:space="preserve">
+        <source>Features</source>
+        <target state="translated">Fonctionnalités</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="File URL" xml:space="preserve">
+        <source>File URL</source>
+        <target state="translated">URL du fichier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="File types" xml:space="preserve">
+        <source>File types</source>
+        <target state="translated">Types de fichiers</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Filter headings" xml:space="preserve">
+        <source>Filter headings</source>
+        <target state="translated">Filtrer les titres</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Find" xml:space="preserve">
+        <source>Find</source>
+        <target state="translated">Rechercher</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Find Next" xml:space="preserve">
+        <source>Find Next</source>
+        <target state="translated">Rechercher le suivant</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Find Next %@" xml:space="preserve">
+        <source>Find Next %@</source>
+        <target state="translated">Rechercher le suivant %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Find Previous" xml:space="preserve">
+        <source>Find Previous</source>
+        <target state="translated">Rechercher le précédent</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Find Previous %@" xml:space="preserve">
+        <source>Find Previous %@</source>
+        <target state="translated">Rechercher le précédent %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Fix Link" xml:space="preserve">
+        <source>Fix Link</source>
+        <target state="translated">Corriger le lien</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Fix Link…" xml:space="preserve">
+        <source>Fix Link…</source>
+        <target state="translated">Corriger le lien…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Folders" xml:space="preserve">
+        <source>Folders</source>
+        <target state="translated">Dossiers</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Frequently Asked Questions" xml:space="preserve">
+        <source>Frequently Asked Questions</source>
+        <target state="translated">Questions fréquentes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="GH" xml:space="preserve">
+        <source>GH</source>
+        <target state="translated">GH</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="GL" xml:space="preserve">
+        <source>GL</source>
+        <target state="translated">GL</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="General" xml:space="preserve">
+        <source>General</source>
+        <target state="translated">Général</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Generate at caret with %@" xml:space="preserve">
+        <source>Generate at caret with %@</source>
+        <target state="translated">Générer au point d’insertion avec %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Generated %@%@" xml:space="preserve">
+        <source>Generated %1$@%2$@</source>
+        <target state="translated">Généré %1$@%2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Generation" xml:space="preserve">
+        <source>Generation</source>
+        <target state="translated">Génération</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Glass style" xml:space="preserve">
+        <source>Glass style</source>
+        <target state="translated">Style du verre</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Goes to the link in the document." xml:space="preserve">
+        <source>Goes to the link in the document.</source>
+        <target state="translated">Accède au lien dans le document.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Grant Access…" xml:space="preserve">
+        <source>Grant Access…</source>
+        <target state="translated">Autoriser l’accès…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="HTML" xml:space="preserve">
+        <source>HTML</source>
+        <target state="translated">HTML</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Heading depth" xml:space="preserve">
+        <source>Heading depth</source>
+        <target state="translated">Profondeur des titres</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Heading level %lld, line %lld. Moves the caret to this heading." xml:space="preserve">
+        <source>Heading level %1$lld, line %2$lld. Moves the caret to this heading.</source>
+        <target state="translated">Titre de niveau %1$lld, ligne %2$lld. Place le point d’insertion sur ce titre.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Help make Markify steadier" xml:space="preserve">
+        <source>Help make Markify steadier</source>
+        <target state="translated">Aidez à améliorer la stabilité de Markify</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Helps generated text match your voice." xml:space="preserve">
+        <source>Helps generated text match your voice.</source>
+        <target state="translated">Aide le texte généré à adopter votre style.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Helps us find and fix crashes and slow spots. Takes effect at once." xml:space="preserve">
+        <source>Helps us find and fix crashes and slow spots. Takes effect at once.</source>
+        <target state="translated">Nous aide à repérer et à corriger les plantages et les lenteurs. Prend effet immédiatement.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Hide Contents and Links" xml:space="preserve">
+        <source>Hide Contents and Links</source>
+        <target state="translated">Masquer le sommaire et les liens</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Hide Library" xml:space="preserve">
+        <source>Hide Library</source>
+        <target state="translated">Masquer la bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Hide Summary" xml:space="preserve">
+        <source>Hide Summary</source>
+        <target state="translated">Masquer le résumé</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="IP addresses. Markify doesn't collect them" xml:space="preserve">
+        <source>IP addresses. Markify doesn't collect them</source>
+        <target state="translated">Les adresses IP. Markify ne les collecte pas</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="In %@" xml:space="preserve">
+        <source>In %@</source>
+        <target state="translated">Dans %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Include related results" xml:space="preserve">
+        <source>Include related results</source>
+        <target state="translated">Inclure les résultats de sens proche</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Index OKF frontmatter" xml:space="preserve">
+        <source>Index OKF frontmatter</source>
+        <target state="translated">Indexer les métadonnées d’en-tête OKF</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Index headings as context" xml:space="preserve">
+        <source>Index headings as context</source>
+        <target state="translated">Indexer les titres pour le contexte</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Indexed folders" xml:space="preserve">
+        <source>Indexed folders</source>
+        <target state="translated">Dossiers indexés</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Indexing · %lld notes read. More results may appear." xml:space="preserve">
+        <source>Indexing · %lld notes read. More results may appear.</source>
+        <target state="translated">Indexation · %lld notes lues. D’autres résultats peuvent apparaître.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Inline Code" xml:space="preserve">
+        <source>Inline Code</source>
+        <target state="translated">Code en ligne</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Insert" xml:space="preserve">
+        <source>Insert</source>
+        <target state="translated">Insérer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Insert Table of Contents" xml:space="preserve">
+        <source>Insert Table of Contents</source>
+        <target state="translated">Insérer une table des matières</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Insert block" xml:space="preserve">
+        <source>Insert block</source>
+        <target state="translated">Insérer un bloc</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Inserts a table of contents at the caret, with the headings shown at this depth; it then updates itself" xml:space="preserve">
+        <source>Inserts a table of contents at the caret, with the headings shown at this depth; it then updates itself</source>
+        <target state="translated">Insère une table des matières au point d’insertion, avec les titres affichés à cette profondeur ; elle se met ensuite à jour automatiquement</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Intelligence" xml:space="preserve">
+        <source>Intelligence</source>
+        <target state="translated">Intelligence</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Italic" xml:space="preserve">
+        <source>Italic</source>
+        <target state="translated">Italique</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Join the Program" xml:space="preserve">
+        <source>Join the Program</source>
+        <target state="translated">Participer au programme</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Join the reports program. Crashes and slow spots reach us, so we can fix them faster, and nothing personal comes with them." xml:space="preserve">
+        <source>Join the reports program. Crashes and slow spots reach us, so we can fix them faster, and nothing personal comes with them.</source>
+        <target state="translated">Participez au programme d’envoi de rapports. Nous recevons les informations sur les plantages et les lenteurs pour les corriger plus vite, sans aucune donnée personnelle.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Keep" xml:space="preserve">
+        <source>Keep</source>
+        <target state="translated">Conserver</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Keep %@" xml:space="preserve">
+        <source>Keep %@</source>
+        <target state="translated">Conserver %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Keeping AI text in a concept sets its generated field to Apple Intelligence." xml:space="preserve">
+        <source>Keeping AI text in a concept sets its generated field to Apple Intelligence.</source>
+        <target state="translated">Lorsque vous conservez du texte généré par l’IA dans un concept, son champ generated indique Apple Intelligence.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Keyboard Shortcuts" xml:space="preserve">
+        <source>Keyboard Shortcuts</source>
+        <target state="translated">Raccourcis clavier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Knowledge" xml:space="preserve">
+        <source>Knowledge</source>
+        <target state="translated">Connaissances</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="L%lld" xml:space="preserve">
+        <source>L%lld</source>
+        <target state="translated">L%lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="L%lld%@" xml:space="preserve">
+        <source>L%1$lld%2$@</source>
+        <target state="translated">L%1$lld%2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Last used" xml:space="preserve">
+        <source>Last used</source>
+        <target state="translated">Dernier utilisé</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Lenses" xml:space="preserve">
+        <source>Lenses</source>
+        <target state="translated">Modes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Library" xml:space="preserve">
+        <source>Library</source>
+        <target state="translated">Bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Library Subfolders" xml:space="preserve">
+        <source>Library Subfolders</source>
+        <target state="translated">Sous-dossiers de la bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Library location" xml:space="preserve">
+        <source>Library location</source>
+        <target state="translated">Emplacement de la bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Limit line width" xml:space="preserve">
+        <source>Limit line width</source>
+        <target state="translated">Limiter la largeur des lignes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Line width" xml:space="preserve">
+        <source>Line width</source>
+        <target state="translated">Largeur des lignes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Link" xml:space="preserve">
+        <source>Link</source>
+        <target state="translated">Lien</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Link %@" xml:space="preserve">
+        <source>Link %@</source>
+        <target state="translated">Lien %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Linked from" xml:space="preserve">
+        <source>Linked from</source>
+        <target state="translated">Liens entrants</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Links in this document appear here." xml:space="preserve">
+        <source>Links in this document appear here.</source>
+        <target state="translated">Les liens de ce document s’affichent ici.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Load remote images" xml:space="preserve">
+        <source>Load remote images</source>
+        <target state="translated">Charger les images distantes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Loading files…" xml:space="preserve">
+        <source>Loading files…</source>
+        <target state="translated">Chargement des fichiers…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="MD" xml:space="preserve">
+        <source>MD</source>
+        <target state="translated">MD</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Make Concept…" xml:space="preserve">
+        <source>Make Concept…</source>
+        <target state="translated">Créer un concept…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Make Default" xml:space="preserve">
+        <source>Make Default</source>
+        <target state="translated">Définir par défaut</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Mark Verified" xml:space="preserve">
+        <source>Mark Verified</source>
+        <target state="translated">Marquer comme vérifié</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markdown" xml:space="preserve">
+        <source>Markdown</source>
+        <target state="translated">Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markdown Guide" xml:space="preserve">
+        <source>Markdown Guide</source>
+        <target state="translated">Guide Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markdown font" xml:space="preserve">
+        <source>Markdown font</source>
+        <target state="translated">Police du mode Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markdown text, titles, file names or paths" xml:space="preserve">
+        <source>Markdown text, titles, file names or paths</source>
+        <target state="translated">Le texte Markdown, les titres, les noms de fichiers ou les chemins d’accès</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markify" xml:space="preserve">
+        <source>Markify</source>
+        <target state="translated">Markify</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markify %@" xml:space="preserve">
+        <source>Markify %@</source>
+        <target state="translated">Markify %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markify Website" xml:space="preserve">
+        <source>Markify Website</source>
+        <target state="translated">Site web de Markify</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markify opens .md files." xml:space="preserve">
+        <source>Markify opens .md files.</source>
+        <target state="translated">Markify ouvre les fichiers .md.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markify shows the contract; it doesn't run computations." xml:space="preserve">
+        <source>Markify shows the contract; it doesn't run computations.</source>
+        <target state="translated">Markify affiche le contrat ; il n’exécute pas les calculs.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Markify's version and macOS version, and your Mac's model" xml:space="preserve">
+        <source>Markify's version and macOS version, and your Mac's model</source>
+        <target state="translated">Les versions de Markify et de macOS, ainsi que le modèle de votre Mac</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Match appearance" xml:space="preserve">
+        <source>Match appearance</source>
+        <target state="translated">Selon l’apparence</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Match case" xml:space="preserve">
+        <source>Match case</source>
+        <target state="translated">Respecter la casse</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Menlo" xml:space="preserve">
+        <source>Menlo</source>
+        <target state="translated">Menlo</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Merge External Changes" xml:space="preserve">
+        <source>Merge External Changes</source>
+        <target state="translated">Fusionner les modifications externes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Monochrome" xml:space="preserve">
+        <source>Monochrome</source>
+        <target state="translated">Monochrome</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="More" xml:space="preserve">
+        <source>More</source>
+        <target state="translated">Plus</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Move To…" xml:space="preserve">
+        <source>Move To…</source>
+        <target state="translated">Déplacer vers…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Narrow" xml:space="preserve">
+        <source>Narrow</source>
+        <target state="translated">Étroite</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="New Document" xml:space="preserve">
+        <source>New Document</source>
+        <target state="translated">Nouveau document</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="New York" xml:space="preserve">
+        <source>New York</source>
+        <target state="translated">New York</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="New document" xml:space="preserve">
+        <source>New document</source>
+        <target state="translated">Nouveau document</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="New document in %@" xml:space="preserve">
+        <source>New document in %@</source>
+        <target state="translated">Nouveau document dans %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="New documents are saved to" xml:space="preserve">
+        <source>New documents are saved to</source>
+        <target state="translated">Enregistrer les nouveaux documents dans</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="New from Clipboard" xml:space="preserve">
+        <source>New from Clipboard</source>
+        <target state="translated">Nouveau document à partir du presse-papiers</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Next match" xml:space="preserve">
+        <source>Next match</source>
+        <target state="translated">Occurrence suivante</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No Markdown files found." xml:space="preserve">
+        <source>No Markdown files found.</source>
+        <target state="translated">Aucun fichier Markdown trouvé.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No broken links" xml:space="preserve">
+        <source>No broken links</source>
+        <target state="translated">Aucun lien rompu</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No headings" xml:space="preserve">
+        <source>No headings</source>
+        <target state="translated">Aucun titre</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No headings at this depth" xml:space="preserve">
+        <source>No headings at this depth</source>
+        <target state="translated">Aucun titre à cette profondeur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No headings match “%@”" xml:space="preserve">
+        <source>No headings match “%@”</source>
+        <target state="translated">Aucun titre ne correspond à « %@ »</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No links of this kind" xml:space="preserve">
+        <source>No links of this kind</source>
+        <target state="translated">Aucun lien de ce type</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No matches yet. Results will update when indexing finishes." xml:space="preserve">
+        <source>No matches yet. Results will update when indexing finishes.</source>
+        <target state="translated">Aucun résultat pour le moment. Les résultats seront mis à jour à la fin de l’indexation.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No matching concepts" xml:space="preserve">
+        <source>No matching concepts</source>
+        <target state="translated">Aucun concept correspondant</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No matching style" xml:space="preserve">
+        <source>No matching style</source>
+        <target state="translated">Aucun style correspondant</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No results" xml:space="preserve">
+        <source>No results</source>
+        <target state="translated">Aucun résultat</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No results in %@" xml:space="preserve">
+        <source>No results in %@</source>
+        <target state="translated">Aucun résultat dans %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="No tags yet" xml:space="preserve">
+        <source>No tags yet</source>
+        <target state="translated">Aucun tag pour le moment</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Not Now" xml:space="preserve">
+        <source>Not Now</source>
+        <target state="translated">Plus tard</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Not checked yet" xml:space="preserve">
+        <source>Not checked yet</source>
+        <target state="translated">Pas encore vérifié</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Notes donated by Markify may also appear in system Spotlight for anyone using this Mac account. The index stays on this Mac. macOS manages Spotlight categories, privacy and ranking." xml:space="preserve">
+        <source>Notes donated by Markify may also appear in system Spotlight for anyone using this Mac account. The index stays on this Mac. macOS manages Spotlight categories, privacy and ranking.</source>
+        <target state="translated">Les notes transmises par Markify peuvent aussi apparaître dans Spotlight pour toute personne utilisant ce compte sur le Mac. L’index reste sur ce Mac. macOS gère les catégories, la confidentialité et le classement de Spotlight.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="OKF bundle contents or links between notes" xml:space="preserve">
+        <source>OKF bundle contents or links between notes</source>
+        <target state="translated">Le contenu des paquets OKF ou les liens entre les notes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="OKF bundles" xml:space="preserve">
+        <source>OKF bundles</source>
+        <target state="translated">Paquets OKF</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="On launch" xml:space="preserve">
+        <source>On launch</source>
+        <target state="translated">Au lancement</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="On this Mac" xml:space="preserve">
+        <source>On this Mac</source>
+        <target state="translated">Sur ce Mac</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="On-device" xml:space="preserve">
+        <source>On-device</source>
+        <target state="translated">Sur l’appareil</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="One page. Two lenses." xml:space="preserve">
+        <source>One page. Two lenses.</source>
+        <target state="translated">Une page. Deux modes.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Only a read request is sent to %@." xml:space="preserve">
+        <source>Only a read request is sent to %@.</source>
+        <target state="translated">Seule une requête de lecture est envoyée à %@.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open" xml:space="preserve">
+        <source>Open</source>
+        <target state="translated">Ouvrir</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open Bundle Folder…" xml:space="preserve">
+        <source>Open Bundle Folder…</source>
+        <target state="translated">Ouvrir le dossier du paquet…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open File" xml:space="preserve">
+        <source>Open File</source>
+        <target state="translated">Ouvrir un fichier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open Files" xml:space="preserve">
+        <source>Open Files</source>
+        <target state="translated">Fichiers ouverts</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open Folder…" xml:space="preserve">
+        <source>Open Folder…</source>
+        <target state="translated">Ouvrir un dossier…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open Original in Browser" xml:space="preserve">
+        <source>Open Original in Browser</source>
+        <target state="translated">Ouvrir l’original dans le navigateur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open URL" xml:space="preserve">
+        <source>Open URL</source>
+        <target state="translated">Ouvrir une URL</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open URL…" xml:space="preserve">
+        <source>Open URL…</source>
+        <target state="translated">Ouvrir une URL…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open as File" xml:space="preserve">
+        <source>Open as File</source>
+        <target state="translated">Ouvrir comme fichier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open at line %lld" xml:space="preserve">
+        <source>Open at line %lld</source>
+        <target state="translated">Ouvrir à la ligne %lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open at the top of the note" xml:space="preserve">
+        <source>Open at the top of the note</source>
+        <target state="translated">Ouvrir au début de la note</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open documents in" xml:space="preserve">
+        <source>Open documents in</source>
+        <target state="translated">Ouvrir les documents dans</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open from URL" xml:space="preserve">
+        <source>Open from URL</source>
+        <target state="translated">Ouvrir à partir d’une URL</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Open in Browser" xml:space="preserve">
+        <source>Open in Browser</source>
+        <target state="translated">Ouvrir dans le navigateur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Opening file…" xml:space="preserve">
+        <source>Opening file…</source>
+        <target state="translated">Ouverture du fichier…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Opens %@ in your browser" xml:space="preserve">
+        <source>Opens %@ in your browser</source>
+        <target state="translated">Ouvre %@ dans votre navigateur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="PDF" xml:space="preserve">
+        <source>PDF</source>
+        <target state="translated">PDF</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Page color" xml:space="preserve">
+        <source>Page color</source>
+        <target state="translated">Couleur de la page</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Paper" xml:space="preserve">
+        <source>Paper</source>
+        <target state="translated">Papier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Password" xml:space="preserve">
+        <source>Password</source>
+        <target state="translated">Mot de passe</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Paste" xml:space="preserve">
+        <source>Paste</source>
+        <target state="translated">Coller</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Paste a link to a file or repository." xml:space="preserve">
+        <source>Paste a link to a file or repository.</source>
+        <target state="translated">Collez un lien vers un fichier ou un dépôt.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Preparing on-device model…" xml:space="preserve">
+        <source>Preparing on-device model…</source>
+        <target state="translated">Préparation du modèle sur l’appareil…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Previous match" xml:space="preserve">
+        <source>Previous match</source>
+        <target state="translated">Occurrence précédente</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Privacy" xml:space="preserve">
+        <source>Privacy</source>
+        <target state="translated">Confidentialité</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Projects" xml:space="preserve">
+        <source>Projects</source>
+        <target state="translated">Projets</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Prose font" xml:space="preserve">
+        <source>Prose font</source>
+        <target state="translated">Police du texte</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Read the full privacy details…" xml:space="preserve">
+        <source>Read the full privacy details…</source>
+        <target state="translated">Lire tous les détails sur la confidentialité…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Reading" xml:space="preserve">
+        <source>Reading</source>
+        <target state="translated">Lecture</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Reading %@" xml:space="preserve">
+        <source>Reading %@</source>
+        <target state="translated">Lecture de %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Reading progress" xml:space="preserve">
+        <source>Reading progress</source>
+        <target state="translated">Progression de la lecture</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Rebuild Index" xml:space="preserve">
+        <source>Rebuild Index</source>
+        <target state="translated">Reconstruire l’index</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Rebuilds the document's table of contents with the headings shown at this depth" xml:space="preserve">
+        <source>Rebuilds the document's table of contents with the headings shown at this depth</source>
+        <target state="translated">Reconstruit la table des matières du document avec les titres affichés à cette profondeur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Recent searches" xml:space="preserve">
+        <source>Recent searches</source>
+        <target state="translated">Recherches récentes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Record AI edits in OKF concepts" xml:space="preserve">
+        <source>Record AI edits in OKF concepts</source>
+        <target state="translated">Consigner les modifications de l’IA dans les concepts OKF</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Record my edits in OKF concepts" xml:space="preserve">
+        <source>Record my edits in OKF concepts</source>
+        <target state="translated">Consigner mes modifications dans les concepts OKF</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Recorded as human:%@ when you mark an OKF concept verified." xml:space="preserve">
+        <source>Recorded as human:%@ when you mark an OKF concept verified.</source>
+        <target state="translated">Enregistré sous human:%@ lorsque vous marquez un concept OKF comme vérifié.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Refresh" xml:space="preserve">
+        <source>Refresh</source>
+        <target state="translated">Actualiser</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Related" xml:space="preserve">
+        <source>Related</source>
+        <target state="translated">Résultats de sens proche</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Release Notes" xml:space="preserve">
+        <source>Release Notes</source>
+        <target state="translated">Notes de version</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Remember in Keychain for %@" xml:space="preserve">
+        <source>Remember in Keychain for %@</source>
+        <target state="translated">Mémoriser dans le trousseau pour %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Remember lens per document" xml:space="preserve">
+        <source>Remember lens per document</source>
+        <target state="translated">Mémoriser le mode de chaque document</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Remove" xml:space="preserve">
+        <source>Remove</source>
+        <target state="translated">Retirer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Remove selected folder from search" xml:space="preserve">
+        <source>Remove selected folder from search</source>
+        <target state="translated">Retirer le dossier sélectionné de la recherche</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Removes Markify’s search entries and pauses indexing until you rebuild. Your files and macOS’s independent file index are untouched." xml:space="preserve">
+        <source>Removes Markify’s search entries and pauses indexing until you rebuild. Your files and macOS’s independent file index are untouched.</source>
+        <target state="translated">Supprime les entrées de recherche de Markify et suspend l’indexation jusqu’à sa reconstruction. Vos fichiers et l’index indépendant de macOS restent intacts.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Removing a folder removes its search entries, never its files." xml:space="preserve">
+        <source>Removing a folder removes its search entries, never its files.</source>
+        <target state="translated">Retirer un dossier supprime ses entrées de recherche, jamais ses fichiers.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Rename…" xml:space="preserve">
+        <source>Rename…</source>
+        <target state="translated">Renommer…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Rendered" xml:space="preserve">
+        <source>Rendered</source>
+        <target state="translated">Rendu</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Reopen last documents" xml:space="preserve">
+        <source>Reopen last documents</source>
+        <target state="translated">Rouvrir les derniers documents</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Reopens each file the way you left it." xml:space="preserve">
+        <source>Reopens each file the way you left it.</source>
+        <target state="translated">Rouvre chaque fichier dans le mode où vous l’avez laissé.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Replace" xml:space="preserve">
+        <source>Replace</source>
+        <target state="translated">Remplacer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Replace All %lld" xml:space="preserve">
+        <source>Replace All %lld</source>
+        <target state="translated">Tout remplacer (%lld)</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Report an Issue…" xml:space="preserve">
+        <source>Report an Issue…</source>
+        <target state="translated">Signaler un problème…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Reports go to Sentry. As with any web request, Sentry's servers see the connection's address; Markify doesn't ask Sentry to keep it. Turning the program off stops all reports." xml:space="preserve">
+        <source>Reports go to Sentry. As with any web request, Sentry's servers see the connection's address; Markify doesn't ask Sentry to keep it. Turning the program off stops all reports.</source>
+        <target state="translated">Les rapports sont envoyés à Sentry. Comme pour toute requête web, les serveurs de Sentry voient l’adresse de connexion ; Markify ne demande pas à Sentry de la conserver. Désactiver le programme arrête l’envoi de tous les rapports.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Repository URL" xml:space="preserve">
+        <source>Repository URL</source>
+        <target state="translated">URL du dépôt</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Restore Defaults" xml:space="preserve">
+        <source>Restore Defaults</source>
+        <target state="translated">Rétablir les réglages par défaut</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Runs on %@" xml:space="preserve">
+        <source>Runs on %@</source>
+        <target state="translated">Fonctionne sur %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Runs on this Mac with Apple Intelligence. Your text never leaves it." xml:space="preserve">
+        <source>Runs on this Mac with Apple Intelligence. Your text never leaves it.</source>
+        <target state="translated">Fonctionne sur ce Mac avec Apple Intelligence. Votre texte n’en sort jamais.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="SF Mono" xml:space="preserve">
+        <source>SF Mono</source>
+        <target state="translated">SF Mono</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="SF Pro" xml:space="preserve">
+        <source>SF Pro</source>
+        <target state="translated">SF Pro</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Same folder as document" xml:space="preserve">
+        <source>Same folder as document</source>
+        <target state="translated">Même dossier que le document</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Save pasted images to" xml:space="preserve">
+        <source>Save pasted images to</source>
+        <target state="translated">Enregistrer les images collées dans</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search" xml:space="preserve">
+        <source>Search</source>
+        <target state="translated">Rechercher</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search All Folders" xml:space="preserve">
+        <source>Search All Folders</source>
+        <target state="translated">Rechercher dans tous les dossiers</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search Library" xml:space="preserve">
+        <source>Search Library</source>
+        <target state="translated">Rechercher dans la bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search Settings" xml:space="preserve">
+        <source>Search Settings</source>
+        <target state="translated">Réglages de recherche</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search Settings…" xml:space="preserve">
+        <source>Search Settings…</source>
+        <target state="translated">Réglages de recherche…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search can only reach folders you’ve granted." xml:space="preserve">
+        <source>Search can only reach folders you’ve granted.</source>
+        <target state="translated">La recherche se limite aux dossiers dont vous avez autorisé l’accès.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search files" xml:space="preserve">
+        <source>Search files</source>
+        <target state="translated">Rechercher des fichiers</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search index deleted" xml:space="preserve">
+        <source>Search index deleted</source>
+        <target state="translated">Index de recherche supprimé</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Search notes" xml:space="preserve">
+        <source>Search notes</source>
+        <target state="translated">Rechercher des notes</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Searching" xml:space="preserve">
+        <source>Searching</source>
+        <target state="translated">Recherche en cours</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Searching Spotlight…" xml:space="preserve">
+        <source>Searching Spotlight…</source>
+        <target state="translated">Recherche Spotlight en cours…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Selected Folder: %@" xml:space="preserve">
+        <source>Selected Folder: %@</source>
+        <target state="translated">Dossier sélectionné : %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Selection · %lld %@" xml:space="preserve">
+        <source>Selection · %1$lld %2$@</source>
+        <target state="translated">Sélection · %1$lld %2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Send crash and performance reports" xml:space="preserve">
+        <source>Send crash and performance reports</source>
+        <target state="translated">Envoyer des rapports de plantage et de performances</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Settings" xml:space="preserve">
+        <source>Settings</source>
+        <target state="translated">Réglages</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Share" xml:space="preserve">
+        <source>Share</source>
+        <target state="translated">Partager</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Shortcuts" xml:space="preserve">
+        <source>Shortcuts</source>
+        <target state="translated">Raccourcis</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show" xml:space="preserve">
+        <source>Show</source>
+        <target state="translated">Afficher</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show Bundle" xml:space="preserve">
+        <source>Show Bundle</source>
+        <target state="translated">Afficher le paquet</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show Contents and Links" xml:space="preserve">
+        <source>Show Contents and Links</source>
+        <target state="translated">Afficher le sommaire et les liens</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show Library" xml:space="preserve">
+        <source>Show Library</source>
+        <target state="translated">Afficher la bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show Markdown" xml:space="preserve">
+        <source>Show Markdown</source>
+        <target state="translated">Afficher le Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show Markdown %@" xml:space="preserve">
+        <source>Show Markdown %@</source>
+        <target state="translated">Afficher le Markdown %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show Result" xml:space="preserve">
+        <source>Show Result</source>
+        <target state="translated">Afficher le résultat</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show Word Count" xml:space="preserve">
+        <source>Show Word Count</source>
+        <target state="translated">Afficher le nombre de mots</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show status capsule" xml:space="preserve">
+        <source>Show status capsule</source>
+        <target state="translated">Afficher la capsule d’état</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Show word count" xml:space="preserve">
+        <source>Show word count</source>
+        <target state="translated">Afficher le nombre de mots</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Showing the first %lld files." xml:space="preserve">
+        <source>Showing the first %lld files.</source>
+        <target state="translated">Affichage des %lld premiers fichiers.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Shows which section contains a literal match. Headings remain part of the note’s searchable text." xml:space="preserve">
+        <source>Shows which section contains a literal match. Headings remain part of the note’s searchable text.</source>
+        <target state="translated">Indique la section contenant une correspondance exacte. Le texte des titres reste inclus dans la recherche.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Skip folders named" xml:space="preserve">
+        <source>Skip folders named</source>
+        <target state="translated">Ignorer les dossiers nommés</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Source" xml:space="preserve">
+        <source>Source</source>
+        <target state="translated">Source</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Sources" xml:space="preserve">
+        <source>Sources</source>
+        <target state="translated">Sources</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Spotlight Settings…" xml:space="preserve">
+        <source>Spotlight Settings…</source>
+        <target state="translated">Réglages Spotlight…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Spotlight may still be processing submitted notes. Try another phrase or a wider scope." xml:space="preserve">
+        <source>Spotlight may still be processing submitted notes. Try another phrase or a wider scope.</source>
+        <target state="translated">Spotlight traite peut-être encore les notes transmises. Essayez une autre expression ou élargissez la recherche.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Spotlight search index" xml:space="preserve">
+        <source>Spotlight search index</source>
+        <target state="translated">Index de recherche Spotlight</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Spotlight search unavailable" xml:space="preserve">
+        <source>Spotlight search unavailable</source>
+        <target state="translated">Recherche Spotlight indisponible</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Stable" xml:space="preserve">
+        <source>Stable</source>
+        <target state="translated">Stable</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Start writing, or type / to insert a block." xml:space="preserve">
+        <source>Start writing, or type / to insert a block.</source>
+        <target state="translated">Commencez à écrire ou tapez / pour insérer un bloc.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Startup" xml:space="preserve">
+        <source>Startup</source>
+        <target state="translated">Démarrage</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Status" xml:space="preserve">
+        <source>Status</source>
+        <target state="translated">État</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Still indexing" xml:space="preserve">
+        <source>Still indexing</source>
+        <target state="translated">Indexation en cours</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Stop" xml:space="preserve">
+        <source>Stop</source>
+        <target state="translated">Arrêter</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Strikethrough" xml:space="preserve">
+        <source>Strikethrough</source>
+        <target state="translated">Barré</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Suggest title &amp; tags for new documents" xml:space="preserve">
+        <source>Suggest title &amp; tags for new documents</source>
+        <target state="translated">Suggérer un titre et des tags pour les nouveaux documents</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Suggestions" xml:space="preserve">
+        <source>Suggestions</source>
+        <target state="translated">Suggestions</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Summarize" xml:space="preserve">
+        <source>Summarize</source>
+        <target state="translated">Résumer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Summarizing…" xml:space="preserve">
+        <source>Summarizing…</source>
+        <target state="translated">Résumé en cours…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Summary" xml:space="preserve">
+        <source>Summary</source>
+        <target state="translated">Résumé</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="System" xml:space="preserve">
+        <source>System</source>
+        <target state="translated">Système</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="System Settings…" xml:space="preserve">
+        <source>System Settings…</source>
+        <target state="translated">Réglages Système…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="System Spotlight" xml:space="preserve">
+        <source>System Spotlight</source>
+        <target state="translated">Spotlight du système</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Tag" xml:space="preserve">
+        <source>Tag</source>
+        <target state="translated">Tag</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Tags" xml:space="preserve">
+        <source>Tags</source>
+        <target state="translated">Tags</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Theme" xml:space="preserve">
+        <source>Theme</source>
+        <target state="translated">Thème</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="This links to a repository. Browse its files instead?" xml:space="preserve">
+        <source>This links to a repository. Browse its files instead?</source>
+        <target state="translated">Ce lien mène à un dépôt. Voulez-vous parcourir ses fichiers ?</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Timing for a sample of sessions, about one in ten" xml:space="preserve">
+        <source>Timing for a sample of sessions, about one in ten</source>
+        <target state="translated">Les durées mesurées pour un échantillon de sessions, environ une sur dix</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Tinted" xml:space="preserve">
+        <source>Tinted</source>
+        <target state="translated">Teinté</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Title / path" xml:space="preserve">
+        <source>Title / path</source>
+        <target state="translated">Titre / chemin</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Title, description, type and tags become searchable and filterable." xml:space="preserve">
+        <source>Title, description, type and tags become searchable and filterable.</source>
+        <target state="translated">Le titre, la description, le type et les tags deviennent accessibles à la recherche et aux filtres.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Toggle Library" xml:space="preserve">
+        <source>Toggle Library</source>
+        <target state="translated">Afficher ou masquer la bibliothèque</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Toggle Markdown" xml:space="preserve">
+        <source>Toggle Markdown</source>
+        <target state="translated">Changer de mode Markdown</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Token" xml:space="preserve">
+        <source>Token</source>
+        <target state="translated">Jeton</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Try" xml:space="preserve">
+        <source>Try</source>
+        <target state="translated">Essayer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Try Again" xml:space="preserve">
+        <source>Try Again</source>
+        <target state="translated">Réessayer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Turn on Apple Intelligence in System Settings" xml:space="preserve">
+        <source>Turn on Apple Intelligence in System Settings</source>
+        <target state="translated">Activez Apple Intelligence dans Réglages Système</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Type" xml:space="preserve">
+        <source>Type</source>
+        <target state="translated">Type</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Types" xml:space="preserve">
+        <source>Types</source>
+        <target state="translated">Types</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Typography" xml:space="preserve">
+        <source>Typography</source>
+        <target state="translated">Typographie</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Untitled" xml:space="preserve">
+        <source>Untitled</source>
+        <target state="translated">Sans titre</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Update Table of Contents" xml:space="preserve">
+        <source>Update Table of Contents</source>
+        <target state="translated">Mettre à jour la table des matières</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Updates" xml:space="preserve">
+        <source>Updates</source>
+        <target state="translated">Mises à jour</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Updates install when you quit Markify." xml:space="preserve">
+        <source>Updates install when you quit Markify.</source>
+        <target state="translated">Les mises à jour s’installent lorsque vous quittez Markify.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Updating Spotlight index…" xml:space="preserve">
+        <source>Updating Spotlight index…</source>
+        <target state="translated">Mise à jour de l’index Spotlight…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Use a GitHub or GitLab repository address, or open this as a file." xml:space="preserve">
+        <source>Use a GitHub or GitLab repository address, or open this as a file.</source>
+        <target state="translated">Utilisez l’adresse d’un dépôt GitHub ou GitLab, ou ouvrez ce lien comme fichier.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Use saved %@ · %@" xml:space="preserve">
+        <source>Use saved %1$@ · %2$@</source>
+        <target state="translated">Utiliser les identifiants enregistrés %1$@ · %2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Use surrounding section as context" xml:space="preserve">
+        <source>Use surrounding section as context</source>
+        <target state="translated">Utiliser la section environnante comme contexte</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Username" xml:space="preserve">
+        <source>Username</source>
+        <target state="translated">Nom d’utilisateur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Verified%@ by %@" xml:space="preserve">
+        <source>Verified%1$@ by %2$@</source>
+        <target state="translated">Vérifié%1$@ par %2$@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Verifier ID" xml:space="preserve">
+        <source>Verifier ID</source>
+        <target state="translated">Identifiant du vérificateur</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Welcome to Markify" xml:space="preserve">
+        <source>Welcome to Markify</source>
+        <target state="translated">Bienvenue dans Markify</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="What gets indexed" xml:space="preserve">
+        <source>What gets indexed</source>
+        <target state="translated">Ce qui est indexé</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="What is never sent" xml:space="preserve">
+        <source>What is never sent</source>
+        <target state="translated">Ce qui n’est jamais envoyé</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="What is sent" xml:space="preserve">
+        <source>What is sent</source>
+        <target state="translated">Ce qui est envoyé</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="White" xml:space="preserve">
+        <source>White</source>
+        <target state="translated">Blanc</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Whole document" xml:space="preserve">
+        <source>Whole document</source>
+        <target state="translated">Document entier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Wide" xml:space="preserve">
+        <source>Wide</source>
+        <target state="translated">Large</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Window" xml:space="preserve">
+        <source>Window</source>
+        <target state="translated">Fenêtre</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Writing Tools" xml:space="preserve">
+        <source>Writing Tools</source>
+        <target state="translated">Outils d’écriture</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Writing Tools %@" xml:space="preserve">
+        <source>Writing Tools %@</source>
+        <target state="translated">Outils d’écriture %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Writing Tools in the format bar" xml:space="preserve">
+        <source>Writing Tools in the format bar</source>
+        <target state="translated">Outils d’écriture dans la barre de mise en forme</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Writing on this Mac…" xml:space="preserve">
+        <source>Writing on this Mac…</source>
+        <target state="translated">Rédaction sur ce Mac…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Written to frontmatter only after you accept." xml:space="preserve">
+        <source>Written to frontmatter only after you accept.</source>
+        <target state="translated">Ajouté aux métadonnées d’en-tête uniquement après votre accord.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="You can change your mind anytime in Settings › Privacy." xml:space="preserve">
+        <source>You can change your mind anytime in Settings › Privacy.</source>
+        <target state="translated">Vous pouvez changer d’avis à tout moment dans Réglages › Confidentialité.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Your name, account or any device identifier" xml:space="preserve">
+        <source>Your name, account or any device identifier</source>
+        <target state="translated">Votre nom, votre compte ou tout identifiant d’appareil</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Your notes stay on disk. Choose Rebuild Index to resume Library search." xml:space="preserve">
+        <source>Your notes stay on disk. Choose Rebuild Index to resume Library search.</source>
+        <target state="translated">Vos notes restent sur le disque. Choisissez Reconstruire l’index pour reprendre la recherche dans la bibliothèque.</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Zoom In" xml:space="preserve">
+        <source>Zoom In</source>
+        <target state="translated">Agrandir</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="Zoom Out" xml:space="preserve">
+        <source>Zoom Out</source>
+        <target state="translated">Réduire</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="esc" xml:space="preserve">
+        <source>esc</source>
+        <target state="translated">échap</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="github.com/owner/repo" xml:space="preserve">
+        <source>github.com/owner/repo</source>
+        <target state="translated">github.com/owner/repo</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="github.com/…/README.md" xml:space="preserve">
+        <source>github.com/…/README.md</source>
+        <target state="translated">github.com/…/README.md</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="github_pat_…" xml:space="preserve">
+        <source>github_pat_…</source>
+        <target state="translated">github_pat_…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="glpat-…" xml:space="preserve">
+        <source>glpat-…</source>
+        <target state="translated">glpat-…</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="https://github.com/owner/repo" xml:space="preserve">
+        <source>https://github.com/owner/repo</source>
+        <target state="translated">https://github.com/owner/repo</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="https://…/document.md" xml:space="preserve">
+        <source>https://…/document.md</source>
+        <target state="translated">https://…/document.md</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="© 2025–2026 Stéphane Paquet · Free to use" xml:space="preserve">
+        <source>© 2025–2026 Stéphane Paquet · Free to use</source>
+        <target state="translated">© 2025–2026 Stéphane Paquet · Utilisation gratuite</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="·" xml:space="preserve">
+        <source>·</source>
+        <target state="translated">·</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="· %@" xml:space="preserve">
+        <source>· %@</source>
+        <target state="translated">· %@</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="×%lld" xml:space="preserve">
+        <source>×%lld</source>
+        <target state="translated">×%lld</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="— Edited" xml:space="preserve">
+        <source>— Edited</source>
+        <target state="translated">— Modifié</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="↑↓ navigate" xml:space="preserve">
+        <source>↑↓ navigate</source>
+        <target state="translated">↑↓ naviguer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="↗" xml:space="preserve">
+        <source>↗</source>
+        <target state="translated">↗</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="↩ insert · esc dismiss" xml:space="preserve">
+        <source>↩ insert · esc dismiss</source>
+        <target state="translated">↩ insérer · échap fermer</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="⌘N" xml:space="preserve">
+        <source>⌘N</source>
+        <target state="translated">⌘N</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="⌘O Open file" xml:space="preserve">
+        <source>⌘O Open file</source>
+        <target state="translated">⌘O Ouvrir un fichier</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="● Credentials required" xml:space="preserve">
+        <source>● Credentials required</source>
+        <target state="translated">● Identifiants requis</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="● Credentials set" xml:space="preserve">
+        <source>● Credentials set</source>
+        <target state="translated">● Identifiants définis</target>
+        <note/>
+      </trans-unit>
+      <trans-unit id="● Public" xml:space="preserve">
+        <source>● Public</source>
+        <target state="translated">● Public</target>
+        <note/>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="PreviewImages/InfoPlist.xcstrings" source-language="en" target-language="fr" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="27.1" build-num="27A9269"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>PreviewImages</source>
+        <target state="translated">PreviewImages</target>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="QuickLook/InfoPlist.xcstrings" source-language="en" target-language="fr" datatype="plaintext">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="27.1" build-num="27A9269"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>MarkifyQuickLook</source>
+        <target state="translated">MarkifyQuickLook</target>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
