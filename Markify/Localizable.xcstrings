@@ -842,7 +842,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Effacer"
+            "value" : "Transparent"
           }
         }
       }
@@ -1950,7 +1950,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dernier utilisé"
+            "value" : "Dernier mode utilisé"
           }
         }
       }
