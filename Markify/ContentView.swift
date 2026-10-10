@@ -107,6 +107,9 @@ struct ContentView: View {
     @State private var knowledgeTask: Task<Void, Never>?
     @State private var retargetTask: Task<Void, Never>?
     @State private var exportTask: Task<Void, Never>?
+    /// The brief confirmation after Copy All, and the task that dismisses it.
+    @State private var copyNotice: CopyNotice?
+    @State private var copyNoticeTask: Task<Void, Never>?
     @State private var conceptCache = ConceptCache()
     @State private var derived = DocumentDerivedData()
     @State private var documentIssues: [OKFDiagnostic] = []
@@ -368,6 +371,19 @@ struct ContentView: View {
                         .padding(.trailing, 16).padding(.bottom, 14)
                         .opacity(chromeVisible ? 1 : 0)
                         .allowsHitTesting(chromeVisible)
+                }
+                if let copyNotice {
+                    Label(copyNotice.message, systemImage: copyNotice.failed ? "exclamationmark.triangle" : "checkmark.circle")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(copyNotice.failed ? AnyShapeStyle(.red) : AnyShapeStyle(.primary))
+                        .padding(.horizontal, 14).frame(height: 32)
+                        .chromeGlass(in: .capsule)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .padding(.bottom, 14)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        .zIndex(7)
                 }
                 if showFind { findPanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, 56 + tabBarInset).padding(.trailing, 12).zIndex(4) }
                 if let review, let frame = reviewFrame(review, geometry: geometry, columnWidth: columnWidth) {
@@ -1431,9 +1447,23 @@ struct ContentView: View {
         let source = document.text
         if medium {
             let mdx = MarkdownTextView.isMDX(fileURL)
-            Task { await DocumentExport.copyForMedium(source, mdx: mdx) }
+            // The notice waits for the pasteboard write, after the HTML renders off the main thread.
+            Task { showCopyNotice(medium: true, copied: await DocumentExport.copyForMedium(source, mdx: mdx)) }
         } else {
-            DocumentExport.copyAll(source)
+            showCopyNotice(medium: false, copied: DocumentExport.copyAll(source))
+        }
+    }
+
+    /// Shows the copy result briefly over the page and announces it to VoiceOver; editing carries on underneath.
+    private func showCopyNotice(medium: Bool, copied: Bool) {
+        let notice = CopyNotice(medium: medium, failed: !copied)
+        copyNoticeTask?.cancel()
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { copyNotice = notice }
+        AccessibilityNotification.Announcement(notice.message).post()
+        copyNoticeTask = Task {
+            try? await Task.sleep(for: .seconds(notice.failed ? 3 : 1.8))
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.25)) { copyNotice = nil }
         }
     }
 
@@ -1929,6 +1959,21 @@ struct AIReview {
     let title: String
     let action: String
     var comparing = false
+}
+
+/// The result of Copy All as Markdown or Copy All for Medium, shown briefly over the page.
+struct CopyNotice: Equatable {
+    let medium: Bool
+    let failed: Bool
+
+    var message: String {
+        switch (medium, failed) {
+        case (false, false): String(localized: "Copied as Markdown")
+        case (true, false): String(localized: "Copied for Medium")
+        case (false, true): String(localized: "Couldn’t copy as Markdown")
+        case (true, true): String(localized: "Couldn’t copy for Medium")
+        }
+    }
 }
 
 /// Marks edits Markify makes for AI results, so they aren't mistaken for typing.

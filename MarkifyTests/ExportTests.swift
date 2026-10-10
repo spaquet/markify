@@ -21,7 +21,7 @@ import Testing
         let source = "# Café 👋\n\n**Bold** and [link](https://example.com).\n\n```swift\nlet x = 1 < 2\n```\n"
         let pasteboard = NSPasteboard.withUniqueName()
         defer { pasteboard.releaseGlobally() }
-        await DocumentExport.copyForMedium(source, to: pasteboard)
+        #expect(await DocumentExport.copyForMedium(source, to: pasteboard))
         #expect(pasteboard.string(forType: .string) == source)
         let html = pasteboard.string(forType: .html) ?? ""
         #expect(html.contains("<h1") && html.contains("Café 👋"))
@@ -29,7 +29,7 @@ import Testing
         #expect(html.contains("href=\"https://example.com\""))
         #expect(html.contains("let x = 1 &lt; 2"))
         #expect(!html.contains("code-label"))
-        DocumentExport.copyAll(source, to: pasteboard)
+        #expect(DocumentExport.copyAll(source, to: pasteboard))
         #expect(pasteboard.string(forType: .string) == source)
         #expect(pasteboard.string(forType: .html) == nil)
     }

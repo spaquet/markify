@@ -27,18 +27,22 @@ import WebKit
             + MarkdownHTML.render(source, mdx: mdx, options: options).body + "</body></html>"
     }
 
-    static func copyAll(_ source: String, to pasteboard: NSPasteboard = .general) {
+    /// Returns false when the pasteboard refused the write.
+    @discardableResult
+    static func copyAll(_ source: String, to pasteboard: NSPasteboard = .general) -> Bool {
         pasteboard.clearContents()
-        pasteboard.setString(source, forType: .string)
+        return pasteboard.setString(source, forType: .string)
     }
 
+    /// Returns once the pasteboard holds both flavors; false when either write failed.
+    @discardableResult
     static func copyForMedium(_ source: String, mdx: Bool = false,
-                              to pasteboard: NSPasteboard = .general) async {
+                              to pasteboard: NSPasteboard = .general) async -> Bool {
         let html = await Task.detached(priority: .userInitiated) {
             mediumHTML(source, mdx: mdx)
         }.value
-        copyAll(source, to: pasteboard)
-        pasteboard.setString(html, forType: .html)
+        guard copyAll(source, to: pasteboard) else { return false }
+        return pasteboard.setString(html, forType: .html)
     }
 
     /// A complete HTML page for the document.

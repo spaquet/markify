@@ -37,4 +37,6 @@ Choose **More (…) › Copy All as Markdown** or **Edit › Copy All as Markdow
 
 Choose **Copy All for Medium** from either menu, then paste into Medium's story editor. The clipboard includes formatted HTML for headings, emphasis, links, lists and code, with Markdown as a plain-text fallback. Frontmatter is omitted from the formatted version. Neither action has a keyboard shortcut.
 
+After either copy, a brief notice at the bottom of the window confirms it — "Copied as Markdown" or "Copied for Medium" — and VoiceOver reads it aloud. Copy for Medium shows the notice once the formatted version is on the clipboard, which can take a moment on long documents. If the clipboard can't be written, the notice says so instead. You can keep typing while it shows.
+
 Medium controls which formatting survives a paste. Tables, task checkboxes, footnotes, callouts, math and diagrams may lose formatting; check the pasted story before publishing. Local images and links to local notes are not uploaded by copying: upload images to Medium and replace local links with public URLs.
