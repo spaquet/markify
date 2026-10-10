@@ -17,6 +17,8 @@ This is an inventory of features in the current Markify source tree. See the [us
 - Type `/` at the start of a line to insert or filter block templates: table, task list, code block, callout, display or inline math, Mermaid diagram, image, headings, bullet or numbered list, quote, divider, footnote, frontmatter, OKF concept or AI-generated text.
 - Continue lists with Return, end an empty list with Return, renumber ordered lists after edits and toggle task checkboxes by clicking them.
 - Edit rendered table cells with Tab and Shift-Tab; add a row by tabbing from the last cell. Insert and delete rows or columns through the context menu or keyboard shortcuts.
+- Show a Contents outline in the right pane: headings (including setext headings) at H1, H2, H3 or all levels, in document order, with collapsible sections, a filter and a reading-position marker. Click a heading to jump to it.
+- Insert a table of contents at the caret with **Insert Table of Contents**; it lists the headings at the chosen depth as links between `<!-- toc -->` and `<!-- /toc -->` markers and updates itself a moment after headings change. The button then reads **Update Table of Contents**. Exported HTML and PDF show it as a card.
 - Find and replace text, move between matches and match case. In the Rendered lens, Find searches visible words across hidden Markdown markers.
 - Zoom text, show or hide the word count, and customize most keyboard shortcuts.
 
