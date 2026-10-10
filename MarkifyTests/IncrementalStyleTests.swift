@@ -47,6 +47,71 @@ import Testing
         }
     }
 
+    /// Every kind of block that shows an asset, beside plain text the partial pass must leave alone.
+    static let assetFixture = "# Title\n\nPlain paragraph with **bold**.\n\n![Alt](pic.png)\n\n"
+        + "Inline ![chip](pic.png) and <img src=\"https://example.com/a.png\" width=\"40\"> here.\n\n"
+        + "<div><img src=\"inline.png\"></div>\n\n```mermaid\ngraph TD; A-->B\n```\n\n"
+        + "- item\n  ![in list](list.png)\n- second\n\n> [!NOTE]\n> callout ![c](c.png)\n\n"
+        + "| A | B |\n| --- | --- |\n| ![t](t.png) | 2 |\n\n<!-- toc -->\n- [Title](#title)\n<!-- /toc -->\n\n"
+        + String(repeating: "Tail paragraph with *emphasis*.\n\n", count: 20)
+
+    /// Attribute values per character. Colors compare by their sRGB components under the editor's appearance: dynamic
+    /// colors are new objects on every pass, so object identity would report differences that are not there.
+    static func canonical(_ text: NSAttributedString, appearance: NSAppearance) -> [[String: String]] {
+        func describe(_ value: Any) -> String {
+            if let color = value as? NSColor {
+                var components = "\(color)"
+                appearance.performAsCurrentDrawingAppearance {
+                    if let srgb = color.usingColorSpace(.sRGB) {
+                        components = "\(srgb.redComponent) \(srgb.greenComponent) \(srgb.blueComponent) \(srgb.alphaComponent)"
+                    }
+                }
+                return components
+            }
+            if let fill = value as? MarkdownBlockFill {
+                return "fill(\(describe(fill.color)) \(fill.radius) \(fill.padding) \(fill.first) \(fill.last))"
+            }
+            return "\(value)"
+        }
+        var result: [[String: String]] = []
+        var location = 0
+        while location < text.length {
+            var range = NSRange()
+            let attributes = text.attributes(at: location, effectiveRange: &range)
+            let described = Dictionary(attributes.map { ($0.key.rawValue, describe($0.value)) }, uniquingKeysWith: { first, _ in first })
+            result += Array(repeating: described, count: NSMaxRange(range) - location)
+            location = NSMaxRange(range)
+        }
+        return result
+    }
+
+    /// Restyling one asset's blocks gives the same attributes as a full pass, so an asset that loads never leaves a
+    /// block styled differently from the rest of the document.
+    @Test(arguments: [false, true]) func assetRestyleMatchesAFullPass(markdownLens: Bool) {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = Self.assetFixture
+        Self.native(editor.string, markdownLens: markdownLens).style(editor)
+        let appearance = editor.effectiveAppearance
+        let full = Self.canonical(editor.textStorage!, appearance: appearance)
+        let dark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        let model = editor.model
+        let keys = Set(model.spans.flatMap { editor.assetKeys($0, model: model, dark: dark) })
+        #expect(keys.count >= 6, "fixture shows \(keys.count) assets")
+        for key in keys.sorted() {
+            editor.requestAssetRestyle(key)
+            Self.native(editor.string, markdownLens: markdownLens).style(editor, incremental: true)
+            #expect(Self.canonical(editor.textStorage!, appearance: appearance) == full, "restyling \(key)")
+            if !markdownLens, let scope = editor.assetScope([key], model: model, dark: dark, extra: []) {
+                #expect(scope.length < (editor.string as NSString).length, "\(key) restyles only its blocks")
+            }
+        }
+        editor.requestAssetRestyle(nil)
+        editor.requestAssetRestyle("image:unrelated")
+        Self.native(editor.string, markdownLens: markdownLens).style(editor, incremental: true)
+        #expect(Self.canonical(editor.textStorage!, appearance: appearance) == full, "a full pass after an unrelated asset")
+        editor.stopObserving()
+    }
+
     static let source = "# Title\n\n<!-- toc -->\n- [Title](#title)\n  - [Part](#part)\n<!-- /toc -->\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n"
         + String(repeating: "Paragraph with **bold** and [a link](https://example.com).\n\n", count: 40) + "## Part\n\nLast line.\n"
 

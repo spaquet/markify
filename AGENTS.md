@@ -8,6 +8,14 @@ Markify is a macOS 26 Markdown editor built with SwiftUI and TextKit 2. There is
 
 The app uses the document-based pattern (`DocumentGroup` with a `FileDocument`). It opens `.md` and `.markdown`, and `.mdx` as Markdown with MDX blocks kept as written.
 
+## Localization
+
+- Localize only the macOS app, including its user-facing UI, accessibility text and bundled user-facing resources. English remains the development, reference and fallback language.
+- The CLI and the skills, plugins and agent integrations developed for Claude Code, Codex and other tools remain English and must not be localized. Website localization is outside this effort. Never translate user documents, Markdown/MDX syntax, CLI command names, protocol values or persisted identifiers as part of UI localization.
+- Follow Apple's current Xcode localization workflow: String Catalogs (`.xcstrings`), build-time extraction, localizable SwiftUI/Foundation APIs, plural/interpolation variants, and Xcode export/import (`.xcloc`/XLIFF) when handing translations off. Use Xcode's language/region overrides and pseudolocalization for review; agent-generated translations require review in context.
+- Track each new language in a sub-issue of [localization task #101](https://github.com/spaquet/markify/issues/101) and implement it in its own branch. Share English string extraction and other infrastructure through the main task before language branches; do not create separate localization frameworks per language.
+- French uses France as its terminology reference and one shared French localization for French-speaking users worldwide, rather than separate translations for France, Belgium, Switzerland, Quebec, Morocco and other regions. Keep system region formatting independent of translation language. Portuguese's regional variant and Norwegian's written standard must be selected in their language tasks before translation.
+
 ## Build & Development Commands
 
 ### Building and Running

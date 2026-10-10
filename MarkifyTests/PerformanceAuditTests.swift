@@ -150,6 +150,20 @@ import Testing
                 #expect(view.string.isSameText(as: source))
                 let copy = String(decoding: Array(source.utf8), as: UTF8.self)
                 measure(name, source, "literal-equality-independent-copy") { #expect(source.isSameText(as: copy)) }
+                // An image at the top of the same document: an asset finishing restyles its block, or everything without a key.
+                let withImage = "![Pic](pic.png)\n\n" + source
+                let imageView = MarkdownTextView(usingTextLayoutManager: true)
+                imageView.string = withImage
+                let imageNative = IncrementalStyleTests.native(withImage)
+                imageNative.style(imageView)
+                let model = imageView.model
+                let key = model.spans.lazy.flatMap { imageView.assetKeys($0, model: model, dark: false) }.first ?? ""
+                measure(name, withImage, "asset-full-restyle") { imageNative.style(imageView, incremental: true) }
+                measure(name, withImage, "asset-block-restyle") {
+                    imageView.requestAssetRestyle(key)
+                    imageNative.style(imageView, incremental: true)
+                }
+                imageView.stopObserving()
                 view.stopObserving()
             }
         }
