@@ -112,6 +112,36 @@ import Testing
         editor.stopObserving()
     }
 
+    /// Heading edits take the paragraph path, and must match a full pass: level changes, markers added and removed,
+    /// Unicode in headings, paragraphs that become headings and back, and a setext underline that must fall back.
+    @Test func headingEditsMatchAFullPass() {
+        let source = "# Title\n\nParagraph with *emphasis*.\n\n## Part\n\nTail with **bold**.\n\n"
+        let edits: [(name: String, anchor: String, offset: Int, delete: Int, insert: String)] = [
+            ("level down", "## Part", 0, 0, "#"),
+            ("level up", "## Part", 0, 1, ""),
+            ("heading to paragraph", "# Title", 0, 2, ""),
+            ("paragraph to heading", "Paragraph with", 0, 0, "# "),
+            ("paragraph after heading", "Tail", 0, 0, "## "),
+            ("accented character in heading", "Part", 4, 0, "é"),
+            ("heading text replaced", "Part", 0, 4, "Heading 日本"),
+            ("setext underline", "Paragraph with *emphasis*.", 26, 0, "\n==="),
+            ("line break after heading", "## Part", 7, 0, "\n\nExtra"),
+        ]
+        for edit in edits {
+            let editor = MarkdownTextView(usingTextLayoutManager: true)
+            editor.string = source
+            Self.native(source).style(editor)
+            let anchor = (editor.string as NSString).range(of: edit.anchor)
+            let location = anchor.location + edit.offset
+            editor.textStorage!.replaceCharacters(in: NSRange(location: location, length: edit.delete), with: edit.insert)
+            Self.native(editor.string).style(editor, incremental: true)
+            let incremental = NSAttributedString(attributedString: editor.textStorage!)
+            Self.native(editor.string).style(editor)
+            #expect(incremental.isEqual(to: editor.textStorage!), "\(edit.name)")
+            editor.stopObserving()
+        }
+    }
+
     static let source = "# Title\n\n<!-- toc -->\n- [Title](#title)\n  - [Part](#part)\n<!-- /toc -->\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n"
         + String(repeating: "Paragraph with **bold** and [a link](https://example.com).\n\n", count: 40) + "## Part\n\nLast line.\n"
 
