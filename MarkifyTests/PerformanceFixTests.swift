@@ -60,11 +60,23 @@ import Testing
         let owner = MarkdownTextView(usingTextLayoutManager: true)
         owner.string = "| A | B |\n| --- | --- |\n| **cell** | other |\n\nTail"
         let range = try #require(owner.model.tables.first?.rows.last?.cells.first)
-        let presentation = owner.tablePresentation(range, width: 200)
+        let presentation = owner.tablePresentation(range, width: 200, column: 0, header: false, alignment: .left)
         let version = presentation.reading.textVersion
         owner.textStorage?.replaceCharacters(in: NSRange(location: (owner.string as NSString).length, length: 0), with: "!")
-        #expect(owner.tablePresentation(range, width: 200) === presentation)
+        #expect(owner.tablePresentation(range, width: 200, column: 0, header: false, alignment: .left) === presentation)
         #expect(presentation.reading.textVersion == version)
+    }
+
+    /// Column widths come from the table's own text: an edit elsewhere keeps them, an edit inside the table changes them.
+    @Test func tableWidthsFollowOnlyTheirOwnTable() throws {
+        let owner = MarkdownTextView(usingTextLayoutManager: true)
+        owner.string = "| ID | Name |\n| --- | --- |\n| 1 | value |\n\nTail"
+        let before = owner.tableWidths(try #require(owner.model.tables.first))
+        owner.textStorage?.replaceCharacters(in: NSRange(location: (owner.string as NSString).length, length: 0), with: "!")
+        #expect(owner.tableWidths(try #require(owner.model.tables.first)) == before)
+        let digit = (owner.string as NSString).range(of: "| 1 |").location + 2
+        owner.textStorage?.replaceCharacters(in: NSRange(location: digit, length: 1), with: "1000000000000000")
+        #expect(owner.tableWidths(try #require(owner.model.tables.first)) != before)
     }
 
     @Test func teardownRemovesEditingObservers() {
@@ -81,12 +93,12 @@ import Testing
         let owner = MarkdownTextView(usingTextLayoutManager: true)
         owner.string = "| Note |\n| --- |\n| Citation[^n] |\n\n[^n]: Original footnote."
         let range = try #require(owner.model.tables.first?.rows.last?.cells.first)
-        let cell = owner.tablePresentation(range, width: 200)
+        let cell = owner.tablePresentation(range, width: 200, column: 0, header: false, alignment: .left)
         let reference = try #require(cell.reading.model.spans.first { if case .footnoteReference = $0.kind { return true }; return false })
         func tip() -> String? { cell.reading.textStorage?.attribute(.toolTip, at: reference.content.location, effectiveRange: nil) as? String }
         #expect(tip() == "Original footnote.")
         owner.textStorage?.replaceCharacters(in: (owner.string as NSString).range(of: "Original"), with: "Updated")
-        #expect(owner.tablePresentation(range, width: 200) === cell)
+        #expect(owner.tablePresentation(range, width: 200, column: 0, header: false, alignment: .left) === cell)
         #expect(tip() == "Updated footnote.")
     }
 

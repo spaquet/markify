@@ -1275,7 +1275,10 @@ class MarkdownTextView: NSTextView {
     private var tableHoverWork: DispatchWorkItem?
     private var tableAnimation: Task<Void, Never>?
     private var tableAnimatedHeights: [Int: CGFloat] = [:]
-    private var tableWidthCache: (version: Int, width: CGFloat, values: [Int: [CGFloat]])?
+    /// Column widths by table, with the table's source text they were measured from. After an edit they hold while the
+    /// table's own text is unchanged, so typing elsewhere keeps them.
+    private var tableWidthCache: (width: CGFloat, values: [Int: (text: String, version: Int, widths: [CGFloat])])?
+    private var tableRowsCache: (version: Int, rendered: Bool, rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)], indices: [Int: Int])?
     private var tableRowIndices: [Int: Int] = [:]
     private var refreshingTables = false
     private var tableRefreshScheduled = false
@@ -1357,11 +1360,17 @@ class MarkdownTextView: NSTextView {
     }
 
     func tableWidths(_ table: MarkdownModel.Table) -> [CGFloat] {
-        if tableWidthCache?.version != textVersion || tableWidthCache?.width != columnWidth {
-            tableWidthCache = (textVersion, columnWidth, [:])
-        }
+        if tableWidthCache?.width != columnWidth { tableWidthCache = (columnWidth, [:]) }
         let key = table.rows.first?.start ?? 0
-        if let widths = tableWidthCache?.values[key] { return widths }
+        if let entry = tableWidthCache?.values[key] {
+            if entry.version == textVersion { return entry.widths }
+            // The text changed since these widths were measured; they still hold if this table's text did not.
+            let text = (string as NSString).substring(with: table.range)
+            if text == entry.text {
+                tableWidthCache?.values[key] = (text, textVersion, entry.widths)
+                return entry.widths
+            }
+        }
         let source = string as NSString
         let count = table.rows.first?.cells.count ?? 0
         guard count > 0 else { return [] }
@@ -1384,7 +1393,8 @@ class MarkdownTextView: NSTextView {
             let remaining = columnWidth - compact.reduce(0) { $0 + widths[$1] }
             for col in widths.indices where !compact.contains(col) { widths[col] = remaining / CGFloat(count - compact.count) }
         }
-        tableWidthCache?.values[key] = widths
+        if tableWidthCache?.values.count ?? 0 >= 64 { tableWidthCache?.values = [:] }
+        tableWidthCache?.values[key] = (source.substring(with: table.range), textVersion, widths)
         return widths
     }
 
@@ -1410,22 +1420,19 @@ class MarkdownTextView: NSTextView {
                 let badge = TableRowView.badgeWidth(text, available: widths[col] - 28)
                 return TableRowView.cellHeight(text, width: badge, id: true) + 22
             }
-            return tablePresentation(range, width: widths[col] - 28).fullHeight + 22
+            return tablePresentation(range, width: widths[col] - 28, column: col, header: false, alignment: tableAlignment(col, table: table)).fullHeight + 22
         }.max() ?? 43
     }
 
-    func tablePresentation(_ range: NSRange, width: CGFloat) -> TableCellPresentation {
+    /// A cell's reading. The caller knows the cell's column, header and alignment, so nothing is searched for here.
+    func tablePresentation(_ range: NSRange, width: CGFloat, column: Int, header: Bool, alignment: NSTextAlignment) -> TableCellPresentation {
         // Scrolling can keep the main queue busy across many refreshes. Drain TextKit's
         // temporary views here instead of retaining discarded cells until that queue idles.
         autoreleasepool {
             let presentation = tablePresentations[range.location] ?? reusableTablePresentations.popLast() ?? TableCellPresentation()
             tablePresentations[range.location] = presentation
             presentation.reading.tableSourceRange = range
-            let table = model.tables.first { $0.rows.contains { $0.cells.contains(range) } }
-            let column = table?.rows.first(where: { $0.cells.contains(range) })?.cells.firstIndex(of: range) ?? 0
-            let header = table?.rows.first?.cells.contains(range) == true
-            presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header,
-                                alignment: table.map { tableAlignment(column, table: $0) } ?? .left)
+            presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header, alignment: alignment)
             return presentation
         }
     }
@@ -1453,10 +1460,14 @@ class MarkdownTextView: NSTextView {
             hoveredTableRow = nil
             tableAnimatedHeights = [:]
         }
-        let rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)] = rendered ? model.tables.flatMap { table in
-            table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
-        } : []
-        tableRowIndices = Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) })
+        if tableRowsCache?.version != textVersion || tableRowsCache?.rendered != rendered {
+            let rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)] = rendered ? model.tables.flatMap { table in
+                table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
+            } : []
+            tableRowsCache = (textVersion, rendered, rows, Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) }))
+        }
+        let rows = tableRowsCache?.rows ?? []
+        tableRowIndices = tableRowsCache?.indices ?? [:]
         var wanted = Set(rows.indices)
         if rows.count > 32, let manager = textLayoutManager, let content = manager.textContentManager {
             manager.ensureLayout(for: visibleRect.insetBy(dx: 0, dy: -200))
@@ -3496,7 +3507,7 @@ final class TableRowView: NSView {
             field.onFocus = onFocus
             field.onTab = onTab
             if index != idColumn, let owner {
-                let presentation = owner.tablePresentation(range, width: width - 28)
+                let presentation = owner.tablePresentation(range, width: width - 28, column: index, header: header, alignment: alignment)
                 if presentation.superview !== self { presentation.removeFromSuperview(); addSubview(presentation) }
                 presentation.field = field
                 presentation.frame = NSRect(x: cellX + 14, y: 11, width: max(1, width - 28), height: bounds.height - 22)
