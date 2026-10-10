@@ -180,6 +180,8 @@ private actor LinkSummaryWriter {
     private(set) var busy: Set<String> = []
     private(set) var errors: [String: String] = [:]
     private(set) var stale: Set<String> = []
+    /// Set by `refreshAvailability()` off the main thread; rows read this instead of the model (MARKIFY-14).
+    private(set) var available = false
     @ObservationIgnored private var jobs: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private var stalenessJob: Task<Void, Never>?
 
@@ -191,7 +193,9 @@ private actor LinkSummaryWriter {
         stalenessJob?.cancel()
     }
 
-    static var available: Bool { SystemLanguageModel.default.availability == .available }
+    func refreshAvailability() async {
+        available = await Task.detached { SystemLanguageModel.default.availability == .available }.value
+    }
 
     /// Local files the pane can summarize, and web pages; other destinations have no ✦.
     static func canSummarize(_ target: LinkTarget) -> Bool {
@@ -223,7 +227,7 @@ private actor LinkSummaryWriter {
     }
 
     func summarize(_ target: LinkTarget, key: String, openTexts: [URL: String]) {
-        guard !busy.contains(key), Self.available else { return }
+        guard !busy.contains(key), available else { return }
         busy.insert(key)
         errors[key] = nil
         jobs[key] = Task {

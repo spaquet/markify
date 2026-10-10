@@ -491,6 +491,7 @@ struct LinksTab: View {
             }
             summarizer.checkStaleness(files, openTexts: OpenTexts.snapshot())
         }
+        .task { await summarizer.refreshAvailability() }
         .onDisappear { summarizer.cancelAll() }
     }
 
@@ -575,7 +576,7 @@ struct LinkRow: View {
     private var broken: String? { status.reason }
     private var occurrences: [DocumentLink] { entry.group.occurrences }
     private var target: DocumentLink { occurrences[next % occurrences.count] }
-    private var canSummarize: Bool { broken == nil && LinkSummarizer.available && LinkSummarizer.canSummarize(entry.target) }
+    private var canSummarize: Bool { broken == nil && summarizer.available && LinkSummarizer.canSummarize(entry.target) }
 
     var body: some View {
         VStack(spacing: 0) {
