@@ -2630,14 +2630,22 @@ class MarkdownTextView: NSTextView {
         }
     }
 
-    /// Repaints the copy button of the code block starting at `location`; the fragment views beneath it repaint with it.
+    /// Repaints the copy button of the code block starting at `location`. TextKit 2 draws each layout fragment in its own
+    /// layer-backed subview, which marking this view alone leaves as it was.
     private func redrawCodeHeader(_ location: Int?) {
         guard let location, let span = model.spans.first(where: { span in
                   guard case .codeBlock = span.kind else { return false }
                   return span.range.location == location
               }),
               let button = codeCopyButtonRect(span)?.insetBy(dx: -4, dy: -4) else { return }
+        func mark(_ view: NSView) {
+            let rect = view.convert(button, from: self)
+            guard view.bounds.intersects(rect) else { return }
+            view.setNeedsDisplay(rect)
+            view.subviews.forEach(mark)
+        }
         setNeedsDisplay(button)
+        subviews.forEach(mark)
     }
 
     /// Callout titles, code headers, the footnotes rule and the frontmatter chip row.
