@@ -3,7 +3,7 @@ import MarkifyMarkdown
 import Testing
 @testable import Markify
 
-/// Manual diagnostics, excluded from normal test runs. See PERFORMANCE_AUDIT.md for the command and limits.
+/// Manual diagnostics, excluded from normal test runs. See PERFORMANCE_AUDIT_2.5.0.md for commands and limits.
 @MainActor struct PerformanceAuditTests {
     private final class AuditDocument: NSDocument {
         var text = ""
@@ -109,6 +109,76 @@ import Testing
 
         try encoder.encode(results).write(to: output, options: .atomic)
         print("Performance audit measurements: \(output.path)")
+    }
+
+    /// Additional 2.5 workloads; kept separate so historical measurements remain comparable.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["MARKIFY_PERFORMANCE_AUDIT"] == "1"))
+    func measureEditingFallbacks() throws {
+        var results: [Measurement] = []
+        func measure(_ name: String, _ source: String, _ operation: String, _ work: () -> Void) {
+            let times = (0..<3).map { _ in
+                let start = ContinuousClock.now
+                work()
+                let duration = (ContinuousClock.now - start).components
+                return Double(duration.seconds) * 1000 + Double(duration.attoseconds) / 1e15
+            }
+            results.append(Measurement(workload: name, bytes: source.utf8.count, operation: operation, milliseconds: times))
+        }
+        for count in [1000, 5000] {
+            for unicode in [false, true] {
+                let source = "# Title\n\n" + String(repeating: unicode
+                    ? "Café — **résumé**, *日本語*, and [a link](https://example.com). 😀\n\n"
+                    : "Paragraph with **bold**, *emphasis*, and [a link](https://example.com).\n\n", count: count)
+                let name = "\(unicode ? "unicode" : "prose")-\(count)"
+                let view = MarkdownTextView(usingTextLayoutManager: true)
+                view.string = source
+                let native = IncrementalStyleTests.native(source)
+                let markdown = IncrementalStyleTests.native(source, markdownLens: true)
+                let find = IncrementalStyleTests.native(source, findQuery: "link")
+                native.style(view)
+                measure(name, source, "unchanged-incremental-restyle") { native.style(view, incremental: true) }
+                measure(name, source, "lens-style-roundtrip") {
+                    markdown.style(view)
+                    native.style(view)
+                }
+                // A heading edit forces the full-document fallback; length stays constant across samples.
+                measure(name, source, "heading-edit-and-style") {
+                    view.textStorage!.replaceCharacters(in: NSRange(location: 2, length: 1), with: "T")
+                    native.style(view, incremental: true)
+                }
+                measure(name, source, "find-full-style") { find.style(view) }
+                // Moving the current match between two matches: only the highlights change.
+                let firstLink = (source as NSString).range(of: "link")
+                var currentIsFirst = false
+                measure(name, source, "find-highlight-move") {
+                    var moved = find
+                    moved.currentMatch = currentIsFirst ? nil : firstLink
+                    currentIsFirst.toggle()
+                    moved.updateFindHighlights(view)
+                }
+                #expect(view.string.isSameText(as: source))
+                let copy = String(decoding: Array(source.utf8), as: UTF8.self)
+                measure(name, source, "literal-equality-independent-copy") { #expect(source.isSameText(as: copy)) }
+                // An image at the top of the same document: an asset finishing restyles its block, or everything without a key.
+                let withImage = "![Pic](pic.png)\n\n" + source
+                let imageView = MarkdownTextView(usingTextLayoutManager: true)
+                imageView.string = withImage
+                let imageNative = IncrementalStyleTests.native(withImage)
+                imageNative.style(imageView)
+                let model = imageView.model
+                let key = model.spans.lazy.flatMap { imageView.assetKeys($0, model: model, dark: false) }.first ?? ""
+                measure(name, withImage, "asset-full-restyle") { imageNative.style(imageView, incremental: true) }
+                measure(name, withImage, "asset-block-restyle") {
+                    imageView.requestAssetRestyle(key)
+                    imageNative.style(imageView, incremental: true)
+                }
+                imageView.stopObserving()
+                view.stopObserving()
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(results).write(to: URL(fileURLWithPath: "/private/tmp/markify-performance-fallbacks.json"), options: .atomic)
     }
 
     // Run in a separate test host so cold WebKit timing does not include the table/prose workloads.

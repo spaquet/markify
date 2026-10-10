@@ -145,8 +145,9 @@ struct NativeEditor: NSViewRepresentable {
         let inSync = editor.string.isSameText(as: text)
         if inSync || !echo { context.coordinator.pushedText.removeAll() }
         let sourceChanged = !inSync && !echo
-        let styleChanged = context.coordinator.lastLens != markdownLens || context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
-            || context.coordinator.lastTheme != theme || context.coordinator.lastCurrentMatch != currentMatch
+        let styleChanged = context.coordinator.lastLens != markdownLens || context.coordinator.lastTheme != theme
+        let findChanged = context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
+            || context.coordinator.lastCurrentMatch != currentMatch
         if sourceChanged || styleChanged {
             let topOffset = editor.characterIndexForInsertion(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
             let anchor = SourceAnchor(source: editor.string, selection: editor.selectedRange(), topOffset: topOffset)
@@ -161,6 +162,8 @@ struct NativeEditor: NSViewRepresentable {
             let newY = max(0, scroll.contentView.bounds.minY + before.minY - after.minY)
             scroll.contentView.scroll(to: NSPoint(x: 0, y: newY))
             scroll.reflectScrolledClipView(scroll.contentView)
+        } else if findChanged {
+            updateFindHighlights(editor)
         }
         context.coordinator.lastLens = markdownLens
         context.coordinator.lastQuery = findQuery
@@ -195,6 +198,9 @@ struct NativeEditor: NSViewRepresentable {
             DispatchQueue.main.async { [weak styling] in styling?.refreshTables() }
             return
         }
+        // Assets that finished loading since the last pass (nil: a full pass is needed). Taken here, so a pass that
+        // styles everything also clears them.
+        let assets = styling?.takeAssetRestyles()
         let storage = incremental ? NSTextStorage(attributedString: live) : live
         styling?.isStyling = true
         defer {
@@ -214,16 +220,33 @@ struct NativeEditor: NSViewRepresentable {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = (markdownLens ? 10 : 11) * theme.scale
         editor.typingAttributes = [.font: base, .foregroundColor: primary, .paragraphStyle: paragraph]
+        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        let model = reading ?? (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
+        let tableOfContents = markdownLens ? nil : TableOfContentsBlock.find(in: model)
+        // Styled lines: the whole document, or only the blocks showing assets that just loaded. A partial pass leaves
+        // every other line's attributes as they are; the copy made above matches the live storage outside `scope`.
+        var scope = whole
+        var partial = false
+        if incremental, let assets, !assets.isEmpty, styling?.canRestyleRegion(key: styleKey) == true,
+           let region = styling?.assetScope(assets, model: model, dark: dark, extra: tableOfContents.map { [$0.range] } ?? []) {
+            scope = region
+            partial = true
+        }
+        let spans = partial ? model.spans.filter { NSIntersectionRange($0.range, scope).length > 0 } : model.spans
+        let tables = partial ? model.tables.filter { NSIntersectionRange($0.range, scope).length > 0 } : model.tables
+        /// Whether a location or range is styled in this pass.
+        func styled(_ location: Int) -> Bool { !partial || NSLocationInRange(location, scope) }
+        func styled(_ range: NSRange) -> Bool { !partial || NSIntersectionRange(range, scope).length > 0 }
         guard whole.length > 0 else {
             updateTypingFont(editor)
             return
         }
         storage.beginEditing()
-        storage.setAttributes([.font: base, .foregroundColor: primary, .paragraphStyle: paragraph], range: whole)
+        storage.setAttributes([.font: base, .foregroundColor: primary, .paragraphStyle: paragraph], range: scope)
 
         func matches(_ pattern: String, _ apply: (NSTextCheckingResult) -> Void) {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines]) else { return }
-            regex.enumerateMatches(in: editor.string, range: whole) { match, _, _ in if let match { apply(match) } }
+            regex.enumerateMatches(in: editor.string, range: scope) { match, _, _ in if let match { apply(match) } }
         }
         /// Even at 1pt hidden text keeps a sliver of advance. TextKit caps a negative kern near its own glyph's advance,
         /// so each character cancels its own width and text after a hidden marker starts where it should.
@@ -241,16 +264,14 @@ struct NativeEditor: NSViewRepresentable {
                                    .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
             if !markdownLens { collapse(range) }
         }
-        let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        let model = reading ?? (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
-        if let styling {
-            styling.retainHTML(Set(model.spans.filter { $0.kind == .htmlBlock }.map { (model.source as NSString).substring(with: $0.range) }))
-            let urls = Set(model.spans.compactMap { span -> URL? in
+        if let styling, !partial {
+            styling.retainHTML(Set(spans.filter { $0.kind == .htmlBlock }.map { (model.source as NSString).substring(with: $0.range) }))
+            let urls = Set(spans.compactMap { span -> URL? in
                 guard case .image(let path, _) = span.kind else { return nil }
                 return MarkdownTextView.imageURL(path, document: styling.documentURL, baseDirectory: styling.baseDirectory)
             })
             // HTML image subscribers are kept until their block disappears as well.
-            let htmlURLs = model.spans.filter { $0.kind == .htmlBlock }.flatMap { span -> [URL] in
+            let htmlURLs = spans.filter { $0.kind == .htmlBlock }.flatMap { span -> [URL] in
                 let html = (model.source as NSString).substring(with: span.content)
                 let regex = try! NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
                 return regex.matches(in: html, range: NSRange(location: 0, length: (html as NSString).length)).compactMap {
@@ -259,7 +280,7 @@ struct NativeEditor: NSViewRepresentable {
             }
             RemoteImages.shared.release(owner: styling, keeping: styling.loadRemoteImages ? urls.union(htmlURLs) : [])
             styling.releaseLocalImages(keeping: urls.union(htmlURLs).filter(\.isFileURL))
-            let diagramKeys = Set(model.spans.compactMap { span -> String? in
+            let diagramKeys = Set(spans.compactMap { span -> String? in
                 guard case .codeBlock(let language?, true) = span.kind, language.lowercased() == "mermaid" else { return nil }
                 return "\(dark):\((model.source as NSString).substring(with: span.content))"
             })
@@ -281,9 +302,9 @@ struct NativeEditor: NSViewRepresentable {
         /// Code blocks and callouts in the Rendered lens: the lines they cover and the rounded box drawn behind them.
         var boxes: [(range: NSRange, fill: MarkdownBlockFill)] = []
         let textView = editor as? MarkdownTextView
-        textView?.inlineFormulas = [:]
-        textView?.htmlBlocks = [:]
-        textView?.inlineHTMLImages = [:]
+        textView?.inlineFormulas = textView?.inlineFormulas.filter { !styled($0.key) } ?? [:]
+        textView?.htmlBlocks = textView?.htmlBlocks.filter { !styled($0.key) } ?? [:]
+        textView?.inlineHTMLImages = textView?.inlineHTMLImages.filter { !styled($0.key) } ?? [:]
         textView?.styledEditedFormula = textView?.editedFormula
         /// Markers are styled after every font, since the hidden ones measure their own width.
         func hide(_ ranges: [NSRange]) { hidden += ranges }
@@ -304,13 +325,12 @@ struct NativeEditor: NSViewRepresentable {
         }
 
         // A table of contents Markify keeps is drawn as a Contents card in the Rendered lens; its parts are styled below.
-        let tableOfContents = markdownLens ? nil : TableOfContentsBlock.find(in: model)
         func inTableOfContents(_ location: Int, body: Bool = false) -> Bool {
             tableOfContents.map { NSLocationInRange(location, body ? $0.body : $0.range) } ?? false
         }
 
         // Blocks: fonts and fills that inline styles then build on.
-        for span in model.spans {
+        for span in spans {
             switch span.kind {
             case .htmlBlock where inTableOfContents(span.range.location),
                  .listItem where inTableOfContents(span.range.location, body: true):
@@ -415,7 +435,7 @@ struct NativeEditor: NSViewRepresentable {
         }
         if markdownLens {
             // Table syntax: the separator row and the pipes around cells.
-            for table in model.tables {
+            for table in tables {
                 for row in table.rows {
                     var location = row.start
                     for cell in row.cells + [NSRange(location: row.end, length: 0)] {
@@ -432,7 +452,7 @@ struct NativeEditor: NSViewRepresentable {
         // OKF footnote labels key into `sources` (§5.1).
         let sources = Dictionary(((try? OKFConcept.parse(source: editor.string)?.get())?.sources ?? []).compactMap { source in source.id.map { ($0, source) } },
                                  uniquingKeysWith: { first, _ in first })
-        for span in model.spans {
+        for span in spans {
             switch span.kind {
             case .strong:
                 adding(bold: true, to: span.content)
@@ -518,7 +538,7 @@ struct NativeEditor: NSViewRepresentable {
 
         for range in hidden { marker(range) }
         if let textView {
-            for (location, image) in textView.inlineHTMLImages {
+            for (location, image) in textView.inlineHTMLImages where styled(location) {
                 let first = source.rangeOfComposedCharacterSequence(at: location)
                 let advance = (source.substring(with: first) as NSString).size(withAttributes: [.font: image.font]).width
                 storage.addAttributes([.font: image.font, .foregroundColor: NSColor.clear, .kern: image.width - advance], range: first)
@@ -547,11 +567,11 @@ struct NativeEditor: NSViewRepresentable {
         for range in destinations { storage.addAttribute(.foregroundColor, value: accent, range: range) }
         if !markdownLens {
             // A block image's caption shows its alt text under the drawn image.
-            for span in model.spans { if case .image(_, true) = span.kind { storage.addAttributes([.font: theme.ui(13), .foregroundColor: secondary], range: span.content) } }
+            for span in spans { if case .image(_, true) = span.kind { storage.addAttributes([.font: theme.ui(13), .foregroundColor: secondary], range: span.content) } }
         }
 
         // Hanging indent: wrapped lines of a list item align with its text, not its marker.
-        for span in model.spans {
+        for span in spans {
             guard case .listItem(let item) = span.kind else { continue }
             let line = source.lineRange(for: NSRange(location: item.marker.location, length: 0))
             var end = NSMaxRange(item.checkbox ?? item.marker)
@@ -561,7 +581,7 @@ struct NativeEditor: NSViewRepresentable {
             storage.addAttribute(.paragraphStyle, value: style, range: line)
         }
         let lists = MarkdownList.scan(model)
-        for lazy in lists.lazyLines {
+        for lazy in lists.lazyLines where styled(lazy.line) {
             guard let owner = storage.attribute(.paragraphStyle, at: lazy.item, effectiveRange: nil) as? NSParagraphStyle,
                   let style = owner.mutableCopy() as? NSMutableParagraphStyle else { continue }
             style.firstLineHeadIndent = owner.headIndent
@@ -576,7 +596,7 @@ struct NativeEditor: NSViewRepresentable {
             let digit = ("0" as NSString).size(withAttributes: [.font: font]).width
             let numbers = lists.numbers
             let widest = Dictionary(numbers.map { ($0.list, $0.value.count) }, uniquingKeysWith: max)
-            for number in numbers {
+            for number in numbers where styled(number.range) {
                 // Hide digits and delimiter; pad the space after them so the text starts past the widest number.
                 storage.addAttributes([.foregroundColor: NSColor.clear, .font: font], range: NSRange(location: number.range.location, length: number.range.length + 1))
                 let pad = CGFloat((widest[number.list] ?? 1) - number.range.length) * digit
@@ -584,7 +604,7 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttributes([.markifyListNumber: number.value + source.substring(with: NSRange(location: NSMaxRange(number.range), length: 1)),
                                        .markifyListNumberOffset: CGFloat((widest[number.list] ?? 1) - number.value.count) * digit], range: number.range)
             }
-            for table in model.tables {
+            for table in tables {
                 for row in table.rows {
                     let rowStyle = NSMutableParagraphStyle()
                     rowStyle.minimumLineHeight = row.separator ? 0.01 : (editor as? MarkdownTextView)?.tableRowHeight(row, table: table) ?? 43
@@ -596,7 +616,7 @@ struct NativeEditor: NSViewRepresentable {
                                           range: NSRange(location: row.start, length: row.end - row.start))
                 }
             }
-            if let toc = tableOfContents {
+            if let toc = tableOfContents, styled(toc.range) {
                 let scale = theme.scale
                 // The opening comment's line holds the card's title, which the line's fragment draws in its place.
                 storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(11, weight: .semibold)], range: toc.opening)
@@ -620,7 +640,7 @@ struct NativeEditor: NSViewRepresentable {
                     while spaces < line.length, source.character(at: line.location + spaces) == 32 { spaces += 1 }
                     return min(spaces / 2, 5)
                 }
-                for span in model.spans {
+                for span in spans {
                     guard case .listItem(let item) = span.kind, NSLocationInRange(item.marker.location, toc.body) else { continue }
                     let line = source.lineRange(for: NSRange(location: item.marker.location, length: 0))
                     var end = NSMaxRange(item.marker)
@@ -634,7 +654,7 @@ struct NativeEditor: NSViewRepresentable {
                     storage.addAttribute(.paragraphStyle, value: style, range: line)
                     if depth > 0 { storage.addAttribute(.markifyGuides, value: MarkdownGuides(count: depth, origin: origin, step: step, color: .separatorColor), range: line) }
                 }
-                for span in model.spans where NSLocationInRange(span.range.location, toc.body) {
+                for span in spans where NSLocationInRange(span.range.location, toc.body) {
                     guard case .link = span.kind else { continue }
                     let top = level(source.lineRange(for: span.range)) == 0
                     storage.addAttributes([.font: top ? theme.ui(15, weight: .semibold) : theme.ui(14), .foregroundColor: top ? primary : secondary], range: span.content)
@@ -677,7 +697,7 @@ struct NativeEditor: NSViewRepresentable {
                 style.paragraphSpacing = MarkdownTextView.diagramErrorHeight * theme.scale
                 storage.addAttribute(.paragraphStyle, value: style, range: last)
             }
-            for span in model.spans where span.kind == .mathBlock {
+            for span in spans where span.kind == .mathBlock {
                 let style = NSMutableParagraphStyle()
                 style.alignment = .center
                 style.minimumLineHeight = 80
@@ -685,7 +705,7 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: span.range.location, length: min(2, span.range.length)))
             }
         }
-        if let frontmatter = model.spans.first(where: { $0.kind == .frontmatter }) {
+        if let frontmatter = spans.first(where: { $0.kind == .frontmatter }) {
             if markdownLens {
                 matches("(?m)^([A-Za-z_][A-Za-z0-9_-]*):") { match in
                     if NSLocationInRange(match.range.location, frontmatter.content) {
@@ -705,22 +725,13 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.paragraphStyle, value: row, range: source.lineRange(for: NSRange(location: frontmatter.range.location, length: 0)))
             }
         }
-        if !findQuery.isEmpty {
-            let options: NSRegularExpression.Options = matchCase ? [] : [.caseInsensitive]
-            if let regex = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: findQuery), options: options) {
-                for match in regex.matches(in: editor.string, range: whole) {
-                    var visible = true
-                    if !markdownLens {
-                        storage.enumerateAttribute(.foregroundColor, in: match.range) { value, _, stop in
-                            if let color = value as? NSColor, color.alphaComponent == 0 { visible = false; stop.pointee = true }
-                        }
-                    }
-                    if visible { storage.addAttribute(.backgroundColor, value: match.range == currentMatch ? NSColor.findCurrent : NSColor.findMatch, range: match.range) }
-                }
-            }
-        }
+        let found = findMatches(in: editor, storage: storage, within: scope)
+        for range in found { storage.addAttribute(.backgroundColor, value: range == currentMatch ? NSColor.findCurrent : NSColor.findMatch, range: range) }
+        // A partial pass replaces only the highlights in its lines.
+        let highlights = Dictionary(found.map { ($0, $0 == currentMatch) }, uniquingKeysWith: { first, _ in first })
+        styling?.findHighlights = partial ? (styling?.findHighlights ?? [:]).filter { NSIntersectionRange($0.key, scope).length == 0 }.merging(highlights) { $1 } : highlights
         storage.endEditing()
-        if storage !== live { Self.applyChangedAttributes(from: storage, to: live) }
+        if storage !== live { Self.applyChangedAttributes(from: storage, to: live, in: partial ? scope : nil) }
         updateTypingFont(editor)
         if let editor = editor as? MarkdownTextView {
             editor.forgetImages()
@@ -728,16 +739,61 @@ struct NativeEditor: NSViewRepresentable {
         }
     }
 
+    /// The find matches in `range` that this lens shows: a match whose text is hidden (a marker in the Rendered lens) is not.
+    func findMatches(in editor: NSTextView, storage: NSTextStorage, within range: NSRange) -> [NSRange] {
+        guard !findQuery.isEmpty,
+              let regex = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: findQuery), options: matchCase ? [] : [.caseInsensitive])
+        else { return [] }
+        return regex.matches(in: editor.string, range: range).map(\.range).filter { match in
+            guard !markdownLens else { return true }
+            var visible = true
+            storage.enumerateAttribute(.foregroundColor, in: match) { value, _, stop in
+                if let color = value as? NSColor, color.alphaComponent == 0 { visible = false; stop.pointee = true }
+            }
+            return visible
+        }
+    }
+
+    /// Moves the find highlights without a syntax pass: the previous matches lose their background (a code block's fill
+    /// shows through where one covers them) and the current matches gain theirs. Syntax attributes are left alone.
+    func updateFindHighlights(_ editor: NSTextView) {
+        guard let storage = editor.textStorage, let styling = editor as? MarkdownTextView else { return }
+        let length = storage.length
+        let code: [NSRange] = markdownLens ? styling.model.spans.compactMap { span in
+            if case .codeBlock = span.kind { return span.content }
+            return nil
+        } : []
+        let found = findMatches(in: editor, storage: storage, within: NSRange(location: 0, length: length))
+        let highlights = Dictionary(found.map { ($0, $0 == currentMatch) }, uniquingKeysWith: { first, _ in first })
+        let previous = styling.findHighlights
+        storage.beginEditing()
+        // Only matches that left or changed between current and not are touched.
+        for (old, wasCurrent) in previous where highlights[old] != wasCurrent && NSMaxRange(old) <= length {
+            storage.removeAttribute(.backgroundColor, range: old)
+            for block in code {
+                let overlap = NSIntersectionRange(block, old)
+                if overlap.length > 0 { storage.addAttribute(.backgroundColor, value: NSColor.codeFill, range: overlap) }
+            }
+        }
+        for (range, isCurrent) in highlights where previous[range] != isCurrent {
+            storage.addAttribute(.backgroundColor, value: isCurrent ? NSColor.findCurrent : NSColor.findMatch, range: range)
+        }
+        storage.endEditing()
+        styling.findHighlights = highlights
+    }
+
     /// Copies `styled`'s attributes onto `live` only where they differ, so TextKit keeps the layout of unchanged text.
-    static func applyChangedAttributes(from styled: NSAttributedString, to live: NSTextStorage) {
+    /// `scope` limits the comparison to the lines a partial pass styled.
+    static func applyChangedAttributes(from styled: NSAttributedString, to live: NSTextStorage, in scope: NSRange? = nil) {
         let length = min(styled.length, live.length)
-        var location = 0
+        let stop = min(scope.map { NSMaxRange($0) } ?? length, length)
+        var location = scope?.location ?? 0
         live.beginEditing()
-        while location < length {
+        while location < stop {
             var new = NSRange(), old = NSRange()
             let attributes = styled.attributes(at: location, effectiveRange: &new)
             let current = live.attributes(at: location, effectiveRange: &old)
-            let end = min(NSMaxRange(new), NSMaxRange(old), length)
+            let end = min(NSMaxRange(new), NSMaxRange(old), stop)
             if !(attributes as NSDictionary).isEqual(to: current) {
                 live.setAttributes(attributes, range: NSRange(location: location, length: end - location))
             }
@@ -771,7 +827,8 @@ struct NativeEditor: NSViewRepresentable {
     /// The height a Mermaid block takes as a diagram, or nil when it failed and shows as code with the error below.
     func diagramHeight(_ span: MarkdownModel.Span, source: NSString, dark: Bool, textView: MarkdownTextView?) -> CGFloat? {
         let diagram = source.substring(with: span.content)
-        let state = MermaidRenderer.shared.state(of: diagram, dark: dark, owner: textView) { [weak textView] in textView?.scheduleRenderRestyle() }
+        let key = MarkdownTextView.mermaidKey(diagram, dark: dark)
+        let state = MermaidRenderer.shared.state(of: diagram, dark: dark, owner: textView) { [weak textView] in textView?.scheduleRenderRestyle(key) }
         switch state {
         case .rendering: return MarkdownTextView.diagramPadding * 2 + 88
         case .rendered(let image): return MarkdownTextView.fitted(image.size, width: columnWidth).height + MarkdownTextView.diagramPadding * 2
@@ -920,7 +977,7 @@ class MarkdownTextView: NSTextView {
     var loadRemoteImages = true {
         didSet {
             if !loadRemoteImages { RemoteImages.shared.release(owner: self) }
-            if loadRemoteImages != oldValue { remoteImageLoaded() }
+            if loadRemoteImages != oldValue { requestAssetRestyle(nil); remoteImageLoaded() }
         }
     }
     var onSlashKey: ((SlashKey, SlashContext) -> Bool)?
@@ -949,7 +1006,7 @@ class MarkdownTextView: NSTextView {
             guard let self, !Task.isCancelled else { return }
             self.imageValidation = nil
             for url in changed { self.removeLocalImage(url) }
-            if !changed.isEmpty { self.scheduleRemoteRestyle() }
+            for url in changed { self.scheduleRemoteRestyle(MarkdownTextView.imageKey(url)) }
         }
     }
 
@@ -1055,6 +1112,77 @@ class MarkdownTextView: NSTextView {
         multipleCharacterEdits = false
     }
 
+    /// The find matches currently highlighted, each marked when it is the current match, so a find change moves only the
+    /// highlights that changed.
+    var findHighlights: [NSRange: Bool] = [:]
+    /// Assets that finished loading since the last style pass, in the form `imageKey` and `mermaidKey` build. Nil asks
+    /// for a full pass, for callers that cannot name what changed.
+    private var assetRestyles: Set<String>? = []
+
+    func requestAssetRestyle(_ asset: String?) {
+        guard let asset else { assetRestyles = nil; return }
+        assetRestyles?.insert(asset)
+    }
+
+    func takeAssetRestyles() -> Set<String>? {
+        defer { assetRestyles = [] }
+        return assetRestyles
+    }
+
+    static func imageKey(_ url: URL) -> String { "image:" + url.absoluteString }
+    static func mermaidKey(_ diagram: String, dark: Bool) -> String { "mermaid:\(dark):" + diagram }
+
+    /// Whether a pass may style only some blocks: the text and style settings match the last pass and no edit is pending.
+    func canRestyleRegion(key: StyleKey) -> Bool {
+        styleKey == key && !multipleCharacterEdits && pendingCharacterEdit == nil && styledSource == string
+    }
+
+    /// The asset keys a span shows: an image, the `<img>` tags of an HTML block, or a Mermaid diagram.
+    func assetKeys(_ span: MarkdownModel.Span, model: MarkdownModel, dark: Bool) -> [String] {
+        let source = model.source as NSString
+        func htmlImages(_ html: String) -> [String] {
+            let tags = Self.imageTag.matches(in: html, range: NSRange(location: 0, length: (html as NSString).length))
+            return tags.compactMap { Self.htmlAttribute("src", in: (html as NSString).substring(with: $0.range)) }
+                .map { Self.imageKey(Self.imageURL($0, document: documentURL, baseDirectory: baseDirectory)) }
+        }
+        switch span.kind {
+        case .image(let path, _):
+            return [Self.imageKey(Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory))]
+        case .inlineHTML:
+            return htmlImages(source.substring(with: span.range))
+        case .htmlBlock:
+            return htmlImages(source.substring(with: span.content))
+        case .codeBlock(let language?, true) where language.lowercased() == "mermaid":
+            return [Self.mermaidKey(source.substring(with: span.content), dark: dark)]
+        default:
+            return []
+        }
+    }
+
+    private static let imageTag = try! NSRegularExpression(pattern: #"<img\b[^>]*>"#, options: .caseInsensitive)
+
+    /// The lines of every block that shows one of `assets`, grown until no block there reaches a block outside it, so
+    /// styling just these lines matches a full pass. Nil when no block shows them.
+    func assetScope(_ assets: Set<String>, model: MarkdownModel, dark: Bool, extra: [NSRange]) -> NSRange? {
+        let source = model.source as NSString
+        var region: NSRange?
+        for span in model.spans where assetKeys(span, model: model, dark: dark).contains(where: assets.contains) {
+            let lines = source.lineRange(for: span.range)
+            region = region.map { NSUnionRange($0, lines) } ?? lines
+        }
+        guard var scope = region else { return nil }
+        let candidates = model.spans.map(\.range) + model.tables.map(\.range) + model.lists.map(\.range) + extra
+        var grown = true
+        while grown {
+            grown = false
+            for candidate in candidates where NSIntersectionRange(candidate, scope).length > 0 {
+                let union = NSUnionRange(scope, source.lineRange(for: candidate))
+                if union != scope { scope = union; grown = true }
+            }
+        }
+        return scope
+    }
+
     func changedStyledParagraph(key: StyleKey) -> (range: NSRange, model: MarkdownModel)? {
         guard styleKey == key, !multipleCharacterEdits, let edit = pendingCharacterEdit,
               let styledSource, let previous = modelCache?.model, previous.source == styledSource else { return nil }
@@ -1147,7 +1275,10 @@ class MarkdownTextView: NSTextView {
     private var tableHoverWork: DispatchWorkItem?
     private var tableAnimation: Task<Void, Never>?
     private var tableAnimatedHeights: [Int: CGFloat] = [:]
-    private var tableWidthCache: (version: Int, width: CGFloat, values: [Int: [CGFloat]])?
+    /// Column widths by table, with the table's source text they were measured from. After an edit they hold while the
+    /// table's own text is unchanged, so typing elsewhere keeps them.
+    private var tableWidthCache: (width: CGFloat, values: [Int: (text: String, version: Int, widths: [CGFloat])])?
+    private var tableRowsCache: (version: Int, rendered: Bool, rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)], indices: [Int: Int])?
     private var tableRowIndices: [Int: Int] = [:]
     private var refreshingTables = false
     private var tableRefreshScheduled = false
@@ -1229,11 +1360,17 @@ class MarkdownTextView: NSTextView {
     }
 
     func tableWidths(_ table: MarkdownModel.Table) -> [CGFloat] {
-        if tableWidthCache?.version != textVersion || tableWidthCache?.width != columnWidth {
-            tableWidthCache = (textVersion, columnWidth, [:])
-        }
+        if tableWidthCache?.width != columnWidth { tableWidthCache = (columnWidth, [:]) }
         let key = table.rows.first?.start ?? 0
-        if let widths = tableWidthCache?.values[key] { return widths }
+        if let entry = tableWidthCache?.values[key] {
+            if entry.version == textVersion { return entry.widths }
+            // The text changed since these widths were measured; they still hold if this table's text did not.
+            let text = (string as NSString).substring(with: table.range)
+            if text == entry.text {
+                tableWidthCache?.values[key] = (text, textVersion, entry.widths)
+                return entry.widths
+            }
+        }
         let source = string as NSString
         let count = table.rows.first?.cells.count ?? 0
         guard count > 0 else { return [] }
@@ -1256,7 +1393,8 @@ class MarkdownTextView: NSTextView {
             let remaining = columnWidth - compact.reduce(0) { $0 + widths[$1] }
             for col in widths.indices where !compact.contains(col) { widths[col] = remaining / CGFloat(count - compact.count) }
         }
-        tableWidthCache?.values[key] = widths
+        if tableWidthCache?.values.count ?? 0 >= 64 { tableWidthCache?.values = [:] }
+        tableWidthCache?.values[key] = (source.substring(with: table.range), textVersion, widths)
         return widths
     }
 
@@ -1282,22 +1420,19 @@ class MarkdownTextView: NSTextView {
                 let badge = TableRowView.badgeWidth(text, available: widths[col] - 28)
                 return TableRowView.cellHeight(text, width: badge, id: true) + 22
             }
-            return tablePresentation(range, width: widths[col] - 28).fullHeight + 22
+            return tablePresentation(range, width: widths[col] - 28, column: col, header: false, alignment: tableAlignment(col, table: table)).fullHeight + 22
         }.max() ?? 43
     }
 
-    func tablePresentation(_ range: NSRange, width: CGFloat) -> TableCellPresentation {
+    /// A cell's reading. The caller knows the cell's column, header and alignment, so nothing is searched for here.
+    func tablePresentation(_ range: NSRange, width: CGFloat, column: Int, header: Bool, alignment: NSTextAlignment) -> TableCellPresentation {
         // Scrolling can keep the main queue busy across many refreshes. Drain TextKit's
         // temporary views here instead of retaining discarded cells until that queue idles.
         autoreleasepool {
             let presentation = tablePresentations[range.location] ?? reusableTablePresentations.popLast() ?? TableCellPresentation()
             tablePresentations[range.location] = presentation
             presentation.reading.tableSourceRange = range
-            let table = model.tables.first { $0.rows.contains { $0.cells.contains(range) } }
-            let column = table?.rows.first(where: { $0.cells.contains(range) })?.cells.firstIndex(of: range) ?? 0
-            let header = table?.rows.first?.cells.contains(range) == true
-            presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header,
-                                alignment: table.map { tableAlignment(column, table: $0) } ?? .left)
+            presentation.update(source: (string as NSString).substring(with: range), width: width, owner: self, header: header, alignment: alignment)
             return presentation
         }
     }
@@ -1325,10 +1460,14 @@ class MarkdownTextView: NSTextView {
             hoveredTableRow = nil
             tableAnimatedHeights = [:]
         }
-        let rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)] = rendered ? model.tables.flatMap { table in
-            table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
-        } : []
-        tableRowIndices = Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) })
+        if tableRowsCache?.version != textVersion || tableRowsCache?.rendered != rendered {
+            let rows: [(MarkdownTable.Row, Bool, MarkdownModel.Table, Int)] = rendered ? model.tables.flatMap { table in
+                table.rows.enumerated().compactMap { index, row in row.separator ? nil : (row, index == 0, table, index) }
+            } : []
+            tableRowsCache = (textVersion, rendered, rows, Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) }))
+        }
+        let rows = tableRowsCache?.rows ?? []
+        tableRowIndices = tableRowsCache?.indices ?? [:]
         var wanted = Set(rows.indices)
         if rows.count > 32, let manager = textLayoutManager, let content = manager.textContentManager {
             manager.ensureLayout(for: visibleRect.insetBy(dx: 0, dy: -200))
@@ -2039,7 +2178,7 @@ class MarkdownTextView: NSTextView {
                 guard self.activeHTML.contains(raw), self.columnWidth == width, self.theme.accent == accent else {
                     self.htmlInputs[key] = nil
                     self.htmlCosts[key] = nil
-                    self.scheduleRemoteRestyle()
+                    self.scheduleRemoteRestyle(nil)
                     return
                 }
                 guard let parsed = imported.text, parsed.length > 0 else { self.htmlFailures.insert(key); return }
@@ -2055,7 +2194,7 @@ class MarkdownTextView: NSTextView {
                 let scale = min(1, width / max(size.width, 1))
                 self.htmlRenderCache[key] = HTMLBlockRender(text: text, scale: scale, height: max(20, ceil(size.height * scale)))
                 self.htmlCosts[key] = cost
-                self.scheduleRemoteRestyle()
+                self.scheduleRemoteRestyle(nil)
             }
         }
         return nil
@@ -2205,7 +2344,7 @@ class MarkdownTextView: NSTextView {
             let remote = resolved
             let host = remote.host() ?? path
             guard loadRemoteImages else { return .placeholder("Remote image — \(host)") }
-            switch RemoteImages.shared.state(of: remote, owner: self, onChange: { [weak self] in self?.scheduleRemoteRestyle() }) {
+            switch RemoteImages.shared.state(of: remote, owner: self, onChange: { [weak self] in self?.scheduleRemoteRestyle(MarkdownTextView.imageKey(remote)) }) {
             case .loaded(let image): return .image(image)
             case .loading: return .placeholder("Loading image — \(host)")
             case .failed: return .placeholder("Image unavailable — \(host)")
@@ -2237,7 +2376,7 @@ class MarkdownTextView: NSTextView {
                 } else { self.imageCache[url] = .some(nil) }
                 self.imageStamps[url] = stamp
             } else { self.imageCache[url] = .some(nil) }
-            self.scheduleRemoteRestyle()
+            self.scheduleRemoteRestyle(MarkdownTextView.imageKey(url))
         }
         return imageCache[url]?.map(ImageContent.image) ?? .placeholder("Loading image — \(url.lastPathComponent)")
     }
@@ -2249,10 +2388,11 @@ class MarkdownTextView: NSTextView {
     }
 
     private var remoteRestyleScheduled = false
-    func scheduleRenderRestyle() { scheduleRemoteRestyle() }
+    func scheduleRenderRestyle(_ asset: String?) { scheduleRemoteRestyle(asset) }
     /// Every style pass asks again for each image still loading, so one arrival can carry many callbacks,
     /// and several images arrive together: they share one restyle on the next turn of the run loop.
-    private func scheduleRemoteRestyle() {
+    private func scheduleRemoteRestyle(_ asset: String?) {
+        requestAssetRestyle(asset)
         guard !remoteRestyleScheduled else { return }
         remoteRestyleScheduled = true
         DispatchQueue.main.async { [weak self] in
@@ -3367,7 +3507,7 @@ final class TableRowView: NSView {
             field.onFocus = onFocus
             field.onTab = onTab
             if index != idColumn, let owner {
-                let presentation = owner.tablePresentation(range, width: width - 28)
+                let presentation = owner.tablePresentation(range, width: width - 28, column: index, header: header, alignment: alignment)
                 if presentation.superview !== self { presentation.removeFromSuperview(); addSubview(presentation) }
                 presentation.field = field
                 presentation.frame = NSRect(x: cellX + 14, y: 11, width: max(1, width - 28), height: bounds.height - 22)

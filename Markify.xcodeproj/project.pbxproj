@@ -18,9 +18,9 @@
 		B10000000000000000000004 /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
 		B10000000000000000000005 /* Markify/MathSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* Markify/MathSVG.swift */; };
 		B10000000000000000000007 /* Markify/Mermaid.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* Markify/Mermaid.swift */; };
-		B10000000000000000000019 /* Markify/DiagramCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* Markify/DiagramCache.swift */; };
 		B10000000000000000000009 /* Markify/Resources/Mermaid/mermaid.html in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */; };
 		B1000000000000000000000B /* Markify/Resources/Mermaid/mermaid.min.js in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */; };
+		B10000000000000000000019 /* Markify/DiagramCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* Markify/DiagramCache.swift */; };
 		C10000000000000000000001 /* PreviewImages.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* PreviewImages.xpc */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C10000000000000000000003 /* QuickLook/PreviewImageProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000004 /* QuickLook/PreviewImageProtocol.swift */; };
 		C10000000000000000000005 /* MarkifyMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 0AF0C0062E80000000000006 /* MarkifyMarkdown */; };
@@ -89,9 +89,9 @@
 		B10000000000000000000002 /* MarkifyQuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MarkifyQuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000006 /* Markify/MathSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/MathSVG.swift; sourceTree = SOURCE_ROOT; };
 		B10000000000000000000008 /* Markify/Mermaid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/Mermaid.swift; sourceTree = SOURCE_ROOT; };
-		B1000000000000000000001A /* Markify/DiagramCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/DiagramCache.swift; sourceTree = SOURCE_ROOT; };
 		B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Markify/Resources/Mermaid/mermaid.html; sourceTree = SOURCE_ROOT; };
 		B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Markify/Resources/Mermaid/mermaid.min.js; sourceTree = SOURCE_ROOT; };
+		B1000000000000000000001A /* Markify/DiagramCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/DiagramCache.swift; sourceTree = SOURCE_ROOT; };
 		C10000000000000000000002 /* PreviewImages.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; path = PreviewImages.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		C10000000000000000000004 /* QuickLook/PreviewImageProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLook/PreviewImageProtocol.swift; sourceTree = SOURCE_ROOT; };
 		D10000000000000000000001 /* Sentry.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Sentry.xcconfig; path = Config/Sentry.xcconfig; sourceTree = SOURCE_ROOT; };
@@ -395,6 +395,8 @@
 			knownRegions = (
 				en,
 				Base,
+				fr,
+				es,
 			);
 			mainGroup = 76A590DE2DC952970033A6AC;
 			minimizedProjectReferenceProxies = 1;
@@ -670,7 +672,7 @@
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 335;
+				CURRENT_PROJECT_VERSION = 339;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -708,7 +710,7 @@
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 335;
+				CURRENT_PROJECT_VERSION = 339;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -815,7 +817,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 335;
+				CURRENT_PROJECT_VERSION = 339;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -838,7 +840,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 335;
+				CURRENT_PROJECT_VERSION = 339;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -859,7 +861,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 335;
+				CURRENT_PROJECT_VERSION = 339;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -882,7 +884,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 335;
+				CURRENT_PROJECT_VERSION = 339;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;

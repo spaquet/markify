@@ -11,6 +11,7 @@ final class ShortcutUITests: XCTestCase {
         app.launchArguments += [
             "-startup", "New document", "-didShowWelcome", "YES", "-shortcuts", "",
             "-defaultLens", "Rendered", "-rememberLens", "NO", "-SUEnableAutomaticChecks", "NO", "-ApplePersistenceIgnoreState", "YES",
+            "-telemetryOnboarded", "YES", "-telemetryEnabled", "NO",
         ]
         app.launch()
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "No editor window")

@@ -48,6 +48,8 @@ public struct MarkdownModel: Sendable {
             guard span.range.location >= range.location, NSMaxRange(span.range) <= NSMaxRange(range) else { return nil }
             switch span.kind {
             case .strong, .emphasis, .strikethrough, .inlineCode, .escape, .link: break
+            // ATX headings sit on one line and style only their own line; setext headings span into the next.
+            case .heading(_, setext: false): break
             default: return nil
             }
             func shifted(_ value: NSRange) -> NSRange { NSRange(location: value.location - range.location, length: value.length) }
