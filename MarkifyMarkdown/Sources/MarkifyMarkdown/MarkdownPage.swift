@@ -25,7 +25,7 @@ public enum MarkdownPage {
     public static func html(_ context: Context, math: @escaping (String, Bool) -> String? = { _, _ in nil },
                             diagram: @escaping (String, String) -> String? = { _, _ in nil },
                             highlight: @escaping (String, String?) -> String? = { _, _ in nil },
-                            pdf: Bool = false, remoteImages: Bool = true) -> String {
+                            remoteImages: Bool = true) -> String {
         var images: [String: String] = [:]
         var remainingImageBytes = 50_000_000
         let options = MarkdownHTML.Options(math: math, diagram: diagram,
@@ -49,9 +49,8 @@ public enum MarkdownPage {
         }
         body += result.body
         var head = "<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<meta name=\"generator\" content=\"Markify\">\n<meta name=\"color-scheme\" content=\"light dark\">\n"
-        if pdf {
-            head += "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:\(remoteImages ? " https: http:" : ""); font-src data:\">\n"
-        }
+        // Every page, HTML export included, blocks scripts and event handlers; remote images follow Settings.
+        head += "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:\(remoteImages ? " https: http:" : ""); font-src data:\">\n"
         head += "<title>\(MarkdownHTML.escape(title))</title>\n<style>\n\(stylesheet)</style>\n"
         return "<!doctype html>\n<html lang=\"\(language)\">\n<head>\n\(head)</head>\n<body>\n<main>\n<article>\n\(body)</article>\n</main>\n</body>\n</html>\n"
     }

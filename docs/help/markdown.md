@@ -29,7 +29,7 @@ Markify reads Markdown the way GitHub does: it follows [CommonMark](https://comm
 
 ### HTML and scripts
 
-Markify does not run scripts from a document in the editor: the Rendered lens shows the HTML's text, images and tables, and scripts do not run. Markify does not filter HTML by an allowlist of tags or attributes. PDF export and Quick Look block scripts. HTML export keeps the document's HTML as written, so a script in the source runs when you open the exported file in a browser. Export only documents you trust to HTML until this is fixed. Remote images load only when **Load remote images** is on in Settings; it is on by default.
+Markify does not run scripts from a document. The Rendered lens shows the HTML's text, images and tables, and scripts do not run. HTML and PDF exports, and Quick Look, carry a Content-Security-Policy that blocks scripts and event handlers, so an exported file does not run them when you open it. Markify does not filter HTML by an allowlist of tags or attributes, so the exported page keeps the HTML as written, just without running it. Remote images load only when **Load remote images** is on in Settings; it is on by default, and the exported page allows remote images only when it is on.
 
 ## Callouts
 

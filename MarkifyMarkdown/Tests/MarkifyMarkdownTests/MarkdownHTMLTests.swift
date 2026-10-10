@@ -17,6 +17,7 @@ private func html(_ source: String, mdx: Bool = false, options: MarkdownHTML.Opt
         #expect(MarkdownPage.imageSource("images/a%20b.png", context: context) == "https://example.com/docs/images/a%20b.png")
         #expect(MarkdownPage.imageSource("/logo.png", context: context) == "https://example.com/logo.png")
         let page = MarkdownPage.html(context)
+        #expect(page.contains("Content-Security-Policy"))
         #expect(page.contains("https://example.com/next.md#part"))
         #expect(page.contains("https://example.com/docs/images/a%20b.png"))
         #expect(context.source == source)

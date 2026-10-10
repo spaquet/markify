@@ -60,24 +60,23 @@ import WebKit
             if diagrams[key] == nil, let svg = await MermaidRenderer.shared.svg(for: code) { diagrams[key] = svg }
         }
         let remote = UserDefaults.standard.object(forKey: "loadRemoteImages") as? Bool ?? true
-        let pdf = format == .pdf
         // Math outlines, code colors and embedded images take a while on long documents; the main thread stays free.
         let renderedDiagrams = diagrams
         let work = Task.detached(priority: .userInitiated) {
             guard !Task.isCancelled else { return "" }
-            return render(context, diagrams: renderedDiagrams, pdf: pdf, remoteImages: remote)
+            return render(context, diagrams: renderedDiagrams, remoteImages: remote)
         }
         return await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
     }
 
     /// The page from already-rendered diagrams, on any thread.
-    nonisolated static func render(_ context: Context, diagrams: [String: String], pdf: Bool, remoteImages: Bool) -> String {
+    nonisolated static func render(_ context: Context, diagrams: [String: String], remoteImages: Bool) -> String {
         MarkdownPage.html(shared(context),
             math: { latex, display in MathSVG.render(latex, display: display) },
             diagram: { language, code in
                 language.lowercased() == "mermaid" ? diagrams[code.trimmingCharacters(in: .whitespacesAndNewlines)] : nil
             },
-            highlight: { code, _ in highlighted(code) }, pdf: pdf, remoteImages: remoteImages)
+            highlight: { code, _ in highlighted(code) }, remoteImages: remoteImages)
     }
 
     static func writeHTML(_ context: Context) async throws {
