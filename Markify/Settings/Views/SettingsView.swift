@@ -40,10 +40,11 @@ struct SettingsView: View {
     @State private var isDefaultApp = false
     @State private var recording: String?
     @State private var recordMonitor: Any?
+    @State private var telemetryOn = Telemetry.isEnabled
     @State private var checksForUpdates = Updates.updater.automaticallyChecksForUpdates
     @State private var installsUpdates = Updates.updater.automaticallyDownloadsUpdates
 
-    private enum Tab { case general, editor, appearance, search, intelligence, shortcuts }
+    private enum Tab { case general, editor, appearance, search, intelligence, shortcuts, privacy }
     private var accent: Color { AccentChoice.color(accentColor) }
 
     var body: some View {
@@ -54,6 +55,7 @@ struct SettingsView: View {
             SearchSettingsView().tabItem { Label("Search", systemImage: "magnifyingglass") }.tag(Tab.search)
             intelligence.tabItem { Label("Intelligence", systemImage: "apple.intelligence") }.tag(Tab.intelligence)
             shortcuts.tabItem { Label("Shortcuts", systemImage: "keyboard") }.tag(Tab.shortcuts)
+            privacy.tabItem { Label("Privacy", systemImage: "hand.raised") }.tag(Tab.privacy)
         }
         .frame(width: 780, height: 520)
         .tint(accent)
@@ -310,6 +312,39 @@ struct SettingsView: View {
     }
 
     // MARK: Intelligence
+
+    private var privacy: some View {
+        Form {
+            Section {
+                Toggle(isOn: Binding(
+                    get: { telemetryOn },
+                    set: { telemetryOn = $0; Telemetry.setEnabled($0) }
+                )) {
+                    Text("Send crash and performance reports")
+                    Text("Helps us find and fix crashes and slow spots. Takes effect at once.")
+                }
+            }
+            Section("What is sent") {
+                Label("Crash stack traces and the error that caused them", systemImage: "exclamationmark.triangle")
+                Label("Markify's version and macOS version, and your Mac's model", systemImage: "desktopcomputer")
+                Label("Timing for a sample of sessions, about one in ten", systemImage: "speedometer")
+            }
+            Section("What is never sent") {
+                Label("Markdown text, titles, file names or paths", systemImage: "doc.text")
+                Label("OKF bundle contents or links between notes", systemImage: "books.vertical")
+                Label("Your name, account or any device identifier", systemImage: "person.crop.circle.badge.xmark")
+                Label("IP addresses. Markify doesn't collect them", systemImage: "network.slash")
+            }
+            Section {
+                Text("Reports go to Sentry. As with any web request, Sentry's servers see the connection's address; Markify doesn't ask Sentry to keep it. Turning the program off stops all reports.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                Button("Read the full privacy details…") { HelpBook.open("legal") }
+                    .buttonStyle(.link)
+            }
+        }
+        .formStyle(.grouped)
+    }
 
     private var intelligence: some View {
         Form {
