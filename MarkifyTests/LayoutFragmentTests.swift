@@ -175,6 +175,20 @@ import Testing
         return count
     }
 
+    /// Pixels inside `rect` (in draw coordinates, y down) that differ from `color`, such as ink over a box's fill.
+    static func differing(_ rep: NSBitmapImageRep, in rect: CGRect, from color: NSColor) -> Int {
+        var count = 0
+        for x in Int(rect.minX)..<Int(rect.maxX) {
+            for y in Int(rect.minY)..<Int(rect.maxY) where x >= 0 && y >= 0 && x < rep.pixelsWide && y < rep.pixelsHigh {
+                guard let pixel = rep.colorAt(x: x, y: y) else { continue }
+                let delta = abs(pixel.redComponent - color.redComponent) + abs(pixel.greenComponent - color.greenComponent)
+                    + abs(pixel.blueComponent - color.blueComponent) + abs(pixel.alphaComponent - color.alphaComponent)
+                if delta > 0.06 { count += 1 }
+            }
+        }
+        return count
+    }
+
     @Test func styleMarksListDecorations() {
         let source = "- bullet\n- [x] done\n\n3. three\n4. four\n"
         let (window, editor) = Self.makeEditor(source)
@@ -242,6 +256,57 @@ import Testing
         let after = Self.fragment(editor, at: ns.range(of: "After").location)!
         #expect(editor.textStorage!.attribute(.markifyBlockFill, at: ns.range(of: "After").location, effectiveRange: nil) == nil)
         _ = after
+    }
+
+    @Test func codeBlocksDrawACopyButtonLeftOfNoLabelOrTheirLabel() throws {
+        let long = "typescriptreact-with-an-unusually-long-language-name-that-would-run-into-the-code"
+        let source = "Intro\n\n```swift\nlet a = 1\n```\n\n```\nplain\n```\n\n    indented\n\n```\(long)\nlong\n```\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let ns = source as NSString
+        let blocks = editor.model.spans.filter { if case .codeBlock = $0.kind { true } else { false } }
+        #expect(blocks.count == 4)
+        for (block, code) in zip(blocks, ["let a", "plain", "indented", "long\n"]) {
+            let button = try #require(editor.codeCopyButtonRect(block), "\(code) has a copy button")
+            let line = editor.textRect(NSRange(location: ns.range(of: code).location, length: 1))
+            #expect(button.maxY <= line.minY + 4, "\(code): the button sits in the box's top padding")
+            #expect(button.maxX <= editor.columnWidth, "\(code): the button stays inside the column")
+            // Drawn where clicks land: the first line's fragment inks the button rect, moved into its coordinates.
+            let fragment = Self.fragment(editor, at: ns.range(of: code).location)!
+            let (rep, point) = Self.render(fragment)
+            let offset = CGPoint(x: fragment.layoutFragmentFrame.minX - point.x + editor.textContainerOrigin.x,
+                                 y: fragment.layoutFragmentFrame.minY - point.y + editor.textContainerOrigin.y)
+            let drawn = button.offsetBy(dx: -offset.x, dy: -offset.y)
+            // Ink over the box's fill, sampled in the top padding at the box's left.
+            let fill = rep.colorAt(x: Int(point.x - fragment.layoutFragmentFrame.minX + 8), y: Int(drawn.midY))!
+            func marked(_ rect: CGRect) -> Int { Self.differing(rep, in: rect, from: fill) }
+            #expect(marked(drawn) > 10, "\(code): the button is drawn")
+            // The label (if any) ends left of the button and, however long, stops halfway across the column.
+            #expect(marked(CGRect(x: drawn.minX - 4, y: drawn.minY, width: 3, height: drawn.height)) == 0, "\(code): the label leaves room for the button")
+            let label = marked(CGRect(x: drawn.minX - 40, y: drawn.minY, width: 30, height: drawn.height))
+            #expect(code == "let a" || code == "long\n" ? label > 10 : label == 0, "\(code): only a block with a language has a label")
+            let farLeft = CGRect(x: drawn.minX - 6 - editor.columnWidth / 2 - 25, y: drawn.minY, width: 20, height: drawn.height)
+            #expect(marked(farLeft) == 0, "\(code): a long label truncates")
+        }
+        // The Markdown lens shows the fences, so it has no button.
+        let (window2, markdown) = Self.makeEditor(source, markdownLens: true)
+        _ = window2
+        #expect(markdown.model.spans.allSatisfy { markdown.codeCopyButtonRect($0) == nil })
+    }
+
+    @Test func copyButtonCopiesTheCodeWithoutFences() throws {
+        let source = "```swift\nlet a = 1\nlet b = 2\n```\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        var reported: Bool?
+        editor.onCodeCopied = { reported = $0 }
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("markify-test-\(UUID().uuidString)"))
+        defer { pasteboard.releaseGlobally() }
+        let block = try #require(editor.model.spans.first { if case .codeBlock = $0.kind { true } else { false } })
+        editor.copyCode(block, to: pasteboard)
+        #expect(pasteboard.string(forType: .string) == "let a = 1\nlet b = 2")
+        #expect(reported == true)
+        #expect(CopyNotice(kind: .code, failed: false).message == "Copied code")
     }
 
     @Test func selectedCodeStaysVisibleThroughTheFill() {

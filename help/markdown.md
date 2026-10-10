@@ -26,7 +26,7 @@ Markify reads Markdown the way GitHub does: it follows [CommonMark](https://comm
 - **Lists**: `-`, `*` or `+` for bullets, `1.` or `1)` for numbers. Indent to nest.
 - **Task lists**: `- [ ]` and `- [x]`. Click the box to toggle it.
 - **Quotes**: start a line with `>`.
-- **Code blocks**: fence with three backticks or tildes, and name the language after the opening fence for syntax colors. Indented code also works.
+- **Code blocks**: fence with three backticks or tildes, and name the language after the opening fence for syntax colors. Indented code also works. In the Rendered lens, the copy button at the top right of a code block copies its code, without the fences, to the clipboard.
 - **Tables**: GFM pipe tables, with `:--`, `:-:` and `--:` in the separator row to align columns.
 - **Dividers**: `---`, `***` or `___` on a line of their own.
 - **HTML**: HTML blocks, inline images and inline SVG display in the Rendered lens; HTML comments (`<!-- … -->`) are hidden. The Markdown lens shows the original tags, which remain editable.

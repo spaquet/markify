@@ -1523,6 +1523,22 @@
         }
       }
     },
+    "Copied code" : {
+      "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Código copiado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Code copié"
+          }
+        }
+      }
+    },
     "Copied for Medium" : {
       "localizations" : {
         "es-ES" : {
@@ -1599,6 +1615,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de copier au format Markdown"
+          }
+        }
+      }
+    },
+    "Couldn’t copy code" : {
+      "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se ha podido copiar el código"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Impossible de copier le code"
           }
         }
       }
