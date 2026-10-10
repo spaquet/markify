@@ -11,6 +11,12 @@
             "value" : "Markify"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -29,6 +35,12 @@
             "value" : "Markify"
           }
         },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -39,6 +51,12 @@
     },
     "Markdown Document" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento Markdown"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -49,6 +67,12 @@
     },
     "MDX Document" : {
       "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento MDX"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -64,6 +88,12 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Stephane Paquet"
+          }
+        },
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Stephane Paquet"
           }
         },
