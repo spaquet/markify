@@ -98,6 +98,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		76AC543C307AC360003E7685 /* Exceptions for "PreviewImages" folder in "PreviewImages" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C10000000000000000000007 /* PreviewImages */;
+		};
 		76EB964B2DC960AE0056409F /* Exceptions for "Markify" folder in "Markify" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -143,6 +150,9 @@
 		};
 		C1000000000000000000000A /* PreviewImages */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				76AC543C307AC360003E7685 /* Exceptions for "PreviewImages" folder in "PreviewImages" target */,
+			);
 			path = PreviewImages;
 			sourceTree = "<group>";
 		};
@@ -347,6 +357,7 @@
 			buildPhases = (
 				C1000000000000000000000C /* Sources */,
 				C1000000000000000000000B /* Frameworks */,
+				76AC5437307AC360003E7685 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -438,6 +449,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		76A590FD2DC952980033A6AC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		76AC5437307AC360003E7685 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
