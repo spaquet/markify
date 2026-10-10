@@ -145,8 +145,9 @@ struct NativeEditor: NSViewRepresentable {
         let inSync = editor.string.isSameText(as: text)
         if inSync || !echo { context.coordinator.pushedText.removeAll() }
         let sourceChanged = !inSync && !echo
-        let styleChanged = context.coordinator.lastLens != markdownLens || context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
-            || context.coordinator.lastTheme != theme || context.coordinator.lastCurrentMatch != currentMatch
+        let styleChanged = context.coordinator.lastLens != markdownLens || context.coordinator.lastTheme != theme
+        let findChanged = context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
+            || context.coordinator.lastCurrentMatch != currentMatch
         if sourceChanged || styleChanged {
             let topOffset = editor.characterIndexForInsertion(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
             let anchor = SourceAnchor(source: editor.string, selection: editor.selectedRange(), topOffset: topOffset)
@@ -161,6 +162,8 @@ struct NativeEditor: NSViewRepresentable {
             let newY = max(0, scroll.contentView.bounds.minY + before.minY - after.minY)
             scroll.contentView.scroll(to: NSPoint(x: 0, y: newY))
             scroll.reflectScrolledClipView(scroll.contentView)
+        } else if findChanged {
+            updateFindHighlights(editor)
         }
         context.coordinator.lastLens = markdownLens
         context.coordinator.lastQuery = findQuery
@@ -722,20 +725,11 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.paragraphStyle, value: row, range: source.lineRange(for: NSRange(location: frontmatter.range.location, length: 0)))
             }
         }
-        if !findQuery.isEmpty {
-            let options: NSRegularExpression.Options = matchCase ? [] : [.caseInsensitive]
-            if let regex = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: findQuery), options: options) {
-                for match in regex.matches(in: editor.string, range: scope) {
-                    var visible = true
-                    if !markdownLens {
-                        storage.enumerateAttribute(.foregroundColor, in: match.range) { value, _, stop in
-                            if let color = value as? NSColor, color.alphaComponent == 0 { visible = false; stop.pointee = true }
-                        }
-                    }
-                    if visible { storage.addAttribute(.backgroundColor, value: match.range == currentMatch ? NSColor.findCurrent : NSColor.findMatch, range: match.range) }
-                }
-            }
-        }
+        let found = findMatches(in: editor, storage: storage, within: scope)
+        for range in found { storage.addAttribute(.backgroundColor, value: range == currentMatch ? NSColor.findCurrent : NSColor.findMatch, range: range) }
+        // A partial pass replaces only the highlights in its lines.
+        let highlights = Dictionary(found.map { ($0, $0 == currentMatch) }, uniquingKeysWith: { first, _ in first })
+        styling?.findHighlights = partial ? (styling?.findHighlights ?? [:]).filter { NSIntersectionRange($0.key, scope).length == 0 }.merging(highlights) { $1 } : highlights
         storage.endEditing()
         if storage !== live { Self.applyChangedAttributes(from: storage, to: live, in: partial ? scope : nil) }
         updateTypingFont(editor)
@@ -743,6 +737,49 @@ struct NativeEditor: NSViewRepresentable {
             editor.forgetImages()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
+    }
+
+    /// The find matches in `range` that this lens shows: a match whose text is hidden (a marker in the Rendered lens) is not.
+    func findMatches(in editor: NSTextView, storage: NSTextStorage, within range: NSRange) -> [NSRange] {
+        guard !findQuery.isEmpty,
+              let regex = try? NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: findQuery), options: matchCase ? [] : [.caseInsensitive])
+        else { return [] }
+        return regex.matches(in: editor.string, range: range).map(\.range).filter { match in
+            guard !markdownLens else { return true }
+            var visible = true
+            storage.enumerateAttribute(.foregroundColor, in: match) { value, _, stop in
+                if let color = value as? NSColor, color.alphaComponent == 0 { visible = false; stop.pointee = true }
+            }
+            return visible
+        }
+    }
+
+    /// Moves the find highlights without a syntax pass: the previous matches lose their background (a code block's fill
+    /// shows through where one covers them) and the current matches gain theirs. Syntax attributes are left alone.
+    func updateFindHighlights(_ editor: NSTextView) {
+        guard let storage = editor.textStorage, let styling = editor as? MarkdownTextView else { return }
+        let length = storage.length
+        let code: [NSRange] = markdownLens ? styling.model.spans.compactMap { span in
+            if case .codeBlock = span.kind { return span.content }
+            return nil
+        } : []
+        let found = findMatches(in: editor, storage: storage, within: NSRange(location: 0, length: length))
+        let highlights = Dictionary(found.map { ($0, $0 == currentMatch) }, uniquingKeysWith: { first, _ in first })
+        let previous = styling.findHighlights
+        storage.beginEditing()
+        // Only matches that left or changed between current and not are touched.
+        for (old, wasCurrent) in previous where highlights[old] != wasCurrent && NSMaxRange(old) <= length {
+            storage.removeAttribute(.backgroundColor, range: old)
+            for block in code {
+                let overlap = NSIntersectionRange(block, old)
+                if overlap.length > 0 { storage.addAttribute(.backgroundColor, value: NSColor.codeFill, range: overlap) }
+            }
+        }
+        for (range, isCurrent) in highlights where previous[range] != isCurrent {
+            storage.addAttribute(.backgroundColor, value: isCurrent ? NSColor.findCurrent : NSColor.findMatch, range: range)
+        }
+        storage.endEditing()
+        styling.findHighlights = highlights
     }
 
     /// Copies `styled`'s attributes onto `live` only where they differ, so TextKit keeps the layout of unchanged text.
@@ -1075,6 +1112,9 @@ class MarkdownTextView: NSTextView {
         multipleCharacterEdits = false
     }
 
+    /// The find matches currently highlighted, each marked when it is the current match, so a find change moves only the
+    /// highlights that changed.
+    var findHighlights: [NSRange: Bool] = [:]
     /// Assets that finished loading since the last style pass, in the form `imageKey` and `mermaidKey` build. Nil asks
     /// for a full pass, for callers that cannot name what changed.
     private var assetRestyles: Set<String>? = []

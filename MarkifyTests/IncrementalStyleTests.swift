@@ -142,6 +142,31 @@ import Testing
         }
     }
 
+    /// Find moves only its highlights: after each change the attributes match a full pass with the same query and
+    /// current match, in both lenses, including where a code block's fill shows through a highlight.
+    @Test(arguments: [false, true]) func findHighlightsMatchAFullPass(markdownLens: Bool) {
+        let source = "# Title\n\nA link [here](https://example.com) and `code link` text.\n\n```\nlink in code\n```\n\nTail link.\n"
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = source
+        let appearance = editor.effectiveAppearance
+        Self.native(source, markdownLens: markdownLens).style(editor)
+        let steps: [(query: String, current: String?)] = [("link", nil), ("link", "link in"), ("code", "code"), ("", nil), ("link", nil)]
+        for step in steps {
+            var moved = Self.native(source, markdownLens: markdownLens, findQuery: step.query)
+            moved.currentMatch = step.current.map { (source as NSString).range(of: $0) }
+            moved.updateFindHighlights(editor)
+            let reference = MarkdownTextView(usingTextLayoutManager: true)
+            reference.string = source
+            var expected = Self.native(source, markdownLens: markdownLens, findQuery: step.query)
+            expected.currentMatch = moved.currentMatch
+            expected.style(reference)
+            #expect(Self.canonical(editor.textStorage!, appearance: appearance) == Self.canonical(reference.textStorage!, appearance: appearance),
+                    "find \(step.query) current \(step.current ?? "none")")
+            reference.stopObserving()
+        }
+        editor.stopObserving()
+    }
+
     static let source = "# Title\n\n<!-- toc -->\n- [Title](#title)\n  - [Part](#part)\n<!-- /toc -->\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n"
         + String(repeating: "Paragraph with **bold** and [a link](https://example.com).\n\n", count: 40) + "## Part\n\nLast line.\n"
 

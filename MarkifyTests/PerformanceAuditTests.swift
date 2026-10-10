@@ -147,6 +147,15 @@ import Testing
                     native.style(view, incremental: true)
                 }
                 measure(name, source, "find-full-style") { find.style(view) }
+                // Moving the current match between two matches: only the highlights change.
+                let firstLink = (source as NSString).range(of: "link")
+                var currentIsFirst = false
+                measure(name, source, "find-highlight-move") {
+                    var moved = find
+                    moved.currentMatch = currentIsFirst ? nil : firstLink
+                    currentIsFirst.toggle()
+                    moved.updateFindHighlights(view)
+                }
                 #expect(view.string.isSameText(as: source))
                 let copy = String(decoding: Array(source.utf8), as: UTF8.self)
                 measure(name, source, "literal-equality-independent-copy") { #expect(source.isSameText(as: copy)) }
