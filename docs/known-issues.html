@@ -208,6 +208,43 @@ pre.src{margin-top:12px;font:13px/1.7 var(--mono);background:var(--surface2);col
       <p class="empty rv">Something else wrong? <a href="https://github.com/spaquet/markify/issues/new">Open an issue on GitHub</a>.</p>
     </div>
   </section>
+
+  <section id="issue-94" style="padding-top:56px">
+    <div class="wrap">
+      <article class="issue rv">
+        <header class="issue-top">
+          <h2>HTML export keeps scripts from your Markdown</h2>
+          <span class="tag bad"><svg aria-hidden="true"><use href="#dash"/></svg>Open · fix planned for 2.5.0</span>
+          <a class="tag plain" href="https://github.com/spaquet/markify/issues/94">Issue #94</a>
+        </header>
+        <div class="issue-body">
+          <div>
+            <h3>What you see</h3>
+            <p>A <code>&lt;script&gt;</code> tag or an <code>on…</code> event handler (such as <code>onerror</code>) in a Markdown file is still in the HTML file that Export › HTML writes. Opening the exported file in a browser runs it. Markify itself doesn’t run the script, in the editor, PDF export or Quick Look.</p>
+          </div>
+          <div>
+            <h3>What happened</h3>
+            <p>HTML export writes raw HTML as you wrote it, and its page has no Content-Security-Policy. PDF export and Quick Look do have one that blocks scripts, so the gap is only in HTML export.</p>
+          </div>
+          <div>
+            <h3>Affected</h3>
+            <p>Every version that has HTML export, and only for documents that contain scripts or event handlers. Ordinary documents export as before.</p>
+          </div>
+          <div id="fix">
+            <h3>What to do</h3>
+            <p>Until the fix ships, export only documents you wrote or trust to HTML. For anything else, use <b>Export › PDF</b>, which blocks scripts, or export the HTML and remove any script tags before you open it.</p>
+          </div>
+          <div>
+            <h3>Links</h3>
+            <div class="links">
+              <a href="https://github.com/spaquet/markify/issues/94"><small>Issue</small><span>#94 on GitHub</span></a>
+              <a href="help/markdown.html#html-and-scripts"><small>Policy</small><span>HTML and scripts in the user guide</span></a>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
 </main>
 
 <footer>

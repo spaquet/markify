@@ -125,6 +125,8 @@
 <li><strong>HTML</strong>: HTML blocks, inline images and inline SVG display in the Rendered lens; HTML comments (<code>&lt;!-- … --&gt;</code>) are hidden. The Markdown lens shows the original tags, which remain editable.
 </li>
 </ul>
+<h3 id="html-and-scripts">HTML and scripts</h3>
+<p>Markify does not run scripts from a document in the editor: the Rendered lens shows the HTML's text, images and tables, and scripts do not run. Markify does not filter HTML by an allowlist of tags or attributes. PDF export and Quick Look block scripts. HTML export keeps the document's HTML as written, so a script in the source runs when you open the exported file in a browser. Export only documents you trust to HTML until this is fixed. Remote images load only when <strong>Load remote images</strong> is on in Settings; it is on by default.</p>
 <h2 id="callouts">Callouts</h2>
 <p>GitHub-style alerts render as colored boxes:</p>
 <pre><span class="code-label" aria-hidden="true">markdown</span><code class="language-markdown">&gt; [!NOTE]
