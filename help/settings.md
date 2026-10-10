@@ -1,6 +1,6 @@
 ---
 title: Settings
-description: Change where documents are saved, the default lens, fonts, appearance, Spotlight search, Apple Intelligence options and keyboard shortcuts.
+description: Change where documents are saved, the default lens, fonts, appearance, Spotlight search, Apple Intelligence options, keyboard shortcuts and the crash and performance reports.
 order: 10
 keywords: settings, preferences, font, theme, dark mode, line width, accent, shortcuts, library location
 ---
@@ -48,6 +48,10 @@ The named index stays on this Mac. Markify reports submission progress; Spotligh
 ## Intelligence
 
 Turn Writing Tools in the format bar, generating at the caret, and title and tag suggestions on or off, and choose the default tone. See [Apple Intelligence](intelligence.md).
+
+## Privacy
+
+Turn **Send crash and performance reports** on or off. It's on by default, and the first-launch screen asks you to join. The tab lists what is sent and what never is. See [Legal](legal.md) for the details.
 
 ## Shortcuts
 

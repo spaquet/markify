@@ -83,6 +83,7 @@ struct ContentView: View {
     @State private var blockMenuHeight: CGFloat = 360
     @FocusState private var blockMenuFocused: Bool
     @State private var showComposer = false
+    @State private var showsTelemetryOnboarding = false
     @State private var composerPrompt = ""
     @State private var composerLength = "Medium"
     @State private var composerTone = "Match document"
@@ -454,6 +455,18 @@ struct ContentView: View {
                 sidebarOpen = true
             }
             loadLibrary()
+            if Telemetry.needsOnboarding && !TelemetryOnboarding.presentedThisLaunch {
+                TelemetryOnboarding.presentedThisLaunch = true
+                showsTelemetryOnboarding = true
+            }
+        }
+        .sheet(isPresented: $showsTelemetryOnboarding) {
+            TelemetryOnboarding { joined in
+                Telemetry.setEnabled(joined)
+                Telemetry.hasOnboarded = true
+                showsTelemetryOnboarding = false
+            }
+            .interactiveDismissDisabled()
         }
         .onDisappear {
             knowledgeTask?.cancel()

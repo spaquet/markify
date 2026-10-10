@@ -1,5 +1,4 @@
 import SwiftUI
-import Sentry
 import CoreSpotlight
 import AppKit
 import MarkifyMarkdown
@@ -274,27 +273,9 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct MarkifyApp: App {
     init() {
-        // Crash reports and a sample of performance traces go to Sentry; the privacy section of the Legal help page
-        // says so. Tests launch the app as their host and report nothing. The DSN comes from the SENTRY_DSN build
-        // setting (Config/Sentry.xcconfig); builds without one report nothing.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
-           let dsn = Bundle.main.object(forInfoDictionaryKey: "SentryDSN") as? String, !dsn.isEmpty {
-            SentrySDK.start { options in
-                options.dsn = dsn
-                #if DEBUG
-                options.environment = "development"
-                #else
-                options.environment = "production"
-                #endif
-                // No IP address or other personal data.
-                options.sendDefaultPii = false
-                options.tracesSampleRate = 0.1
-                options.configureProfiling = {
-                    $0.sessionSampleRate = 0.1
-                    $0.lifecycle = .trace
-                }
-            }
-        }
+        // Crash reports and a sample of performance traces go to Sentry while the user is enrolled in the program
+        // (Settings › Privacy). See Telemetry.
+        Telemetry.startIfEnabled()
     }
     @NSApplicationDelegateAdaptor(MarkifyAppDelegate.self) private var appDelegate
 

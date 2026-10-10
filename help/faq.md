@@ -68,7 +68,7 @@ Choose **More (…) › Export › HTML** or **PDF**. The HTML page is self-cont
 
 ### Does Markify collect any data?
 
-Markify has no accounts, usage analytics or tracking, and never sends your documents anywhere. It does send crash reports, and timing data from a sample of sessions, to Sentry so bugs and slowdowns can be fixed; these hold no document text or personal data. See the privacy section on the [Legal](legal.md) page for every time it connects to the internet.
+Markify has no accounts, usage analytics or tracking, and never sends your documents anywhere. It does send crash reports, and timing data from a sample of sessions, to Sentry so bugs and slowdowns can be fixed; these hold no document text or personal data. You can turn this off in **Settings › Privacy**. See the privacy section on the [Legal](legal.md) page for every time it connects to the internet.
 
 ### Is my text sent to an AI service?
 
