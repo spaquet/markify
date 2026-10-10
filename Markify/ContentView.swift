@@ -69,6 +69,8 @@ struct ContentView: View {
     @State private var aiPlacement: AIPlacement = .atCaret
     @State private var aiSelectionSource = ""
     @State private var aiSuggestion: FrontmatterSuggestion?
+    /// Read once off the main thread (MARKIFY-14): `SystemLanguageModel.default.availability` loads an eligibility plist, too slow for `body`.
+    @State private var aiAvailability: SystemLanguageModel.Availability = .unavailable(.deviceNotEligible)
     @State private var hasTyped = false
     @State private var isNewDocument = false
     @State private var offeredTitleTags = false
@@ -148,7 +150,6 @@ struct ContentView: View {
     private var wordCount: Int { derived.wordCount(in: document.text) }
     /// The document's OKF reading, when its frontmatter has a `type`.
     private var concept: OKFConcept? { conceptCache.concept(in: document.text) }
-    private var aiAvailability: SystemLanguageModel.Availability { SystemLanguageModel.default.availability }
     private var documentModel: MarkdownModel {
         derived.model(in: document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx", editor: textView as? MarkdownTextView)
     }
@@ -444,6 +445,7 @@ struct ContentView: View {
             if review != nil { scrollTick += 1 }
             if linksOpen { updateReading() }
         }
+        .task { aiAvailability = await Task.detached { SystemLanguageModel.default.availability }.value }
         .onAppear {
             markdownLens = initialLens()
             isNewDocument = document.text.isEmpty && fileURL == nil
