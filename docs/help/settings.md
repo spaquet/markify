@@ -45,6 +45,10 @@ The named index stays on this Mac. Markify reports submission progress; Spotligh
 
 Turn Writing Tools in the format bar, generating at the caret, and title and tag suggestions on or off, and choose the default tone. See [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.md).
 
+## Privacy
+
+Turn **Send crash and performance reports** on or off. It's on by default, and the first-launch screen asks you to join. The tab lists what is sent and what never is. See [Legal](https://spaquet.github.io/markify/legal.md) for the details.
+
 ## Shortcuts
 
 Double-click a shortcut to record a new one. See [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.md).

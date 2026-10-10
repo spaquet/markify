@@ -643,6 +643,10 @@ The named index stays on this Mac. Markify reports submission progress; Spotligh
 
 Turn Writing Tools in the format bar, generating at the caret, and title and tag suggestions on or off, and choose the default tone. See [Apple Intelligence](https://spaquet.github.io/markify/help/intelligence.html).
 
+## Privacy
+
+Turn **Send crash and performance reports** on or off. It's on by default, and the first-launch screen asks you to join. The tab lists what is sent and what never is. See [Legal](https://spaquet.github.io/markify/legal.html) for the details.
+
 ## Shortcuts
 
 Double-click a shortcut to record a new one. See [Keyboard shortcuts](https://spaquet.github.io/markify/help/shortcuts.html).
@@ -917,7 +921,7 @@ Choose **More (…) › Export › HTML** or **PDF**. The HTML page is self-cont
 
 ### Does Markify collect any data?
 
-Markify has no accounts, usage analytics or tracking, and never sends your documents anywhere. It does send crash reports, and timing data from a sample of sessions, to Sentry so bugs and slowdowns can be fixed; these hold no document text or personal data. See the privacy section on the [Legal](https://spaquet.github.io/markify/legal.html) page for every time it connects to the internet.
+Markify has no accounts, usage analytics or tracking, and never sends your documents anywhere. It does send crash reports, and timing data from a sample of sessions, to Sentry so bugs and slowdowns can be fixed; these hold no document text or personal data. You can turn this off in **Settings › Privacy**. See the privacy section on the [Legal](https://spaquet.github.io/markify/legal.html) page for every time it connects to the internet.
 
 ### Is my text sent to an AI service?
 
@@ -972,7 +976,7 @@ Markify doesn't collect, store or share personal data. It has no accounts, no us
 Markify connects to the internet only in these cases:
 
 - **Update checks.** Markify downloads its update feed from GitHub (`github.com/spaquet/markify`) to see whether a new version exists, and downloads the update when you install it. This request includes your IP address and Markify's version, as any web request does, and is subject to [GitHub's privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Turn automatic checks off in **Settings › General › Updates**.
-- **Crash and performance reports.** When Markify crashes, it sends a crash report to [Sentry](https://sentry.io), which hosts Markify's error reports. A report holds the stack trace, Markify's version, and your Mac's model and macOS version; it holds no document text, file names or personal data. Markify also sends timing data for a sample of sessions (about one in ten) so slow operations can be found and fixed. As with any web request, Sentry sees your IP address; Markify doesn't ask it to keep it. Sentry's handling is described in [Sentry's privacy policy](https://sentry.io/privacy/).
+- **Crash and performance reports.** On by default, and you can turn it off in **Settings › Privacy**; the first-launch screen asks before anything is sent. When Markify crashes, it sends a crash report to [Sentry](https://sentry.io), which hosts Markify's error reports. A report holds the stack trace, Markify's version, and your Mac's model and macOS version; it holds no document text, file names or personal data. Markify also sends timing data for a sample of sessions (about one in ten) so slow operations can be found and fixed. As with any web request, Sentry sees your IP address; Markify doesn't ask it to keep it. Sentry's handling is described in [Sentry's privacy policy](https://sentry.io/privacy/).
 - **Remote images.** When a document contains an image from a web address and **Settings › General › Load remote images** is on, Markify downloads it from that server. Turn the setting off to stop this.
 - **Links you open.** ⌘-clicking a web link opens it in your browser.
 - **Link checks.** While the Contents and Links pane is open, Markify asks each web link in the document whether the page still exists (a `HEAD` request, or a one-byte `GET` when the server refuses `HEAD`), so broken links can be marked. Each site sees your IP address, as with any web request; nothing about your document is sent. Results are kept on your Mac for 24 hours, and a link is checked again when you click it or choose **Check Links**.
