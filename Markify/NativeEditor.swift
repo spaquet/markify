@@ -936,7 +936,7 @@ struct StyleKey: Equatable {
     let root: URL?
     let remote: Bool
 
-    init(native: NativeEditor, editor: NSTextView) {
+    @MainActor init(native: NativeEditor, editor: NSTextView) {
         theme = native.theme; markdown = native.markdownLens; width = native.columnWidth
         query = native.findQuery; matchCase = native.matchCase; match = native.currentMatch
         appearance = editor.effectiveAppearance.name
