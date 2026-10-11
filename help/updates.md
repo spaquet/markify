@@ -8,7 +8,7 @@ keywords: install, download, dmg, gatekeeper, open anyway, update, sparkle, appl
 
 ## System requirements
 
-Markify needs **macOS 26 Tahoe** or later. There are two downloads: one for Macs with **Apple silicon** (M1 and later) and one for **Intel** Macs. Apple Intelligence features need Apple silicon.
+Markify needs **macOS 15.6 Sequoia** or later. There are two downloads: one for Macs with **Apple silicon** (M1 and later) and one for **Intel** Macs. Apple Intelligence features need Apple silicon.
 
 ## Installing
 

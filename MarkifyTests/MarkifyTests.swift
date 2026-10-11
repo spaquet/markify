@@ -6,6 +6,27 @@ import Testing
 @testable import Markify
 
 struct MarkifyTests {
+    @Test @MainActor func intelligenceAvailabilityKeepsSequoiaWritingToolsSeparate() async {
+        let availability = await IntelligenceAvailability.check()
+        #expect(availability == IntelligenceAvailability.current)
+        if #unavailable(macOS 26) {
+            #expect(availability != .available)
+            #expect(availability == .unavailable(NSWritingToolsCoordinator.isWritingToolsAvailable ? .requiresMacOS26 : .deviceNotEligible))
+        }
+    }
+
+    @Test @MainActor func floatingControlsRender() throws {
+        let view = NSHostingView(rootView: ChromeGlassContainer {
+            Text("Writing Tools").padding().chromeGlass(in: .capsule)
+        })
+        view.frame = NSRect(x: 0, y: 0, width: 200, height: 60)
+        view.layoutSubtreeIfNeeded()
+        let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        let color = try #require(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2))
+        #expect(color.alphaComponent > 0)
+    }
+
     @Test func editorTextComparisonIsLiteralAndFast() {
         let storage = NSTextStorage(string: String(repeating: "Résumé — naïve café “quoted”, line\n", count: 6000))
         var pushed: [String] = []

@@ -349,17 +349,19 @@ struct SettingsView: View {
     private var intelligence: some View {
         Form {
             Section { statusCard }
-            if SystemLanguageModel.default.availability != .unavailable(.deviceNotEligible) {
+            if IntelligenceAvailability.current != .unavailable(.deviceNotEligible) {
                 Section("Features") {
                     Toggle("Writing Tools in the format bar", isOn: $writingTools)
-                    Toggle(isOn: $generateAtCaret) {
-                        Text("Generate at caret with \(Shortcuts.display(Shortcuts.key("generate", stored: shortcutOverrides)))")
-                        Text("Also available as /write in the insert menu.")
-                    }
-                    Toggle(isOn: $suggestTitleTags) {
-                        Text("Suggest title & tags for new documents")
-                        Text("Written to frontmatter only after you accept.")
-                    }
+                    Group {
+                        Toggle(isOn: $generateAtCaret) {
+                            Text("Generate at caret with \(Shortcuts.display(Shortcuts.key("generate", stored: shortcutOverrides)))")
+                            Text("Also available as /write in the insert menu.")
+                        }
+                        Toggle(isOn: $suggestTitleTags) {
+                            Text("Suggest title & tags for new documents")
+                            Text("Written to frontmatter only after you accept.")
+                        }
+                    }.disabled(IntelligenceAvailability.current == .unavailable(.requiresMacOS26))
                     Toggle(isOn: $recordAIGenerated) {
                         Text("Record AI edits in OKF concepts")
                         Text("Keeping AI text in a concept sets its generated field to Apple Intelligence.")
@@ -373,18 +375,19 @@ struct SettingsView: View {
                         Text("Use surrounding section as context")
                         Text("Helps generated text match your voice.")
                     }
-                }
+                }.disabled(IntelligenceAvailability.current == .unavailable(.requiresMacOS26))
             }
         }.formStyle(.grouped)
     }
 
     private var statusCard: some View {
-        let status: (title: String, detail: String) = switch SystemLanguageModel.default.availability {
+        let status: (title: String, detail: String) = switch IntelligenceAvailability.current {
         case .available: ("Apple Intelligence is on", "On-device model ready. Markify never sends your text off this Mac.")
         case .unavailable(.appleIntelligenceNotEnabled): ("Apple Intelligence is off", "Turn on Apple Intelligence in System Settings to use these features.")
         case .unavailable(.modelNotReady): ("Preparing Apple Intelligence", "The on-device model is downloading. Features turn on when it's ready.")
+        case .unavailable(.requiresMacOS26): (String(localized: "Writing Tools on macOS Sequoia"), String(localized: "System Writing Tools are available. Generation and link summaries require macOS 26 or later."))
         case .unavailable(.deviceNotEligible): ("Apple Intelligence isn't available", "This Mac can't run Apple Intelligence.")
-        @unknown default: ("Apple Intelligence is unavailable", "Check Apple Intelligence in System Settings.")
+        default: ("Apple Intelligence is unavailable", "Check Apple Intelligence in System Settings.")
         }
         return HStack(spacing: 12) {
             Image(systemName: "apple.intelligence")
@@ -397,7 +400,7 @@ struct SettingsView: View {
                 Text(status.detail).font(.system(size: 11.5)).foregroundStyle(.secondary)
             }
             Spacer()
-            if SystemLanguageModel.default.availability == .unavailable(.modelNotReady) { ProgressView().controlSize(.small) }
+            if IntelligenceAvailability.current == .unavailable(.modelNotReady) { ProgressView().controlSize(.small) }
             Button("System Settings…") {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.Siri-Settings.extension") { NSWorkspace.shared.open(url) }
             }

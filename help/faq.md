@@ -16,7 +16,7 @@ Yes. Markify is free to download and use, including for work. Its source code is
 
 ### Which Macs does Markify run on?
 
-Any Mac with macOS 26 Tahoe or later, with Apple silicon or an Intel processor. Download the build that matches your Mac.
+Any Mac with macOS 15.6 Sequoia or later, with Apple silicon or an Intel processor. Download the build that matches your Mac.
 
 ### Is there a version for iPhone, iPad, Windows or Linux?
 

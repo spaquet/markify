@@ -138,6 +138,7 @@ enum PageColor {
 /// Liquid Glass for the floating controls, following Settings › Glass style and Reduce Transparency.
 struct ChromeGlass<S: Shape>: ViewModifier {
     let shape: S
+    var interactive = false
     @AppStorage("glassStyle") private var glassStyle = "System"
     @AppStorage("accentColor") private var accentColor = "Multicolor"
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -147,11 +148,16 @@ struct ChromeGlass<S: Shape>: ViewModifier {
             content
                 .background(Color(nsColor: .windowBackgroundColor), in: shape)
                 .overlay(shape.stroke(Color.primary.opacity(0.14), lineWidth: 1))
+        } else if #available(macOS 26, *) {
+            content.glassEffect(glass.interactive(interactive), in: shape)
         } else {
-            content.glassEffect(glass, in: shape)
+            content
+                .background(.regularMaterial, in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(0.14), lineWidth: 1))
         }
     }
 
+    @available(macOS 26, *)
     private var glass: Glass {
         switch glassStyle {
         case "Clear": .clear
@@ -161,6 +167,20 @@ struct ChromeGlass<S: Shape>: ViewModifier {
     }
 }
 
+struct ChromeGlassContainer<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if #available(macOS 26, *) {
+            GlassEffectContainer { content }
+        } else {
+            content
+        }
+    }
+}
+
 extension View {
-    func chromeGlass(in shape: some Shape) -> some View { modifier(ChromeGlass(shape: shape)) }
+    func chromeGlass(in shape: some Shape, interactive: Bool = false) -> some View {
+        modifier(ChromeGlass(shape: shape, interactive: interactive))
+    }
 }

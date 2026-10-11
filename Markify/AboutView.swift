@@ -55,7 +55,7 @@ struct AboutView: View {
                         .contentShape(.rect(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 14))
+                    .chromeGlass(in: .rect(cornerRadius: 14), interactive: true)
                     .help(link.address)
                     .accessibilityLabel(link.title)
                     .accessibilityHint("Opens \(link.address) in your browser")

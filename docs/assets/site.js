@@ -48,7 +48,7 @@
 
   // Download: pick the build for this Mac. Chrome and Edge report the architecture; Safari and Firefox don't,
   // so the GPU decides (Apple GPUs support ASTC textures, Intel and AMD don't). Unknown means Apple silicon,
-  // which nearly every Mac on macOS 26 has. The other build is always one click away.
+  // the default when architecture detection is unavailable. The other build is always one click away.
   const buttons = document.querySelectorAll('[data-dl]');
   if (!buttons.length) return;
   const BUILDS = {
@@ -93,7 +93,7 @@
     });
     document.querySelectorAll('[data-dl-alt]').forEach(a => { a.href = other.url; a.textContent = `Download for ${other.name}`; });
     document.querySelectorAll('[data-dl-note]').forEach(n => {
-      n.textContent = !mac ? 'Markify runs on a Mac with macOS 26.' : sure ? `This looks like a Mac with ${main.name === 'Intel' ? 'an Intel processor' : 'Apple silicon'}.` : `For ${main.long}.`;
+      n.textContent = !mac ? 'Markify runs on a Mac with macOS 15.6.' : sure ? `This looks like a Mac with ${main.name === 'Intel' ? 'an Intel processor' : 'Apple silicon'}.` : `For ${main.long}.`;
     });
     document.querySelectorAll('[data-dl-other-label]').forEach(n => { n.textContent = arch === 'as' ? 'Have an Intel Mac?' : 'Have a Mac with Apple silicon?'; });
   });

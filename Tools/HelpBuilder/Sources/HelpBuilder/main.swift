@@ -294,7 +294,7 @@ func webPage(_ page: Page, index: Int) -> String {
         graph.append(["@type": "TechArticle", "headline": page.title, "description": page.description, "dateModified": page.lastModified,
                       "inLanguage": "en", "url": url, "keywords": page.keywords,
                       "author": ["@type": "Person", "name": "Stéphane Paquet", "url": "https://github.com/spaquet"],
-                      "about": ["@type": "SoftwareApplication", "name": "Markify", "operatingSystem": "macOS 26", "applicationCategory": "ProductivityApplication", "url": site]])
+                      "about": ["@type": "SoftwareApplication", "name": "Markify", "operatingSystem": "macOS 15.6", "applicationCategory": "ProductivityApplication", "url": site]])
     }
 
     var head = """
@@ -518,7 +518,7 @@ func webURL(_ page: Page) -> String { page.web == "help/index.html" ? site + "he
 var llms = """
 # Markify
 
-> Markify is a free, source-available Markdown editor for macOS 26 (Apple silicon and Intel). It shows a document on one page with two lenses over the same text — a rendered lens and a Markdown lens, switched with ⌘/ — instead of a split preview. It follows CommonMark and GitHub Flavored Markdown and adds callouts, LaTeX math, footnotes, Mermaid diagrams, YAML frontmatter and MDX files; exports self-contained HTML and paginated PDF; uses on-device Apple Intelligence for proofreading, rewriting and generation; and reads and edits Open Knowledge Format (OKF) bundles. Documents are plain .md files saved exactly as written.
+> Markify is a free, source-available Markdown editor for macOS 15.6 (Apple silicon and Intel). It shows a document on one page with two lenses over the same text — a rendered lens and a Markdown lens, switched with ⌘/ — instead of a split preview. It follows CommonMark and GitHub Flavored Markdown and adds callouts, LaTeX math, footnotes, Mermaid diagrams, YAML frontmatter and MDX files; exports self-contained HTML and paginated PDF; uses on-device Apple Intelligence for proofreading, rewriting and generation; and reads and edits Open Knowledge Format (OKF) bundles. Documents are plain .md files saved exactly as written.
 
 - Website: \(site)
 - Download: \(repository)/releases/latest (markify-as.dmg for Apple silicon, markify-intel.dmg for Intel)

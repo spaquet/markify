@@ -125,7 +125,7 @@ struct TelemetryOnboarding: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
+        .chromeGlass(in: .rect(cornerRadius: 16))
     }
 
     /// The website's desk colors, faint behind the sheet's material, as in the About window.
