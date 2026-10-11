@@ -2393,6 +2393,9 @@
         }
       }
     },
+    "Generation requires macOS 26 or later." : {
+
+    },
     "GH" : {
       "localizations" : {
         "es-ES" : {
@@ -5931,6 +5934,9 @@
         }
       }
     },
+    "System Writing Tools are available. Generation and link summaries require macOS 26 or later." : {
+
+    },
     "Tag" : {
       "localizations" : {
         "es-ES" : {
@@ -6582,6 +6588,9 @@
           }
         }
       }
+    },
+    "Writing Tools on macOS Sequoia" : {
+
     },
     "Written to frontmatter only after you accept." : {
       "localizations" : {

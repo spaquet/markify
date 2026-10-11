@@ -69,8 +69,8 @@ struct ContentView: View {
     @State private var aiPlacement: AIPlacement = .atCaret
     @State private var aiSelectionSource = ""
     @State private var aiSuggestion: FrontmatterSuggestion?
-    /// Read once off the main thread (MARKIFY-14): `SystemLanguageModel.default.availability` loads an eligibility plist, too slow for `body`.
-    @State private var aiAvailability: SystemLanguageModel.Availability = .unavailable(.deviceNotEligible)
+    /// Read once off the main thread (MARKIFY-14): Foundation Models eligibility loads a plist, too slow for `body`.
+    @State private var aiAvailability: IntelligenceAvailability = .unavailable(.deviceNotEligible)
     @State private var hasTyped = false
     @State private var isNewDocument = false
     @State private var offeredTitleTags = false
@@ -264,7 +264,7 @@ struct ContentView: View {
                     .zIndex(2)
                 }
 
-                GlassEffectContainer {
+                ChromeGlassContainer {
                     HStack(spacing: 10) {
                         Button { toggleSidebar() } label: {
                             Image(systemName: "sidebar.left")
@@ -462,7 +462,7 @@ struct ContentView: View {
             if review != nil { scrollTick += 1 }
             if linksOpen { updateReading() }
         }
-        .task { aiAvailability = await Task.detached { SystemLanguageModel.default.availability }.value }
+        .task { aiAvailability = await IntelligenceAvailability.check() }
         .onAppear {
             markdownLens = initialLens()
             isNewDocument = document.text.isEmpty && fileURL == nil
@@ -952,6 +952,12 @@ struct ContentView: View {
                     writingRow("Table", symbol: "tablecells") { generateSelection("Turn this selection into a Markdown table. Return only the table.", title: "Table") }
                 }
             }
+            } else if aiAvailability == .unavailable(.requiresMacOS26) {
+                HStack(spacing: 6) {
+                    writingTile("Proofread", symbol: "checkmark") { openSystemWritingTools() }
+                    writingTile("Rewrite", symbol: "arrow.clockwise") { openSystemWritingTools() }
+                }
+                Text("Generation requires macOS 26 or later.").foregroundStyle(.secondary)
             } else if aiAvailability == .unavailable(.appleIntelligenceNotEnabled) {
                 Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary)
             } else if aiAvailability == .unavailable(.modelNotReady) {
@@ -1064,9 +1070,15 @@ struct ContentView: View {
                 Text("Turn on Apple Intelligence in System Settings").foregroundStyle(.secondary).padding(.horizontal, 10)
             case .unavailable(.modelNotReady):
                 HStack { ProgressView().controlSize(.small); Text("Preparing on-device model…") }.padding(.horizontal, 10)
+            case .unavailable(.requiresMacOS26):
+                HStack(spacing: 6) {
+                    writingTile("Proofread", symbol: "checkmark") { textView?.showWritingTools(nil) }
+                    writingTile("Rewrite…", symbol: "arrow.clockwise") { textView?.showWritingTools(nil) }
+                }
+                Text("Generation requires macOS 26 or later.").foregroundStyle(.secondary)
             case .unavailable(.deviceNotEligible):
                 EmptyView()
-            @unknown default:
+            default:
                 Text("Apple Intelligence is unavailable.").padding(.horizontal, 10)
             }
             if aiBusy {
@@ -1348,7 +1360,7 @@ struct ContentView: View {
     }
 
     private func generate(action: String, placement: AIPlacement = .atCaret) {
-        guard aiAvailability == .available, !action.isEmpty else { return }
+        guard #available(macOS 26, *), aiAvailability == .available, !action.isEmpty else { return }
         aiTask?.cancel()
         aiOutput = ""
         aiError = nil
@@ -2080,13 +2092,10 @@ enum FinderTags {
     }
 
     private static func write(_ url: URL, previous: [String], current: [String]) {
-        var url = url
         let finder = (try? url.resourceValues(forKeys: [.tagNamesKey]).tagNames) ?? []
         let merged = merge(finder: finder, previous: previous, current: current)
         guard merged != finder else { return }
-        var values = URLResourceValues()
-        values.tagNames = merged
-        try? url.setResourceValues(values)
+        try? (url as NSURL).setResourceValue(merged, forKey: .tagNamesKey)
     }
 }
 
@@ -2124,12 +2133,14 @@ enum AIPlacement: Equatable {
     }
 }
 
+@available(macOS 26, *)
 @Generable
 struct SuggestedFrontmatter {
     @Guide(description: "A concise title for the document") var title: String
     @Guide(description: "At most five short topic tags") var tags: [String]
 }
 
+@available(macOS 26, *)
 @Generable
 struct SuggestedConcept {
     @Guide(description: "A concise title for the document") var title: String

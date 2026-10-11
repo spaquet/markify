@@ -194,7 +194,7 @@ private actor LinkSummaryWriter {
     }
 
     func refreshAvailability() async {
-        available = await Task.detached { SystemLanguageModel.default.availability == .available }.value
+        available = await IntelligenceAvailability.check() == .available
     }
 
     /// Local files the pane can summarize, and web pages; other destinations have no ✦.
@@ -227,7 +227,7 @@ private actor LinkSummaryWriter {
     }
 
     func summarize(_ target: LinkTarget, key: String, openTexts: [URL: String]) {
-        guard !busy.contains(key), available else { return }
+        guard #available(macOS 26, *), !busy.contains(key), available else { return }
         busy.insert(key)
         errors[key] = nil
         jobs[key] = Task {

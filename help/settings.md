@@ -28,7 +28,7 @@ Choose **Markify › Settings…** (⌘,).
 
 ## Appearance
 
-Theme (light, dark or system), page color, code colors, the glass style of the floating controls, the accent color, and the status capsule.
+Theme (light, dark or system), page color, code colors, the glass style of the floating controls, the accent color, and the status capsule. Liquid Glass styles apply on macOS 26 or later; macOS 15.6 uses a standard material background. Reduce Transparency uses a solid background on both.
 
 ## Search
 

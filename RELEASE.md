@@ -175,7 +175,7 @@ Someone published the release before the workflow finished. A published immutabl
 
 ### Build failed
 
-Open the failed run in **Actions** and check the **Build Markify** step. The runner uses `macos-latest`, and the **Show Xcode version** step prints the Xcode it used. The project targets macOS 26, so it needs Xcode 26 or later.
+Open the failed run in **Actions** and check the **Build Markify** step. The runner uses `macos-latest`, and the **Show Xcode version** step prints the Xcode it used. The app supports macOS 15.6 or later, but building still needs Xcode 26 or later for the guarded Liquid Glass and Foundation Models APIs.
 
 ### Version not extracted correctly
 

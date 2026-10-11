@@ -1,6 +1,6 @@
 # Homebrew distribution
 
-Markify's project-owned tap lives in this repository at [`Casks/markify.rb`](Casks/markify.rb). It uses the existing immutable GitHub release DMGs, selecting Apple silicon or Intel with a separate SHA-256 checksum for each. The minimum is macOS 26 (Tahoe); Sparkle provides in-app updates.
+Markify's project-owned tap lives in this repository at [`Casks/markify.rb`](Casks/markify.rb). It uses the existing immutable GitHub release DMGs, selecting Apple silicon or Intel with a separate SHA-256 checksum for each. The cask currently points to release 2.2.2, which requires macOS 26 (Tahoe). Markify now supports macOS 15.6 (Sequoia) or later; lower the cask requirement to macOS 15.6 when it points to the first compatible release. Sparkle provides in-app updates.
 
 This is a third-party tap, maintained by Markify, without Homebrew endorsement. The cask pins the latest published release and is updated after each one (see [Maintain the cask](#maintain-the-cask)); `version` in [`Casks/markify.rb`](Casks/markify.rb) is the release Homebrew installs.
 

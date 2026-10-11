@@ -4,7 +4,7 @@ This file provides guidance to AI coding agents working in this repository.
 
 ## Project Overview
 
-Markify is a macOS 26 Markdown editor built with SwiftUI and TextKit 2. There is no split preview: one column shows the document through two lenses over the same text storage — a Rendered lens and a Markdown lens (⌘/). Formatting happens through a floating format bar and a `/` slash menu; a library sidebar lists open files and library notes. The binding design is in [design/README.md](design/README.md) and `design/Markdown Editor.dc.html`; decisions that fill its gaps are in [DECISIONS.md](DECISIONS.md).
+Markify is a macOS 15.6 Markdown editor built with SwiftUI and TextKit 2. There is no split preview: one column shows the document through two lenses over the same text storage — a Rendered lens and a Markdown lens (⌘/). Formatting happens through a floating format bar and a `/` slash menu; a library sidebar lists open files and library notes. The binding design is in [design/README.md](design/README.md) and `design/Markdown Editor.dc.html`; decisions that fill its gaps are in [DECISIONS.md](DECISIONS.md).
 
 The app uses the document-based pattern (`DocumentGroup` with a `FileDocument`). It opens `.md` and `.markdown`, and `.mdx` as Markdown with MDX blocks kept as written.
 

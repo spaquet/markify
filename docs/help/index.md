@@ -2,7 +2,7 @@
 
 # Markify Help
 
-Markify is a Markdown editor for macOS 26 that shows your document on **one page**. Write on the rendered page, press ⌘/ to see the same text as plain Markdown, and press it again to come back. Nothing is converted: both views edit the same `.md` file.
+Markify is a Markdown editor for macOS 15.6 that shows your document on **one page**. Write on the rendered page, press ⌘/ to see the same text as plain Markdown, and press it again to come back. Nothing is converted: both views edit the same `.md` file.
 
 New to Markify? [Open the Welcome tour](markify://welcome), a document that shows the main features by letting you try them.
 

@@ -11,6 +11,8 @@ Markify uses Apple Intelligence on your Mac: the system **Writing Tools** and Ap
 > [!NOTE]
 > Apple Intelligence needs a Mac with Apple silicon and Apple Intelligence turned on in **System Settings › Apple Intelligence & Siri**. On other Macs, Markify works the same without these features. If the model is still downloading, Markify says “Preparing on-device model…”.
 
+On **macOS 15.6 Sequoia**, the format bar and whole-document menu offer system **Proofread** and **Rewrite**. These open Writing Tools. Custom prompts, tone shortcuts, generation at the caret, title and tag suggestions, and Links panel summaries require **macOS 26 or later**, which provides the Foundation Models framework.
+
 ## Working on a selection
 
 Select text and click the Apple Intelligence symbol at the left of the format bar, or press **⇧⌘W**:

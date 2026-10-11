@@ -5,13 +5,13 @@
 <p align="center">
   <a href="https://github.com/spaquet/markify/releases"><img src="https://img.shields.io/github/v/release/spaquet/markify" alt="GitHub Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Commons%20Clause%20%2B%20MIT-blue" alt="License"></a>
-  <a href="https://www.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-26%2B-lightgrey" alt="macOS 26+"></a>
+  <a href="https://www.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-15.6%2B-lightgrey" alt="macOS 15.6+"></a>
   <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2+-orange" alt="Swift 6.2+"></a>
 </p>
 
 # <img src="docs/images/app-icon.png" alt="" width="36" align="top"> Markify
 
-A quiet Markdown editor for macOS 26. Write on one rendered page, press <kbd>⌘/</kbd> to see the same text as plain Markdown, and let on-device Apple Intelligence proofread and rewrite. No split preview pane.
+A quiet Markdown editor for macOS 15.6. Write on one rendered page, press <kbd>⌘/</kbd> to see the same text as plain Markdown, and let on-device Apple Intelligence proofread and rewrite. No split preview pane.
 
 **Website:** [spaquet.github.io/markify](https://spaquet.github.io/markify/)
 
@@ -97,8 +97,8 @@ Not sure which one to choose? Check your Mac:
 
 ## Requirements
 
-- **macOS 26 Tahoe** or later
-- **Apple Intelligence** features need a Mac that supports it, with Apple Intelligence turned on
+- **macOS 15.6 Sequoia** or later
+- **Apple Intelligence** features need a Mac that supports it, with Apple Intelligence turned on. System Writing Tools work on macOS 15.6; custom generation and link summaries require macOS 26 or later
 - **Xcode 26** or later (for building from source)
 
 ## Building from Source
