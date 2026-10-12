@@ -22,6 +22,10 @@ Any Mac with macOS 15.6 Sequoia or later, with Apple silicon or an Intel process
 
 No. Markify is a native Mac app built with SwiftUI and TextKit 2.
 
+### Is Markify available in other languages?
+
+Markify's menus, settings and messages are in English, French and Spanish. It follows your Mac's language, or the one chosen for Markify in **System Settings › General › Language & Region › Applications**. Your documents are never translated.
+
 ### How is Markify different from other Markdown editors?
 
 Most Markdown editors split the window into source and preview. Markify shows one page and lets you switch its lens with ⌘/: the rendered page and the plain Markdown are the same text, so nothing is converted or rewritten. See [Two lenses](lenses.md).
