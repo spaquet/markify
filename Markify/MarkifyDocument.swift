@@ -377,12 +377,14 @@ struct MarkifyDocument: FileDocument {
         guard self.document !== document else { return }
         stop()
         self.document = document
-        observation = document.observe(\.fileModificationDate, options: [.prior]) { [weak self] document, change in
-            let pending = document.isDocumentEdited || document.hasUnautosavedChanges
-            let hasFile = document.fileURL != nil
-            let browsing = document.isBrowsingVersions
+        observation = document.observe(\.fileModificationDate, options: [.prior]) { [weak self, weak document] _, change in
             let prior = change.isPrior
-            let work = { @MainActor [weak self] () -> Void in self?.dateChange(prior: prior, pending: pending, hasFile: hasFile, browsing: browsing) }
+            // NSDocument sets the date on the main thread; read its state there, as it stood at the change.
+            let work = { @MainActor [weak self, weak document] () -> Void in
+                guard let self, let document else { return }
+                self.dateChange(prior: prior, pending: document.isDocumentEdited || document.hasUnautosavedChanges,
+                                hasFile: document.fileURL != nil, browsing: document.isBrowsingVersions)
+            }
             if Thread.isMainThread { MainActor.assumeIsolated(work) } else { DispatchQueue.main.async(execute: work) }
         }
         menuObserver = NotificationCenter.default.addObserver(forName: NSMenu.willSendActionNotification, object: nil, queue: nil) { [weak self] note in
