@@ -1,9 +1,9 @@
 cask "markify" do
   arch arm: "as", intel: "intel"
 
-  version "2.2.2"
-  sha256 arm:   "d13b56e934c852ee58f0fd9f0910adbd2deea19db91f2c8550933d3a3a432116",
-         intel: "ec5568a494d1fb3710e5e94af8984327afe5217325ed08215a2713aae7ac0acb"
+  version "2.5.0"
+  sha256 arm:   "ddcf8867dd087b8d7dd1ae2eac44af020c8f56ecbb7bf0403768f22c45e7b479",
+         intel: "e84e4f1f1167591cc6ea7d148b39babe60d62da780fd9414850edc6ffcd76b76"
 
   url "https://github.com/spaquet/markify/releases/download/v#{version}/markify-#{arch}.dmg"
   name "Markify"
@@ -16,7 +16,7 @@ cask "markify" do
   end
 
   auto_updates true
-  depends_on macos: :tahoe
+  depends_on macos: :sequoia
 
   app "Markify.app"
 
