@@ -5077,6 +5077,38 @@
         }
       }
     },
+    "Saved" : {
+      "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enregistré"
+          }
+        }
+      }
+    },
+    "Saved automatically" : {
+      "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardado automáticamente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enregistré automatiquement"
+          }
+        }
+      }
+    },
     "Search" : {
       "localizations" : {
         "es-ES" : {

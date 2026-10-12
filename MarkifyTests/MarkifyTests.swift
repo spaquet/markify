@@ -202,6 +202,60 @@ struct MarkifyTests {
         #expect(notifications == 3)
     }
 
+    @Test @MainActor func saveNoticeTellsSaveFromAutosaveAndIgnoresReverts() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("one".utf8).write(to: url)
+        let type = "net.daringfireball.markdown"
+        let document = try SaveTestDocument(contentsOf: url, ofType: type)
+        var saves: [DocumentSaveObserver.Kind] = []
+        var reverting = false
+        let observer = DocumentSaveObserver(isReverting: { reverting })
+        observer.onSave = { saves.append($0) }
+        observer.watch(document)
+        func write(_ text: String, _ operation: NSDocument.SaveOperationType) async throws {
+            document.text = text
+            document.updateChangeCount(.changeDone)
+            try await document.save(to: url, ofType: type, for: operation)
+        }
+
+        try await write("two", .autosaveInPlaceOperation)
+        #expect(saves == [.automatic])
+        observer.menuAction(#selector(NSDocument.save(_:)), current: document)
+        try await write("three", .saveOperation)
+        #expect(saves == [.automatic, .manual])
+        // ⌘S with nothing to write still answers.
+        observer.menuAction(#selector(NSDocument.save(_:)), current: document)
+        #expect(saves == [.automatic, .manual, .manual])
+        // Another window's Save isn't this document's.
+        observer.menuAction(#selector(NSDocument.save(_:)), current: nil)
+        #expect(saves.count == 3)
+
+        // NSDocument's own revert after an external edit, and Markify's Reload over local edits, aren't saves.
+        try Data("external".utf8).write(to: url)
+        try document.revert(toContentsOf: url, ofType: type)
+        document.text = "local"
+        document.updateChangeCount(.changeDone)
+        reverting = true
+        try document.revert(toContentsOf: url, ofType: type)
+        reverting = false
+        document.updateChangeCount(.changeDone)
+        observer.menuAction(#selector(NSDocument.revertToSaved(_:)), current: document)
+        try document.revert(toContentsOf: url, ofType: type)
+        #expect(saves.count == 3)
+
+        observer.stop()
+        try await write("four", .autosaveInPlaceOperation)
+        #expect(saves.count == 3)
+    }
+
+    /// The save notice tells ⌘S from autosave by the menu action, so SwiftUI's Save item must send `saveDocument:`.
+    @Test @MainActor func saveMenuItemSendsSaveDocument() throws {
+        let items = try #require(NSApp.mainMenu).items.compactMap(\.submenu).flatMap(\.items)
+        let save = try #require(items.first { $0.keyEquivalent == "s" && $0.keyEquivalentModifierMask == .command })
+        #expect(save.action == #selector(NSDocument.save(_:)))
+    }
+
     @Test func externalFileMergePreservesBothVersionsAndMarksConflicts() throws {
         let base = "one\ntwo\nthree\n"
         #expect(try DocumentFileRefresh.merge(local: "ONE\ntwo\nthree\n", base: base,
@@ -1061,6 +1115,13 @@ struct MarkifyTests {
         #expect(failed.isEmpty)
         #expect(try String(contentsOf: url, encoding: .utf8) == "Newer edit\n\n[Old](new.md)\n")
     }
+}
+
+@MainActor private final class SaveTestDocument: NSDocument {
+    nonisolated(unsafe) var text = ""
+    override nonisolated class var autosavesInPlace: Bool { true }
+    override func data(ofType typeName: String) throws -> Data { Data(text.utf8) }
+    override func read(from data: Data, ofType typeName: String) throws { text = String(decoding: data, as: UTF8.self) }
 }
 
 @MainActor private final class RefreshTestDocument: NSDocument {
