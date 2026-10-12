@@ -54,6 +54,8 @@ struct MarkifyDocument: FileDocument {
     private var readAgain = false
     private var timer: Timer?
     private(set) var presenting = false
+    /// True while Reload replaces the document with the disk contents, so the read isn't taken for a save.
+    private(set) var reverting = false
     private let refreshSearch: () -> Void
     private let readText: (() -> String)?
     private let writeText: ((String) -> Void)?
@@ -185,6 +187,8 @@ struct MarkifyDocument: FileDocument {
                     case .keep: break
                     case .reload:
                         try Self.preserveVersions(at: url, local: Data(local.utf8), external: disk, document: document)
+                        self.reverting = true
+                        defer { self.reverting = false }
                         try document.revert(toContentsOf: url, ofType: type)
                         self.writeText?(external)
                     case .merge:
@@ -344,6 +348,102 @@ struct MarkifyDocument: FileDocument {
     }
 
     isolated deinit { timer?.invalidate() }
+}
+
+/// Tells the window when its document is written to its file, by Save (⌘S, File › Save…) or by macOS autosave.
+///
+/// NSDocument sets `fileModificationDate` after every write and every revert. A write happens with changes
+/// pending (or right after the Save command); a revert that NSDocument makes on its own after an external
+/// edit happens only without them, and Markify's Reload and Revert To are excluded explicitly.
+@MainActor final class DocumentSaveObserver {
+    enum Kind { case manual, automatic }
+
+    private weak var document: NSDocument?
+    private var observation: NSKeyValueObservation?
+    private var menuObserver: NSObjectProtocol?
+    /// Save was chosen for this document and its write hasn't happened yet (an untitled document waits for the save panel).
+    private var manualPending = false
+    /// Revert To or Browse All Versions was chosen; a date change in the next two minutes is its read, not a save.
+    private var revertRequested: Date?
+    private var wasWriting = false
+    /// One save can set the date more than once; those changes make one notice.
+    private var lastReport: (kind: Kind, date: Date)?
+    private let isReverting: () -> Bool
+    var onSave: (Kind) -> Void = { _ in }
+
+    init(isReverting: @escaping () -> Bool = { false }) { self.isReverting = isReverting }
+
+    func watch(_ document: NSDocument) {
+        guard self.document !== document else { return }
+        stop()
+        self.document = document
+        observation = document.observe(\.fileModificationDate, options: [.prior]) { [weak self] document, change in
+            let pending = document.isDocumentEdited || document.hasUnautosavedChanges
+            let hasFile = document.fileURL != nil
+            let browsing = document.isBrowsingVersions
+            let prior = change.isPrior
+            let work = { @MainActor [weak self] () -> Void in self?.dateChange(prior: prior, pending: pending, hasFile: hasFile, browsing: browsing) }
+            if Thread.isMainThread { MainActor.assumeIsolated(work) } else { DispatchQueue.main.async(execute: work) }
+        }
+        menuObserver = NotificationCenter.default.addObserver(forName: NSMenu.willSendActionNotification, object: nil, queue: nil) { [weak self] note in
+            let action = (note.userInfo?["MenuItem"] as? NSMenuItem)?.action
+            MainActor.assumeIsolated { self?.menuAction(action) }
+        }
+    }
+
+    func stop() {
+        observation?.invalidate()
+        observation = nil
+        menuObserver.map(NotificationCenter.default.removeObserver)
+        menuObserver = nil
+        document = nil
+        manualPending = false
+        revertRequested = nil
+        wasWriting = false
+        lastReport = nil
+    }
+
+    func menuAction(_ action: Selector?, current: NSDocument? = NSDocumentController.shared.currentDocument) {
+        guard let action, let document, current === document else { return }
+        switch action {
+        case #selector(NSDocument.save(_:)), #selector(NSDocument.saveAs(_:)):
+            // Nothing to write: say so now rather than wait for a write that may not come.
+            if action == #selector(NSDocument.save(_:)), document.fileURL != nil,
+               !document.isDocumentEdited, !document.hasUnautosavedChanges {
+                lastReport = nil
+                report(.manual)
+            } else {
+                manualPending = true
+            }
+        case #selector(NSDocument.revertToSaved(_:)), #selector(NSDocument.browseVersions(_:)):
+            revertRequested = .now
+        default: break
+        }
+    }
+
+    func dateChange(prior: Bool, pending: Bool, hasFile: Bool, browsing: Bool) {
+        if prior {
+            wasWriting = (pending || manualPending) && !browsing && !isReverting()
+            return
+        }
+        defer { wasWriting = false }
+        if let requested = revertRequested {
+            revertRequested = nil
+            if requested.timeIntervalSinceNow > -120 { manualPending = false; return }
+        }
+        guard wasWriting, hasFile || manualPending else { return }
+        let kind: Kind = manualPending ? .manual : .automatic
+        manualPending = false
+        report(kind)
+    }
+
+    private func report(_ kind: Kind) {
+        if let lastReport, lastReport.date.timeIntervalSinceNow > -1, kind == .automatic || lastReport.kind == kind { return }
+        lastReport = (kind, .now)
+        onSave(kind)
+    }
+
+    isolated deinit { observation?.invalidate(); menuObserver.map(NotificationCenter.default.removeObserver) }
 }
 
 private final class ReportDocumentFactory: @unchecked Sendable {

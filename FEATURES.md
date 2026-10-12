@@ -5,6 +5,7 @@ This is an inventory of features in the current Markify source tree. See the [us
 ## Documents and editing
 
 - Open and save `.md`, `.markdown` and `.mdx` files as plain UTF-8 text. macOS document autosave, recent files, rename, move and version browsing are available.
+- Show a brief notice over the page when the document is written: **Saved** after ⌘S or File › Save, **Saved automatically** after macOS autosave. Reloads after external edits and Revert To show none. Manual saves are announced to VoiceOver; autosaves are not.
 - Recover saved Markdown text with native macOS Versions through File › Revert To › Browse All Versions… or the title menu; restore an earlier version or restore a copy with Option. macOS manages history storage and checkpoints; linked assets are not versioned with the text. External-change prompts pause during version browsing.
 - Detect external file edits and offer Keep My Changes, Reload or Merge. Reload reads the latest disk contents; Merge preserves independent changes and marks overlapping edits, with undo support.
 - Open public HTTPS Markdown files with File › Open URL…, including GitHub and GitLab file-page URLs. Browse and search Markdown files on a public repository’s default branch, then open a file as an unsaved local copy. Downloads reject redirects to HTTP, credentials, HTML responses and files larger than 10 MB; authentication is not supported.

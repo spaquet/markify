@@ -454,7 +454,8 @@ struct ContentView: View {
         .navigationTitle("")
         .toolbar(removing: .title)
         .toolbarBackground(.hidden, for: .windowToolbar)
-        .background(WindowConfiguration(text: $document.text, tabTitle: title, tabBarInset: $tabBarInset))
+        .background(WindowConfiguration(text: $document.text, tabTitle: title, tabBarInset: $tabBarInset,
+                                        onSave: { showCopyNotice($0 == .manual ? .saved : .autosaved, copied: true) }))
         .preferredColorScheme(appearance == "Auto" ? nil : appearance == "Dark" ? .dark : .light)
         .tint(accent)
         .onReceive(NotificationCenter.default.publisher(for: NSView.boundsDidChangeNotification)) { notification in
@@ -1466,12 +1467,13 @@ struct ContentView: View {
         }
     }
 
-    /// Shows the copy result briefly over the page and announces it to VoiceOver; editing carries on underneath.
+    /// Shows a copy or save result briefly over the page and announces it to VoiceOver; editing carries on underneath.
+    /// Autosaves aren't announced: they come while typing, without the person asking.
     private func showCopyNotice(_ kind: CopyNotice.Kind, copied: Bool) {
         let notice = CopyNotice(kind: kind, failed: !copied)
         copyNoticeTask?.cancel()
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { copyNotice = notice }
-        AccessibilityNotification.Announcement(notice.message).post()
+        if kind != .autosaved { AccessibilityNotification.Announcement(notice.message).post() }
         copyNoticeTask = Task {
             try? await Task.sleep(for: .seconds(notice.failed ? 3 : 1.8))
             guard !Task.isCancelled else { return }
@@ -1973,9 +1975,9 @@ struct AIReview {
     var comparing = false
 }
 
-/// The result of Copy All as Markdown, Copy All for Medium or a code block's copy button, shown briefly over the page.
+/// The result of Copy All as Markdown, Copy All for Medium, a code block's copy button or a save, shown briefly over the page.
 struct CopyNotice: Equatable {
-    enum Kind { case markdown, medium, code }
+    enum Kind { case markdown, medium, code, saved, autosaved }
 
     let kind: Kind
     let failed: Bool
@@ -1988,6 +1990,9 @@ struct CopyNotice: Equatable {
         case (.markdown, true): String(localized: "Couldn’t copy as Markdown")
         case (.medium, true): String(localized: "Couldn’t copy for Medium")
         case (.code, true): String(localized: "Couldn’t copy code")
+        // NSDocument reports a failed save with its own alert.
+        case (.saved, _): String(localized: "Saved")
+        case (.autosaved, _): String(localized: "Saved automatically")
         }
     }
 }
@@ -2181,6 +2186,7 @@ struct LibraryNote: Identifiable {
 final class DocumentWindowView: NSView {
     var text: Binding<String>?
     var tabBarInset: Binding<CGFloat>?
+    var onSave: (DocumentSaveObserver.Kind) -> Void = { _ in }
     private var layoutObservation: NSKeyValueObservation?
     private var fullScreenObservers: [NSObjectProtocol] = []
 
@@ -2227,7 +2233,13 @@ final class DocumentWindowView: NSView {
         }
         guard !MarkifyAppDelegate.replaceStartupDocument(with: document) else { return }
         fileRefresh.watch(window)
+        saveObserver.watch(document)
     }
+    lazy var saveObserver: DocumentSaveObserver = {
+        let observer = DocumentSaveObserver(isReverting: { [weak self] in self?.fileRefresh.reverting ?? false })
+        observer.onSave = { [weak self] in self?.onSave($0) }
+        return observer
+    }()
 }
 
 private struct WindowConfiguration: NSViewRepresentable {
@@ -2235,10 +2247,12 @@ private struct WindowConfiguration: NSViewRepresentable {
     /// The window title stays empty so the titlebar shows nothing; tabs still need a name (#82).
     let tabTitle: String
     @Binding var tabBarInset: CGFloat
+    let onSave: (DocumentSaveObserver.Kind) -> Void
     func makeNSView(context: Context) -> NSView {
         let view = DocumentWindowView()
         view.text = $text
         view.tabBarInset = $tabBarInset
+        view.onSave = onSave
         DispatchQueue.main.async {
             view.watchDocument()
             guard let window = view.window else { return }
@@ -2254,10 +2268,12 @@ private struct WindowConfiguration: NSViewRepresentable {
     static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
         (nsView as? DocumentWindowView)?.isActive = false
         (nsView as? DocumentWindowView)?.fileRefresh.stop()
+        (nsView as? DocumentWindowView)?.saveObserver.stop()
     }
     func updateNSView(_ nsView: NSView, context: Context) {
         (nsView as? DocumentWindowView)?.text = $text
         (nsView as? DocumentWindowView)?.tabBarInset = $tabBarInset
+        (nsView as? DocumentWindowView)?.onSave = onSave
         DispatchQueue.main.async {
             (nsView as? DocumentWindowView)?.watchDocument()
             nsView.window?.titleVisibility = .hidden
