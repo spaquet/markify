@@ -5081,13 +5081,13 @@
       "localizations" : {
         "es-ES" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Guardado"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Enregistré"
           }
         }
@@ -5097,13 +5097,13 @@
       "localizations" : {
         "es-ES" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Guardado automáticamente"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Enregistré automatiquement"
           }
         }
