@@ -487,22 +487,6 @@
         }
       }
     },
-    "%lld%%" : {
-      "localizations" : {
-        "es-ES" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld %%"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld %%"
-          }
-        }
-      }
-    },
     "© 2025–2026 Stéphane Paquet · Free to use" : {
       "localizations" : {
         "es-ES" : {
@@ -1527,13 +1511,13 @@
       "localizations" : {
         "es-ES" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Código copiado"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Code copié"
           }
         }
@@ -1623,13 +1607,13 @@
       "localizations" : {
         "es-ES" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "No se ha podido copiar el código"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Impossible de copier le code"
           }
         }
@@ -2394,7 +2378,20 @@
       }
     },
     "Generation requires macOS 26 or later." : {
-
+      "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La generación requiere macOS 26 o posterior."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La génération nécessite macOS 26 ou version ultérieure."
+          }
+        }
+      }
     },
     "GH" : {
       "localizations" : {
@@ -5935,7 +5932,20 @@
       }
     },
     "System Writing Tools are available. Generation and link summaries require macOS 26 or later." : {
-
+      "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las Herramientas de Escritura del sistema están disponibles. La generación y los resúmenes de enlaces requieren macOS 26 o posterior."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Outils d’écriture du système sont disponibles. La génération et les résumés de liens nécessitent macOS 26 ou version ultérieure."
+          }
+        }
+      }
     },
     "Tag" : {
       "localizations" : {
@@ -6590,7 +6600,20 @@
       }
     },
     "Writing Tools on macOS Sequoia" : {
-
+      "localizations" : {
+        "es-ES" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herramientas de Escritura en macOS Sequoia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outils d’écriture sous macOS Sequoia"
+          }
+        }
+      }
     },
     "Written to frontmatter only after you accept." : {
       "localizations" : {

@@ -291,7 +291,7 @@ struct ContentsTab: View {
                 Text("Reading \(Text(active.map { headings[$0].title } ?? "—").foregroundStyle(style.text).fontWeight(.medium))")
                     .lineLimit(1).truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text("\(percent)%").monospacedDigit()
+                Text(Double(percent) / 100, format: .percent.precision(.fractionLength(0))).monospacedDigit()
             }
             .font(.system(size: 11.5)).foregroundStyle(style.muted)
             Capsule().fill(style.track).frame(height: 3)
