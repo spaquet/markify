@@ -97,9 +97,10 @@ struct MarkifyDocument: FileDocument {
         readGeneration = UUID()
         self.document = document
         url = document.fileURL
-        // Native document contents are available without disk I/O; the SwiftUI binding may still
-        // show the previous document during revert. Confirm the disk baseline on a worker.
-        lastDisk = document.fileType.flatMap { try? document.fileWrapper(ofType: $0).regularFileContents } ?? nil
+        // The worker below sets the disk baseline. SwiftUI's fileWrapper(ofType:) reads the file again
+        // (NSFileWrapper(url:)) and can wait on the URL resource cache lock while a Finder tag write
+        // waits on Spotlight (MARKIFY-23); the binding may still show the previous document during revert.
+        lastDisk = nil
         lastStamp = nil
         if let url {
             let generation = readGeneration
@@ -129,6 +130,9 @@ struct MarkifyDocument: FileDocument {
         }
         timer?.tolerance = 2
     }
+
+    /// Waits for the disk baseline read that `watch` starts.
+    func waitForBaseline() async { await readTask?.value }
 
     /// One read at a time, with a trailing check for events that arrive during I/O.
     func scheduleRefresh() {
@@ -167,6 +171,7 @@ struct MarkifyDocument: FileDocument {
               let type = document.fileType,
               disk != lastDisk else { return }
         let base = lastDisk
+        // Document windows always pass readText; fileWrapper(ofType:) reads the file (see watch) and is the tests' fallback.
         guard let current = (readText?()).map({ Data($0.utf8) })
                 ?? (try? document.fileWrapper(ofType: type).regularFileContents) else { return }
         if disk == current { lastDisk = disk; return } // Our own save.

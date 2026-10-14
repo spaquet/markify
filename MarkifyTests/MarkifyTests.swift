@@ -67,6 +67,7 @@ struct MarkifyTests {
             })
             defer { refresh.stop() }
             refresh.watch(document)
+            await refresh.waitForBaseline()
             try Data("one\ntwo\nintermediate\n".utf8).write(to: url, options: .atomic)
             refresh.refresh()
             let external = "one\ntwo\nTHREE\n"
@@ -96,6 +97,36 @@ struct MarkifyTests {
             }
             for version in versions { try version.remove() }
         }
+    }
+
+    /// MARKIFY-23: SwiftUI's fileWrapper(ofType:) reads the file and hung the main thread behind a Finder tag write.
+    @Test @MainActor func watchingReadsTheDiskBaselineOffTheMainThread() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".md")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("on disk".utf8).write(to: url)
+        let document = RefreshTestDocument()
+        document.text = "on disk"
+        document.fileURL = url
+        document.fileType = "net.daringfireball.markdown"
+        var editorText = "on disk"
+        var notifications = 0
+        let refresh = DocumentFileRefresh(refreshSearch: {}, readText: { editorText },
+                                          writeText: { editorText = $0 }, choose: { _, complete in
+            notifications += 1
+            complete(.keep)
+        })
+        defer { refresh.stop() }
+        refresh.watch(document)
+        #expect(document.wrapperReads == 0)
+        await refresh.waitForBaseline()
+        // The baseline matches the disk: an unchanged file prompts nothing, an external edit still does.
+        refresh.scheduleRefresh()
+        await refresh.waitForBaseline()
+        #expect(notifications == 0)
+        try Data("external".utf8).write(to: url, options: .atomic)
+        refresh.refresh()
+        #expect(notifications == 1)
+        #expect(document.wrapperReads == 0)
     }
 
     @Test @MainActor func externalFilePromptsWaitUntilVersionBrowsingEnds() async throws {
@@ -283,6 +314,7 @@ struct MarkifyTests {
         let refresh = DocumentFileRefresh(readText: { editorText }, writeText: { editorText = $0 },
                                           choose: { _, complete in complete(.merge) })
         refresh.watch(document)
+        await refresh.waitForBaseline()
         editorText = "ONE\ntwo\nthree\n"
         document.updateChangeCount(.changeDone)
         try Data("one\ntwo\nTHREE\n".utf8).write(to: url)
@@ -1131,8 +1163,10 @@ struct MarkifyTests {
     var viewing = false
     override var isBrowsingVersions: Bool { browsing }
     override var isInViewingMode: Bool { viewing }
+    var wrapperReads = 0
     override func fileWrapper(ofType typeName: String) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: Data(text.utf8))
+        wrapperReads += 1
+        return FileWrapper(regularFileWithContents: Data(text.utf8))
     }
     override func revert(toContentsOf url: URL, ofType typeName: String) throws {
         text = try String(contentsOf: url, encoding: .utf8)
