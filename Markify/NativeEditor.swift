@@ -147,7 +147,9 @@ struct NativeEditor: NSViewRepresentable {
         let echo = context.coordinator.pushedText.contains { $0.isSameText(as: text) }
         let inSync = editor.string.isSameText(as: text)
         if inSync || !echo { context.coordinator.pushedText.removeAll() }
-        let sourceChanged = !inSync && !echo
+        // Marked text (a dead key's accent, an input method's composition) reaches the binding only once committed:
+        // replacing the editor's text before then cancels it, and the accent never combines with the next key (#125).
+        let sourceChanged = !inSync && !echo && !editor.hasMarkedText()
         let styleChanged = context.coordinator.lastLens != markdownLens || context.coordinator.lastTheme != theme
         let findChanged = context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
             || context.coordinator.lastCurrentMatch != currentMatch
@@ -866,7 +868,11 @@ struct NativeEditor: NSViewRepresentable {
             return parent.onSlashKey(key, slash)
         }
         func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
-            if !isCreatingTitle, textView.string.isEmpty,
+            // A dead key's accent stays marked until the next key; the title starts when the composed letter replaces it (#125).
+            let onlyMarked = textView.hasMarkedText()
+                && textView.markedRange() == NSRange(location: 0, length: (textView.string as NSString).length)
+            if !isCreatingTitle, (textView as? MarkdownTextView)?.isMarkingText != true,
+               textView.string.isEmpty || onlyMarked,
                let replacementString, !replacementString.isEmpty,
                !replacementString.hasPrefix("/"),
                !replacementString.contains("\n") {
@@ -1568,6 +1574,15 @@ class MarkdownTextView: NSTextView {
                 return
             }
         }
+    }
+
+    /// True while an input method marks text, such as a dead key's accent waiting for the next key.
+    private(set) var isMarkingText = false
+
+    override func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
+        isMarkingText = true
+        defer { isMarkingText = false }
+        super.setMarkedText(string, selectedRange: selectedRange, replacementRange: replacementRange)
     }
 
     override func keyDown(with event: NSEvent) {
