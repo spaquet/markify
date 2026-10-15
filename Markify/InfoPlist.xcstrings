@@ -22,6 +22,12 @@
             "state" : "translated",
             "value" : "Markify"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
         }
       }
     },
@@ -46,6 +52,12 @@
             "state" : "translated",
             "value" : "Markify"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
         }
       }
     },
@@ -62,6 +74,12 @@
             "state" : "translated",
             "value" : "Document Markdown"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento Markdown"
+          }
         }
       }
     },
@@ -77,6 +95,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Document MDX"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento MDX"
           }
         }
       }
@@ -98,6 +122,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stephane Paquet"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stephane Paquet"

@@ -22,6 +22,12 @@
             "state" : "translated",
             "value" : "PreviewImages"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PreviewImages"
+          }
         }
       }
     }

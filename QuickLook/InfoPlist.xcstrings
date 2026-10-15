@@ -22,6 +22,12 @@
             "state" : "translated",
             "value" : "MarkifyQuickLook"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MarkifyQuickLook"
+          }
         }
       }
     }
