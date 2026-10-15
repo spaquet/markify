@@ -14,6 +14,12 @@
             "state" : "translated",
             "value" : ""
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ""
+          }
         }
       }
     },
@@ -26,6 +32,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " ▍"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : " ▍"
@@ -46,6 +58,12 @@
             "state" : "translated",
             "value" : "— Modifié"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "— Modificato"
+          }
         }
       }
     },
@@ -58,6 +76,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "./assets"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "./assets"
@@ -78,6 +102,12 @@
             "state" : "translated",
             "value" : "./images"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "./images"
+          }
         }
       }
     },
@@ -90,6 +120,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ".%@"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : ".%@"
@@ -110,6 +146,12 @@
             "state" : "translated",
             "value" : "·"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
         }
       }
     },
@@ -126,6 +168,12 @@
             "state" : "translated",
             "value" : "· %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· %@"
+          }
         }
       }
     },
@@ -138,6 +186,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "#%@"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "#%@"
@@ -164,6 +218,12 @@
             "state" : "translated",
             "value" : "%1$@  %2$lld"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@  %2$lld"
+          }
         }
       }
     },
@@ -182,6 +242,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$@"
@@ -208,6 +274,12 @@
             "state" : "translated",
             "value" : "%1$@ · %2$lld concepts%3$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld concetti%3$@"
+          }
         }
       }
     },
@@ -230,6 +302,12 @@
             "state" : "translated",
             "value" : "%1$@ · vérifié %2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · verificati %2$@"
+          }
         }
       }
     },
@@ -245,6 +323,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couleur d’accentuation %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colore di evidenziazione %@"
           }
         }
       }
@@ -262,6 +346,12 @@
             "state" : "translated",
             "value" : "%@ Bibliothèque"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Libreria"
+          }
         }
       }
     },
@@ -274,6 +364,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Markdown"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ Markdown"
@@ -294,6 +390,12 @@
             "state" : "translated",
             "value" : "Thème %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema %@"
+          }
         }
       }
     },
@@ -312,6 +414,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$lld"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@, %2$lld"
@@ -338,6 +446,12 @@
             "state" : "translated",
             "value" : "%1$@ : %2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@: %2$@"
+          }
         }
       }
     },
@@ -360,6 +474,12 @@
             "state" : "translated",
             "value" : "%1$@%2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@%2$@"
+          }
         }
       }
     },
@@ -372,6 +492,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld"
@@ -398,6 +524,12 @@
             "state" : "translated",
             "value" : "%1$lld %2$@ dans le paquet"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld %2$@ nel pacchetto"
+          }
         }
       }
     },
@@ -414,6 +546,12 @@
             "state" : "translated",
             "value" : "Résultats : %lld"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Risultati: %lld"
+          }
         }
       }
     },
@@ -429,6 +567,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld notes · classées par Spotlight"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld note · ordinate da Spotlight"
           }
         }
       }
@@ -452,6 +596,12 @@
             "state" : "translated",
             "value" : "%1$lld sur %2$lld"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld di %2$lld"
+          }
         }
       }
     },
@@ -468,6 +618,12 @@
             "state" : "translated",
             "value" : "%lld pour cent"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld percento"
+          }
         }
       }
     },
@@ -480,6 +636,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pt"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld pt"
@@ -500,6 +662,12 @@
             "state" : "translated",
             "value" : "© 2025–2026 Stéphane Paquet · Utilisation gratuite"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "© 2025–2026 Stéphane Paquet · Uso gratuito"
+          }
         }
       }
     },
@@ -516,6 +684,12 @@
             "state" : "translated",
             "value" : "↑↓ naviguer"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ naviga"
+          }
         }
       }
     },
@@ -528,6 +702,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↗"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "↗"
@@ -548,6 +728,12 @@
             "state" : "translated",
             "value" : "↩ insérer · échap fermer"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↩ inserisci · esc chiudi"
+          }
         }
       }
     },
@@ -560,6 +746,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "×%lld"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "×%lld"
@@ -580,6 +772,12 @@
             "state" : "translated",
             "value" : "⌘N"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘N"
+          }
         }
       }
     },
@@ -595,6 +793,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "⌘O Ouvrir un fichier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘O Apri file"
           }
         }
       }
@@ -612,6 +816,12 @@
             "state" : "translated",
             "value" : "● Identifiants requis"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "● Credenziali richieste"
+          }
         }
       }
     },
@@ -627,6 +837,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "● Identifiants définis"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "● Credenziali impostate"
           }
         }
       }
@@ -644,6 +860,12 @@
             "state" : "translated",
             "value" : "● Public"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "● Pubblico"
+          }
         }
       }
     },
@@ -660,6 +882,12 @@
             "state" : "translated",
             "value" : "Un fichier Markdown sur le Web ou un dépôt GitHub / GitLab."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un file Markdown sul web o un repository GitHub / GitLab."
+          }
         }
       }
     },
@@ -672,6 +900,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aa"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aa"
@@ -692,6 +926,12 @@
             "state" : "translated",
             "value" : "À propos de Markify"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informazioni su Markify"
+          }
         }
       }
     },
@@ -707,6 +947,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couleur d’accentuation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colore di evidenziazione"
           }
         }
       }
@@ -724,6 +970,12 @@
             "state" : "translated",
             "value" : "Accepter"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accetta"
+          }
         }
       }
     },
@@ -739,6 +991,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Accès"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accesso"
           }
         }
       }
@@ -756,6 +1014,12 @@
             "state" : "translated",
             "value" : "L’autorisation d’accès à ce dossier a expiré. Ses notes restent masquées jusqu’à ce que vous autorisiez à nouveau l’accès."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’accesso a questa cartella è scaduto. Le sue note restano nascoste finché non concedi di nuovo l’accesso."
+          }
         }
       }
     },
@@ -771,6 +1035,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remerciements et licence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ringraziamenti e licenza"
           }
         }
       }
@@ -788,6 +1058,12 @@
             "state" : "translated",
             "value" : "Taille réelle"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dimensioni reali"
+          }
         }
       }
     },
@@ -803,6 +1079,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter un dossier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi cartella"
           }
         }
       }
@@ -820,6 +1102,12 @@
             "state" : "translated",
             "value" : "Ajouter un dossier…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi cartella…"
+          }
         }
       }
     },
@@ -835,6 +1123,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter une entrée au journal…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi voce al registro…"
           }
         }
       }
@@ -852,6 +1146,12 @@
             "state" : "translated",
             "value" : "Tout"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutto"
+          }
         }
       }
     },
@@ -867,6 +1167,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tous les dossiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte le cartelle"
           }
         }
       }
@@ -884,6 +1190,12 @@
             "state" : "translated",
             "value" : "Tous les niveaux"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti i livelli"
+          }
         }
       }
     },
@@ -899,6 +1211,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tous les tags"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti i tag"
           }
         }
       }
@@ -916,6 +1234,12 @@
             "state" : "translated",
             "value" : "Tous les types"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti i tipi"
+          }
         }
       }
     },
@@ -931,6 +1255,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Permet à Spotlight de trouver des résultats de sens proche si cette fonction est disponible sur ce Mac. Ces résultats s’ouvrent au début de la note."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consente a Spotlight di trovare risultati di significato affine, se disponibile su questo Mac. Questi risultati si aprono all’inizio della nota."
           }
         }
       }
@@ -948,6 +1278,12 @@
             "state" : "translated",
             "value" : "Également disponible avec /write dans le menu d’insertion."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disponibile anche con /write nel menu di inserimento."
+          }
         }
       }
     },
@@ -963,6 +1299,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Une autre app ouvre les fichiers .md."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un’altra app apre i file .md."
           }
         }
       }
@@ -980,6 +1322,12 @@
             "state" : "translated",
             "value" : "Apparence"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aspetto"
+          }
         }
       }
     },
@@ -992,6 +1340,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple Intelligence"
@@ -1012,6 +1366,12 @@
             "state" : "translated",
             "value" : "Apple Intelligence n’est pas disponible."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence non è disponibile."
+          }
         }
       }
     },
@@ -1027,6 +1387,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demander à chaque fois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi ogni volta"
           }
         }
       }
@@ -1044,6 +1410,12 @@
             "state" : "translated",
             "value" : "Style de bloc, %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stile del blocco, %@"
+          }
         }
       }
     },
@@ -1059,6 +1431,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gras"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grassetto"
           }
         }
       }
@@ -1076,6 +1454,12 @@
             "state" : "translated",
             "value" : "Parcourir"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sfoglia"
+          }
         }
       }
     },
@@ -1091,6 +1475,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Parcourir toutes les versions…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sfoglia tutte le versioni…"
           }
         }
       }
@@ -1108,6 +1498,12 @@
             "state" : "translated",
             "value" : "Parcourir le dépôt"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sfoglia repository"
+          }
         }
       }
     },
@@ -1123,6 +1519,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La connexion par navigateur n’est pas configurée dans cette version. Utilisez un jeton d’accès personnel ci-dessous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’accesso tramite browser non è configurato in questa versione. Usa un token di accesso personale qui sotto."
           }
         }
       }
@@ -1140,6 +1542,12 @@
             "state" : "translated",
             "value" : "Conçu avec swift-markdown, cmark-gfm, SwaTex, les polices KaTeX, Mermaid, Sparkle, Sentry et Yams. Prend en charge le format Open Knowledge Format de Google Cloud."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Realizzato con swift-markdown, cmark-gfm, SwaTex, i font KaTeX, Mermaid, Sparkle, Sentry e Yams. Supporta l’Open Knowledge Format di Google Cloud."
+          }
         }
       }
     },
@@ -1155,6 +1563,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Annuler"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla"
           }
         }
       }
@@ -1178,6 +1592,12 @@
             "state" : "translated",
             "value" : "Modifié %1$@%2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modificato %1$@%2$@"
+          }
         }
       }
     },
@@ -1193,6 +1613,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher automatiquement les mises à jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla automaticamente gli aggiornamenti"
           }
         }
       }
@@ -1210,6 +1636,12 @@
             "state" : "translated",
             "value" : "Rechercher des mises à jour…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla aggiornamenti…"
+          }
         }
       }
     },
@@ -1225,6 +1657,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vérifier les liens"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica link"
           }
         }
       }
@@ -1248,6 +1686,12 @@
             "state" : "translated",
             "value" : "Vérification de %1$lld %2$@…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica di %1$lld %2$@…"
+          }
         }
       }
     },
@@ -1263,6 +1707,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vérification…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica in corso…"
           }
         }
       }
@@ -1280,6 +1730,12 @@
             "state" : "translated",
             "value" : "Choisir…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli…"
+          }
         }
       }
     },
@@ -1295,6 +1751,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Transparent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trasparente"
           }
         }
       }
@@ -1312,6 +1774,12 @@
             "state" : "translated",
             "value" : "Effacer le filtre"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancella filtro"
+          }
         }
       }
     },
@@ -1327,6 +1795,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Effacer la recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancella ricerca"
           }
         }
       }
@@ -1344,6 +1818,12 @@
             "state" : "translated",
             "value" : "Effacer l’URL"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancella URL"
+          }
         }
       }
     },
@@ -1359,6 +1839,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thème du code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema del codice"
           }
         }
       }
@@ -1376,6 +1862,12 @@
             "state" : "translated",
             "value" : "Agents de programmation"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenti di programmazione"
+          }
         }
       }
     },
@@ -1391,6 +1883,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réduire %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprimi %@"
           }
         }
       }
@@ -1408,6 +1906,12 @@
             "state" : "translated",
             "value" : "Noms séparés par des virgules, pris en compte dans chaque dossier indexé. Les fichiers masqués et les liens symboliques sont ignorés."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nomi separati da virgole, applicati in ogni cartella indicizzata. I file nascosti e i link simbolici vengono ignorati."
+          }
         }
       }
     },
@@ -1423,6 +1927,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comparer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confronta"
           }
         }
       }
@@ -1440,6 +1950,12 @@
             "state" : "translated",
             "value" : "Calcul"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calcolo"
+          }
         }
       }
     },
@@ -1455,6 +1971,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sommaire et liens"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommario e link"
           }
         }
       }
@@ -1472,6 +1994,12 @@
             "state" : "translated",
             "value" : "Poursuivre la rédaction"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continua a scrivere"
+          }
         }
       }
     },
@@ -1487,6 +2015,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Commandes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlli"
           }
         }
       }
@@ -1504,6 +2038,12 @@
             "state" : "translated",
             "value" : "Copié au format Markdown"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiato come Markdown"
+          }
         }
       }
     },
@@ -1519,6 +2059,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Code copié"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codice copiato"
           }
         }
       }
@@ -1536,6 +2082,12 @@
             "state" : "translated",
             "value" : "Copié pour Medium"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiato per Medium"
+          }
         }
       }
     },
@@ -1551,6 +2103,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout copier au format Markdown"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia tutto come Markdown"
           }
         }
       }
@@ -1568,6 +2126,12 @@
             "state" : "translated",
             "value" : "Tout copier pour Medium"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia tutto per Medium"
+          }
         }
       }
     },
@@ -1583,6 +2147,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copier l’URL source"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia URL di origine"
           }
         }
       }
@@ -1600,6 +2170,12 @@
             "state" : "translated",
             "value" : "Impossible de copier au format Markdown"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile copiare come Markdown"
+          }
         }
       }
     },
@@ -1615,6 +2191,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de copier le code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile copiare il codice"
           }
         }
       }
@@ -1632,6 +2214,12 @@
             "state" : "translated",
             "value" : "Impossible de copier pour Medium"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile copiare per Medium"
+          }
         }
       }
     },
@@ -1647,6 +2235,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les traces de pile des plantages et les erreurs à leur origine"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le tracce dello stack degli arresti anomali e l’errore che li ha causati"
           }
         }
       }
@@ -1664,6 +2258,12 @@
             "state" : "translated",
             "value" : "Créer un jeton…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea un token…"
+          }
         }
       }
     },
@@ -1679,6 +2279,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les identifiants sont envoyés uniquement à %@. Ils ne sont enregistrés que si vous le choisissez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le credenziali vengono inviate solo a %@. Vengono salvate solo se lo scegli."
           }
         }
       }
@@ -1696,6 +2302,12 @@
             "state" : "translated",
             "value" : "Bibliothèque actuelle"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Libreria attuale"
+          }
         }
       }
     },
@@ -1711,6 +2323,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paquet OKF actuel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacchetto OKF attuale"
           }
         }
       }
@@ -1728,6 +2346,12 @@
             "state" : "translated",
             "value" : "App Markdown par défaut"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Markdown predefinita"
+          }
         }
       }
     },
@@ -1743,6 +2367,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Périmètre par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ambito predefinito"
           }
         }
       }
@@ -1760,6 +2390,12 @@
             "state" : "translated",
             "value" : "Ton par défaut"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tono predefinito"
+          }
         }
       }
     },
@@ -1775,6 +2411,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer l’index"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina indice"
           }
         }
       }
@@ -1792,6 +2434,12 @@
             "state" : "translated",
             "value" : "Supprimer l’index de recherche ?"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare l’indice di ricerca?"
+          }
         }
       }
     },
@@ -1807,6 +2455,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer l’index de recherche…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina indice di ricerca…"
           }
         }
       }
@@ -1824,6 +2478,12 @@
             "state" : "translated",
             "value" : "Obsolète"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obsoleto"
+          }
         }
       }
     },
@@ -1839,6 +2499,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Décrivez une modification à apporter au document…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descrivi una modifica al documento…"
           }
         }
       }
@@ -1856,6 +2522,12 @@
             "state" : "translated",
             "value" : "Décrivez le texte à rédiger ou appuyez sur ↩ pour continuer"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descrivi cosa scrivere o premi ↩ per continuare"
+          }
         }
       }
     },
@@ -1871,6 +2543,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Décrivez votre modification"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descrivi la modifica"
           }
         }
       }
@@ -1888,6 +2566,12 @@
             "state" : "translated",
             "value" : "Destination"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destinazione"
+          }
         }
       }
     },
@@ -1903,6 +2587,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Abandonner"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scarta"
           }
         }
       }
@@ -1920,6 +2610,12 @@
             "state" : "translated",
             "value" : "Abandonner la réécriture"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scarta riscrittura"
+          }
         }
       }
     },
@@ -1935,6 +2631,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Documents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documenti"
           }
         }
       }
@@ -1952,6 +2654,12 @@
             "state" : "translated",
             "value" : "Double-cliquez sur un raccourci pour le modifier"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai doppio clic su un’abbreviazione per modificarla"
+          }
         }
       }
     },
@@ -1967,6 +2675,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jusqu’aux titres de niveau %lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fino ai titoli di livello %lld"
           }
         }
       }
@@ -1984,6 +2698,12 @@
             "state" : "translated",
             "value" : "Télécharger et installer automatiquement les mises à jour"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scarica e installa automaticamente gli aggiornamenti"
+          }
         }
       }
     },
@@ -1999,6 +2719,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Brouillon"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bozza"
           }
         }
       }
@@ -2016,6 +2742,12 @@
             "state" : "translated",
             "value" : "Lorsque vous modifiez le texte d’un concept, son champ generated vous désigne comme auteur, au plus une fois par jour."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando modifichi il testo di un concetto, il suo campo generated indica te come autore, al massimo una volta al giorno."
+          }
         }
       }
     },
@@ -2031,6 +2763,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Éditeur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor"
           }
         }
       }
@@ -2048,6 +2786,12 @@
             "state" : "translated",
             "value" : "échap"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "esc"
+          }
         }
       }
     },
@@ -2063,6 +2807,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Développer %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espandi %@"
           }
         }
       }
@@ -2080,6 +2830,12 @@
             "state" : "translated",
             "value" : "Exporter"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esporta"
+          }
         }
       }
     },
@@ -2095,6 +2851,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Estomper la barre d’outils pendant la saisie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attenua la barra degli strumenti durante la digitazione"
           }
         }
       }
@@ -2112,6 +2874,12 @@
             "state" : "translated",
             "value" : "Fonctionnalités"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funzionalità"
+          }
         }
       }
     },
@@ -2127,6 +2895,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Types de fichiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipi di file"
           }
         }
       }
@@ -2144,6 +2918,12 @@
             "state" : "translated",
             "value" : "URL du fichier"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL del file"
+          }
         }
       }
     },
@@ -2159,6 +2939,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filtrer les titres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra titoli"
           }
         }
       }
@@ -2176,6 +2962,12 @@
             "state" : "translated",
             "value" : "Rechercher"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova"
+          }
         }
       }
     },
@@ -2191,6 +2983,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher le suivant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova successivo"
           }
         }
       }
@@ -2208,6 +3006,12 @@
             "state" : "translated",
             "value" : "Rechercher le suivant %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova successivo %@"
+          }
         }
       }
     },
@@ -2223,6 +3027,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher le précédent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova precedente"
           }
         }
       }
@@ -2240,6 +3050,12 @@
             "state" : "translated",
             "value" : "Rechercher le précédent %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova precedente %@"
+          }
         }
       }
     },
@@ -2255,6 +3071,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Corriger le lien"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correggi link"
           }
         }
       }
@@ -2272,6 +3094,12 @@
             "state" : "translated",
             "value" : "Corriger le lien…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Correggi link…"
+          }
         }
       }
     },
@@ -2287,6 +3115,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dossiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartelle"
           }
         }
       }
@@ -2304,6 +3138,12 @@
             "state" : "translated",
             "value" : "Questions fréquentes"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Domande frequenti"
+          }
         }
       }
     },
@@ -2320,6 +3160,12 @@
             "state" : "translated",
             "value" : "Général"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generali"
+          }
         }
       }
     },
@@ -2335,6 +3181,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Générer au point d’insertion avec %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genera nel punto di inserimento con %@"
           }
         }
       }
@@ -2358,6 +3210,12 @@
             "state" : "translated",
             "value" : "Généré %1$@%2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generato %1$@%2$@"
+          }
         }
       }
     },
@@ -2373,6 +3231,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Génération"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generazione"
           }
         }
       }
@@ -2390,6 +3254,12 @@
             "state" : "translated",
             "value" : "La génération nécessite macOS 26 ou version ultérieure."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La generazione richiede macOS 26 o versione successiva."
+          }
         }
       }
     },
@@ -2402,6 +3272,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GH"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "GH"
@@ -2422,6 +3298,12 @@
             "state" : "translated",
             "value" : "github_pat_…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "github_pat_…"
+          }
         }
       }
     },
@@ -2434,6 +3316,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "github.com/…/README.md"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "github.com/…/README.md"
@@ -2454,6 +3342,12 @@
             "state" : "translated",
             "value" : "github.com/owner/repo"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "github.com/owner/repo"
+          }
         }
       }
     },
@@ -2466,6 +3360,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GL"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "GL"
@@ -2486,6 +3386,12 @@
             "state" : "translated",
             "value" : "Style du verre"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stile del vetro"
+          }
         }
       }
     },
@@ -2498,6 +3404,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "glpat-…"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "glpat-…"
@@ -2518,6 +3430,12 @@
             "state" : "translated",
             "value" : "Accède au lien dans le document."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Va al link nel documento."
+          }
         }
       }
     },
@@ -2534,6 +3452,12 @@
             "state" : "translated",
             "value" : "Autoriser l’accès…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concedi accesso…"
+          }
         }
       }
     },
@@ -2549,6 +3473,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Profondeur des titres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profondità dei titoli"
           }
         }
       }
@@ -2572,6 +3502,12 @@
             "state" : "translated",
             "value" : "Titre de niveau %1$lld, ligne %2$lld. Place le point d’insertion sur ce titre."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titolo di livello %1$lld, riga %2$lld. Sposta il punto di inserimento su questo titolo."
+          }
         }
       }
     },
@@ -2587,6 +3523,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aidez à améliorer la stabilité de Markify"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuta a rendere Markify più stabile"
           }
         }
       }
@@ -2604,6 +3546,12 @@
             "state" : "translated",
             "value" : "Aide le texte généré à adopter votre style."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuta il testo generato ad adattarsi al tuo stile."
+          }
         }
       }
     },
@@ -2619,6 +3567,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nous aide à repérer et à corriger les plantages et les lenteurs. Prend effet immédiatement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ci aiuta a individuare e correggere arresti anomali e rallentamenti. Ha effetto immediato."
           }
         }
       }
@@ -2636,6 +3590,12 @@
             "state" : "translated",
             "value" : "Masquer le sommaire et les liens"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi sommario e link"
+          }
         }
       }
     },
@@ -2651,6 +3611,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Masquer la bibliothèque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi libreria"
           }
         }
       }
@@ -2668,6 +3634,12 @@
             "state" : "translated",
             "value" : "Masquer le résumé"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi riassunto"
+          }
         }
       }
     },
@@ -2680,6 +3652,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTML"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "HTML"
@@ -2700,6 +3678,12 @@
             "state" : "translated",
             "value" : "https://…/document.md"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://…/document.md"
+          }
         }
       }
     },
@@ -2712,6 +3696,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://github.com/owner/repo"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "https://github.com/owner/repo"
@@ -2732,6 +3722,12 @@
             "state" : "translated",
             "value" : "Dans %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %@"
+          }
         }
       }
     },
@@ -2747,6 +3743,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inclure les résultats de sens proche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Includi risultati affini"
           }
         }
       }
@@ -2764,6 +3766,12 @@
             "state" : "translated",
             "value" : "Indexer les titres pour le contexte"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indicizza i titoli come contesto"
+          }
         }
       }
     },
@@ -2779,6 +3787,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indexer les métadonnées d’en-tête OKF"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indicizza il frontmatter OKF"
           }
         }
       }
@@ -2796,6 +3810,12 @@
             "state" : "translated",
             "value" : "Dossiers indexés"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartelle indicizzate"
+          }
         }
       }
     },
@@ -2811,6 +3831,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indexation · %lld notes lues. D’autres résultats peuvent apparaître."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indicizzazione · %lld note lette. Potrebbero apparire altri risultati."
           }
         }
       }
@@ -2828,6 +3854,12 @@
             "state" : "translated",
             "value" : "Code en ligne"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codice in linea"
+          }
         }
       }
     },
@@ -2843,6 +3875,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Insérer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci"
           }
         }
       }
@@ -2860,6 +3898,12 @@
             "state" : "translated",
             "value" : "Insérer un bloc"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci blocco"
+          }
         }
       }
     },
@@ -2875,6 +3919,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Insérer une table des matières"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci sommario"
           }
         }
       }
@@ -2892,6 +3942,12 @@
             "state" : "translated",
             "value" : "Insère une table des matières au point d’insertion, avec les titres affichés à cette profondeur ; elle se met ensuite à jour automatiquement"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisce un sommario nel punto di inserimento, con i titoli mostrati a questa profondità; poi si aggiorna da solo"
+          }
         }
       }
     },
@@ -2907,6 +3963,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Intelligence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intelligenza"
           }
         }
       }
@@ -2924,6 +3986,12 @@
             "state" : "translated",
             "value" : "Les adresses IP. Markify ne les collecte pas"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli indirizzi IP. Markify non li raccoglie"
+          }
         }
       }
     },
@@ -2939,6 +4007,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Italique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corsivo"
           }
         }
       }
@@ -2956,6 +4030,12 @@
             "state" : "translated",
             "value" : "Participer au programme"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partecipa al programma"
+          }
         }
       }
     },
@@ -2971,6 +4051,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Participez au programme d’envoi de rapports. Nous recevons les informations sur les plantages et les lenteurs pour les corriger plus vite, sans aucune donnée personnelle."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partecipa al programma di invio dei rapporti. Riceviamo arresti anomali e rallentamenti per correggerli più in fretta, senza alcun dato personale."
           }
         }
       }
@@ -2988,6 +4074,12 @@
             "state" : "translated",
             "value" : "Conserver"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantieni"
+          }
         }
       }
     },
@@ -3003,6 +4095,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Conserver %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantieni %@"
           }
         }
       }
@@ -3020,6 +4118,12 @@
             "state" : "translated",
             "value" : "Lorsque vous conservez du texte généré par l’IA dans un concept, son champ generated indique Apple Intelligence."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando mantieni testo dell’IA in un concetto, il suo campo generated indica Apple Intelligence."
+          }
         }
       }
     },
@@ -3035,6 +4139,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Raccourcis clavier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbreviazioni da tastiera"
           }
         }
       }
@@ -3052,6 +4162,12 @@
             "state" : "translated",
             "value" : "Connaissances"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conoscenza"
+          }
         }
       }
     },
@@ -3064,6 +4180,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L%lld"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "L%lld"
@@ -3090,6 +4212,12 @@
             "state" : "translated",
             "value" : "L%1$lld%2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L%1$lld%2$@"
+          }
         }
       }
     },
@@ -3105,6 +4233,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dernier mode utilisé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultima modalità usata"
           }
         }
       }
@@ -3122,6 +4256,12 @@
             "state" : "translated",
             "value" : "Modes"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modalità"
+          }
         }
       }
     },
@@ -3137,6 +4277,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bibliothèque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Libreria"
           }
         }
       }
@@ -3154,6 +4300,12 @@
             "state" : "translated",
             "value" : "Emplacement de la bibliothèque"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posizione della libreria"
+          }
         }
       }
     },
@@ -3169,6 +4321,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sous-dossiers de la bibliothèque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sottocartelle della libreria"
           }
         }
       }
@@ -3186,6 +4344,12 @@
             "state" : "translated",
             "value" : "Limiter la largeur des lignes"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limita la larghezza delle righe"
+          }
         }
       }
     },
@@ -3201,6 +4365,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Largeur des lignes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Larghezza delle righe"
           }
         }
       }
@@ -3218,6 +4388,12 @@
             "state" : "translated",
             "value" : "Lien"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link"
+          }
         }
       }
     },
@@ -3233,6 +4409,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lien %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link %@"
           }
         }
       }
@@ -3250,6 +4432,12 @@
             "state" : "translated",
             "value" : "Liens entrants"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link in entrata"
+          }
         }
       }
     },
@@ -3265,6 +4453,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les liens de ce document s’affichent ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I link di questo documento appaiono qui."
           }
         }
       }
@@ -3282,6 +4476,12 @@
             "state" : "translated",
             "value" : "Charger les images distantes"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carica immagini remote"
+          }
         }
       }
     },
@@ -3297,6 +4497,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chargement des fichiers…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caricamento dei file…"
           }
         }
       }
@@ -3314,6 +4520,12 @@
             "state" : "translated",
             "value" : "Créer un concept…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crea concetto…"
+          }
         }
       }
     },
@@ -3329,6 +4541,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Définir par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta come predefinita"
           }
         }
       }
@@ -3346,6 +4564,12 @@
             "state" : "translated",
             "value" : "Marquer comme vérifié"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segna come verificato"
+          }
         }
       }
     },
@@ -3358,6 +4582,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Markdown"
@@ -3378,6 +4608,12 @@
             "state" : "translated",
             "value" : "Police du mode Markdown"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Font Markdown"
+          }
         }
       }
     },
@@ -3393,6 +4629,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guide Markdown"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guida a Markdown"
           }
         }
       }
@@ -3410,6 +4652,12 @@
             "state" : "translated",
             "value" : "Le texte Markdown, les titres, les noms de fichiers ou les chemins d’accès"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testo Markdown, titoli, nomi di file o percorsi"
+          }
         }
       }
     },
@@ -3422,6 +4670,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Markify"
@@ -3442,6 +4696,12 @@
             "state" : "translated",
             "value" : "Markify %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify %@"
+          }
         }
       }
     },
@@ -3457,6 +4717,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Markify ouvre les fichiers .md."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify apre i file .md."
           }
         }
       }
@@ -3474,6 +4740,12 @@
             "state" : "translated",
             "value" : "Markify affiche le contrat ; il n’exécute pas les calculs."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify mostra il contratto; non esegue i calcoli."
+          }
         }
       }
     },
@@ -3489,6 +4761,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Site web de Markify"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sito web di Markify"
           }
         }
       }
@@ -3506,6 +4784,12 @@
             "state" : "translated",
             "value" : "Les versions de Markify et de macOS, ainsi que le modèle de votre Mac"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le versioni di Markify e di macOS e il modello del tuo Mac"
+          }
         }
       }
     },
@@ -3521,6 +4805,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Selon l’apparence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come l’aspetto"
           }
         }
       }
@@ -3538,6 +4828,12 @@
             "state" : "translated",
             "value" : "Respecter la casse"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maiuscole/minuscole"
+          }
         }
       }
     },
@@ -3550,6 +4846,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MD"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "MD"
@@ -3570,6 +4872,12 @@
             "state" : "translated",
             "value" : "Menlo"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menlo"
+          }
         }
       }
     },
@@ -3585,6 +4893,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fusionner les modifications externes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unisci modifiche esterne"
           }
         }
       }
@@ -3602,6 +4916,12 @@
             "state" : "translated",
             "value" : "Monochrome"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monocromatico"
+          }
         }
       }
     },
@@ -3617,6 +4937,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altro"
           }
         }
       }
@@ -3634,6 +4960,12 @@
             "state" : "translated",
             "value" : "Déplacer vers…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sposta in…"
+          }
         }
       }
     },
@@ -3649,6 +4981,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Étroite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stretta"
           }
         }
       }
@@ -3666,6 +5004,12 @@
             "state" : "translated",
             "value" : "Nouveau document"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo documento"
+          }
         }
       }
     },
@@ -3681,6 +5025,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nouveau document"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo documento"
           }
         }
       }
@@ -3698,6 +5048,12 @@
             "state" : "translated",
             "value" : "Nouveau document dans %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo documento in %@"
+          }
         }
       }
     },
@@ -3713,6 +5069,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistrer les nouveaux documents dans"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva i nuovi documenti in"
           }
         }
       }
@@ -3730,6 +5092,12 @@
             "state" : "translated",
             "value" : "Nouveau document à partir du presse-papiers"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo dagli appunti"
+          }
         }
       }
     },
@@ -3742,6 +5110,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New York"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "New York"
@@ -3762,6 +5136,12 @@
             "state" : "translated",
             "value" : "Occurrence suivante"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corrispondenza successiva"
+          }
         }
       }
     },
@@ -3777,6 +5157,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun lien rompu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun link interrotto"
           }
         }
       }
@@ -3794,6 +5180,12 @@
             "state" : "translated",
             "value" : "Aucun titre"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun titolo"
+          }
         }
       }
     },
@@ -3809,6 +5201,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun titre à cette profondeur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun titolo a questa profondità"
           }
         }
       }
@@ -3826,6 +5224,12 @@
             "state" : "translated",
             "value" : "Aucun titre ne correspond à « %@ »"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun titolo corrisponde a “%@”"
+          }
         }
       }
     },
@@ -3841,6 +5245,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun lien de ce type"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun link di questo tipo"
           }
         }
       }
@@ -3858,6 +5268,12 @@
             "state" : "translated",
             "value" : "Aucun fichier Markdown trouvé."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun file Markdown trovato."
+          }
         }
       }
     },
@@ -3873,6 +5289,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun résultat pour le moment. Les résultats seront mis à jour à la fin de l’indexation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora nessuna corrispondenza. I risultati si aggiorneranno al termine dell’indicizzazione."
           }
         }
       }
@@ -3890,6 +5312,12 @@
             "state" : "translated",
             "value" : "Aucun concept correspondant"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun concetto corrispondente"
+          }
         }
       }
     },
@@ -3905,6 +5333,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun style correspondant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno stile corrispondente"
           }
         }
       }
@@ -3922,6 +5356,12 @@
             "state" : "translated",
             "value" : "Aucun résultat"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun risultato"
+          }
         }
       }
     },
@@ -3937,6 +5377,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun résultat dans %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun risultato in %@"
           }
         }
       }
@@ -3954,6 +5400,12 @@
             "state" : "translated",
             "value" : "Aucun tag pour le moment"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora nessun tag"
+          }
         }
       }
     },
@@ -3969,6 +5421,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pas encore vérifié"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ancora verificato"
           }
         }
       }
@@ -3986,6 +5444,12 @@
             "state" : "translated",
             "value" : "Plus tard"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ora"
+          }
         }
       }
     },
@@ -4001,6 +5465,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les notes transmises par Markify peuvent aussi apparaître dans Spotlight pour toute personne utilisant ce compte sur le Mac. L’index reste sur ce Mac. macOS gère les catégories, la confidentialité et le classement de Spotlight."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le note fornite da Markify possono apparire anche in Spotlight di sistema per chiunque usi questo account del Mac. L’indice resta su questo Mac. macOS gestisce categorie, privacy e ordinamento di Spotlight."
           }
         }
       }
@@ -4018,6 +5488,12 @@
             "state" : "translated",
             "value" : "Le contenu des paquets OKF ou les liens entre les notes"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il contenuto dei pacchetti OKF o i link tra le note"
+          }
         }
       }
     },
@@ -4033,6 +5509,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paquets OKF"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacchetti OKF"
           }
         }
       }
@@ -4050,6 +5532,12 @@
             "state" : "translated",
             "value" : "Au lancement"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All’avvio"
+          }
         }
       }
     },
@@ -4065,6 +5553,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sur ce Mac"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su questo Mac"
           }
         }
       }
@@ -4082,6 +5576,12 @@
             "state" : "translated",
             "value" : "Sur l’appareil"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sul dispositivo"
+          }
         }
       }
     },
@@ -4097,6 +5597,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Une page. Deux modes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una pagina. Due modalità."
           }
         }
       }
@@ -4114,6 +5620,12 @@
             "state" : "translated",
             "value" : "Seule une requête de lecture est envoyée à %@."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A %@ viene inviata solo una richiesta di lettura."
+          }
         }
       }
     },
@@ -4129,6 +5641,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri"
           }
         }
       }
@@ -4146,6 +5664,12 @@
             "state" : "translated",
             "value" : "Ouvrir comme fichier"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri come file"
+          }
         }
       }
     },
@@ -4161,6 +5685,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir à la ligne %lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri alla riga %lld"
           }
         }
       }
@@ -4178,6 +5708,12 @@
             "state" : "translated",
             "value" : "Ouvrir au début de la note"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri all’inizio della nota"
+          }
         }
       }
     },
@@ -4193,6 +5729,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir le dossier du paquet…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri cartella del pacchetto…"
           }
         }
       }
@@ -4210,6 +5752,12 @@
             "state" : "translated",
             "value" : "Ouvrir les documents dans"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri i documenti in"
+          }
         }
       }
     },
@@ -4225,6 +5773,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir un fichier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri file"
           }
         }
       }
@@ -4242,6 +5796,12 @@
             "state" : "translated",
             "value" : "Fichiers ouverts"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File aperti"
+          }
         }
       }
     },
@@ -4257,6 +5817,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir un dossier…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri cartella…"
           }
         }
       }
@@ -4274,6 +5840,12 @@
             "state" : "translated",
             "value" : "Ouvrir à partir d’une URL"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri da URL"
+          }
         }
       }
     },
@@ -4289,6 +5861,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir dans le navigateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri nel browser"
           }
         }
       }
@@ -4306,6 +5884,12 @@
             "state" : "translated",
             "value" : "Ouvrir l’original dans le navigateur"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri originale nel browser"
+          }
         }
       }
     },
@@ -4321,6 +5905,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir une URL"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri URL"
           }
         }
       }
@@ -4338,6 +5928,12 @@
             "state" : "translated",
             "value" : "Ouvrir une URL…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri URL…"
+          }
         }
       }
     },
@@ -4353,6 +5949,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouverture du fichier…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apertura del file…"
           }
         }
       }
@@ -4370,6 +5972,12 @@
             "state" : "translated",
             "value" : "Ouvre %@ dans votre navigateur"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apre %@ nel browser"
+          }
         }
       }
     },
@@ -4385,6 +5993,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couleur de la page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colore della pagina"
           }
         }
       }
@@ -4402,6 +6016,12 @@
             "state" : "translated",
             "value" : "Papier"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carta"
+          }
         }
       }
     },
@@ -4417,6 +6037,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mot de passe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
           }
         }
       }
@@ -4434,6 +6060,12 @@
             "state" : "translated",
             "value" : "Coller"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla"
+          }
         }
       }
     },
@@ -4450,6 +6082,12 @@
             "state" : "translated",
             "value" : "Collez un lien vers un fichier ou un dépôt."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla un link a un file o a un repository."
+          }
         }
       }
     },
@@ -4462,6 +6100,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "PDF"
@@ -4482,6 +6126,12 @@
             "state" : "translated",
             "value" : "Préparation du modèle sur l’appareil…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparazione del modello sul dispositivo…"
+          }
         }
       }
     },
@@ -4497,6 +6147,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Occurrence précédente"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corrispondenza precedente"
           }
         }
       }
@@ -4514,6 +6170,12 @@
             "state" : "translated",
             "value" : "Confidentialité"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
         }
       }
     },
@@ -4529,6 +6191,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Projets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progetti"
           }
         }
       }
@@ -4546,6 +6214,12 @@
             "state" : "translated",
             "value" : "Police du texte"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Font del testo"
+          }
         }
       }
     },
@@ -4561,6 +6235,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lire tous les détails sur la confidentialité…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leggi tutti i dettagli sulla privacy…"
           }
         }
       }
@@ -4578,6 +6258,12 @@
             "state" : "translated",
             "value" : "Lecture"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lettura"
+          }
         }
       }
     },
@@ -4593,6 +6279,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lecture de %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lettura di %@"
           }
         }
       }
@@ -4610,6 +6302,12 @@
             "state" : "translated",
             "value" : "Progression de la lecture"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avanzamento della lettura"
+          }
         }
       }
     },
@@ -4625,6 +6323,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reconstruire l’index"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricrea indice"
           }
         }
       }
@@ -4642,6 +6346,12 @@
             "state" : "translated",
             "value" : "Reconstruit la table des matières du document avec les titres affichés à cette profondeur"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricrea il sommario del documento con i titoli mostrati a questa profondità"
+          }
         }
       }
     },
@@ -4657,6 +6367,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recherches récentes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricerche recenti"
           }
         }
       }
@@ -4674,6 +6390,12 @@
             "state" : "translated",
             "value" : "Consigner les modifications de l’IA dans les concepts OKF"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra le modifiche dell’IA nei concetti OKF"
+          }
         }
       }
     },
@@ -4689,6 +6411,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Consigner mes modifications dans les concepts OKF"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra le mie modifiche nei concetti OKF"
           }
         }
       }
@@ -4706,6 +6434,12 @@
             "state" : "translated",
             "value" : "Enregistré sous human:%@ lorsque vous marquez un concept OKF comme vérifié."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrato come human:%@ quando segni un concetto OKF come verificato."
+          }
         }
       }
     },
@@ -4721,6 +6455,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Actualiser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna"
           }
         }
       }
@@ -4738,6 +6478,12 @@
             "state" : "translated",
             "value" : "Résultats de sens proche"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affini"
+          }
         }
       }
     },
@@ -4753,6 +6499,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notes de version"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note di rilascio"
           }
         }
       }
@@ -4770,6 +6522,12 @@
             "state" : "translated",
             "value" : "Mémoriser dans le trousseau pour %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricorda nel portachiavi per %@"
+          }
         }
       }
     },
@@ -4785,6 +6543,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mémoriser le mode de chaque document"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricorda la modalità di ogni documento"
           }
         }
       }
@@ -4802,6 +6566,12 @@
             "state" : "translated",
             "value" : "Retirer"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi"
+          }
         }
       }
     },
@@ -4817,6 +6587,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retirer le dossier sélectionné de la recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi la cartella selezionata dalla ricerca"
           }
         }
       }
@@ -4834,6 +6610,12 @@
             "state" : "translated",
             "value" : "Supprime les entrées de recherche de Markify et suspend l’indexation jusqu’à sa reconstruction. Vos fichiers et l’index indépendant de macOS restent intacts."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuove le voci di ricerca di Markify e sospende l’indicizzazione finché non ricrei l’indice. I tuoi file e l’indice dei file indipendente di macOS restano intatti."
+          }
         }
       }
     },
@@ -4849,6 +6631,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retirer un dossier supprime ses entrées de recherche, jamais ses fichiers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovere una cartella ne rimuove le voci di ricerca, mai i file."
           }
         }
       }
@@ -4866,6 +6654,12 @@
             "state" : "translated",
             "value" : "Renommer…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rinomina…"
+          }
         }
       }
     },
@@ -4881,6 +6675,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rendu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formattata"
           }
         }
       }
@@ -4898,6 +6698,12 @@
             "state" : "translated",
             "value" : "Rouvrir les derniers documents"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riapri gli ultimi documenti"
+          }
         }
       }
     },
@@ -4913,6 +6719,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rouvre chaque fichier dans le mode où vous l’avez laissé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riapre ogni file nella modalità in cui l’hai lasciato."
           }
         }
       }
@@ -4930,6 +6742,12 @@
             "state" : "translated",
             "value" : "Remplacer"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sostituisci"
+          }
         }
       }
     },
@@ -4945,6 +6763,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout remplacer (%lld)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sostituisci tutto (%lld)"
           }
         }
       }
@@ -4962,6 +6786,12 @@
             "state" : "translated",
             "value" : "Signaler un problème…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnala un problema…"
+          }
         }
       }
     },
@@ -4977,6 +6807,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les rapports sont envoyés à Sentry. Comme pour toute requête web, les serveurs de Sentry voient l’adresse de connexion ; Markify ne demande pas à Sentry de la conserver. Désactiver le programme arrête l’envoi de tous les rapports."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I rapporti vengono inviati a Sentry. Come per qualsiasi richiesta web, i server di Sentry vedono l’indirizzo della connessione; Markify non chiede a Sentry di conservarlo. Disattivando il programma si interrompe l’invio di tutti i rapporti."
           }
         }
       }
@@ -4994,6 +6830,12 @@
             "state" : "translated",
             "value" : "URL du dépôt"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL del repository"
+          }
         }
       }
     },
@@ -5009,6 +6851,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rétablir les réglages par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ripristina impostazioni predefinite"
           }
         }
       }
@@ -5026,6 +6874,12 @@
             "state" : "translated",
             "value" : "Fonctionne sur %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funziona su %@"
+          }
         }
       }
     },
@@ -5041,6 +6895,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fonctionne sur ce Mac avec Apple Intelligence. Votre texte n’en sort jamais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funziona su questo Mac con Apple Intelligence. Il tuo testo non lo lascia mai."
           }
         }
       }
@@ -5058,6 +6918,12 @@
             "state" : "translated",
             "value" : "Même dossier que le document"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stessa cartella del documento"
+          }
         }
       }
     },
@@ -5073,6 +6939,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistrer les images collées dans"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva le immagini incollate in"
           }
         }
       }
@@ -5090,6 +6962,12 @@
             "state" : "translated",
             "value" : "Enregistré"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvato"
+          }
         }
       }
     },
@@ -5105,6 +6983,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistré automatiquement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvato automaticamente"
           }
         }
       }
@@ -5122,6 +7006,12 @@
             "state" : "translated",
             "value" : "Rechercher"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca"
+          }
         }
       }
     },
@@ -5137,6 +7027,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher dans tous les dossiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca in tutte le cartelle"
           }
         }
       }
@@ -5154,6 +7050,12 @@
             "state" : "translated",
             "value" : "La recherche se limite aux dossiers dont vous avez autorisé l’accès."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La ricerca può accedere solo alle cartelle per cui hai concesso l’accesso."
+          }
         }
       }
     },
@@ -5169,6 +7071,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher des fichiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca file"
           }
         }
       }
@@ -5186,6 +7094,12 @@
             "state" : "translated",
             "value" : "Index de recherche supprimé"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indice di ricerca eliminato"
+          }
         }
       }
     },
@@ -5201,6 +7115,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher dans la bibliothèque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca nella libreria"
           }
         }
       }
@@ -5218,6 +7138,12 @@
             "state" : "translated",
             "value" : "Rechercher des notes"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca note"
+          }
         }
       }
     },
@@ -5233,6 +7159,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réglages de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni di ricerca"
           }
         }
       }
@@ -5250,6 +7182,12 @@
             "state" : "translated",
             "value" : "Réglages de recherche…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni di ricerca…"
+          }
         }
       }
     },
@@ -5265,6 +7203,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recherche en cours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricerca in corso"
           }
         }
       }
@@ -5282,6 +7226,12 @@
             "state" : "translated",
             "value" : "Recherche Spotlight en cours…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricerca in Spotlight…"
+          }
         }
       }
     },
@@ -5297,6 +7247,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dossier sélectionné : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cartella selezionata: %@"
           }
         }
       }
@@ -5320,6 +7276,12 @@
             "state" : "translated",
             "value" : "Sélection · %1$lld %2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selezione · %1$lld %2$@"
+          }
         }
       }
     },
@@ -5335,6 +7297,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Envoyer des rapports de plantage et de performances"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia rapporti su arresti anomali e prestazioni"
           }
         }
       }
@@ -5352,6 +7320,12 @@
             "state" : "translated",
             "value" : "Réglages"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni"
+          }
         }
       }
     },
@@ -5364,6 +7338,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SF Mono"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "SF Mono"
@@ -5384,6 +7364,12 @@
             "state" : "translated",
             "value" : "SF Pro"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SF Pro"
+          }
         }
       }
     },
@@ -5399,6 +7385,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Partager"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condividi"
           }
         }
       }
@@ -5416,6 +7408,12 @@
             "state" : "translated",
             "value" : "Raccourcis"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbreviazioni"
+          }
         }
       }
     },
@@ -5431,6 +7429,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra"
           }
         }
       }
@@ -5448,6 +7452,12 @@
             "state" : "translated",
             "value" : "Afficher le paquet"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra pacchetto"
+          }
         }
       }
     },
@@ -5463,6 +7473,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher le sommaire et les liens"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra sommario e link"
           }
         }
       }
@@ -5480,6 +7496,12 @@
             "state" : "translated",
             "value" : "Afficher la bibliothèque"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra libreria"
+          }
         }
       }
     },
@@ -5495,6 +7517,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher le Markdown"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra Markdown"
           }
         }
       }
@@ -5512,6 +7540,12 @@
             "state" : "translated",
             "value" : "Afficher le Markdown %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra Markdown %@"
+          }
         }
       }
     },
@@ -5527,6 +7561,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher le résultat"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra risultato"
           }
         }
       }
@@ -5544,6 +7584,12 @@
             "state" : "translated",
             "value" : "Afficher la capsule d’état"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la capsula di stato"
+          }
         }
       }
     },
@@ -5559,6 +7605,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher le nombre de mots"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra conteggio parole"
           }
         }
       }
@@ -5576,6 +7628,12 @@
             "state" : "translated",
             "value" : "Afficher le nombre de mots"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra conteggio parole"
+          }
         }
       }
     },
@@ -5591,6 +7649,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Affichage des %lld premiers fichiers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vengono mostrati i primi %lld file."
           }
         }
       }
@@ -5608,6 +7672,12 @@
             "state" : "translated",
             "value" : "Indique la section contenant une correspondance exacte. Le texte des titres reste inclus dans la recherche."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indica quale sezione contiene una corrispondenza esatta. I titoli restano parte del testo ricercabile della nota."
+          }
         }
       }
     },
@@ -5623,6 +7693,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ignorer les dossiers nommés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignora le cartelle denominate"
           }
         }
       }
@@ -5640,6 +7716,12 @@
             "state" : "translated",
             "value" : "Source"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Origine"
+          }
         }
       }
     },
@@ -5655,6 +7737,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sources"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Origini"
           }
         }
       }
@@ -5672,6 +7760,12 @@
             "state" : "translated",
             "value" : "Spotlight traite peut-être encore les notes transmises. Essayez une autre expression ou élargissez la recherche."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotlight potrebbe ancora elaborare le note inviate. Prova un’altra frase o un ambito più ampio."
+          }
         }
       }
     },
@@ -5687,6 +7781,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Index de recherche Spotlight"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indice di ricerca di Spotlight"
           }
         }
       }
@@ -5704,6 +7804,12 @@
             "state" : "translated",
             "value" : "Recherche Spotlight indisponible"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricerca di Spotlight non disponibile"
+          }
         }
       }
     },
@@ -5719,6 +7825,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réglages Spotlight…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni di Spotlight…"
           }
         }
       }
@@ -5736,6 +7848,12 @@
             "state" : "translated",
             "value" : "Stable"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stabile"
+          }
         }
       }
     },
@@ -5751,6 +7869,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Commencez à écrire ou tapez / pour insérer un bloc."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inizia a scrivere o digita / per inserire un blocco."
           }
         }
       }
@@ -5768,6 +7892,12 @@
             "state" : "translated",
             "value" : "Démarrage"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvio"
+          }
         }
       }
     },
@@ -5783,6 +7913,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "État"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stato"
           }
         }
       }
@@ -5800,6 +7936,12 @@
             "state" : "translated",
             "value" : "Indexation en cours"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indicizzazione in corso"
+          }
         }
       }
     },
@@ -5815,6 +7957,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Arrêter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interrompi"
           }
         }
       }
@@ -5832,6 +7980,12 @@
             "state" : "translated",
             "value" : "Barré"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barrato"
+          }
         }
       }
     },
@@ -5847,6 +8001,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suggérer un titre et des tags pour les nouveaux documents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggerisci titolo e tag per i nuovi documenti"
           }
         }
       }
@@ -5864,6 +8024,12 @@
             "state" : "translated",
             "value" : "Suggestions"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggerimenti"
+          }
         }
       }
     },
@@ -5879,6 +8045,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Résumer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassumi"
           }
         }
       }
@@ -5896,6 +8068,12 @@
             "state" : "translated",
             "value" : "Résumé en cours…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassunto in corso…"
+          }
         }
       }
     },
@@ -5911,6 +8089,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Résumé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassunto"
           }
         }
       }
@@ -5928,6 +8112,12 @@
             "state" : "translated",
             "value" : "Système"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistema"
+          }
         }
       }
     },
@@ -5943,6 +8133,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réglages Système…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni di Sistema…"
           }
         }
       }
@@ -5960,6 +8156,12 @@
             "state" : "translated",
             "value" : "Spotlight du système"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotlight di sistema"
+          }
         }
       }
     },
@@ -5976,6 +8178,12 @@
             "state" : "translated",
             "value" : "Les Outils d’écriture du système sont disponibles. La génération et les résumés de liens nécessitent macOS 26 ou version ultérieure."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli Strumenti di scrittura di sistema sono disponibili. La generazione e i riassunti dei link richiedono macOS 26 o versione successiva."
+          }
         }
       }
     },
@@ -5988,6 +8196,12 @@
           }
         },
         "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag"
+          }
+        },
+        "it" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tag"
@@ -6008,6 +8222,12 @@
             "state" : "translated",
             "value" : "Tags"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tag"
+          }
         }
       }
     },
@@ -6023,6 +8243,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thème"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema"
           }
         }
       }
@@ -6040,6 +8266,12 @@
             "state" : "translated",
             "value" : "Ce lien mène à un dépôt. Voulez-vous parcourir ses fichiers ?"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo link porta a un repository. Vuoi sfogliarne i file?"
+          }
         }
       }
     },
@@ -6055,6 +8287,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les durées mesurées pour un échantillon de sessions, environ une sur dix"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tempi misurati per un campione di sessioni, circa una su dieci"
           }
         }
       }
@@ -6072,6 +8310,12 @@
             "state" : "translated",
             "value" : "Teinté"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colorato"
+          }
         }
       }
     },
@@ -6087,6 +8331,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Titre / chemin"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titolo / percorso"
           }
         }
       }
@@ -6104,6 +8354,12 @@
             "state" : "translated",
             "value" : "Le titre, la description, le type et les tags deviennent accessibles à la recherche et aux filtres."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titolo, descrizione, tipo e tag diventano ricercabili e filtrabili."
+          }
         }
       }
     },
@@ -6119,6 +8375,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher ou masquer la bibliothèque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra/nascondi libreria"
           }
         }
       }
@@ -6136,6 +8398,12 @@
             "state" : "translated",
             "value" : "Changer de mode Markdown"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alterna modalità Markdown"
+          }
         }
       }
     },
@@ -6151,6 +8419,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jeton"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token"
           }
         }
       }
@@ -6168,6 +8442,12 @@
             "state" : "translated",
             "value" : "Essayer"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova"
+          }
         }
       }
     },
@@ -6183,6 +8463,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réessayer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riprova"
           }
         }
       }
@@ -6200,6 +8486,12 @@
             "state" : "translated",
             "value" : "Activez Apple Intelligence dans Réglages Système"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attiva Apple Intelligence in Impostazioni di Sistema"
+          }
         }
       }
     },
@@ -6215,6 +8507,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Type"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipo"
           }
         }
       }
@@ -6232,6 +8530,12 @@
             "state" : "translated",
             "value" : "Types"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipi"
+          }
         }
       }
     },
@@ -6247,6 +8551,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Typographie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipografia"
           }
         }
       }
@@ -6264,6 +8574,12 @@
             "state" : "translated",
             "value" : "Sans titre"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senza titolo"
+          }
         }
       }
     },
@@ -6279,6 +8595,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mettre à jour la table des matières"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna sommario"
           }
         }
       }
@@ -6296,6 +8618,12 @@
             "state" : "translated",
             "value" : "Mises à jour"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiornamenti"
+          }
         }
       }
     },
@@ -6311,6 +8639,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les mises à jour s’installent lorsque vous quittez Markify."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli aggiornamenti vengono installati quando esci da Markify."
           }
         }
       }
@@ -6328,6 +8662,12 @@
             "state" : "translated",
             "value" : "Mise à jour de l’index Spotlight…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiornamento dell’indice di Spotlight…"
+          }
         }
       }
     },
@@ -6343,6 +8683,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Utilisez l’adresse d’un dépôt GitHub ou GitLab, ou ouvrez ce lien comme fichier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa l’indirizzo di un repository GitHub o GitLab, oppure apri questo link come file."
           }
         }
       }
@@ -6366,6 +8712,12 @@
             "state" : "translated",
             "value" : "Utiliser les identifiants enregistrés %1$@ · %2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa le credenziali salvate %1$@ · %2$@"
+          }
         }
       }
     },
@@ -6382,6 +8734,12 @@
             "state" : "translated",
             "value" : "Utiliser la section environnante comme contexte"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa la sezione circostante come contesto"
+          }
         }
       }
     },
@@ -6397,6 +8755,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nom d’utilisateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome utente"
           }
         }
       }
@@ -6420,6 +8784,12 @@
             "state" : "translated",
             "value" : "Vérifié%1$@ par %2$@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificato%1$@ da %2$@"
+          }
         }
       }
     },
@@ -6435,6 +8805,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Identifiant du vérificateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID verificatore"
           }
         }
       }
@@ -6452,6 +8828,12 @@
             "state" : "translated",
             "value" : "Bienvenue dans Markify"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benvenuto in Markify"
+          }
         }
       }
     },
@@ -6467,6 +8849,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce qui est indexé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa viene indicizzato"
           }
         }
       }
@@ -6484,6 +8872,12 @@
             "state" : "translated",
             "value" : "Ce qui n’est jamais envoyé"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa non viene mai inviato"
+          }
         }
       }
     },
@@ -6499,6 +8893,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ce qui est envoyé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa viene inviato"
           }
         }
       }
@@ -6516,6 +8916,12 @@
             "state" : "translated",
             "value" : "Blanc"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bianco"
+          }
         }
       }
     },
@@ -6531,6 +8937,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Document entier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intero documento"
           }
         }
       }
@@ -6548,6 +8960,12 @@
             "state" : "translated",
             "value" : "Large"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ampia"
+          }
         }
       }
     },
@@ -6563,6 +8981,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fenêtre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finestra"
           }
         }
       }
@@ -6580,6 +9004,12 @@
             "state" : "translated",
             "value" : "Rédaction sur ce Mac…"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrittura su questo Mac…"
+          }
         }
       }
     },
@@ -6595,6 +9025,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Outils d’écriture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strumenti di scrittura"
           }
         }
       }
@@ -6612,6 +9048,12 @@
             "state" : "translated",
             "value" : "Outils d’écriture %@"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strumenti di scrittura %@"
+          }
         }
       }
     },
@@ -6627,6 +9069,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Outils d’écriture dans la barre de mise en forme"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strumenti di scrittura nella barra di formattazione"
           }
         }
       }
@@ -6644,6 +9092,12 @@
             "state" : "translated",
             "value" : "Outils d’écriture sous macOS Sequoia"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strumenti di scrittura su macOS Sequoia"
+          }
         }
       }
     },
@@ -6659,6 +9113,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouté aux métadonnées d’en-tête uniquement après votre accord."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scritto nel frontmatter solo dopo la tua conferma."
           }
         }
       }
@@ -6676,6 +9136,12 @@
             "state" : "translated",
             "value" : "Vous pouvez changer d’avis à tout moment dans Réglages › Confidentialité."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi cambiare idea in qualsiasi momento in Impostazioni › Privacy."
+          }
         }
       }
     },
@@ -6691,6 +9157,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Votre nom, votre compte ou tout identifiant d’appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo nome, il tuo account o qualsiasi identificativo del dispositivo"
           }
         }
       }
@@ -6708,6 +9180,12 @@
             "state" : "translated",
             "value" : "Vos notes restent sur le disque. Choisissez Reconstruire l’index pour reprendre la recherche dans la bibliothèque."
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le tue note restano sul disco. Scegli Ricrea indice per riprendere la ricerca nella libreria."
+          }
         }
       }
     },
@@ -6724,6 +9202,12 @@
             "state" : "translated",
             "value" : "Agrandir"
           }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingrandisci"
+          }
         }
       }
     },
@@ -6739,6 +9223,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réduire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riduci"
           }
         }
       }
