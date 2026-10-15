@@ -5,6 +5,12 @@
       "comment" : "Bundle display name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -24,6 +30,12 @@
           }
         },
         "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
+        },
+        "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Markify"
@@ -35,6 +47,12 @@
       "comment" : "Bundle name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -58,11 +76,23 @@
             "state" : "translated",
             "value" : "Markify"
           }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markify"
+          }
         }
       }
     },
     "Markdown Document" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown-Dokument"
+          }
+        },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
@@ -80,11 +110,23 @@
             "state" : "translated",
             "value" : "Documento Markdown"
           }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento Markdown"
+          }
         }
       }
     },
     "MDX Document" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MDX-Dokument"
+          }
+        },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
@@ -102,6 +144,12 @@
             "state" : "translated",
             "value" : "Documento MDX"
           }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documento MDX"
+          }
         }
       }
     },
@@ -109,6 +157,12 @@
       "comment" : "Copyright (human-readable)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stephane Paquet"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -128,6 +182,12 @@
           }
         },
         "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stephane Paquet"
+          }
+        },
+        "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stephane Paquet"

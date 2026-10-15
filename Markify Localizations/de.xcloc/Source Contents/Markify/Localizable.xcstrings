@@ -1,0 +1,2341 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    " ▍" : {
+
+    },
+    "— Edited" : {
+
+    },
+    ", %lld times" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : ", %lld time"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : ", %lld times"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    ", broken: %@" : {
+
+    },
+    "./assets" : {
+
+    },
+    "./images" : {
+
+    },
+    ".%@" : {
+
+    },
+    "·" : {
+
+    },
+    "· %@" : {
+
+    },
+    "“%@” doesn’t exist yet." : {
+
+    },
+    "“%@” has no Markdown files." : {
+
+    },
+    "#%@" : {
+
+    },
+    "%@ accent" : {
+
+    },
+    "%@ account" : {
+
+    },
+    "%@ Library" : {
+
+    },
+    "%@ Markdown" : {
+
+    },
+    "%@ theme" : {
+
+    },
+    "%@, %@, line %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, line %3$lld"
+          }
+        }
+      }
+    },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+
+    },
+    "%lld broken links" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld broken link"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld broken links"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld concepts" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld concept"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld concepts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld documents link to this file’s old location. Markify can point them at the new one." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld document links to this file’s old location. Markify can point it at the new one."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld documents link to this file’s old location. Markify can point them at the new one."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld found" : {
+
+    },
+    "%lld h ago" : {
+
+    },
+    "%lld issues in bundle" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld issue in bundle"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld issues in bundle"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld min ago" : {
+
+    },
+    "%lld notes" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld note"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld notes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld notes · ranked by Spotlight" : {
+
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "%lld percent" : {
+
+    },
+    "%lld pt" : {
+
+    },
+    "%lld uses" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld use"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld uses"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld words · Markdown" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld word · Markdown"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld words · Markdown"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld words · Rendered" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld word · Rendered"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld words · Rendered"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "`%@` points to %@, which does not exist." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "`%1$@` points to %2$@, which does not exist."
+          }
+        }
+      }
+    },
+    "© 2025–2026 Stéphane Paquet · Free to use" : {
+
+    },
+    "↑↓ navigate" : {
+
+    },
+    "↗" : {
+
+    },
+    "↩ insert · esc dismiss" : {
+
+    },
+    "×%lld" : {
+
+    },
+    "⌘N" : {
+
+    },
+    "⌘O Open file" : {
+
+    },
+    "● Credentials required" : {
+
+    },
+    "● Credentials set" : {
+
+    },
+    "● Public" : {
+
+    },
+    "✓ Reviewed" : {
+
+    },
+    "A Markdown file on the web, or a GitHub / GitLab repository." : {
+
+    },
+    "Aa" : {
+
+    },
+    "About Markify" : {
+
+    },
+    "Accent color" : {
+
+    },
+    "Accept" : {
+
+    },
+    "Access" : {
+
+    },
+    "Access expired" : {
+
+    },
+    "Access needed" : {
+
+    },
+    "Access to this folder expired. Its notes stay hidden until you grant access again." : {
+
+    },
+    "Access was denied. Choose credentials below and retry, or replace expired credentials. The server may also have reached its request limit." : {
+
+    },
+    "Acknowledgements & License" : {
+
+    },
+    "Actual Size" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add Folder" : {
+
+    },
+    "Add Folder…" : {
+
+    },
+    "Add Log Entry" : {
+
+    },
+    "Add Log Entry…" : {
+
+    },
+    "Adds a dated entry to log.md in “%@”." : {
+
+    },
+    "All" : {
+
+    },
+    "All Folders" : {
+
+    },
+    "All levels" : {
+
+    },
+    "All Tags" : {
+
+    },
+    "All Types" : {
+
+    },
+    "Allows Spotlight to find related meaning when available on this Mac. Related results open at the top of the note." : {
+
+    },
+    "Also available as /write in the insert menu." : {
+
+    },
+    "An OKF bundle is a folder of .md concepts. Create one with Knowledge › Rebuild Index after adding concepts." : {
+
+    },
+    "An OKF concept needs a type, such as Metric, Playbook or Reference." : {
+
+    },
+    "Anonymous by design" : {
+
+    },
+    "Another app opens .md files." : {
+
+    },
+    "Appearance" : {
+
+    },
+    "Apple Intelligence" : {
+
+    },
+    "Apple Intelligence is off" : {
+
+    },
+    "Apple Intelligence is on" : {
+
+    },
+    "Apple Intelligence is unavailable" : {
+
+    },
+    "Apple Intelligence is unavailable." : {
+
+    },
+    "Apple Intelligence isn't available" : {
+
+    },
+    "Ask each time" : {
+
+    },
+    "At caret" : {
+
+    },
+    "At caret · %@" : {
+
+    },
+    "Attester" : {
+
+    },
+    "Auto" : {
+      "extractionState" : "manual"
+    },
+    "Bearer token" : {
+
+    },
+    "Block style, %@" : {
+
+    },
+    "Blue" : {
+      "extractionState" : "manual"
+    },
+    "Body" : {
+      "extractionState" : "manual"
+    },
+    "Bold" : {
+
+    },
+    "Broken" : {
+
+    },
+    "Browse" : {
+
+    },
+    "Browse All Versions…" : {
+
+    },
+    "Browse its files and folders" : {
+
+    },
+    "Browse Repository" : {
+
+    },
+    "Browser sign-in is not configured for this build. Use a personal access token below." : {
+
+    },
+    "Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Mermaid, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format." : {
+
+    },
+    "Bullet" : {
+      "extractionState" : "manual"
+    },
+    "Bulleted" : {
+      "extractionState" : "manual"
+    },
+    "Callout" : {
+      "extractionState" : "manual"
+    },
+    "Cancel" : {
+
+    },
+    "Caution" : {
+      "comment" : "GitHub callout title"
+    },
+    "Certificate error" : {
+
+    },
+    "Changed %@" : {
+
+    },
+    "Changed %@ by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Changed %1$@ by %2$@"
+          }
+        }
+      }
+    },
+    "Check Apple Intelligence in System Settings." : {
+
+    },
+    "Check for updates automatically" : {
+
+    },
+    "Check for Updates…" : {
+
+    },
+    "Check Links" : {
+
+    },
+    "checked %@" : {
+
+    },
+    "Checking %lld links…" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Checking %lld link…"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Checking %lld links…"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Checking…" : {
+
+    },
+    "Choose a folder of Markdown notes to search." : {
+
+    },
+    "Choose a folder to show in the Library sidebar." : {
+
+    },
+    "Choose another name or folder." : {
+
+    },
+    "Choose how to handle changes to %@. Reload uses the latest external text. Merge combines it with your current text; overlapping edits are marked for you to resolve. Both versions are saved in Browse All Versions before Reload or Merge." : {
+
+    },
+    "Choose the root folder of an OKF knowledge bundle." : {
+
+    },
+    "Choose the same folder to renew its access." : {
+
+    },
+    "Choose…" : {
+
+    },
+    "Citation (OKF 0.1)" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear filter" : {
+
+    },
+    "Clear search" : {
+
+    },
+    "Clear URL" : {
+
+    },
+    "Code block" : {
+      "extractionState" : "manual"
+    },
+    "Code theme" : {
+
+    },
+    "Coding Agents" : {
+
+    },
+    "Collapse %@" : {
+
+    },
+    "Comma-separated names, applied inside every indexed folder. Hidden files and symlinks are skipped." : {
+
+    },
+    "Compare" : {
+
+    },
+    "Computation" : {
+
+    },
+    "Concept" : {
+      "extractionState" : "manual"
+    },
+    "Concise" : {
+      "extractionState" : "manual"
+    },
+    "Contents" : {
+
+    },
+    "Contents and Links" : {
+
+    },
+    "Continue writing" : {
+
+    },
+    "Continue Writing" : {
+
+    },
+    "Controls" : {
+
+    },
+    "Copied as Markdown" : {
+
+    },
+    "Copied code" : {
+
+    },
+    "Copied for Medium" : {
+
+    },
+    "Copy All as Markdown" : {
+
+    },
+    "Copy All for Medium" : {
+
+    },
+    "Copy Source URL" : {
+
+    },
+    "Could not open report" : {
+
+    },
+    "Could not read saved credentials from Keychain." : {
+
+    },
+    "Could not read the repository file list." : {
+
+    },
+    "Could not remove saved credentials from Keychain." : {
+
+    },
+    "Could not save credentials in Keychain." : {
+
+    },
+    "Could not update credentials in Keychain." : {
+
+    },
+    "Couldn’t copy as Markdown" : {
+
+    },
+    "Couldn’t copy code" : {
+
+    },
+    "Couldn’t copy for Medium" : {
+
+    },
+    "Crash stack traces and the error that caused them" : {
+
+    },
+    "Crash stacks, Markify and macOS versions, your Mac's model, and timing for about one session in ten." : {
+
+    },
+    "Create" : {
+
+    },
+    "Create a token…" : {
+
+    },
+    "Create it as a new concept in %@?" : {
+
+    },
+    "Creation" : {
+
+    },
+    "Credentials are sent only to %@. Saved only when you choose." : {
+
+    },
+    "Current Library" : {
+
+    },
+    "Current OKF bundle" : {
+
+    },
+    "Dark" : {
+      "extractionState" : "manual"
+    },
+    "Default Markdown app" : {
+
+    },
+    "Default scope" : {
+
+    },
+    "Default tone" : {
+
+    },
+    "Delete Column" : {
+
+    },
+    "Delete Index" : {
+
+    },
+    "Delete Row" : {
+
+    },
+    "Delete Search Index?" : {
+
+    },
+    "Delete Search Index…" : {
+
+    },
+    "Deprecated" : {
+
+    },
+    "Deprecation" : {
+
+    },
+    "Describe a change to the document…" : {
+
+    },
+    "Describe what to write, or press ↩ to continue" : {
+
+    },
+    "Describe your change" : {
+
+    },
+    "Destination" : {
+
+    },
+    "Diagram exceeds the 64 KB limit." : {
+
+    },
+    "Diagram PDF could not be read." : {
+
+    },
+    "Diagram rendering timed out." : {
+
+    },
+    "Discard" : {
+
+    },
+    "Discard Rewrite" : {
+
+    },
+    "Divider" : {
+      "extractionState" : "manual"
+    },
+    "Document" : {
+
+    },
+    "Documents" : {
+
+    },
+    "Don’t Update" : {
+
+    },
+    "Double-click a shortcut to change it" : {
+
+    },
+    "Down to heading level %lld" : {
+
+    },
+    "Download and install updates automatically" : {
+
+    },
+    "Draft" : {
+
+    },
+    "Edit" : {
+
+    },
+    "Editing a concept's text sets its generated field to you, at most once a day." : {
+
+    },
+    "Editor" : {
+
+    },
+    "Enable Index OKF frontmatter in Settings › Search to filter by type and tag." : {
+
+    },
+    "Enter a full https:// address without embedded credentials." : {
+
+    },
+    "Enter a GitHub or GitLab repository URL." : {
+
+    },
+    "Enter a valid HTTPS URL." : {
+
+    },
+    "Enter an HTTPS URL without embedded credentials." : {
+
+    },
+    "Error %lld" : {
+
+    },
+    "esc" : {
+
+    },
+    "Executor" : {
+
+    },
+    "Expand %@" : {
+
+    },
+    "Export" : {
+
+    },
+    "Fade toolbar while typing" : {
+
+    },
+    "Features" : {
+
+    },
+    "File" : {
+
+    },
+    "File not found" : {
+
+    },
+    "File types" : {
+
+    },
+    "File URL" : {
+
+    },
+    "Files" : {
+
+    },
+    "Filter by an indexed OKF frontmatter tag." : {
+
+    },
+    "Filter by OKF frontmatter type, such as Concept or Reference." : {
+
+    },
+    "Filter headings" : {
+
+    },
+    "Filters use OKF frontmatter: type (for example Concept or Reference) and tags. No values have been indexed in this scope." : {
+
+    },
+    "Find" : {
+
+    },
+    "Find Next" : {
+
+    },
+    "Find Next %@" : {
+
+    },
+    "Find Previous" : {
+
+    },
+    "Find Previous %@" : {
+
+    },
+    "Fine-grained token with Contents: read" : {
+
+    },
+    "Fix Link" : {
+
+    },
+    "Fix link…" : {
+
+    },
+    "Fix Link…" : {
+
+    },
+    "Folders" : {
+
+    },
+    "Footnote" : {
+      "extractionState" : "manual"
+    },
+    "Format" : {
+
+    },
+    "Formatting" : {
+      "extractionState" : "manual"
+    },
+    "Frequently Asked Questions" : {
+
+    },
+    "Friendly" : {
+      "extractionState" : "manual"
+    },
+    "Frontmatter" : {
+
+    },
+    "General" : {
+
+    },
+    "Generate / Continue" : {
+      "extractionState" : "manual"
+    },
+    "Generate at caret with %@" : {
+
+    },
+    "Generated %@" : {
+
+    },
+    "Generated %@ · Source changed" : {
+
+    },
+    "Generation" : {
+
+    },
+    "Generation requires macOS 26 or later." : {
+
+    },
+    "GH" : {
+
+    },
+    "GitHub" : {
+
+    },
+    "github_pat_…" : {
+
+    },
+    "github.com/…/README.md" : {
+
+    },
+    "github.com/owner/repo" : {
+
+    },
+    "GL" : {
+
+    },
+    "Glass style" : {
+
+    },
+    "glpat-…" : {
+
+    },
+    "Go to line %lld" : {
+
+    },
+    "Go to line %lld (%lld of %lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to line %1$lld (%2$lld of %3$lld)"
+          }
+        }
+      }
+    },
+    "Goes to the link in the document." : {
+
+    },
+    "Gone (410)" : {
+
+    },
+    "Grant access to %@." : {
+
+    },
+    "Grant Access…" : {
+
+    },
+    "Graphite" : {
+      "extractionState" : "manual"
+    },
+    "Green" : {
+      "extractionState" : "manual"
+    },
+    "H1" : {
+
+    },
+    "H2" : {
+
+    },
+    "H3" : {
+
+    },
+    "Heading" : {
+      "extractionState" : "manual"
+    },
+    "Heading 1" : {
+      "extractionState" : "manual"
+    },
+    "Heading 2" : {
+      "extractionState" : "manual"
+    },
+    "Heading 3" : {
+      "extractionState" : "manual"
+    },
+    "Heading depth" : {
+
+    },
+    "Heading level %lld, line %lld. Moves the caret to this heading." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Heading level %1$lld, line %2$lld. Moves the caret to this heading."
+          }
+        }
+      }
+    },
+    "Help make Markify steadier" : {
+
+    },
+    "Helps generated text match your voice." : {
+
+    },
+    "Helps us find and fix crashes and slow spots. Takes effect at once." : {
+
+    },
+    "Hide Contents and Links" : {
+
+    },
+    "Hide Library" : {
+
+    },
+    "Hide summary" : {
+
+    },
+    "Hide Summary" : {
+
+    },
+    "HTML" : {
+
+    },
+    "HTTP Basic authentication" : {
+
+    },
+    "https://…/document.md" : {
+
+    },
+    "https://github.com/owner/repo" : {
+
+    },
+    "Image" : {
+      "extractionState" : "manual"
+    },
+    "Image unavailable — %@" : {
+
+    },
+    "Important" : {
+      "comment" : "GitHub callout title"
+    },
+    "In %@" : {
+
+    },
+    "In this document" : {
+
+    },
+    "Include related results" : {
+
+    },
+    "Index headings as context" : {
+
+    },
+    "Index OKF frontmatter" : {
+
+    },
+    "Indexed folders" : {
+
+    },
+    "Indexing · %lld notes read. More results may appear." : {
+
+    },
+    "Indexing · more results may appear" : {
+
+    },
+    "Indexing cancelled · rebuild to finish" : {
+
+    },
+    "Indexing…" : {
+
+    },
+    "Inline Code" : {
+
+    },
+    "Inline math" : {
+      "extractionState" : "manual"
+    },
+    "Insert" : {
+
+    },
+    "Insert at top" : {
+
+    },
+    "Insert block" : {
+
+    },
+    "Insert Column Left" : {
+
+    },
+    "Insert Column Right" : {
+
+    },
+    "Insert Row Above" : {
+
+    },
+    "Insert Row Below" : {
+
+    },
+    "Insert Table of Contents" : {
+
+    },
+    "Inserts a table of contents at the caret, with the headings shown at this depth; it then updates itself" : {
+
+    },
+    "Intelligence" : {
+
+    },
+    "Invalid server response." : {
+
+    },
+    "IP addresses. Markify doesn't collect them" : {
+
+    },
+    "Italic" : {
+
+    },
+    "Its folder may have been removed or need access. Check Settings › Search." : {
+
+    },
+    "Join the Program" : {
+
+    },
+    "Join the reports program. Crashes and slow spots reach us, so we can fix them faster, and nothing personal comes with them." : {
+
+    },
+    "just now" : {
+
+    },
+    "Keep" : {
+
+    },
+    "Keep %@" : {
+
+    },
+    "Keep My Changes" : {
+
+    },
+    "Keeping AI text in a concept sets its generated field to Apple Intelligence." : {
+
+    },
+    "Key points" : {
+
+    },
+    "Key Points" : {
+
+    },
+    "Keyboard Shortcuts" : {
+
+    },
+    "Knowledge" : {
+
+    },
+    "L%lld" : {
+
+    },
+    "Last checked %@." : {
+
+    },
+    "Last used" : {
+
+    },
+    "Length" : {
+
+    },
+    "Lenses" : {
+
+    },
+    "Library" : {
+
+    },
+    "Library location" : {
+
+    },
+    "Library Subfolders" : {
+
+    },
+    "Light" : {
+      "extractionState" : "manual"
+    },
+    "Limit line width" : {
+
+    },
+    "Line width" : {
+
+    },
+    "Link" : {
+
+    },
+    "Link %@" : {
+
+    },
+    "Linked from" : {
+
+    },
+    "Links" : {
+
+    },
+    "Links in this document appear here." : {
+
+    },
+    "Links to %@, which does not exist yet." : {
+
+    },
+    "List" : {
+
+    },
+    "Lists" : {
+      "extractionState" : "manual"
+    },
+    "Load remote images" : {
+
+    },
+    "Loading files…" : {
+
+    },
+    "Loading image — %@" : {
+
+    },
+    "Local image unavailable in a web document" : {
+
+    },
+    "Long" : {
+      "extractionState" : "manual"
+    },
+    "Machine-confirmed" : {
+
+    },
+    "Make Concept" : {
+
+    },
+    "Make Concept…" : {
+
+    },
+    "Make Default" : {
+
+    },
+    "Mark Verified" : {
+
+    },
+    "Markdown" : {
+
+    },
+    "Markdown font" : {
+
+    },
+    "Markdown Guide" : {
+
+    },
+    "Markdown text, titles, file names or paths" : {
+
+    },
+    "Markify" : {
+
+    },
+    "Markify %@" : {
+
+    },
+    "Markify opens .md files." : {
+
+    },
+    "Markify shows the contract; it doesn't run computations." : {
+
+    },
+    "Markify Website" : {
+
+    },
+    "Markify's version and macOS version, and your Mac's model" : {
+
+    },
+    "Match appearance" : {
+
+    },
+    "Match case" : {
+
+    },
+    "Match document" : {
+      "extractionState" : "manual"
+    },
+    "Math" : {
+      "extractionState" : "manual"
+    },
+    "MD" : {
+
+    },
+    "Medium" : {
+      "extractionState" : "manual"
+    },
+    "Menlo" : {
+
+    },
+    "Merge" : {
+
+    },
+    "Merge External Changes" : {
+
+    },
+    "Mermaid" : {
+      "extractionState" : "manual"
+    },
+    "Mermaid is missing from this build." : {
+
+    },
+    "Monochrome" : {
+
+    },
+    "More" : {
+
+    },
+    "Move To…" : {
+
+    },
+    "Multicolor" : {
+      "extractionState" : "manual"
+    },
+    "Narrow" : {
+
+    },
+    "Never checked for updates." : {
+
+    },
+    "New document" : {
+
+    },
+    "New Document" : {
+
+    },
+    "New document in %@" : {
+
+    },
+    "New documents are saved to" : {
+
+    },
+    "New from Clipboard" : {
+
+    },
+    "New section" : {
+
+    },
+    "New York" : {
+
+    },
+    "Next match" : {
+
+    },
+    "No broken links" : {
+
+    },
+    "No credentials are sent" : {
+
+    },
+    "No default branch was found in this repository." : {
+
+    },
+    "No headings" : {
+
+    },
+    "No headings at this depth" : {
+
+    },
+    "No headings match “%@”" : {
+
+    },
+    "No links of this kind" : {
+
+    },
+    "No Markdown files found." : {
+
+    },
+    "No Markdown text, OKF bundle contents, titles, file names or paths ever leave your Mac." : {
+
+    },
+    "No matches yet. Results will update when indexing finishes." : {
+
+    },
+    "No matching concepts" : {
+
+    },
+    "No matching style" : {
+
+    },
+    "No results" : {
+
+    },
+    "No results in %@" : {
+
+    },
+    "No such heading" : {
+
+    },
+    "No tags yet" : {
+
+    },
+    "No type" : {
+
+    },
+    "None" : {
+      "comment" : "No keyboard shortcut"
+    },
+    "Not checked yet" : {
+
+    },
+    "Not found (404)" : {
+
+    },
+    "Not Now" : {
+
+    },
+    "Note" : {
+      "comment" : "GitHub callout title"
+    },
+    "Notes donated by Markify may also appear in system Spotlight for anyone using this Mac account. The index stays on this Mac. macOS manages Spotlight categories, privacy and ranking." : {
+
+    },
+    "Numbered" : {
+      "extractionState" : "manual"
+    },
+    "OKF bundle" : {
+      "extractionState" : "manual"
+    },
+    "OKF bundle contents or links between notes" : {
+
+    },
+    "OKF bundles" : {
+
+    },
+    "OKF type and tag choices appear as notes in this scope are indexed." : {
+
+    },
+    "On launch" : {
+
+    },
+    "On this Mac" : {
+
+    },
+    "On-device" : {
+
+    },
+    "On-device model ready. Markify never sends your text off this Mac." : {
+
+    },
+    "One page. Two lenses." : {
+
+    },
+    "Only a read request is sent to %@." : {
+
+    },
+    "Only technical data" : {
+
+    },
+    "Open" : {
+
+    },
+    "Open as File" : {
+
+    },
+    "Open at line %lld" : {
+
+    },
+    "Open at the top of the note" : {
+
+    },
+    "Open Bundle" : {
+
+    },
+    "Open Bundle Folder…" : {
+
+    },
+    "Open documents in" : {
+
+    },
+    "Open file" : {
+
+    },
+    "Open File" : {
+
+    },
+    "Open Files" : {
+
+    },
+    "Open Folder" : {
+
+    },
+    "Open Folder…" : {
+
+    },
+    "Open from URL" : {
+
+    },
+    "Open in browser" : {
+
+    },
+    "Open in Browser" : {
+
+    },
+    "Open one Markdown document" : {
+
+    },
+    "Open Original in Browser" : {
+
+    },
+    "Open URL" : {
+
+    },
+    "Open URL…" : {
+
+    },
+    "Opening file…" : {
+
+    },
+    "Opens %@ in your browser" : {
+
+    },
+    "Orange" : {
+      "extractionState" : "manual"
+    },
+    "Page color" : {
+
+    },
+    "Paper" : {
+
+    },
+    "Paragraphs" : {
+      "extractionState" : "manual"
+    },
+    "Password" : {
+
+    },
+    "Paste" : {
+
+    },
+    "Paste a link to a file or repository." : {
+
+    },
+    "Paused" : {
+
+    },
+    "PDF" : {
+
+    },
+    "Pending" : {
+
+    },
+    "Personal access token" : {
+
+    },
+    "Pink" : {
+      "extractionState" : "manual"
+    },
+    "Preparing Apple Intelligence" : {
+
+    },
+    "Preparing on-device model…" : {
+
+    },
+    "Previous match" : {
+
+    },
+    "Privacy" : {
+
+    },
+    "Professional" : {
+      "extractionState" : "manual"
+    },
+    "Project" : {
+      "extractionState" : "manual"
+    },
+    "Projects" : {
+
+    },
+    "Proofread" : {
+
+    },
+    "Prose font" : {
+
+    },
+    "Public" : {
+
+    },
+    "Purple" : {
+      "extractionState" : "manual"
+    },
+    "Quote" : {
+      "extractionState" : "manual"
+    },
+    "Read the full privacy details…" : {
+
+    },
+    "Reading" : {
+
+    },
+    "Reading %@" : {
+
+    },
+    "Reading progress" : {
+
+    },
+    "Rebuild Index" : {
+
+    },
+    "Rebuilding Spotlight index…" : {
+
+    },
+    "Rebuilds the document's table of contents with the headings shown at this depth" : {
+
+    },
+    "Recent searches" : {
+
+    },
+    "Record AI edits in OKF concepts" : {
+
+    },
+    "Record my edits in OKF concepts" : {
+
+    },
+    "Recorded as human:%@ when you mark an OKF concept verified." : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Related" : {
+
+    },
+    "Release Notes" : {
+
+    },
+    "Releases" : {
+
+    },
+    "Reload" : {
+
+    },
+    "Remember in Keychain for %@" : {
+
+    },
+    "Remember lens per document" : {
+
+    },
+    "Remote image — %@" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove selected folder from search" : {
+
+    },
+    "Removes Markify’s search entries and pauses indexing until you rebuild. Your files and macOS’s independent file index are untouched." : {
+
+    },
+    "Removing a folder removes its search entries, never its files." : {
+
+    },
+    "Rename…" : {
+
+    },
+    "Rendered" : {
+
+    },
+    "Rendering diagram…" : {
+
+    },
+    "Reopen last documents" : {
+
+    },
+    "Reopens each file the way you left it." : {
+
+    },
+    "Replace" : {
+
+    },
+    "Replace All %lld" : {
+
+    },
+    "Replace index.md in “%@”?" : {
+
+    },
+    "Report an Issue…" : {
+
+    },
+    "Reports carry no name, account or device identifier. Markify collects no IP addresses." : {
+
+    },
+    "Reports go to Sentry. As with any web request, Sentry's servers see the connection's address; Markify doesn't ask Sentry to keep it. Turning the program off stops all reports." : {
+
+    },
+    "Repository" : {
+
+    },
+    "Repository URL" : {
+
+    },
+    "Restore Defaults" : {
+
+    },
+    "Returns %@" : {
+
+    },
+    "Rewrite" : {
+
+    },
+    "Rewrite · %@" : {
+
+    },
+    "Rewrite…" : {
+
+    },
+    "Runs on %@" : {
+
+    },
+    "Runs on an unspecified runtime" : {
+
+    },
+    "Runs on this Mac with Apple Intelligence. Your text never leaves it." : {
+
+    },
+    "Same folder as document" : {
+
+    },
+    "Save pasted images to" : {
+
+    },
+    "Saved" : {
+
+    },
+    "Saved automatically" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search All Folders" : {
+
+    },
+    "Search can only reach folders you’ve granted." : {
+
+    },
+    "Search files" : {
+
+    },
+    "Search index deleted" : {
+
+    },
+    "Search index deleted · rebuild to resume" : {
+
+    },
+    "Search Library" : {
+
+    },
+    "Search notes" : {
+
+    },
+    "Search Settings" : {
+
+    },
+    "Search Settings…" : {
+
+    },
+    "Searching" : {
+
+    },
+    "Searching Spotlight…" : {
+
+    },
+    "Selected Folder: %@" : {
+
+    },
+    "Selection · %lld words" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Selection · %lld word"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Selection · %lld words"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Send crash and performance reports" : {
+
+    },
+    "Sent as an Authorization header" : {
+
+    },
+    "Server not found" : {
+
+    },
+    "Settings" : {
+
+    },
+    "SF Mono" : {
+
+    },
+    "SF Pro" : {
+
+    },
+    "Share" : {
+
+    },
+    "Short" : {
+      "extractionState" : "manual"
+    },
+    "Shortcuts" : {
+
+    },
+    "Show" : {
+
+    },
+    "Show Bundle" : {
+
+    },
+    "Show Contents and Links" : {
+
+    },
+    "Show Library" : {
+
+    },
+    "Show Markdown" : {
+
+    },
+    "Show Markdown %@" : {
+
+    },
+    "Show Result" : {
+
+    },
+    "Show status capsule" : {
+
+    },
+    "Show word count" : {
+
+    },
+    "Show Word Count" : {
+
+    },
+    "Showing the first %lld files." : {
+
+    },
+    "Shows which section contains a literal match. Headings remain part of the note’s searchable text." : {
+
+    },
+    "Sign in once, works for every repo you can read" : {
+
+    },
+    "Skip folders named" : {
+
+    },
+    "Some folders need attention · see Search Settings" : {
+
+    },
+    "Some links couldn’t be updated." : {
+
+    },
+    "Some notes could not be read" : {
+
+    },
+    "Source" : {
+
+    },
+    "Source: " : {
+
+    },
+    "Sources" : {
+
+    },
+    "Sponsor" : {
+
+    },
+    "Spotlight · %lld notes submitted" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Spotlight · %lld note submitted"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Spotlight · %lld notes submitted"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Spotlight indexing failed: %@" : {
+
+    },
+    "Spotlight may still be processing submitted notes. Try another phrase or a wider scope." : {
+
+    },
+    "Spotlight search index" : {
+
+    },
+    "Spotlight search unavailable" : {
+
+    },
+    "Spotlight Settings…" : {
+
+    },
+    "Stable" : {
+
+    },
+    "Stale" : {
+
+    },
+    "Start writing, or type / to insert a block." : {
+
+    },
+    "Startup" : {
+
+    },
+    "Status" : {
+
+    },
+    "Still indexing" : {
+
+    },
+    "Stop" : {
+
+    },
+    "Strikethrough" : {
+
+    },
+    "Subheading" : {
+      "extractionState" : "manual"
+    },
+    "Suggest title & tags" : {
+
+    },
+    "Suggest title & tags for new documents" : {
+
+    },
+    "Suggest title, type & tags" : {
+
+    },
+    "Suggestions" : {
+
+    },
+    "Summarize" : {
+
+    },
+    "Summarizing…" : {
+
+    },
+    "Summary" : {
+
+    },
+    "System" : {
+
+    },
+    "System Settings…" : {
+
+    },
+    "System Spotlight" : {
+
+    },
+    "System Writing Tools are available. Generation and link summaries require macOS 26 or later." : {
+
+    },
+    "Table" : {
+
+    },
+    "Tables" : {
+      "extractionState" : "manual"
+    },
+    "Tag" : {
+
+    },
+    "Tags" : {
+
+    },
+    "Task" : {
+      "extractionState" : "manual"
+    },
+    "Task list" : {
+      "extractionState" : "manual"
+    },
+    "Text" : {
+      "extractionState" : "manual"
+    },
+    "The credentials contain invalid characters." : {
+
+    },
+    "The destination is unavailable or has no readable text." : {
+
+    },
+    "The diagram renderer stopped. Edit the diagram to retry." : {
+
+    },
+    "The document couldn’t be created." : {
+
+    },
+    "The file or repository was not found. Private resources may require credentials." : {
+
+    },
+    "The frontmatter couldn’t be updated." : {
+
+    },
+    "the host" : {
+
+    },
+    "The listing is rebuilt from each concept’s type, title and description. Anything written by hand in index.md is replaced." : {
+
+    },
+    "The on-device model is downloading. Features turn on when it's ready." : {
+
+    },
+    "The selection changed while writing. Generate again to avoid replacing newer edits." : {
+
+    },
+    "The server redirected to a different origin. Credentials were not sent. Open the destination separately if you trust it." : {
+
+    },
+    "The server returned HTTP %lld. Check the URL and try again." : {
+
+    },
+    "Theme" : {
+
+    },
+    "This destination is not a supported text page or Markdown file." : {
+
+    },
+    "This file changed outside Markify" : {
+
+    },
+    "this host" : {
+
+    },
+    "This links to a repository. Browse its files instead?" : {
+
+    },
+    "This Mac can't run Apple Intelligence." : {
+
+    },
+    "This note is no longer available to Markify." : {
+
+    },
+    "This repository is too large to browse. Open a file URL instead." : {
+
+    },
+    "This response exceeds the 10 MB limit." : {
+
+    },
+    "This URL did not return a Markdown file. Use a file URL ending in .md, .markdown or .mdx." : {
+
+    },
+    "This URL did not return a UTF-8 Markdown file." : {
+
+    },
+    "Timed out" : {
+
+    },
+    "Timing for a sample of sessions, about one in ten" : {
+
+    },
+    "Tinted" : {
+
+    },
+    "Tip" : {
+      "comment" : "GitHub callout title"
+    },
+    "Title" : {
+      "extractionState" : "manual"
+    },
+    "Title / path" : {
+
+    },
+    "Title, description, type and tags become searchable and filterable." : {
+
+    },
+    "Toggle Library" : {
+
+    },
+    "Toggle Markdown" : {
+
+    },
+    "Token" : {
+
+    },
+    "Token with read_api for repository browsing" : {
+
+    },
+    "Tone" : {
+
+    },
+    "Too many diagrams are waiting to render." : {
+
+    },
+    "Too many redirects." : {
+
+    },
+    "Try" : {
+
+    },
+    "Try Again" : {
+
+    },
+    "Turn on Apple Intelligence in System Settings" : {
+
+    },
+    "Turn on Apple Intelligence in System Settings to use these features." : {
+
+    },
+    "Type" : {
+
+    },
+    "Type shortcut…" : {
+
+    },
+    "Types" : {
+
+    },
+    "Typography" : {
+
+    },
+    "Unable to read folder" : {
+
+    },
+    "Unreachable" : {
+
+    },
+    "Untitled" : {
+
+    },
+    "Unverified" : {
+
+    },
+    "Update" : {
+
+    },
+    "Update Links" : {
+
+    },
+    "Update links to “%@”?" : {
+
+    },
+    "Update Table of Contents" : {
+
+    },
+    "updated %@" : {
+
+    },
+    "Updates" : {
+
+    },
+    "Updates install when you quit Markify." : {
+
+    },
+    "Updating Spotlight index…" : {
+
+    },
+    "Use a GitHub or GitLab file URL with a branch and path." : {
+
+    },
+    "Use a GitHub or GitLab repository address, or open this as a file." : {
+
+    },
+    "Use saved %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use saved %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Use surrounding section as context" : {
+
+    },
+    "Username" : {
+
+    },
+    "Username & password" : {
+
+    },
+    "Verified %@ by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Verified %1$@ by %2$@"
+          }
+        }
+      }
+    },
+    "Verified by %@" : {
+
+    },
+    "Verifier ID" : {
+
+    },
+    "Version %@" : {
+
+    },
+    "Version %@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Version %1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "Waiting for Spotlight indexing" : {
+
+    },
+    "Warning" : {
+      "comment" : "GitHub callout title"
+    },
+    "Web" : {
+
+    },
+    "Website" : {
+
+    },
+    "Welcome to Markify" : {
+
+    },
+    "What gets indexed" : {
+
+    },
+    "What is never sent" : {
+
+    },
+    "What is sent" : {
+
+    },
+    "White" : {
+
+    },
+    "Whole document" : {
+
+    },
+    "Wide" : {
+
+    },
+    "Window" : {
+
+    },
+    "Write" : {
+      "extractionState" : "manual"
+    },
+    "Writing on this Mac…" : {
+
+    },
+    "Writing Tools" : {
+
+    },
+    "Writing Tools %@" : {
+
+    },
+    "Writing Tools in the format bar" : {
+
+    },
+    "Writing Tools on macOS Sequoia" : {
+
+    },
+    "Written to frontmatter only after you accept." : {
+
+    },
+    "You can change your mind anytime in Settings › Privacy." : {
+
+    },
+    "Your name, account or any device identifier" : {
+
+    },
+    "Your notes stay on disk. Choose Rebuild Index to resume Library search." : {
+
+    },
+    "Your writing stays yours" : {
+
+    },
+    "Zoom In" : {
+
+    },
+    "Zoom Out" : {
+
+    }
+  },
+  "version" : "1.3"
+}
