@@ -913,7 +913,7 @@ No. Markify is a native Mac app built with SwiftUI and TextKit 2.
 
 ### Is Markify available in other languages?
 
-Markify's menus, settings and messages are in English, French and Spanish. It follows your Mac's language, or the one chosen for Markify in **System Settings › General › Language & Region › Applications**. Your documents are never translated.
+Markify's menus, settings and messages are in English, French, Italian and Spanish. It follows your Mac's language, or the one chosen for Markify in **System Settings › General › Language & Region › Applications**. Your documents are never translated.
 
 ### How is Markify different from other Markdown editors?
 
