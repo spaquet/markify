@@ -130,7 +130,7 @@ struct ContentView: View {
     private var rowSel: Color { colorScheme == .dark ? Color.white.opacity(0.14 * strong) : Color.black.opacity(0.07 * strong) }
     private var rule: Color { colorScheme == .dark ? Color.white.opacity(0.12 * strong) : Color.black.opacity(0.09 * strong) }
     private var accentSoft: Color { accent.opacity(colorScheme == .dark ? 0.22 : 0.13) }
-    private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? document.report?.title ?? suggestedName ?? "Untitled" }
+    private var title: String { fileURL?.deletingPathExtension().lastPathComponent ?? document.report?.title ?? suggestedName ?? String(localized: "Untitled") }
     private var reportBase: URL? { document.remoteBase ?? (fileURL == nil ? document.report?.baseDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) } : nil) }
     /// The frontmatter title, else the first H1; names an untitled document and seeds its save panel.
     private var suggestedName: String? {
@@ -362,7 +362,7 @@ struct ContentView: View {
                 .zIndex(3)
 
                 if showStatusCapsule {
-                    Text("\(showWordCount ? "\(wordCount) words · " : "")\(markdownLens ? "Markdown" : "Rendered")")
+                    Text(showWordCount ? (markdownLens ? "\(wordCount) words · Markdown" : "\(wordCount) words · Rendered") : markdownLens ? "Markdown" : "Rendered")
                         .font(.system(size: 11.5))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 12).frame(height: 28)
@@ -549,7 +549,7 @@ struct ContentView: View {
             Button("Inline Code") { wrap("`") }.keyboardShortcut(shortcut("code")).hidden()
             Button("Link") { wrap("[", suffix: "](url)") }.keyboardShortcut(shortcut("link")).hidden()
             ForEach(["Body", "Title", "Heading", "Subheading"], id: \.self) { style in
-                Button(style) { applyBlockStyle(style) }.keyboardShortcut(shortcut(style.lowercased())).hidden()
+                Button(style.localizedLabel) { applyBlockStyle(style) }.keyboardShortcut(shortcut(style.lowercased())).hidden()
             }
             ForEach(MarkdownTable.Edit.allCases, id: \.self) { edit in
                 Button(edit.title) {
@@ -693,13 +693,13 @@ struct ContentView: View {
     private func newDocument(in folder: URL) {
         let panel = NSSavePanel()
         panel.directoryURL = folder
-        panel.nameFieldStringValue = "Untitled.md"
+        panel.nameFieldStringValue = String(localized: "Untitled") + ".md"
         panel.allowedContentTypes = [.markdown]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         guard !FileManager.default.fileExists(atPath: url.path), FileManager.default.createFile(atPath: url.path, contents: Data()) else {
             let alert = NSAlert()
-            alert.messageText = "The document couldn’t be created."
-            alert.informativeText = "Choose another name or folder."
+            alert.messageText = String(localized: "The document couldn’t be created.")
+            alert.informativeText = String(localized: "Choose another name or folder.")
             alert.runModal()
             return
         }
@@ -800,7 +800,9 @@ struct ContentView: View {
     }
 
     private var blockMenu: some View {
-        let entries = BlockStyle.all.filter { blockMenuQuery.isEmpty || $0.name.localizedCaseInsensitiveContains(blockMenuQuery) }
+        let entries = BlockStyle.all.filter {
+            blockMenuQuery.isEmpty || $0.name.localizedLabel.localizedCaseInsensitiveContains(blockMenuQuery) || $0.name.localizedCaseInsensitiveContains(blockMenuQuery)
+        }
         return VStack(alignment: .leading, spacing: 1) {
             ForEach(["Text", "Lists"], id: \.self) { section in
                 let rows = entries.filter { $0.section == section }
@@ -808,7 +810,7 @@ struct ContentView: View {
                     if section == "Lists" && entries.contains(where: { $0.section == "Text" }) {
                         Rectangle().fill(rule).frame(height: 1).padding(.horizontal, 6).padding(.vertical, 4)
                     }
-                    Text(section).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                    Text(section.localizedLabel).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
                         .padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 2)
                     ForEach(rows) { style in
                         let index = entries.firstIndex { $0.name == style.name } ?? 0
@@ -844,7 +846,7 @@ struct ContentView: View {
             HStack(spacing: 0) {
                 Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).frame(width: 14).opacity(current ? 1 : 0)
                     .padding(.trailing, 6)
-                Text(style.name).font(style.font)
+                Text(style.name.localizedLabel).font(style.font)
                     .foregroundStyle(current ? .white : style.name == "Quote" ? .secondary : .primary)
                 Spacer()
                 Text(style.name == "Body" ? shortcutLabel("body") : style.prefix)
@@ -857,7 +859,7 @@ struct ContentView: View {
             .contentShape(.rect(cornerRadius: 11))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(style.name)
+        .accessibilityLabel(style.name.localizedLabel)
         .accessibilityAddTraits(current ? .isSelected : [])
     }
 
@@ -923,7 +925,7 @@ struct ContentView: View {
                 Image(systemName: "apple.intelligence").symbolRenderingMode(.multicolor).font(.system(size: 14))
                 TextField("Describe your change", text: $selectionPrompt)
                     .textFieldStyle(.plain)
-                    .onSubmit { generateSelection("Revise the selection as follows: \(selectionPrompt). Return only the revised Markdown text.", title: "Edit") }
+                    .onSubmit { generateSelection("Revise the selection as follows: \(selectionPrompt). Return only the revised Markdown text.", title: String(localized: "Edit")) }
                 Image(systemName: "return").font(.system(size: 12)).foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 12).frame(height: 36)
@@ -935,9 +937,9 @@ struct ContentView: View {
             HStack(spacing: 6) {
                 ForEach(["Friendly", "Professional", "Concise"], id: \.self) { tone in
                     Button {
-                        generateSelection("Rewrite this selection in a \(tone.lowercased()) tone. Return only the revised Markdown text.", title: "Rewrite · \(tone)")
+                        generateSelection("Rewrite this selection in a \(tone.lowercased()) tone. Return only the revised Markdown text.", title: String(localized: "Rewrite · \(tone.localizedLabel)"))
                     } label: {
-                        Text(tone).frame(maxWidth: .infinity).frame(height: 32).contentShape(.rect(cornerRadius: 10))
+                        Text(tone.localizedLabel).frame(maxWidth: .infinity).frame(height: 32).contentShape(.rect(cornerRadius: 10))
                     }
                     .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 10))
                 }
@@ -945,12 +947,12 @@ struct ContentView: View {
             Rectangle().fill(rule).frame(height: 1).padding(.horizontal, 6).padding(.vertical, 2)
             Grid(horizontalSpacing: 2, verticalSpacing: 2) {
                 GridRow {
-                    writingRow("Summary", symbol: "text.alignleft") { generateSelection("Summarize this selection in one paragraph. Return only Markdown text.", title: "Summary") }
-                    writingRow("Key Points", symbol: "list.bullet") { generateSelection("Extract the key points as a Markdown list. Return only the list.", title: "Key Points") }
+                    writingRow("Summary", symbol: "text.alignleft") { generateSelection("Summarize this selection in one paragraph. Return only Markdown text.", title: String(localized: "Summary")) }
+                    writingRow("Key Points", symbol: "list.bullet") { generateSelection("Extract the key points as a Markdown list. Return only the list.", title: String(localized: "Key Points")) }
                 }
                 GridRow {
-                    writingRow("List", symbol: "list.dash") { generateSelection("Turn this selection into a Markdown list. Return only the list.", title: "List") }
-                    writingRow("Table", symbol: "tablecells") { generateSelection("Turn this selection into a Markdown table. Return only the table.", title: "Table") }
+                    writingRow("List", symbol: "list.dash") { generateSelection("Turn this selection into a Markdown list. Return only the list.", title: String(localized: "List")) }
+                    writingRow("Table", symbol: "tablecells") { generateSelection("Turn this selection into a Markdown table. Return only the table.", title: String(localized: "Table")) }
                 }
             }
             } else if aiAvailability == .unavailable(.requiresMacOS26) {
@@ -976,7 +978,7 @@ struct ContentView: View {
             HStack {
                 Text("On this Mac")
                 Spacer()
-                Text("Selection · \(selectionWordCount) \(selectionWordCount == 1 ? "word" : "words")")
+                Text("Selection · \(selectionWordCount) words")
             }
             .font(.system(size: 11)).foregroundStyle(.secondary)
             .padding(.horizontal, 10).padding(.top, 2).padding(.bottom, 4)
@@ -988,7 +990,7 @@ struct ContentView: View {
         .chromeGlass(in: .rect(cornerRadius: 20))
     }
 
-    private func writingTile(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+    private func writingTile(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 3) {
                 Image(systemName: symbol).font(.system(size: 15, weight: .medium)).foregroundStyle(accent).frame(height: 18)
@@ -1001,7 +1003,7 @@ struct ContentView: View {
         .buttonStyle(MenuRowStyle(fill: field, hover: field, radius: 12))
     }
 
-    private func writingRow(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+    private func writingRow(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 16)
@@ -1128,7 +1130,7 @@ struct ContentView: View {
         .chromeGlass(in: .rect(cornerRadius: 20))
     }
 
-    private func aiRow(_ title: String, detail: String, action: @escaping () -> Void) -> some View {
+    private func aiRow(_ title: LocalizedStringKey, detail: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack {
                 Text(title)
@@ -1195,9 +1197,9 @@ struct ContentView: View {
                 Text("esc").font(.system(size: 11)).foregroundStyle(.tertiary)
             }
             HStack(spacing: 6) {
-                composerChip("Length", value: $composerLength, options: ["Short", "Medium", "Long"])
-                composerChip("Tone", value: $composerTone, options: ["Match document", "Friendly", "Professional", "Concise"])
-                composerChip("Format", value: $composerFormat, options: ["Paragraphs", "List", "Table"])
+                composerChip(String(localized: "Length"), value: $composerLength, options: ["Short", "Medium", "Long"])
+                composerChip(String(localized: "Tone"), value: $composerTone, options: ["Match document", "Friendly", "Professional", "Concise"])
+                composerChip(String(localized: "Format"), value: $composerFormat, options: ["Paragraphs", "List", "Table"])
             }
             if !aiOutput.isEmpty {
                 Text("\(Text(aiOutput).foregroundStyle(.secondary))\(Text(aiBusy ? " ▍" : "").foregroundStyle(aiGradient))")
@@ -1241,9 +1243,9 @@ struct ContentView: View {
 
     private func composerChip(_ label: String, value: Binding<String>, options: [String]) -> some View {
         Menu {
-            Picker(label, selection: value) { ForEach(options, id: \.self) { Text($0).tag($0) } }.pickerStyle(.inline)
+            Picker(label, selection: value) { ForEach(options, id: \.self) { Text($0.localizedLabel).tag($0) } }.pickerStyle(.inline)
         } label: {
-            Text("\(label): \(value.wrappedValue)").font(.system(size: 11.5)).padding(.horizontal, 9).frame(height: 24)
+            Text(verbatim: "\(label): \(value.wrappedValue.localizedLabel)").font(.system(size: 11.5)).padding(.horizontal, 9).frame(height: 24)
                 .background(field, in: .capsule)
         }
         .menuIndicator(.hidden)
@@ -1295,7 +1297,7 @@ struct ContentView: View {
         guard let textView, case .replaceSelection(let range) = aiPlacement else { return }
         let source = textView.string as NSString
         guard NSMaxRange(range) <= source.length, source.substring(with: range) == aiSelectionSource else {
-            aiError = "The selection changed while writing. Generate again to avoid replacing newer edits."
+            aiError = String(localized: "The selection changed while writing. Generate again to avoid replacing newer edits.")
             return
         }
         let result = aiOutput
@@ -1432,7 +1434,7 @@ struct ContentView: View {
         let source = textView.string as NSString
         if case .replaceSelection(let range) = aiPlacement {
             guard NSMaxRange(range) <= source.length, source.substring(with: range) == aiSelectionSource else {
-                aiError = "The selection changed while writing. Generate again to avoid replacing newer edits."
+                aiError = String(localized: "The selection changed while writing. Generate again to avoid replacing newer edits.")
                 return
             }
         }
@@ -1522,7 +1524,7 @@ struct ContentView: View {
                                     Image(systemName: entry.symbol)
                                         .frame(width: 24, height: 24)
                                         .background(index == slashSelection ? Color.white.opacity(0.16) : Color.secondary.opacity(0.09), in: .rect(cornerRadius: 7))
-                                    Text(entry.title).font(.system(size: 13))
+                                    Text(entry.title.localizedLabel).font(.system(size: 13))
                                     Spacer()
                                     Text(entry.shortcut).font(.system(size: 12, design: .monospaced)).opacity(0.7)
                                 }
@@ -1698,14 +1700,14 @@ struct ContentView: View {
         let used = Dictionary(grouping: knowledge?.bundle.concepts.compactMap(\.concept?.type) ?? [], by: { $0 })
             .sorted { $0.value.count > $1.value.count }.map(\.key)
         let alert = NSAlert()
-        alert.messageText = "Make Concept"
-        alert.informativeText = "An OKF concept needs a type, such as Metric, Playbook or Reference."
+        alert.messageText = String(localized: "Make Concept")
+        alert.informativeText = String(localized: "An OKF concept needs a type, such as Metric, Playbook or Reference.")
         let field = NSComboBox(frame: NSRect(x: 0, y: 0, width: 260, height: 26))
         field.addItems(withObjectValues: used.isEmpty ? ["Reference", "Playbook", "Metric"] : used)
         field.stringValue = used.first ?? "Reference"
         alert.accessoryView = field
-        alert.addButton(withTitle: "Make Concept")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Make Concept"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         alert.window.initialFirstResponder = field
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let type = field.stringValue.trimmingCharacters(in: .whitespaces)
@@ -1753,11 +1755,11 @@ struct ContentView: View {
         let ownUpdated = OKFEditing.retargetingLinks(in: ownText, document: old, root: root, movedFrom: old, to: new)
         guard !others.isEmpty || ownUpdated != ownText else { return }
         let alert = NSAlert()
-        alert.messageText = "Update links to “\(new.lastPathComponent)”?"
+        alert.messageText = String(localized: "Update links to “\(new.lastPathComponent)”?")
         let count = others.count + (ownUpdated != ownText ? 1 : 0)
-        alert.informativeText = "\(count) \(count == 1 ? "document links" : "documents link") to this file’s old location. Markify can point them at the new one."
-        alert.addButton(withTitle: "Update Links")
-        alert.addButton(withTitle: "Don’t Update")
+        alert.informativeText = String(localized: "\(count) documents link to this file’s old location. Markify can point them at the new one.")
+        alert.addButton(withTitle: String(localized: "Update Links"))
+        alert.addButton(withTitle: String(localized: "Don’t Update"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         if ownUpdated != ownText, let textView, textView.string == ownText {
             textView.insertText(ownUpdated, replacementRange: NSRange(location: 0, length: (ownText as NSString).length))
@@ -1771,7 +1773,7 @@ struct ContentView: View {
             guard !Task.isCancelled else { return }
             if !failed.isEmpty {
                 let alert = NSAlert()
-                alert.messageText = "Some links couldn’t be updated."
+                alert.messageText = String(localized: "Some links couldn’t be updated.")
                 alert.informativeText = failed.map(\.path).joined(separator: "\n")
                 alert.runModal()
             }
@@ -1793,7 +1795,7 @@ struct ContentView: View {
         } catch {
             guard !quiet else { return }
             let alert = NSAlert()
-            alert.messageText = "The frontmatter couldn’t be updated."
+            alert.messageText = String(localized: "The frontmatter couldn’t be updated.")
             alert.informativeText = String(describing: error)
             alert.runModal()
             return
@@ -1809,7 +1811,9 @@ struct ContentView: View {
         guard fileURL == nil, let window, window === textView?.window else { return }
         DispatchQueue.main.async {
             guard let panel = window.attachedSheet as? NSSavePanel else { return }
-            if let suggestedName, panel.nameFieldStringValue.hasPrefix("Untitled") { panel.nameFieldStringValue = suggestedName }
+            if let suggestedName, panel.nameFieldStringValue.hasPrefix(NSDocumentController.shared.document(for: window)?.displayName ?? "Untitled") {
+                panel.nameFieldStringValue = suggestedName
+            }
             if panel.tagNames?.isEmpty ?? true, let tags = Frontmatter.parse(document.text)?.tags, !tags.isEmpty { panel.tagNames = tags }
             guard newDocumentLocation == "Library" else { return }
             let folder = libraryFolder ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Markify")
@@ -1955,12 +1959,15 @@ struct SlashEntry {
     static func matching(_ query: String) -> [Self] {
         let letters = Array(query.lowercased())
         guard !letters.isEmpty else { return all }
+        // The English title always matches, so a typed /table works in every language.
         return all.filter { entry in
-            var remaining = entry.title.lowercased()[...]
-            return letters.allSatisfy { letter in
-                guard let index = remaining.firstIndex(of: letter) else { return false }
-                remaining = remaining[remaining.index(after: index)...]
-                return true
+            [entry.title, entry.title.localizedLabel].contains { title in
+                var remaining = title.lowercased()[...]
+                return letters.allSatisfy { letter in
+                    guard let index = remaining.firstIndex(of: letter) else { return false }
+                    remaining = remaining[remaining.index(after: index)...]
+                    return true
+                }
             }
         }
     }

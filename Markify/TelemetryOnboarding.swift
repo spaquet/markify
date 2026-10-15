@@ -13,7 +13,7 @@ struct TelemetryOnboarding: View {
     /// Shown once per launch, so several windows restored at launch don't stack sheets.
     @MainActor static var presentedThisLaunch = false
 
-    private static let points: [(symbol: String, tint: Color, title: String, detail: String)] = [
+    private static let points: [(symbol: String, tint: Color, title: LocalizedStringResource, detail: LocalizedStringResource)] = [
         ("lock.shield.fill", .teal, "Anonymous by design",
          "Reports carry no name, account or device identifier. Markify collects no IP addresses."),
         ("doc.text.magnifyingglass", .indigo, "Your writing stays yours",
@@ -104,7 +104,7 @@ struct TelemetryOnboarding: View {
         .animation(.easeOut(duration: 0.5), value: appeared)
     }
 
-    private func pointCard(_ point: (symbol: String, tint: Color, title: String, detail: String)) -> some View {
+    private func pointCard(_ point: (symbol: String, tint: Color, title: LocalizedStringResource, detail: LocalizedStringResource)) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: point.symbol)
                 .font(.system(size: 17, weight: .medium))

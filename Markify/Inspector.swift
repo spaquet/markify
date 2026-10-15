@@ -124,7 +124,7 @@ struct InspectorTabs: View {
         .accessibilityLabel("Show")
     }
 
-    private func segment(_ value: DocumentInspector.Tab, _ label: String, _ count: Int) -> some View {
+    private func segment(_ value: DocumentInspector.Tab, _ label: LocalizedStringResource, _ count: Int) -> some View {
         let on = tab == value
         return Button { withAnimation(.easeOut(duration: 0.18)) { tab = value } } label: {
             HStack(spacing: 6) {
@@ -136,7 +136,7 @@ struct InspectorTabs: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(label), \(count)")
+        .accessibilityLabel(Text(label) + Text(verbatim: ", \(count)"))
         .accessibilityAddTraits(on ? [.isSelected] : [])
     }
 }
@@ -210,7 +210,7 @@ struct ContentsTab: View {
 
     private var depthControl: some View {
         HStack(spacing: 0) {
-            ForEach([(1, "H1"), (2, "H2"), (3, "H3"), (6, "All")], id: \.0) { value, label in
+            ForEach([(1, LocalizedStringResource("H1")), (2, "H2"), (3, "H3"), (6, "All")], id: \.0) { value, label in
                 let on = depth == value
                 Button { depth = value } label: {
                     Text(label).font(.system(size: 11.5, weight: .semibold))
@@ -258,7 +258,7 @@ struct ContentsTab: View {
                         Color.clear.frame(width: 20, height: 30)
                     }
                 }
-                Text(heading.title.isEmpty ? "Untitled" : heading.title)
+                Text(heading.title.isEmpty ? String(localized: "Untitled") : heading.title)
                     .font(.system(size: size, weight: weight))
                     .foregroundStyle(heading.title.isEmpty ? style.faint : color)
                     .lineLimit(1).truncationMode(.tail)
@@ -273,7 +273,7 @@ struct ContentsTab: View {
         .buttonStyle(.plain)
         .onHover { hovered = $0 ? heading.id : hovered == heading.id ? nil : hovered }
         .help(heading.title)
-        .accessibilityLabel(heading.title.isEmpty ? "Untitled" : heading.title)
+        .accessibilityLabel(heading.title.isEmpty ? String(localized: "Untitled") : heading.title)
         .accessibilityValue(on ? "Reading" : "")
         .accessibilityHint("Heading level \(heading.level), line \(heading.line). Moves the caret to this heading.")
     }
@@ -460,7 +460,7 @@ struct LinksTab: View {
             .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 6)
             ScrollView {
                 VStack(spacing: 8) {
-                    ForEach([(LinkTarget.Kind.anchor, "In this document"), (.file, "Files"), (.web, "Web")], id: \.0) { kind, title in
+                    ForEach([(LinkTarget.Kind.anchor, LocalizedStringResource("In this document")), (.file, "Files"), (.web, "Web")], id: \.0) { kind, title in
                         let items = shown.filter { $0.target.kind == kind }
                         if !items.isEmpty {
                             VStack(alignment: .leading, spacing: 0) {
@@ -495,7 +495,7 @@ struct LinksTab: View {
         .onDisappear { summarizer.cancelAll() }
     }
 
-    private func chip(_ value: Filter, _ label: String, _ count: Int) -> some View {
+    private func chip(_ value: Filter, _ label: LocalizedStringResource, _ count: Int) -> some View {
         let on = filter == value
         return Button { filter = value } label: {
             HStack(spacing: 5) {
@@ -510,7 +510,7 @@ struct LinksTab: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(label), \(count)")
+        .accessibilityLabel(Text(label) + Text(verbatim: ", \(count)"))
         .accessibilityAddTraits(on ? [.isSelected] : [])
     }
 
@@ -525,9 +525,12 @@ struct LinksTab: View {
         let dates = web.compactMap { WebLinkChecks.shared.date(of: $0) } + [local.checked].compactMap { $0 }
         return HStack(spacing: 10) {
             TimelineView(.periodic(from: .now, by: 30)) { context in
-                Text(checking ? "Checking \(entries.count) \(entries.count == 1 ? "link" : "links")…"
-                     : dates.min().map { "\(brokenCount == 0 ? "No broken links" : "\(brokenCount) broken") · checked \(Self.ago($0, now: context.date))" }
-                     ?? "Not checked yet")
+                Text(checking ? String(localized: "Checking \(entries.count) links…")
+                     : dates.min().map { date in
+                         let ago = Self.ago(date, now: context.date)
+                         let broken = brokenCount == 0 ? String(localized: "No broken links") : String(localized: "\(brokenCount) broken links")
+                         return broken + " · " + String(localized: "checked \(ago)")
+                     } ?? String(localized: "Not checked yet"))
             }
             .font(.system(size: 11.5)).lineSpacing(2).foregroundStyle(style.muted)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -550,9 +553,9 @@ struct LinksTab: View {
 
     static func ago(_ date: Date, now: Date) -> String {
         let seconds = now.timeIntervalSince(date)
-        if seconds < 60 { return "just now" }
-        if seconds < 3600 { return "\(Int(seconds / 60)) min ago" }
-        if seconds < 86_400 { return "\(Int(seconds / 3600)) h ago" }
+        if seconds < 60 { return String(localized: "just now") }
+        if seconds < 3600 { return String(localized: "\(Int(seconds / 60)) min ago") }
+        if seconds < 86_400 { return String(localized: "\(Int(seconds / 3600)) h ago") }
         return date.formatted(.relative(presentation: .numeric, unitsStyle: .wide))
     }
 }
@@ -650,7 +653,7 @@ struct LinkRow: View {
         HStack(spacing: 2) {
             action("arrow.uturn.backward", goToHelp, color: style.text, perform: goToNext)
             if broken != nil {
-                action("pencil", "Fix link…", color: style.red) { fixing = true }
+                action("pencil", String(localized: "Fix link…"), color: style.red) { fixing = true }
                     .popover(isPresented: $fixing, arrowEdge: .bottom) {
                         FixLinkPopover(entry: entry, reason: broken ?? "", headings: headings) { replacement in
                             fixing = false
@@ -659,10 +662,10 @@ struct LinkRow: View {
                     }
             } else {
                 if entry.target.kind != .anchor {
-                    action("arrow.up.right", entry.target.kind == .web ? "Open in browser" : "Open file", color: style.text, perform: open)
+                    action("arrow.up.right", entry.target.kind == .web ? String(localized: "Open in browser") : String(localized: "Open file"), color: style.text, perform: open)
                 }
                 if canSummarize {
-                    action("sparkle", summaryOpen ? "Hide summary" : "Summarize", color: InspectorStyle.intelligence, active: summaryOpen, perform: toggleSummary)
+                    action("sparkle", summaryOpen ? String(localized: "Hide summary") : String(localized: "Summarize"), color: InspectorStyle.intelligence, active: summaryOpen, perform: toggleSummary)
                 }
             }
         }
@@ -674,13 +677,14 @@ struct LinkRow: View {
 
     private var goToHelp: String {
         let line = target.line
-        return occurrences.count > 1 ? "Go to line \(line) (\(next % occurrences.count + 1) of \(occurrences.count))" : "Go to line \(line)"
+        return occurrences.count > 1 ? String(localized: "Go to line \(line) (\(next % occurrences.count + 1) of \(occurrences.count))") : String(localized: "Go to line \(line)")
     }
 
     private var accessibilityLabel: String {
-        var label = "\(entry.first.text.isEmpty ? entry.first.destination : entry.first.text), \(entry.displayDestination), line \(entry.first.line)"
-        if occurrences.count > 1 { label += ", \(occurrences.count) times" }
-        if let broken { label += ", broken: \(broken)" }
+        let name = entry.first.text.isEmpty ? entry.first.destination : entry.first.text
+        var label = String(localized: "\(name), \(entry.displayDestination), line \(entry.first.line)")
+        if occurrences.count > 1 { label += String(localized: ", \(occurrences.count) times") }
+        if let broken { label += String(localized: ", broken: \(broken)") }
         return label
     }
 
@@ -751,7 +755,8 @@ struct SummaryCard: View {
             }
             if let saved, !summarizer.busy.contains(key) {
                 HStack(spacing: 6) {
-                    Text("Generated \(saved.date.formatted(date: .abbreviated, time: .shortened))\(summarizer.stale.contains(key) ? " · Source changed" : "")")
+                    let generated = saved.date.formatted(date: .abbreviated, time: .shortened)
+                    Text(summarizer.stale.contains(key) ? "Generated \(generated) · Source changed" : "Generated \(generated)")
                     Spacer()
                     Button("Refresh") { summarizer.summarize(target, key: key, openTexts: OpenTexts.snapshot()) }
                         .buttonStyle(.plain).foregroundStyle(style.accent)
@@ -802,7 +807,7 @@ struct FixLinkPopover: View {
             HStack {
                 Spacer()
                 Button("Cancel", role: .cancel, action: cancel).keyboardShortcut(.cancelAction)
-                Button(entry.group.occurrences.count > 1 ? "Replace All \(entry.group.occurrences.count)" : "Replace", action: confirm)
+                Button(entry.group.occurrences.count > 1 ? "Replace All \(entry.group.occurrences.count)" as LocalizedStringKey : "Replace", action: confirm)
                     .keyboardShortcut(.defaultAction)
                     .disabled(destination.trimmingCharacters(in: .whitespaces).isEmpty || destination == entry.first.destination)
             }

@@ -18,7 +18,7 @@ final class PointerUITests: XCTestCase {
     private func launch(showingWelcome: Bool = false) {
         app.launchArguments += [
             "-startup", "New document", "-didShowWelcome", showingWelcome ? "NO" : "YES",
-            "-defaultLens", "Rendered", "-rememberLens", "NO", "-SUEnableAutomaticChecks", "NO", "-ApplePersistenceIgnoreState", "YES",
+            "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-defaultLens", "Rendered", "-rememberLens", "NO", "-SUEnableAutomaticChecks", "NO", "-ApplePersistenceIgnoreState", "YES",
         ]
         app.launch()
     }

@@ -87,7 +87,7 @@ final class PublicURLClient: NSObject, URLSessionTaskDelegate, @unchecked Sendab
 
 struct RemoteOpenError: LocalizedError {
     let message: String
-    init(_ message: String) { self.message = message }
+    init(_ message: LocalizedStringResource) { self.message = String(localized: message) }
     var errorDescription: String? { message }
 }
 
@@ -364,7 +364,7 @@ struct OpenURLView: View {
                             }.buttonStyle(.plain).padding(.horizontal, 8).padding(.vertical, 3).background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
                         }.font(.system(size: 11.5))
                     } else {
-                        notice("Enter a full https:// address without embedded credentials.", color: .red)
+                        notice(String(localized: "Enter a full https:// address without embedded credentials."), color: .red)
                     }
                     if mismatch {
                         HStack {
@@ -406,7 +406,7 @@ struct OpenURLView: View {
                                     }
                                     SecureField(access == "basic" ? "Password" : parsed.github ? "github_pat_…" : parsed.isGit ? "glpat-…" : "Token", text: $secret)
                                         .textContentType(access == "basic" ? .password : nil).textFieldStyle(.roundedBorder)
-                                    Toggle("Remember in Keychain for \(parsed.url.host ?? "this host")", isOn: $remember).toggleStyle(.checkbox).font(.system(size: 11.5))
+                                    Toggle("Remember in Keychain for \(parsed.url.host ?? String(localized: "this host"))", isOn: $remember).toggleStyle(.checkbox).font(.system(size: 11.5))
                                     if parsed.isGit {
                                         Link("Create a token…", destination: URL(string: parsed.github ? "https://github.com/settings/personal-access-tokens/new" : parsed.origin.absoluteString + "/-/user_settings/personal_access_tokens")!).font(.system(size: 11.5))
                                     }
@@ -415,7 +415,7 @@ struct OpenURLView: View {
                             ForEach(saved.indices, id: \.self) { index in
                                 Divider()
                                 HStack {
-                                    Button("Use saved \(saved[index].kind) · \(saved[index].account)") {
+                                    Button("Use saved \(Self.kindLabel(saved[index].kind)) · \(saved[index].account)") {
                                         let value = saved[index]
                                         access = value.kind == "gitlab" || parsed.isGit ? "token" : value.kind
                                         username = value.account; secret = value.secret; remember = false
@@ -442,7 +442,11 @@ struct OpenURLView: View {
             }.padding(24)
             Divider()
             HStack(spacing: 14) {
-                Text(parsed.map { access == "public" ? "Only a read request is sent to \($0.url.host ?? "the host")." : "Credentials are sent only to \($0.credentialOrigin.host ?? "the host"). Saved only when you choose." } ?? "Paste a link to a file or repository.")
+                Text(parsed.map { parsed in
+                    let host = String(localized: "the host")
+                    return access == "public" ? String(localized: "Only a read request is sent to \(parsed.url.host ?? host).")
+                        : String(localized: "Credentials are sent only to \(parsed.credentialOrigin.host ?? host). Saved only when you choose.")
+                } ?? String(localized: "Paste a link to a file or repository."))
                     .font(.system(size: 11.5)).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
                 Button("Cancel") { work?.cancel(); dismiss() }.keyboardShortcut(.cancelAction)
                 Button(repository && files == nil ? "Browse" : "Open") { start() }.buttonStyle(.borderedProminent)
@@ -459,7 +463,7 @@ struct OpenURLView: View {
             .onDisappear { work?.cancel() }
     }
 
-    private func modeCard(_ mode: Bool, title: String, subtitle: String, icon: String) -> some View {
+    private func modeCard(_ mode: Bool, title: LocalizedStringResource, subtitle: LocalizedStringResource, icon: String) -> some View {
         Button { repository = mode } label: {
             HStack(spacing: 10) {
                 Image(systemName: icon).frame(width: 28, height: 28).foregroundStyle(repository == mode ? .white : Color.primary)
@@ -473,7 +477,7 @@ struct OpenURLView: View {
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(repository == mode ? Color.blue : .primary.opacity(0.1), lineWidth: repository == mode ? 1.5 : 0.5))
         }.buttonStyle(.plain).accessibilityAddTraits(repository == mode ? .isSelected : [])
     }
-    private func accessRow(_ value: String, title: String, subtitle: String) -> some View {
+    private func accessRow(_ value: String, title: LocalizedStringResource, subtitle: LocalizedStringResource) -> some View {
         Button { access = value } label: {
             HStack(spacing: 12) {
                 Image(systemName: access == value ? "largecircle.fill.circle" : "circle").foregroundStyle(access == value ? Color.blue : .secondary)
@@ -485,6 +489,15 @@ struct OpenURLView: View {
             }.padding(.horizontal, 14).padding(.vertical, 10).contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityAddTraits(access == value ? .isSelected : [])
     }
+    /// A saved credential's kind (`basic`, `bearer`, `gitlab`) as the access choice that made it.
+    private static func kindLabel(_ kind: String) -> String {
+        switch kind {
+        case "basic": String(localized: "Username & password")
+        case "gitlab": String(localized: "Personal access token")
+        default: String(localized: "Token")
+        }
+    }
+
     private func notice(_ text: String, color: Color) -> some View {
         Label(text, systemImage: "exclamationmark.triangle").font(.system(size: 12)).foregroundStyle(color)
             .padding(10).frame(maxWidth: .infinity, alignment: .leading).background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 10)).textSelection(.enabled)
@@ -504,7 +517,7 @@ struct OpenURLView: View {
         guard !busy, parsed != nil, !mismatch, access != "account", access == "public" || !secret.isEmpty, access != "basic" || !username.isEmpty else { return }
         error = nil
         guard let url = URL(string: address.trimmingCharacters(in: .whitespacesAndNewlines)) else {
-            error = "Enter a valid HTTPS URL."; return
+            error = String(localized: "Enter a valid HTTPS URL."); return
         }
         let credentials = credential
         let persist = remember

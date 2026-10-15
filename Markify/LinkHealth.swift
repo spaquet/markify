@@ -56,16 +56,16 @@ enum LocalLinkCheck {
     static func status(of target: LinkTarget, anchors: Set<String>, openTexts: [URL: String]) -> LinkStatus {
         switch target {
         case let .anchor(fragment):
-            return anchors.contains(fragment) ? .ok : .broken("No such heading")
+            return anchors.contains(fragment) ? .ok : .broken(String(localized: "No such heading"))
         case let .file(url, fragment):
             guard let url else { return .unknown }
             var isDirectory: ObjCBool = false
             let open = openTexts[url.standardizedFileURL]
-            guard open != nil || FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return .broken("File not found") }
+            guard open != nil || FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return .broken(String(localized: "File not found")) }
             guard let fragment, !isDirectory.boolValue, ["md", "markdown", "mdx"].contains(url.pathExtension.lowercased()) else { return .ok }
             guard let text = open ?? (try? String(contentsOf: url, encoding: .utf8)) else { return .unknown }
             let headings = DocumentHeading.extract(from: MarkdownModel(text, mdx: url.pathExtension.lowercased() == "mdx"))
-            return headings.contains { $0.anchor == fragment } ? .ok : .broken("No such heading")
+            return headings.contains { $0.anchor == fragment } ? .ok : .broken(String(localized: "No such heading"))
         case .web:
             return .unknown
         }
@@ -198,21 +198,21 @@ enum LocalLinkCheck {
             switch code {
             case ..<400, 401, 403: return .some(nil) // The page exists; access is restricted.
             case 429: return nil
-            case 404: return .some("Not found (404)")
-            case 410: return .some("Gone (410)")
-            default: return .some("Error \(code)")
+            case 404: return .some(String(localized: "Not found (404)"))
+            case 410: return .some(String(localized: "Gone (410)"))
+            default: return .some(String(localized: "Error \(code)"))
             }
         } catch let error as URLError {
             switch error.code {
             case .notConnectedToInternet, .networkConnectionLost, .cancelled, .internationalRoamingOff, .dataNotAllowed: return nil
-            case .timedOut: return .some("Timed out")
-            case .cannotFindHost, .dnsLookupFailed: return .some("Server not found")
+            case .timedOut: return .some(String(localized: "Timed out"))
+            case .cannotFindHost, .dnsLookupFailed: return .some(String(localized: "Server not found"))
             case .secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate, .serverCertificateNotYetValid,
-                 .serverCertificateHasUnknownRoot: return .some("Certificate error")
-            default: return .some("Unreachable")
+                 .serverCertificateHasUnknownRoot: return .some(String(localized: "Certificate error"))
+            default: return .some(String(localized: "Unreachable"))
             }
         } catch {
-            return .some("Unreachable")
+            return .some(String(localized: "Unreachable"))
         }
     }
 }

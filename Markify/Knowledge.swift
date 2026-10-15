@@ -106,13 +106,13 @@ private actor KnowledgeLoader {
             guard !Task.isCancelled else { return found }
             guard let target = OKFLinks.resolve(link.target, from: fileURL, bundleRoot: root),
                   !FileManager.default.fileExists(atPath: target.path) else { continue }
-            found.append(OKFDiagnostic(.info, "Links to \(link.target), which does not exist yet."))
+            found.append(OKFDiagnostic(.info, String(localized: "Links to \(link.target), which does not exist yet.")))
         }
         for reference in (try? OKFConcept.parse(source: text)?.get())?.references ?? [] {
             guard !Task.isCancelled else { return found }
             guard let target = OKFLinks.resolve(reference.target, from: fileURL, bundleRoot: root),
                   !FileManager.default.fileExists(atPath: target.path) else { continue }
-            found.append(OKFDiagnostic(.warning, "`\(reference.field)` points to \(reference.target), which does not exist."))
+            found.append(OKFDiagnostic(.warning, String(localized: "`\(reference.field)` points to \(reference.target), which does not exist.")))
         }
         return found
     }
@@ -195,10 +195,10 @@ private actor KnowledgeLoader {
 
     private static func offerToCreate(_ url: URL, title: String?) {
         let alert = NSAlert()
-        alert.messageText = "“\(url.lastPathComponent)” doesn’t exist yet."
-        alert.informativeText = "Create it as a new concept in \(url.deletingLastPathComponent().lastPathComponent)?"
-        alert.addButton(withTitle: "Create")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = String(localized: "“\(url.lastPathComponent)” doesn’t exist yet.")
+        alert.informativeText = String(localized: "Create it as a new concept in \(url.deletingLastPathComponent().lastPathComponent)?")
+        alert.addButton(withTitle: String(localized: "Create"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         let name = title.flatMap { $0.isEmpty ? nil : $0 } ?? url.deletingPathExtension().lastPathComponent
         let text = OKFEditing.conceptTemplate(type: nil, title: name, author: actor) + "\n# \(name)\n\n"
@@ -216,10 +216,12 @@ private actor KnowledgeLoader {
     /// Asks for a log entry and adds it to `log.md` beside the document.
     static func addLogEntry(for document: URL, title: String, bundleRoot: URL?) {
         let alert = NSAlert()
-        alert.messageText = "Add Log Entry"
-        alert.informativeText = "Adds a dated entry to log.md in “\(document.deletingLastPathComponent().lastPathComponent)”."
+        alert.messageText = String(localized: "Add Log Entry")
+        alert.informativeText = String(localized: "Adds a dated entry to log.md in “\(document.deletingLastPathComponent().lastPathComponent)”.")
+        // The label is written to log.md in English; the menu shows it in the user's language.
+        let labels = ["Update", "Creation", "Deprecation"]
         let kind = NSPopUpButton(frame: NSRect(x: 0, y: 30, width: 320, height: 26), pullsDown: false)
-        kind.addItems(withTitles: ["Update", "Creation", "Deprecation"])
+        kind.addItems(withTitles: [String(localized: "Update"), String(localized: "Creation"), String(localized: "Deprecation")])
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
         let path = bundleRoot.flatMap { OKFLinks.bundlePath(of: document, root: $0) } ?? document.lastPathComponent
         field.stringValue = "Revised [\(title)](\(path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path))."
@@ -227,13 +229,13 @@ private actor KnowledgeLoader {
         stack.addSubview(kind)
         stack.addSubview(field)
         alert.accessoryView = stack
-        alert.addButton(withTitle: "Add")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Add"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         alert.window.initialFirstResponder = field
         guard alert.runModal() == .alertFirstButtonReturn, !field.stringValue.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         let log = document.deletingLastPathComponent().appendingPathComponent("log.md")
         let existing = try? String(contentsOf: log, encoding: .utf8)
-        let text = OKFEditing.appendingLogEntry(field.stringValue, label: kind.titleOfSelectedItem ?? "Update", to: existing)
+        let text = OKFEditing.appendingLogEntry(field.stringValue, label: labels[max(kind.indexOfSelectedItem, 0)], to: existing)
         write(text, to: log)
     }
 
@@ -244,10 +246,10 @@ private actor KnowledgeLoader {
         let existing = try? String(contentsOf: index, encoding: .utf8)
         if existing != nil {
             let alert = NSAlert()
-            alert.messageText = "Replace index.md in “\(folder.lastPathComponent)”?"
-            alert.informativeText = "The listing is rebuilt from each concept’s type, title and description. Anything written by hand in index.md is replaced."
-            alert.addButton(withTitle: "Replace")
-            alert.addButton(withTitle: "Cancel")
+            alert.messageText = String(localized: "Replace index.md in “\(folder.lastPathComponent)”?")
+            alert.informativeText = String(localized: "The listing is rebuilt from each concept’s type, title and description. Anything written by hand in index.md is replaced.")
+            alert.addButton(withTitle: String(localized: "Replace"))
+            alert.addButton(withTitle: String(localized: "Cancel"))
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
         let bundle = await Task.detached(priority: .userInitiated) { OKFBundle.load(root: bundleRoot) }.value
@@ -275,7 +277,8 @@ struct KnowledgeSection: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Knowledge").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary).padding(.top, 12)
             if let state {
-                Text("\(state.bundle.root.lastPathComponent) · \(state.bundle.concepts.count) concepts\(state.bundle.okfVersion.map { " · OKF \($0)" } ?? "")")
+                Text(verbatim: ([state.bundle.root.lastPathComponent, String(localized: "\(state.bundle.concepts.count) concepts")]
+                                + [state.bundle.okfVersion.map { "OKF \($0)" }].compactMap { $0 }).joined(separator: " · "))
                     .font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 if state.bundle.truncated {
                     Text("Showing the first \(state.bundle.documents.count) files.").font(.system(size: 11)).foregroundStyle(.orange)
@@ -299,7 +302,7 @@ struct KnowledgeSection: View {
                             Button { if let url = issue.url { open(url) } } label: { IssueRow(issue: issue, showPath: true) }.buttonStyle(.plain)
                         }
                     } label: {
-                        Text("\(others.count) \(others.count == 1 ? "issue" : "issues") in bundle").font(.system(size: 11.5))
+                        Text("\(others.count) issues in bundle").font(.system(size: 11.5))
                     }
                 }
             }
@@ -335,7 +338,7 @@ private struct BundleBrowser: View {
                     group(type, bundle.concepts.filter { $0.concept?.type == type })
                 }
                 let untyped = bundle.concepts.filter { !($0.concept?.isConcept ?? false) }
-                if !untyped.isEmpty { group("No type", untyped) }
+                if !untyped.isEmpty { group(String(localized: "No type"), untyped) }
             } else if mode == "Tags" {
                 ForEach(bundle.tags, id: \.self) { tag in
                     group("#" + tag, bundle.concepts.filter { $0.concept?.tags.contains(tag) == true })
@@ -351,7 +354,7 @@ private struct BundleBrowser: View {
         DisclosureGroup {
             ForEach(documents) { row($0, detail: nil) }
         } label: {
-            Text("\(name)  \(documents.count)").font(.system(size: 12.5, weight: .medium)).lineLimit(1)
+            Text(verbatim: "\(name)  \(documents.count)").font(.system(size: 12.5, weight: .medium)).lineLimit(1)
         }
     }
 
@@ -431,34 +434,48 @@ private struct ConceptDetails: View {
         let citations = concept.sources.isEmpty ? OKFLinks.legacyCitations(in: FrontmatterBlock.body(of: text)) : []
         VStack(alignment: .leading, spacing: 4) {
             if let changed = concept.lastChanged {
-                let by = concept.generated?.by.map { " by \($0.isHuman ? $0.displayName : $0.description)" } ?? ""
-                Text("Changed \(changed.formatted(date: .abbreviated, time: .omitted))\(by)").font(.system(size: 11.5)).foregroundStyle(.secondary)
+                let date = changed.formatted(date: .abbreviated, time: .omitted)
+                Group {
+                    if let by = concept.generated?.by.map({ $0.isHuman ? $0.displayName : $0.description }) {
+                        Text("Changed \(date) by \(by)")
+                    } else {
+                        Text("Changed \(date)")
+                    }
+                }
+                .font(.system(size: 11.5)).foregroundStyle(.secondary)
             }
             if let verified = concept.lastVerified, let by = verified.by {
-                Text("Verified\(verified.at.map { " \($0.formatted(date: .abbreviated, time: .omitted))" } ?? "") by \(by.displayName)")
-                    .font(.system(size: 11.5)).foregroundStyle(.secondary)
+                Group {
+                    if let at = verified.at?.formatted(date: .abbreviated, time: .omitted) {
+                        Text("Verified \(at) by \(by.displayName)")
+                    } else {
+                        Text("Verified by \(by.displayName)")
+                    }
+                }
+                .font(.system(size: 11.5)).foregroundStyle(.secondary)
             }
             if !concept.sources.isEmpty || !citations.isEmpty {
                 Text("Sources").font(.system(size: 11.5, weight: .medium)).padding(.top, 4)
                 ForEach(Array(concept.sources.enumerated()), id: \.offset) { _, source in
-                    linkRow(source.title ?? source.resource ?? source.id ?? "Source", target: source.resource, detail: signals(source))
+                    linkRow(source.title ?? source.resource ?? source.id ?? String(localized: "Source"), target: source.resource, detail: signals(source))
                 }
                 ForEach(Array(citations.enumerated()), id: \.offset) { _, link in
-                    linkRow(link.text, target: link.target, detail: "Citation (OKF 0.1)")
+                    linkRow(link.text, target: link.target, detail: String(localized: "Citation (OKF 0.1)"))
                 }
             }
             if concept.isAttestedComputation || concept.runtime != nil {
                 Text("Computation").font(.system(size: 11.5, weight: .medium)).padding(.top, 4)
-                Text("Runs on \(concept.runtime ?? "an unspecified runtime")").font(.system(size: 11.5))
+                Text(concept.runtime.map { "Runs on \($0)" } ?? "Runs on an unspecified runtime").font(.system(size: 11.5))
                 if !concept.parameters.isEmpty {
                     Text(concept.parameters.map { "\($0.name ?? "?"): \($0.type ?? "any")\($0.required ? "" : "?")" }.joined(separator: ", "))
                         .font(.system(size: 11.5, design: .monospaced)).foregroundStyle(.secondary)
                 }
-                if let computation = concept.computation { linkRow("Computation", target: computation, detail: computation) }
+                if let computation = concept.computation { linkRow(String(localized: "Computation"), target: computation, detail: computation) }
                 if let executor = concept.executorResource {
-                    linkRow("Executor", target: executor, detail: concept.receipt.isEmpty ? executor : "Returns " + concept.receipt.joined(separator: ", "))
+                    linkRow(String(localized: "Executor"), target: executor,
+                            detail: concept.receipt.isEmpty ? executor : String(localized: "Returns \(concept.receipt.formatted(.list(type: .and)))"))
                 }
-                if let attester = concept.attesterResource { linkRow("Attester", target: attester, detail: attester) }
+                if let attester = concept.attesterResource { linkRow(String(localized: "Attester"), target: attester, detail: attester) }
                 Text("Markify shows the contract; it doesn't run computations.").font(.system(size: 11)).foregroundStyle(.tertiary)
             }
         }
@@ -467,8 +484,8 @@ private struct ConceptDetails: View {
     private func signals(_ source: OKFSource) -> String? {
         var parts: [String] = []
         if let author = source.author { parts.append(author.displayName) }
-        if let count = source.usageCount { parts.append("\(count.formatted()) uses") }
-        if let modified = source.lastModified { parts.append("updated \(modified.formatted(date: .abbreviated, time: .omitted))") }
+        if let count = source.usageCount { parts.append(String(localized: "\(count) uses")) }
+        if let modified = source.lastModified { parts.append(String(localized: "updated \(modified.formatted(date: .abbreviated, time: .omitted))")) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
@@ -530,8 +547,8 @@ private struct IssueRow: View {
     /// Asks for a bundle folder, remembers it, and opens its root index.md (or first concept) with the sidebar showing.
     static func chooseAndOpen() {
         let panel = NSOpenPanel()
-        panel.message = "Choose the root folder of an OKF knowledge bundle."
-        panel.prompt = "Open Bundle"
+        panel.message = String(localized: "Choose the root folder of an OKF knowledge bundle.")
+        panel.prompt = String(localized: "Open Bundle")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         guard panel.runModal() == .OK, let url = panel.url else { return }
@@ -544,8 +561,8 @@ private struct IssueRow: View {
         let first = FileManager.default.fileExists(atPath: index.path) ? index : OKFBundle.load(root: url, limit: 200).concepts.first?.url
         guard let first else {
             let alert = NSAlert()
-            alert.messageText = "“\(url.lastPathComponent)” has no Markdown files."
-            alert.informativeText = "An OKF bundle is a folder of .md concepts. Create one with Knowledge › Rebuild Index after adding concepts."
+            alert.messageText = String(localized: "“\(url.lastPathComponent)” has no Markdown files.")
+            alert.informativeText = String(localized: "An OKF bundle is a folder of .md concepts. Create one with Knowledge › Rebuild Index after adding concepts.")
             alert.runModal()
             return
         }

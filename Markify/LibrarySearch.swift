@@ -183,7 +183,27 @@ struct SearchSnapshot: Sendable {
     var folders: [SearchFolder] = []
     var notes: [SearchNote] = []
     var subfolders: [URL] = []
-    var status: [String: String] = [:]
+    var status: [String: FolderStatus] = [:]
+}
+
+/// One indexed folder's state in Settings › Search.
+enum FolderStatus: Sendable, Equatable {
+    case paused, accessExpired, accessNeeded, indexing, unreadable, partlyRead, indexed(Int)
+
+    var needsAccess: Bool { self == .accessExpired || self == .accessNeeded }
+    var isUsable: Bool { !needsAccess && self != .unreadable }
+
+    var label: String {
+        switch self {
+        case .paused: String(localized: "Paused")
+        case .accessExpired: String(localized: "Access expired")
+        case .accessNeeded: String(localized: "Access needed")
+        case .indexing: String(localized: "Indexing…")
+        case .unreadable: String(localized: "Unable to read folder")
+        case .partlyRead: String(localized: "Some notes could not be read")
+        case .indexed(let count): String(localized: "\(count) notes")
+        }
+    }
 }
 
 /// File enumeration, Markdown parsing, reading results, and index maintenance all run on this actor, away from MainActor.
@@ -217,7 +237,7 @@ actor SpotlightWorker {
         }
         var snapshot = SearchSnapshot(folders: folders)
         guard !options.paused else {
-            snapshot.status = Dictionary(uniqueKeysWithValues: folders.map { ($0.id, "Paused") })
+            snapshot.status = Dictionary(uniqueKeysWithValues: folders.map { ($0.id, FolderStatus.paused) })
             return snapshot
         }
         var accessible: [SearchFolder] = []
@@ -225,11 +245,11 @@ actor SpotlightWorker {
         defer { accesses.forEach { $0.stopAccessingSecurityScopedResource() } }
         for folder in folders {
             let url = folder.bookmark.isEmpty ? URL(fileURLWithPath: folder.path) : Bookmarks.url(folder.bookmark)
-            guard let url else { snapshot.status[folder.id] = "Access expired"; continue }
+            guard let url else { snapshot.status[folder.id] = .accessExpired; continue }
             if url.startAccessingSecurityScopedResource() { accesses.append(url) }
-            guard FileManager.default.isReadableFile(atPath: url.path) else { snapshot.status[folder.id] = "Access needed"; continue }
+            guard FileManager.default.isReadableFile(atPath: url.path) else { snapshot.status[folder.id] = .accessNeeded; continue }
             accessible.append(folder)
-            snapshot.status[folder.id] = "Indexing…"
+            snapshot.status[folder.id] = .indexing
         }
         await progress(snapshot)
         var seen = Set<String>()
@@ -246,7 +266,7 @@ actor SpotlightWorker {
             guard let enumerator = FileManager.default.enumerator(at: root,
                 includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey],
                 options: [.skipsHiddenFiles, .skipsPackageDescendants], errorHandler: { _, _ in scanFailed = true; return true }) else {
-                snapshot.status[folder.id] = "Unable to read folder"; failed = true; continue
+                snapshot.status[folder.id] = .unreadable; failed = true; continue
             }
             var count = 0
             while let url = enumerator.nextObject() as? URL {
@@ -292,7 +312,7 @@ actor SpotlightWorker {
                 } catch is CancellationError { throw CancellationError() }
                 catch { scanFailed = true }
             }
-            snapshot.status[folder.id] = scanFailed ? "Some notes could not be read" : "\(count) notes"
+            snapshot.status[folder.id] = scanFailed ? .partlyRead : .indexed(count)
             failed = failed || scanFailed
         }
         if !updates.isEmpty { try await index.indexSearchableItems(updates) }
@@ -337,7 +357,7 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
     var snapshot = SearchSnapshot()
     var indexing = false
     var indexedCount = 0
-    var message = "Waiting for Spotlight indexing"
+    var message = String(localized: "Waiting for Spotlight indexing")
     var revision = 0
     var recents: [String] = UserDefaults.standard.stringArray(forKey: "recentLibrarySearches") ?? []
     @ObservationIgnored private let worker = SpotlightWorker()
@@ -401,12 +421,12 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
     func chooseFolder(replacing folder: SearchFolder? = nil) {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false
-        panel.message = folder == nil ? "Choose a folder of Markdown notes to search." : "Grant access to \(folder!.name)."
+        panel.message = folder.map { String(localized: "Grant access to \($0.name).") } ?? String(localized: "Choose a folder of Markdown notes to search.")
         if let folder { panel.directoryURL = URL(fileURLWithPath: folder.path) }
         guard panel.runModal() == .OK, let url = panel.url,
               let bookmark = try? url.bookmarkData(options: .withSecurityScope) else { return }
         if let folder, folder.id != SearchNote.identifier(url) {
-            NSApp.presentError(NSError(domain: "MarkifySearch", code: 1, userInfo: [NSLocalizedDescriptionKey: "Choose the same folder to renew its access."]))
+            NSApp.presentError(NSError(domain: "MarkifySearch", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "Choose the same folder to renew its access.")]))
             return
         }
         if folder?.kind == "Library" { UserDefaults.standard.set(bookmark, forKey: "libraryBookmark") }
@@ -475,19 +495,21 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
                     watcher.watch(URL(fileURLWithPath: folder.path)) { [weak self] in self?.refresh() }
                     return watcher
                 }
-                indexing = true; indexedCount = 0; message = rebuilding ? "Rebuilding Spotlight index…" : "Indexing · more results may appear"
+                indexing = true; indexedCount = 0; message = rebuilding ? String(localized: "Rebuilding Spotlight index…") : String(localized: "Indexing · more results may appear")
                 do {
                     let result = try await worker.refresh(folders: folders, options: options, rebuild: rebuilding) { [weak self] partial in
                         await self?.progress(partial, version: version)
                     }
                     guard version == requestVersion else { indexing = false; continue }
                     snapshot = result
-                    let needsAttention = result.status.values.contains { !$0.hasSuffix("notes") }
-                    message = options.paused ? "Search index deleted · rebuild to resume" : needsAttention ? "Some folders need attention · see Search Settings" : "Spotlight · \(result.notes.count) notes submitted"
+                    let needsAttention = result.status.values.contains { if case .indexed = $0 { false } else { true } }
+                    message = options.paused ? String(localized: "Search index deleted · rebuild to resume")
+                        : needsAttention ? String(localized: "Some folders need attention · see Search Settings")
+                        : String(localized: "Spotlight · \(result.notes.count) notes submitted")
                     revision += 1
                     succeeded = true
-                } catch is CancellationError { succeeded = false; message = "Indexing cancelled · rebuild to finish" }
-                catch { succeeded = false; message = "Spotlight indexing failed: \(error.localizedDescription)" }
+                } catch is CancellationError { succeeded = false; message = String(localized: "Indexing cancelled · rebuild to finish") }
+                catch { succeeded = false; message = String(localized: "Spotlight indexing failed: \(error.localizedDescription)") }
                 indexing = false
             }
             job = nil
@@ -498,7 +520,7 @@ private final class SpotlightAcknowledgement: @unchecked Sendable {
     private func progress(_ partial: SearchSnapshot, version: Int) {
         guard version == requestVersion else { return }
         indexedCount = partial.notes.count
-        let usableRoots = Set(partial.status.filter { !$0.value.contains("Access") && !$0.value.contains("Unable") }.keys)
+        let usableRoots = Set(partial.status.filter { $0.value.isUsable }.keys)
         let currentIDs = Set(partial.notes.map(\.id))
         let retained = snapshot.notes.filter { note in !currentIDs.contains(note.id) && note.roots.contains(where: usableRoots.contains) }
         snapshot = partial

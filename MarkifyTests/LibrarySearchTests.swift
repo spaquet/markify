@@ -119,7 +119,7 @@ struct LibrarySearchTests {
             _ = try await eventually(query: token, domain: domain, count: 2)
             let denied = SearchFolder(path: root.appendingPathComponent("Denied").path, bookmark: Data("invalid bookmark".utf8), kind: "Project")
             let accessCheck = try await worker.refresh(folders: folders + [denied], options: SearchOptions(), rebuild: false) { _ in }
-            #expect(accessCheck.status[denied.id] == "Access expired")
+            #expect(accessCheck.status[denied.id] == .accessExpired)
             #expect(accessCheck.notes.count == 2)
             var withoutMetadata = SearchOptions(); withoutMetadata.metadata = false; withoutMetadata.headings = false
             let stripped = try await worker.refresh(folders: folders, options: withoutMetadata, rebuild: false) { _ in }

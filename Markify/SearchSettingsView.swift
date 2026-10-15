@@ -28,12 +28,12 @@ struct SearchSettingsView: View {
                     HStack(spacing: 10) {
                         Image(systemName: folder.kind == "OKF bundle" ? "diamond" : "folder")
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("\(folder.name) · \(folder.kind)").fontWeight(.medium)
+                            Text(verbatim: "\(folder.name) · \(folder.kind.localizedLabel)").fontWeight(.medium)
                             Text(folder.path).font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                         }
                         Spacer()
-                        Text(search.snapshot.status[folder.id] ?? (search.indexing ? "Indexing…" : "Pending")).font(.caption).foregroundStyle(.secondary)
-                        if search.snapshot.status[folder.id]?.contains("Access") == true {
+                        Text(search.snapshot.status[folder.id]?.label ?? (search.indexing ? String(localized: "Indexing…") : String(localized: "Pending"))).font(.caption).foregroundStyle(.secondary)
+                        if search.snapshot.status[folder.id]?.needsAccess == true {
                             Button("Grant Access…") { search.chooseFolder(replacing: folder) }
                         }
                     }.padding(4).contentShape(.rect).onTapGesture { selected = folder.id }

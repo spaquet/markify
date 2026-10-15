@@ -8,10 +8,10 @@ struct AboutView: View {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? ""
         let build = info?["CFBundleVersion"] as? String ?? ""
-        return build.isEmpty ? "Version \(short)" : "Version \(short) (\(build))"
+        return build.isEmpty ? String(localized: "Version \(short)") : String(localized: "Version \(short) (\(build))")
     }
 
-    private static let links: [(title: String, symbol: String, address: String)] = [
+    private static let links: [(title: LocalizedStringResource, symbol: String, address: String)] = [
         ("Website", "globe", "https://spaquet.github.io/markify/"),
         ("GitHub", "chevron.left.forwardslash.chevron.right", "https://github.com/spaquet/markify"),
         ("Releases", "sparkles", "https://github.com/spaquet/markify/releases"),
@@ -41,13 +41,13 @@ struct AboutView: View {
                 .padding(.top, 10)
 
             HStack(spacing: 8) {
-                ForEach(Self.links, id: \.title) { link in
+                ForEach(Self.links, id: \.address) { link in
                     Link(destination: URL(string: link.address)!) {
                         VStack(spacing: 5) {
                             Image(systemName: link.symbol)
                                 .font(.system(size: 15, weight: .medium))
                                 .symbolRenderingMode(.hierarchical)
-                                .foregroundStyle(link.title == "Sponsor" ? Color.pink : Color.accentColor)
+                                .foregroundStyle(link.symbol == "heart" ? Color.pink : Color.accentColor)
                                 .frame(height: 18)
                             Text(link.title).font(.system(size: 11, weight: .medium)).foregroundStyle(.primary)
                         }

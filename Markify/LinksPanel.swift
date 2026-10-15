@@ -283,8 +283,8 @@ private enum SummaryError: LocalizedError {
     case unsupported, unavailable
     var errorDescription: String? {
         switch self {
-        case .unsupported: "This destination is not a supported text page or Markdown file."
-        case .unavailable: "The destination is unavailable or has no readable text."
+        case .unsupported: String(localized: "This destination is not a supported text page or Markdown file.")
+        case .unavailable: String(localized: "The destination is unavailable or has no readable text.")
         }
     }
 }

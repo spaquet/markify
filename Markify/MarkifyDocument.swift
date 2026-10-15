@@ -240,11 +240,11 @@ struct MarkifyDocument: FileDocument {
             return
         }
         let alert = NSAlert()
-        alert.messageText = "This file changed outside Markify"
-        alert.informativeText = "Choose how to handle changes to \(url.lastPathComponent). Reload uses the latest external text. Merge combines it with your current text; overlapping edits are marked for you to resolve. Both versions are saved in Browse All Versions before Reload or Merge."
-        alert.addButton(withTitle: "Keep My Changes")
-        alert.addButton(withTitle: "Reload")
-        if base != nil, writeText != nil { alert.addButton(withTitle: "Merge") }
+        alert.messageText = String(localized: "This file changed outside Markify")
+        alert.informativeText = String(localized: "Choose how to handle changes to \(url.lastPathComponent). Reload uses the latest external text. Merge combines it with your current text; overlapping edits are marked for you to resolve. Both versions are saved in Browse All Versions before Reload or Merge.")
+        alert.addButton(withTitle: String(localized: "Keep My Changes"))
+        alert.addButton(withTitle: String(localized: "Reload"))
+        if base != nil, writeText != nil { alert.addButton(withTitle: String(localized: "Merge")) }
         alert.beginSheetModal(for: window) { response in
             // Let AppKit finish dismissing the sheet before replacing the SwiftUI document.
             DispatchQueue.main.async {

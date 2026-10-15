@@ -10,7 +10,7 @@ final class ShortcutUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments += [
             "-startup", "New document", "-didShowWelcome", "YES", "-shortcuts", "",
-            "-defaultLens", "Rendered", "-rememberLens", "NO", "-SUEnableAutomaticChecks", "NO", "-ApplePersistenceIgnoreState", "YES",
+            "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-defaultLens", "Rendered", "-rememberLens", "NO", "-SUEnableAutomaticChecks", "NO", "-ApplePersistenceIgnoreState", "YES",
             "-telemetryOnboarded", "YES", "-telemetryEnabled", "NO",
         ]
         app.launch()

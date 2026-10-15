@@ -99,15 +99,15 @@ struct LibrarySearchPanel: View {
         Array(Set(scopedNotes.flatMap(\.tags).filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })).sorted()
     }
     private var filterHelp: String {
-        if !service.options.metadata { return "Enable Index OKF frontmatter in Settings › Search to filter by type and tag." }
-        if service.indexing { return "OKF type and tag choices appear as notes in this scope are indexed." }
-        return "Filters use OKF frontmatter: type (for example Concept or Reference) and tags. No values have been indexed in this scope."
+        if !service.options.metadata { return String(localized: "Enable Index OKF frontmatter in Settings › Search to filter by type and tag.") }
+        if service.indexing { return String(localized: "OKF type and tag choices appear as notes in this scope are indexed.") }
+        return String(localized: "Filters use OKF frontmatter: type (for example Concept or Reference) and tags. No values have been indexed in this scope.")
     }
     private var request: String { "\(query)\u{0}\(selectedScope)\u{0}\(type)\u{0}\(tag)\u{0}\(service.revision)" }
     private var scopeName: String {
-        if selectedScope == "all" { return "All Folders" }
+        if selectedScope == "all" { return String(localized: "All Folders") }
         if let folder = service.snapshot.folders.first(where: { $0.id == selectedScope }) { return folder.name }
-        return service.snapshot.subfolders.first(where: { SearchNote.identifier($0) == selectedScope })?.lastPathComponent ?? "Current Library"
+        return service.snapshot.subfolders.first(where: { SearchNote.identifier($0) == selectedScope })?.lastPathComponent ?? String(localized: "Current Library")
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -164,9 +164,9 @@ struct LibrarySearchPanel: View {
                         Text("All Types").tag("")
                         ForEach(types, id: \.self) { value in Text(value).tag(value) }
                     }
-                } label: { Text(type.isEmpty ? "Type" : type) }
+                } label: { Text(type.isEmpty ? String(localized: "Type") : type) }
                 .disabled(types.isEmpty && type.isEmpty)
-                .help(types.isEmpty ? filterHelp : "Filter by OKF frontmatter type, such as Concept or Reference.")
+                .help(types.isEmpty ? filterHelp : String(localized: "Filter by OKF frontmatter type, such as Concept or Reference."))
                 .padding(.horizontal, 7).padding(.vertical, 4)
                 .foregroundStyle(type.isEmpty ? Color.primary : .white)
                 .background(type.isEmpty ? Color.primary.opacity(0.06) : Color.accentColor, in: .capsule)
@@ -177,7 +177,7 @@ struct LibrarySearchPanel: View {
                     }
                 } label: { Text(tag.isEmpty ? "Tag" : "#\(tag)") }
                 .disabled(tags.isEmpty && tag.isEmpty)
-                .help(tags.isEmpty ? filterHelp : "Filter by an indexed OKF frontmatter tag.")
+                .help(tags.isEmpty ? filterHelp : String(localized: "Filter by an indexed OKF frontmatter tag."))
                 .padding(.horizontal, 7).padding(.vertical, 4)
                 .foregroundStyle(tag.isEmpty ? Color.primary : .white)
                 .background(tag.isEmpty ? Color.primary.opacity(0.06) : Color.accentColor, in: .capsule)
@@ -192,7 +192,7 @@ struct LibrarySearchPanel: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(service.snapshot.folders.filter { root in
-                        (selectedScope == "all" || selectedScope == root.id) && (service.snapshot.status[root.id]?.contains("Access") == true)
+                        (selectedScope == "all" || selectedScope == root.id) && (service.snapshot.status[root.id]?.needsAccess == true)
                     }) { root in
                         VStack(alignment: .leading, spacing: 5) {
                             Text(root.name).fontWeight(.semibold)
@@ -224,7 +224,7 @@ struct LibrarySearchPanel: View {
                             let results = session.results.filter { group(for: $0.note)?.id == root.id }
                             HStack {
                                 Text(root.name).fontWeight(.semibold)
-                                Text(root.kind).padding(.horizontal, 6).background(.quaternary, in: .capsule)
+                                Text(root.kind.localizedLabel).padding(.horizontal, 6).background(.quaternary, in: .capsule)
                                 Spacer()
                                 Text("\(results.count)")
                             }.font(.system(size: 11)).foregroundStyle(.secondary).padding(.top, 8)
@@ -286,7 +286,7 @@ struct LibrarySearchPanel: View {
                 HStack {
                     Text(result.note.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     Spacer(minLength: 0)
-                    Text(result.line.map { "L\($0)\(result.count > 1 ? " · \(result.count)×" : "")" } ?? (result.related ? "Related" : "Title / path"))
+                    Text(result.line.map { "L\($0)\(result.count > 1 ? " · \(result.count)×" : "")" } ?? (result.related ? String(localized: "Related") : String(localized: "Title / path")))
                         .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(result.related ? .purple : .secondary)
                 }
                 Text(LibraryNote.path(of: result.note.url, in: URL(fileURLWithPath: root.path)))

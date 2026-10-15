@@ -136,8 +136,8 @@ struct SettingsView: View {
     }
 
     private var lastUpdateCheck: String {
-        guard let date = Updates.updater.lastUpdateCheckDate else { return "Never checked for updates." }
-        return "Last checked \(date.formatted(.relative(presentation: .named)))."
+        guard let date = Updates.updater.lastUpdateCheckDate else { return String(localized: "Never checked for updates.") }
+        return String(localized: "Last checked \(date.formatted(.relative(presentation: .named))).")
     }
 
     private var libraryURL: URL? {
@@ -149,7 +149,7 @@ struct SettingsView: View {
         guard let url = libraryURL else { return "~/Documents/Markify" }
         let count = LibrarySearch.shared.snapshot.notes.filter { $0.roots.contains(SearchNote.identifier(url)) }.count
         let path = (url.path as NSString).abbreviatingWithTildeInPath
-        return "\(path) · \(count) \(count == 1 ? "note" : "notes")"
+        return "\(path) · " + String(localized: "\(count) notes")
     }
 
     private func chooseLibrary() {
@@ -269,11 +269,11 @@ struct SettingsView: View {
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.12)))
                 .padding(3)
                 .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(selected ? accent : .clear, lineWidth: 3))
-                Text(name).font(.system(size: 12, weight: selected ? .semibold : .regular))
+                Text(name.localizedLabel).font(.system(size: 12, weight: selected ? .semibold : .regular))
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(name) theme")
+        .accessibilityLabel("\(name.localizedLabel) theme")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -306,8 +306,8 @@ struct SettingsView: View {
             .overlay(Circle().strokeBorder(selected ? AccentChoice.color(name) : .clear, lineWidth: 1.5).padding(-1.5))
         }
         .buttonStyle(.plain)
-        .help(name)
-        .accessibilityLabel("\(name) accent")
+        .help(name.localizedLabel)
+        .accessibilityLabel("\(name.localizedLabel) accent")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -369,7 +369,7 @@ struct SettingsView: View {
                 }
                 Section("Generation") {
                     Picker("Default tone", selection: $generationTone) {
-                        ForEach(["Match document", "Friendly", "Professional", "Concise"], id: \.self) { Text($0).tag($0) }
+                        ForEach(["Match document", "Friendly", "Professional", "Concise"], id: \.self) { Text($0.localizedLabel).tag($0) }
                     }
                     Toggle(isOn: $useSectionContext) {
                         Text("Use surrounding section as context")
@@ -382,12 +382,12 @@ struct SettingsView: View {
 
     private var statusCard: some View {
         let status: (title: String, detail: String) = switch IntelligenceAvailability.current {
-        case .available: ("Apple Intelligence is on", "On-device model ready. Markify never sends your text off this Mac.")
-        case .unavailable(.appleIntelligenceNotEnabled): ("Apple Intelligence is off", "Turn on Apple Intelligence in System Settings to use these features.")
-        case .unavailable(.modelNotReady): ("Preparing Apple Intelligence", "The on-device model is downloading. Features turn on when it's ready.")
+        case .available: (String(localized: "Apple Intelligence is on"), String(localized: "On-device model ready. Markify never sends your text off this Mac."))
+        case .unavailable(.appleIntelligenceNotEnabled): (String(localized: "Apple Intelligence is off"), String(localized: "Turn on Apple Intelligence in System Settings to use these features."))
+        case .unavailable(.modelNotReady): (String(localized: "Preparing Apple Intelligence"), String(localized: "The on-device model is downloading. Features turn on when it's ready."))
         case .unavailable(.requiresMacOS26): (String(localized: "Writing Tools on macOS Sequoia"), String(localized: "System Writing Tools are available. Generation and link summaries require macOS 26 or later."))
-        case .unavailable(.deviceNotEligible): ("Apple Intelligence isn't available", "This Mac can't run Apple Intelligence.")
-        default: ("Apple Intelligence is unavailable", "Check Apple Intelligence in System Settings.")
+        case .unavailable(.deviceNotEligible): (String(localized: "Apple Intelligence isn't available"), String(localized: "This Mac can't run Apple Intelligence."))
+        default: (String(localized: "Apple Intelligence is unavailable"), String(localized: "Check Apple Intelligence in System Settings."))
         }
         return HStack(spacing: 12) {
             Image(systemName: "apple.intelligence")
@@ -413,11 +413,11 @@ struct SettingsView: View {
         Form {
             Text("Double-click a shortcut to change it").font(.system(size: 12)).foregroundStyle(.secondary)
             ForEach(Shortcuts.sections, id: \.self) { section in
-                Section(section) {
+                Section(section.localizedLabel) {
                     if section == "Editor" { LabeledContent("Insert block") { keycap("/") } }
                     ForEach(Shortcuts.actions.filter { $0.section == section }) { action in
-                        LabeledContent(action.title) {
-                            keycap(recording == action.id ? "Type shortcut…" : Shortcuts.display(Shortcuts.key(action.id, stored: shortcutOverrides)),
+                        LabeledContent(action.title.localizedLabel) {
+                            keycap(recording == action.id ? String(localized: "Type shortcut…") : Shortcuts.display(Shortcuts.key(action.id, stored: shortcutOverrides)),
                                    active: recording == action.id)
                                 .onTapGesture(count: 2) { startRecording(action.id) }
                         }

@@ -34,8 +34,8 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
                 if let note = search.snapshot.notes.first(where: { $0.id == identifier }) { Knowledge.open(note.url); return }
                 if !search.indexing {
                     let alert = NSAlert()
-                    alert.messageText = "This note is no longer available to Markify."
-                    alert.informativeText = "Its folder may have been removed or need access. Check Settings › Search."
+                    alert.messageText = String(localized: "This note is no longer available to Markify.")
+                    alert.informativeText = String(localized: "Its folder may have been removed or need access. Check Settings › Search.")
                     alert.runModal()
                     break
                 }
@@ -141,7 +141,7 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
 
     private static func reportError(_ error: Error) {
         let alert = NSAlert()
-        alert.messageText = "Could not open report"
+        alert.messageText = String(localized: "Could not open report")
         alert.informativeText = error.localizedDescription
         alert.runModal()
     }
@@ -216,8 +216,8 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     static func openLibraryFolder() {
         let window = NSApp.keyWindow
         let panel = NSOpenPanel()
-        panel.message = "Choose a folder to show in the Library sidebar."
-        panel.prompt = "Open Folder"
+        panel.message = String(localized: "Choose a folder to show in the Library sidebar.")
+        panel.prompt = String(localized: "Open Folder")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         guard panel.runModal() == .OK, let url = panel.url,

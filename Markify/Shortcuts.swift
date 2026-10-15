@@ -108,7 +108,7 @@ enum Shortcuts {
     /// Menu-style glyphs, e.g. "⇧⌘X".
     static func display(_ spec: String) -> String {
         let parts = spec.split(separator: " ").map(String.init)
-        guard let key = parts.last else { return "None" }
+        guard let key = parts.last else { return String(localized: "None", comment: "No keyboard shortcut") }
         let symbols = [("ctrl", "⌃"), ("opt", "⌥"), ("shift", "⇧"), ("cmd", "⌘")]
         let modifiers = symbols.filter { parts.dropLast().contains($0.0) }.map(\.1).joined()
         return modifiers + (namedKeys.first { $0.name == key }?.glyph ?? key.uppercased())

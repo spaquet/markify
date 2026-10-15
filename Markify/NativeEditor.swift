@@ -531,7 +531,7 @@ struct NativeEditor: NSViewRepresentable {
                 guard !markdownLens else { continue }
                 storage.addAttributes([.font: theme.ui(11, weight: .semibold), .baselineOffset: 7 * theme.scale], range: span.content)
                 let cited = sources[label].map { source in
-                    "Source: " + [source.title, source.resource, source.author?.displayName].compactMap { $0 }.joined(separator: " · ")
+                    String(localized: "Source: ") + [source.title, source.resource, source.author?.displayName].compactMap { $0 }.joined(separator: " · ")
                 }
                 let tip = [definitions.first(where: { $0.label == label })?.text, cited].compactMap { $0 }.joined(separator: "\n\n")
                 if !tip.isEmpty { storage.addAttribute(.toolTip, value: tip, range: span.content) }
@@ -625,7 +625,7 @@ struct NativeEditor: NSViewRepresentable {
                 let scale = theme.scale
                 // The opening comment's line holds the card's title, which the line's fragment draws in its place.
                 storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(11, weight: .semibold)], range: toc.opening)
-                storage.addAttribute(.markifyTitle, value: NSAttributedString(string: "CONTENTS", attributes: [
+                storage.addAttribute(.markifyTitle, value: NSAttributedString(string: String(localized: "Contents").localizedUppercase, attributes: [
                     .font: theme.ui(11, weight: .semibold), .kern: 0.7 * scale, .foregroundColor: NSColor.secondaryLabelColor]),
                                      range: NSRange(location: toc.opening.location, length: 1))
                 let title = NSMutableParagraphStyle()
@@ -2359,23 +2359,23 @@ class MarkdownTextView: NSTextView {
     /// The image an `![](path)` shows: a file beside the document, or a remote image when Settings allows it.
     func image(for path: String, embed: Bool = false) -> ImageContent {
         let resolved = Self.imageURL(path, document: documentURL, baseDirectory: baseDirectory)
-        if baseDirectory?.isFileURL == false && resolved.isFileURL { return .placeholder("Local image unavailable in a web document") }
+        if baseDirectory?.isFileURL == false && resolved.isFileURL { return .placeholder(String(localized: "Local image unavailable in a web document")) }
         if ["http", "https"].contains(resolved.scheme?.lowercased() ?? "") {
             let remote = resolved
             let host = remote.host() ?? path
-            guard loadRemoteImages else { return .placeholder("Remote image — \(host)") }
+            guard loadRemoteImages else { return .placeholder(String(localized: "Remote image — \(host)")) }
             switch RemoteImages.shared.state(of: remote, owner: self, onChange: { [weak self] in self?.scheduleRemoteRestyle(MarkdownTextView.imageKey(remote)) }) {
             case .loaded(let image): return .image(image)
-            case .loading: return .placeholder("Loading image — \(host)")
-            case .failed: return .placeholder("Image unavailable — \(host)")
+            case .loading: return .placeholder(String(localized: "Loading image — \(host)"))
+            case .failed: return .placeholder(String(localized: "Image unavailable — \(host)"))
             }
         }
         let url = resolved
         if let cached = imageCache[url], !embed || cached == nil || imageDataURIs[url] != nil {
-            return cached.map(ImageContent.image) ?? .placeholder("Image unavailable — \(url.lastPathComponent)")
+            return cached.map(ImageContent.image) ?? .placeholder(String(localized: "Image unavailable — \(url.lastPathComponent)"))
         }
         guard imageRequests[url] == nil, imageRequests.count < 4, imageCache.count < 64 else {
-            return imageCache[url]?.map(ImageContent.image) ?? .placeholder("Loading image — \(url.lastPathComponent)")
+            return imageCache[url]?.map(ImageContent.image) ?? .placeholder(String(localized: "Loading image — \(url.lastPathComponent)"))
         }
         let work = Task.detached(priority: .utility) { () -> (FileStamp, CGImage, String?)? in
             guard let stamp = FileStamp(at: url), let data = try? FileRead.data(at: url, maximumBytes: 10_000_000),
@@ -2398,7 +2398,7 @@ class MarkdownTextView: NSTextView {
             } else { self.imageCache[url] = .some(nil) }
             self.scheduleRemoteRestyle(MarkdownTextView.imageKey(url))
         }
-        return imageCache[url]?.map(ImageContent.image) ?? .placeholder("Loading image — \(url.lastPathComponent)")
+        return imageCache[url]?.map(ImageContent.image) ?? .placeholder(String(localized: "Loading image — \(url.lastPathComponent)"))
     }
 
     private func remoteImageLoaded() {
@@ -2467,7 +2467,7 @@ class MarkdownTextView: NSTextView {
                 let size = Self.fitted(image.size, width: columnWidth)
                 image.draw(in: NSRect(x: container.midX - size.width / 2, y: container.midY - size.height / 2, width: size.width, height: size.height))
             default:
-                let text = NSAttributedString(string: "Rendering diagram…", attributes: [.font: theme.ui(12), .foregroundColor: NSColor.secondaryLabelColor])
+                let text = NSAttributedString(string: String(localized: "Rendering diagram…"), attributes: [.font: theme.ui(12), .foregroundColor: NSColor.secondaryLabelColor])
                 text.draw(at: NSPoint(x: container.midX - text.size().width / 2, y: container.midY - text.size().height / 2))
             }
         }
@@ -2674,7 +2674,7 @@ class MarkdownTextView: NSTextView {
                 guard NSLocationInRange(range.location, anchorRange) else { continue }
                 let token = rect(range)
                 guard token.intersects(dirtyRect.insetBy(dx: 0, dy: -20)) else { continue }
-                let title = NSAttributedString(string: type.capitalized, attributes: [
+                let title = NSAttributedString(string: Callout.title(type), attributes: [
                     .font: theme.ui(13, weight: .semibold), .foregroundColor: Callout.color(type, accent: theme.accent)])
                 title.draw(at: NSPoint(x: token.minX, y: token.maxY - title.size().height))
             case .image(let path, false):
@@ -2850,15 +2850,15 @@ class MarkdownTextView: NSTextView {
         var chips = [chip(concept.type ?? "", theme.accent)]
         switch concept.status {
         case .stable: break
-        case .draft: chips.append(chip("Draft", .systemOrange))
-        case .deprecated: chips.append(chip("Deprecated", .systemRed))
+        case .draft: chips.append(chip(String(localized: "Draft"), .systemOrange))
+        case .deprecated: chips.append(chip(String(localized: "Deprecated"), .systemRed))
         case .other(let raw): chips.append(chip(raw, .secondaryLabelColor))
         }
-        if concept.isStale() { chips.append(chip("Stale", .systemOrange)) }
+        if concept.isStale() { chips.append(chip(String(localized: "Stale"), .systemOrange)) }
         switch concept.trustTier {
-        case .humanReviewed: chips.append(chip("✓ Reviewed", .systemGreen))
-        case .machineConfirmed: chips.append(chip("Machine-confirmed", .secondaryLabelColor))
-        case .unverified: chips.append(chip("Unverified", .tertiaryLabelColor, filled: false))
+        case .humanReviewed: chips.append(chip(String(localized: "✓ Reviewed"), .systemGreen))
+        case .machineConfirmed: chips.append(chip(String(localized: "Machine-confirmed"), .secondaryLabelColor))
+        case .unverified: chips.append(chip(String(localized: "Unverified"), .tertiaryLabelColor, filled: false))
         }
         return chips
     }
@@ -2880,7 +2880,7 @@ class MarkdownTextView: NSTextView {
             items.append(FrontmatterChip(text: NSAttributedString(string: "↗ " + label, attributes: [.font: theme.ui(11.5), .foregroundColor: theme.accent]), fill: nil, link: resource))
         }
         if items.isEmpty {
-            items.append(FrontmatterChip(text: NSAttributedString(string: "Frontmatter", attributes: [.font: font, .foregroundColor: NSColor.tertiaryLabelColor]), fill: tagFill))
+            items.append(FrontmatterChip(text: NSAttributedString(string: String(localized: "Frontmatter"), attributes: [.font: font, .foregroundColor: NSColor.tertiaryLabelColor]), fill: tagFill))
         }
         var x: CGFloat = 0
         return items.compactMap { item in
@@ -3898,12 +3898,12 @@ struct MarkdownTable {
 
         var title: String {
             switch self {
-            case .insertRowAbove: "Insert Row Above"
-            case .insertRowBelow: "Insert Row Below"
-            case .insertColumnLeft: "Insert Column Left"
-            case .insertColumnRight: "Insert Column Right"
-            case .deleteRow: "Delete Row"
-            case .deleteColumn: "Delete Column"
+            case .insertRowAbove: String(localized: "Insert Row Above")
+            case .insertRowBelow: String(localized: "Insert Row Below")
+            case .insertColumnLeft: String(localized: "Insert Column Left")
+            case .insertColumnRight: String(localized: "Insert Column Right")
+            case .deleteRow: String(localized: "Delete Row")
+            case .deleteColumn: String(localized: "Delete Column")
             }
         }
     }
@@ -4039,6 +4039,18 @@ struct SourceAnchor {
 }
 
 enum Callout {
+    /// The title the Rendered lens draws; the `[!TYPE]` marker in the source stays as written.
+    static func title(_ type: String) -> String {
+        switch type.uppercased() {
+        case "NOTE": String(localized: "Note", comment: "GitHub callout title")
+        case "TIP": String(localized: "Tip", comment: "GitHub callout title")
+        case "IMPORTANT": String(localized: "Important", comment: "GitHub callout title")
+        case "WARNING": String(localized: "Warning", comment: "GitHub callout title")
+        case "CAUTION": String(localized: "Caution", comment: "GitHub callout title")
+        default: type.capitalized
+        }
+    }
+
     static func color(_ type: String, accent: NSColor) -> NSColor {
         switch type.uppercased() {
         case "TIP": .systemGreen

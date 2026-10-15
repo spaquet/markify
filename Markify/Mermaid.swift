@@ -60,13 +60,13 @@ import WebKit
     /// The diagram's state, starting a render on first request; `onChange` runs once when it settles.
     func state(of source: String, dark: Bool, owner: AnyObject? = nil, onChange: @escaping () -> Void) -> State {
         let key = "\(dark):\(source)"
-        guard source.utf8.count <= 64_000 else { return .failed("Diagram exceeds the 64 KB limit.") }
+        guard source.utf8.count <= 64_000 else { return .failed(String(localized: "Diagram exceeds the 64 KB limit.")) }
         let consumer = ObjectIdentifier(owner ?? self)
         if let state = states[key] {
             waiting[key, default: [:]][consumer] = onChange
             return state
         }
-        guard pendingCount < 32 else { return .failed("Too many diagrams are waiting to render.") }
+        guard pendingCount < 32 else { return .failed(String(localized: "Too many diagrams are waiting to render.")) }
         // Renders requested without an owner are never released; drop the settled ones before the cache grows large.
         if states.count >= 64 {
             let renderer = ObjectIdentifier(self)
@@ -189,7 +189,7 @@ import WebKit
         let token = generation
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.generation == token else { return }
-            self.recover("Diagram rendering timed out.")
+            self.recover(String(localized: "Diagram rendering timed out."))
         }
         deadline = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: work)
@@ -213,7 +213,7 @@ import WebKit
 
     private func start() {
         guard let page = Bundle.main.url(forResource: "mermaid", withExtension: "html") else {
-            finishAll(.failed("Mermaid is missing from this build."))
+            finishAll(.failed(String(localized: "Mermaid is missing from this build.")))
             return
         }
         if webView == nil {
@@ -306,7 +306,7 @@ import WebKit
                                 self.persist(.pdf(data), for: job.key)
                                 self.finish(job.key, .rendered(image))
                             } else {
-                                self.finish(job.key, .failed("Diagram PDF could not be read."))
+                                self.finish(job.key, .failed(String(localized: "Diagram PDF could not be read.")))
                             }
                         case .failure(let error):
                             self.finish(job.key, .failed(error.localizedDescription))
@@ -401,7 +401,7 @@ import WebKit
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        recover("The diagram renderer stopped. Edit the diagram to retry.")
+        recover(String(localized: "The diagram renderer stopped. Edit the diagram to retry."))
     }
 
     /// Only the bundled page loads; links inside diagrams go nowhere.
