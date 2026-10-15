@@ -38,7 +38,7 @@ Wherever you save them. Every document is an ordinary `.md` file. By default new
 
 ### Can I use Markify with iCloud Drive, Dropbox or Git?
 
-Yes. Because documents are plain files, anything that syncs or versions files works with them. Markify reloads a document when another app changes it.
+Yes. Because documents are plain files, anything that syncs or versions files works with them. Markify reloads a document when another app changes it. To sync between your Macs or share with other people through iCloud Drive, see [Sync and share with iCloud Drive](library.md#sync-and-share-with-icloud-drive). Simultaneous editing on several Macs hasn't been fully tested yet, so edit a shared document in one place at a time.
 
 ### Does Markify change my Markdown?
 

@@ -33,6 +33,30 @@
 <p>In an Open Knowledge Format bundle, the sidebar also groups concepts by folder, type or tag. See <a href="knowledge.html">Knowledge bundles</a>.</p>
 <h3 id="changes-from-other-apps">Changes from other apps</h3>
 <p>When an open file changes on disk, Markify reloads its contents if the document has no unsaved edits. Unsaved local edits are preserved. Changes also request a search index refresh for notes in configured search folders; Spotlight may take time to show the new content.</p>
+<h2 id="sync-and-share-with-icloud-drive">Sync and share with iCloud Drive</h2>
+<p>Markify saves ordinary Markdown files, so iCloud Drive can keep your documents in sync between your Macs or share them with other people, with no extra service to install.</p>
+<div class="callout callout-warning" role="note" aria-label="Warning">
+<p class="callout-title">Warning</p>
+<p>Simultaneous editing hasn't been fully tested yet. If the same document is edited on two Macs at once, or by two people at once, the other Mac may not show the new text right away. Edit a shared document in one place at a time, and wait for iCloud Drive to finish syncing before you continue elsewhere. When Markify notices that a file changed on disk, it offers <strong>Keep My Changes</strong>, <strong>Reload</strong> or <strong>Merge</strong>. See <a href="getting-started.html#changes-from-another-app">Changes from another app</a>.</p>
+</div>
+<h3 id="between-your-own-macs">Between your own Macs</h3>
+<ol>
+<li>Create a folder in iCloud Drive, such as <code>iCloud Drive/Markify</code>.
+</li>
+<li>Move your documents into it, along with their images and linked files, so relative paths keep working.
+</li>
+<li>On each Mac, choose that folder in <strong>Markify › Settings… › General › Library location</strong>.
+</li>
+<li>Sign in to the same Apple Account on each Mac and turn on iCloud Drive.
+</li>
+</ol>
+<p>Wait for syncing to finish before you switch Macs, especially after working offline.</p>
+<h3 id="with-other-people">With other people</h3>
+<p>In the Finder, select the folder in iCloud Drive and use its sharing controls to invite people through their own Apple Accounts. Let them view only or make changes, depending on what they need. They can then open the shared Markdown files in Markify.</p>
+<p>Share a folder that holds only the documents and images you mean to share. Don't use “anyone with the link” access for private material. Removing someone's access later doesn't delete copies they've already downloaded.</p>
+<h3 id="protecting-your-documents">Protecting your documents</h3>
+<p>For stronger privacy, turn on <strong>Advanced Data Protection</strong> in your Apple Account's iCloud settings, where it's available. It adds end-to-end encryption to the contents of your iCloud Drive files. A shared folder keeps this protection only when every participant has turned it on, and sharing with “anyone with the link” doesn't keep it. Set up a recovery contact or recovery key first: Apple can't recover end-to-end encrypted data if you lose access to your account. See <a rel="noopener" href="https://support.apple.com/en-us/102651">Apple's iCloud data security overview</a>.</p>
+<p>Use a strong password on each Mac, turn on FileVault, and keep two-factor authentication on for your Apple Account.</p>
 <h2 id="find-and-replace">Find and replace</h2>
 <div class="table"><table>
 <thead>
