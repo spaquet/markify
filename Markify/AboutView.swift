@@ -16,6 +16,7 @@ struct AboutView: View {
         ("GitHub", "chevron.left.forwardslash.chevron.right", "https://github.com/spaquet/markify"),
         ("Releases", "sparkles", "https://github.com/spaquet/markify/releases"),
         ("Sponsor", "heart", "https://github.com/sponsors/spaquet"),
+        ("X", "at", "https://x.com/stpaquet"),
     ]
 
     var body: some View {
@@ -51,7 +52,7 @@ struct AboutView: View {
                                 .frame(height: 18)
                             Text(link.title).font(.system(size: 11, weight: .medium)).foregroundStyle(.primary)
                         }
-                        .frame(width: 76, height: 58)
+                        .frame(width: 68, height: 58)
                         .contentShape(.rect(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
