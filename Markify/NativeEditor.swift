@@ -1426,13 +1426,21 @@ class MarkdownTextView: NSTextView {
         let widths = tableWidths(table)
         let id = tableIDColumn(table)
         return row.cells.enumerated().map { col, range in
+            let width = rowColumnWidth(col, widths: widths, cellCount: row.cells.count)
             if col == id {
                 let text = (string as NSString).substring(with: range)
-                let badge = TableRowView.badgeWidth(text, available: widths[col] - 28)
+                let badge = TableRowView.badgeWidth(text, available: width - 28)
                 return TableRowView.cellHeight(text, width: badge, id: true) + 22
             }
-            return tablePresentation(range, width: widths[col] - 28, column: col, header: false, alignment: tableAlignment(col, table: table)).fullHeight + 22
+            return tablePresentation(range, width: width - 28, column: col, header: false, alignment: tableAlignment(col, table: table)).fullHeight + 22
         }.max() ?? 43
+    }
+
+    /// A cell's column width. Widths measured for the table can be shorter than a row (MARKIFY-2X), so a column
+    /// without a measured width takes an even share of the row instead of trapping.
+    func rowColumnWidth(_ col: Int, widths: [CGFloat], cellCount: Int) -> CGFloat {
+        if widths.indices.contains(col) { return widths[col] }
+        return columnWidth / CGFloat(max(cellCount, 1))
     }
 
     /// A cell's reading. The caller knows the cell's column, header and alignment, so nothing is searched for here.

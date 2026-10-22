@@ -682,6 +682,15 @@ struct MarkifyTests {
         #expect((editor.string as NSString).substring(with: cell) == "Alpha")
     }
 
+    /// Widths shorter than a row (MARKIFY-2X) fall back to an even share of the column width instead of trapping.
+    @Test @MainActor func rowColumnWidthFallsBackWhenWidthsAreShort() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.columnWidth = 600
+        #expect(editor.rowColumnWidth(1, widths: [100, 200], cellCount: 2) == 200)
+        #expect(editor.rowColumnWidth(2, widths: [100, 200], cellCount: 3) == 200)
+        #expect(editor.rowColumnWidth(0, widths: [], cellCount: 0) == 600)
+    }
+
     @Test func orderedListsRenumberFromTheirStart() {
         let text = "1. a\n3. b\n   1. nested\n   5. nested\n7. c\n\nText\n\n4. new\n9. list\n- bullet\n1. after\n```\n1. code\n1. code\n```"
         var fixed = text as NSString
