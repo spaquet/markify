@@ -1879,11 +1879,20 @@ class MarkdownTextView: NSTextView {
         let location: Int
     }
 
-    /// Row and column commands for the table at `location`, or none outside a table.
+    /// Copies the table at `location` as Markdown source, with an HTML table for apps that paste rich text. Nothing in the
+    /// document changes.
+    @discardableResult
+    func copyTable(at location: Int, to pasteboard: NSPasteboard = .general) async -> Bool {
+        guard let table = MarkdownTable.containing(model, location: location) else { return false }
+        let source = (string as NSString).substring(with: NSRange(location: table.rows[0].start, length: table.rows[table.rows.count - 1].end - table.rows[0].start))
+        return await DocumentExport.copyForMedium(source, mdx: Self.isMDX(documentURL), to: pasteboard)
+    }
+
+    /// Row and column commands for the table at `location`, and copying it; none outside a table.
     func tableMenuItems(at location: Int) -> [NSMenuItem] {
         guard MarkdownTable.containing(model, location: location) != nil else { return [] }
         let groups: [[MarkdownTable.Edit]] = [[.insertRowAbove, .insertRowBelow], [.insertColumnLeft, .insertColumnRight], [.deleteRow, .deleteColumn]]
-        return groups.enumerated().flatMap { index, edits in
+        let edits = groups.enumerated().flatMap { index, edits in
             (index > 0 ? [NSMenuItem.separator()] : []) + edits.map { edit in
                 let item = NSMenuItem(title: edit.title, action: #selector(tableMenuAction(_:)), keyEquivalent: "")
                 item.target = self
@@ -1891,6 +1900,15 @@ class MarkdownTextView: NSTextView {
                 return item
             }
         }
+        let copy = NSMenuItem(title: String(localized: "Copy Table"), action: #selector(copyTableAction(_:)), keyEquivalent: "")
+        copy.target = self
+        copy.representedObject = location
+        return edits + [.separator(), copy]
+    }
+
+    @objc private func copyTableAction(_ sender: NSMenuItem) {
+        guard let location = sender.representedObject as? Int else { return }
+        Task { await copyTable(at: location) }
     }
 
     @objc private func tableMenuAction(_ sender: NSMenuItem) {

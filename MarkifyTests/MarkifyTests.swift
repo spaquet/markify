@@ -661,9 +661,10 @@ struct MarkifyTests {
         editor.string = "Text\n\n| A |\n| --- |\n| C |"
         #expect(editor.tableMenuItems(at: 1).isEmpty)
         let items = editor.tableMenuItems(at: (editor.string as NSString).range(of: "C").location)
-        #expect(items.filter { !$0.isSeparatorItem }.map(\.title) == MarkdownTable.Edit.allCases.map(\.title))
+        // The edits come first and Copy Table last.
+        #expect(items.filter { !$0.isSeparatorItem }.map(\.title) == MarkdownTable.Edit.allCases.map(\.title) + ["Copy Table"])
         let enabled = items.filter { !$0.isSeparatorItem && editor.validateMenuItem($0) }.map(\.title)
-        #expect(enabled == ["Insert Row Above", "Insert Row Below", "Insert Column Left", "Insert Column Right", "Delete Row"])
+        #expect(enabled == ["Insert Row Above", "Insert Row Below", "Insert Column Left", "Insert Column Right", "Delete Row", "Copy Table"])
     }
 
     @Test func tableShortcutsUseArrowAndDeleteKeys() {
@@ -723,6 +724,19 @@ struct MarkifyTests {
         #expect(table.move(to: 9, in: text) == nil)
         #expect(table.move(to: 7, in: text) == nil)
         #expect(table.move(to: (text as NSString).range(of: "After").location, in: text) == nil)
+    }
+
+    @Test @MainActor func tableCopiesAsMarkdownAndHTMLWithoutChangingTheDocument() async {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "Intro\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nAfter"
+        let pasteboard = NSPasteboard.withUniqueName()
+        let before = editor.string
+        #expect(await editor.copyTable(at: 9, to: pasteboard))
+        #expect(pasteboard.string(forType: .string) == "| A | B |\n| --- | --- |\n| 1 | 2 |")
+        #expect(pasteboard.string(forType: .html)?.contains("<table") == true)
+        #expect(editor.string == before)
+        #expect(editor.tableMenuItems(at: 9).last?.title == "Copy Table")
+        #expect(editor.tableMenuItems(at: 0).isEmpty)
     }
 
     /// Widths shorter than a row (MARKIFY-2X) fall back to an even share of the column width instead of trapping.
