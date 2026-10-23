@@ -122,6 +122,12 @@
             "state" : "translated",
             "value" : "Markdown-asiakirja"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown-dokument"
+          }
         }
       }
     },
@@ -161,6 +167,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MDX-asiakirja"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MDX-dokument"
           }
         }
       }
