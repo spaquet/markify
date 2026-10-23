@@ -1787,11 +1787,41 @@ class MarkdownTextView: NSTextView {
         return rule
     }()
 
-    /// Shows the drop rule at `y` (this view's coordinates), or hides it when nil.
-    func showTableDropRule(at y: CGFloat?) {
-        guard let y else { tableDropRule.isHidden = true; return }
-        tableDropRule.frame = NSRect(x: 0, y: y - 1, width: columnWidth, height: 2)
+    /// Shows the drop rule over `frame` (this view's coordinates), or hides it when nil.
+    func showTableDropRule(_ frame: NSRect?) {
+        guard let frame else { tableDropRule.isHidden = true; return }
+        tableDropRule.frame = frame
         tableDropRule.isHidden = false
+    }
+
+    /// The rect of a rendered table's rows, from its first row to its last.
+    private func tableFrame(_ table: MarkdownModel.Table) -> NSRect? {
+        table.rows.filter { !$0.separator }.map { row -> NSRect in
+            tableRowIndices[row.start].flatMap { tableOverlays[$0]?.frame } ?? textRect(NSRange(location: row.start, length: 1))
+        }.reduce(nil) { union, rect in union.map { $0.union(rect) } ?? rect }
+    }
+
+    /// The gap a table column dragged to `x` (this view's coordinates) lands in, as an index into the columns, and the
+    /// rule that marks it: a vertical line along the table's height.
+    func tableColumnGap(tableStart start: Int, x: CGFloat) -> (slot: Int, rule: NSRect)? {
+        guard rendered, let table = model.tables.first(where: { $0.rows.first?.start == start }),
+              let header = tableRowIndices[start].flatMap({ tableOverlays[$0] }), let frame = tableFrame(table) else { return nil }
+        var position = header.frame.minX
+        var slot = header.widths.count
+        for (index, width) in header.widths.enumerated() {
+            if x < position + width / 2 { slot = index; break }
+            position += width
+        }
+        let boundary = header.widths.prefix(slot).reduce(header.frame.minX, +)
+        return (slot, NSRect(x: boundary - 1, y: frame.minY, width: 2, height: frame.height))
+    }
+
+    /// Moves the column at `index` into the gap before `slot` of the table starting at `start`.
+    @discardableResult
+    func moveTableColumn(tableStart start: Int, from index: Int, to slot: Int) -> Bool {
+        guard let table = model.tables.first(where: { $0.rows.first?.start == start }),
+              let change = MarkdownTable(rows: table.rows, current: 0).moveColumn(index, to: slot, in: string) else { return false }
+        return applyTable(change, actionName: String(localized: "Move Column"), tableStart: start, anchored: true)
     }
 
     /// The gap a table row dragged to `y` (this view's coordinates) lands in: its index in the table's rows, and the y
@@ -3631,6 +3661,14 @@ final class TableRowView: NSView {
     private var canDragRow: Bool { expanded && !header }
     private var dragging = false
     private var drop: (slot: Int, rule: CGFloat)?
+    /// The header's grip sits along its top edge above the hovered column and drags that column.
+    private var dragColumn: Int?
+    private var columnDrop: (slot: Int, rule: NSRect)?
+
+    private func column(atX x: CGFloat) -> Int? {
+        var end: CGFloat = 0
+        return widths.firstIndex { width in end += width; return x < end }
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -3647,20 +3685,39 @@ final class TableRowView: NSView {
         onHover?(false)
     }
     override func mouseDown(with event: NSEvent) {
-        guard canDragRow, convert(event.locationInWindow, from: nil).x < 12, let owner else { return super.mouseDown(with: event) }
+        let point = convert(event.locationInWindow, from: nil)
+        if header, point.y < 10, let owner, let column = column(atX: point.x) {
+            dragColumn = column
+            owner.tableDragging = true
+            return
+        }
+        guard canDragRow, point.x < 12, let owner else { return super.mouseDown(with: event) }
         dragging = true
         owner.tableDragging = true
     }
     override func mouseDragged(with event: NSEvent) {
+        if dragColumn != nil, let owner {
+            columnDrop = owner.tableColumnGap(tableStart: rowStart, x: owner.convert(event.locationInWindow, from: nil).x)
+            owner.showTableDropRule(columnDrop?.rule)
+            return
+        }
         guard dragging, let owner else { return super.mouseDragged(with: event) }
         drop = owner.tableRowGap(rowStart: rowStart, y: owner.convert(event.locationInWindow, from: nil).y)
-        owner.showTableDropRule(at: drop?.rule)
+        owner.showTableDropRule(drop.map { NSRect(x: frame.minX, y: $0.rule - 1, width: frame.width, height: 2) })
     }
     override func mouseUp(with event: NSEvent) {
+        if let column = dragColumn, let owner {
+            dragColumn = nil
+            owner.tableDragging = false
+            owner.showTableDropRule(nil)
+            if let columnDrop { owner.moveTableColumn(tableStart: rowStart, from: column, to: columnDrop.slot) }
+            columnDrop = nil
+            return
+        }
         guard dragging, let owner else { return super.mouseUp(with: event) }
         dragging = false
         owner.tableDragging = false
-        owner.showTableDropRule(at: nil)
+        owner.showTableDropRule(nil)
         if let drop { owner.moveTableRow(rowStart: rowStart, to: drop.slot) }
         drop = nil
     }
@@ -3756,6 +3813,14 @@ final class TableRowView: NSView {
         if expanded {
             NSColor.controlAccentColor.setFill()
             NSBezierPath(roundedRect: NSRect(x: 0, y: 6, width: 3, height: bounds.height - 12), xRadius: 1.5, yRadius: 1.5).fill()
+        }
+        if header, let col = hoveredColumn, widths.indices.contains(col) {
+            // Three dots along the top edge of the hovered column: the grip that drags the column.
+            NSColor.secondaryLabelColor.setFill()
+            let center = widths.prefix(col).reduce(0, +) + widths[col] / 2
+            for offset in [-4.0, 0, 4.0] {
+                NSBezierPath(ovalIn: NSRect(x: center + offset - 0.75, y: 3.5, width: 1.5, height: 1.5)).fill()
+            }
         }
         if canDragRow {
             // Six dots: the grip that drags the row.
@@ -4116,6 +4181,7 @@ struct MarkdownTable {
             line.cells.insert(line.cells.remove(at: index), at: target)
             return line
         }
+        // The caret stays on the moved column's cell in the row it was in.
         return replacing(lines, row: current, column: target, in: source)
     }
 
