@@ -1917,6 +1917,7 @@ struct SlashEntry {
             if !above.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { inserted = "\n" + inserted }
         }
         editor.insertText(inserted, replacementRange: range)
+        if title == "Table" { (editor as? MarkdownTextView)?.ensureParagraphAfterTable() }
         let leading = inserted.hasPrefix("\n") ? 1 : 0
         let caret: (Int, Int)? = switch title {
         case "Table": (2, 6)

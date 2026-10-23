@@ -661,9 +661,10 @@ struct MarkifyTests {
         editor.string = "Text\n\n| A |\n| --- |\n| C |"
         #expect(editor.tableMenuItems(at: 1).isEmpty)
         let items = editor.tableMenuItems(at: (editor.string as NSString).range(of: "C").location)
-        #expect(items.filter { !$0.isSeparatorItem }.map(\.title) == MarkdownTable.Edit.allCases.map(\.title))
+        // The edits come first and Copy Table last.
+        #expect(items.filter { !$0.isSeparatorItem }.map(\.title) == MarkdownTable.Edit.allCases.map(\.title) + ["Copy Table"])
         let enabled = items.filter { !$0.isSeparatorItem && editor.validateMenuItem($0) }.map(\.title)
-        #expect(enabled == ["Insert Row Above", "Insert Row Below", "Insert Column Left", "Insert Column Right", "Delete Row"])
+        #expect(enabled == ["Insert Row Above", "Insert Row Below", "Insert Column Left", "Insert Column Right", "Delete Row", "Copy Table"])
     }
 
     @Test func tableShortcutsUseArrowAndDeleteKeys() {
@@ -680,6 +681,88 @@ struct MarkifyTests {
         for value in ["Al", "Alp", "Alpha"] { cell = editor.replaceTableCell(cell, with: value) }
         #expect(editor.string == "| Alpha | B |\n| --- | --- |\n| C | D |")
         #expect((editor.string as NSString).substring(with: cell) == "Alpha")
+    }
+
+    /// Applies a table change from `MarkdownTable` to `source`.
+    private func applied(_ change: MarkdownTable.Change?, to source: String) -> String? {
+        change.map { (source as NSString).replacingCharacters(in: $0.range, with: $0.replacement) }
+    }
+
+    @Test func tableRowsMoveWithinTheBody() throws {
+        let text = "| A | B |\n| --- | --- |\n| 1 | 2 |\n| 3 | 4 |\n| 5 | 6 |"
+        let table = try #require(MarkdownTable.blocks(in: text).first)
+        // Rows: header 0, delimiter 1, body 2...4. A slot is the gap before that row.
+        #expect(applied(table.moveRow(2, to: 5, in: text), to: text) == "| A | B |\n| --- | --- |\n| 3 | 4 |\n| 5 | 6 |\n| 1 | 2 |")
+        #expect(applied(table.moveRow(4, to: 2, in: text), to: text) == "| A | B |\n| --- | --- |\n| 5 | 6 |\n| 1 | 2 |\n| 3 | 4 |")
+        #expect(applied(table.moveRow(2, to: 4, in: text), to: text) == "| A | B |\n| --- | --- |\n| 3 | 4 |\n| 1 | 2 |\n| 5 | 6 |")
+        // A gap next to the row itself is no move; the header and delimiter never move.
+        #expect(table.moveRow(2, to: 2, in: text) == nil)
+        #expect(table.moveRow(2, to: 3, in: text) == nil)
+        #expect(table.moveRow(0, to: 2, in: text) == nil)
+        #expect(table.moveRow(1, to: 2, in: text) == nil)
+    }
+
+    @Test func tableColumnsMoveWithTheirAlignment() throws {
+        let text = "| A | B | C |\n| :-- | --- | ---: |\n| 1 | 2 | 3 |"
+        let table = try #require(MarkdownTable.blocks(in: text).first)
+        #expect(applied(table.moveColumn(0, to: 2, in: text), to: text) == "| B | A | C |\n| --- | :-- | ---: |\n| 2 | 1 | 3 |")
+        #expect(applied(table.moveColumn(2, to: 0, in: text), to: text) == "| C | A | B |\n| ---: | :-- | --- |\n| 3 | 1 | 2 |")
+        #expect(table.moveColumn(1, to: 1, in: text) == nil)
+        #expect(table.moveColumn(1, to: 2, in: text) == nil)
+    }
+
+    @Test func tablesMoveToALineStartOutsideThemselves() throws {
+        let text = "Intro\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nAfter\n"
+        let table = try #require(MarkdownTable.blocks(in: text).first)
+        let up = try #require(table.move(to: 0, in: text))
+        #expect(applied(up.change, to: text) == "| A | B |\n| --- | --- |\n| 1 | 2 |\n\nIntro\n\nAfter\n")
+        #expect(up.start == 0)
+        let down = try #require(table.move(to: (text as NSString).length, in: text))
+        #expect(applied(down.change, to: text) == "Intro\n\nAfter\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n")
+        #expect((applied(down.change, to: text)! as NSString).substring(from: down.start).hasPrefix("| A | B |"))
+        // Inside the table, its own start, or the line it already sits above is no move.
+        #expect(table.move(to: 9, in: text) == nil)
+        #expect(table.move(to: 7, in: text) == nil)
+        #expect(table.move(to: (text as NSString).range(of: "After").location, in: text) == nil)
+    }
+
+    @Test @MainActor func tableCopiesAsMarkdownAndHTMLWithoutChangingTheDocument() async {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "Intro\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nAfter"
+        let pasteboard = NSPasteboard.withUniqueName()
+        let before = editor.string
+        #expect(await editor.copyTable(at: 9, to: pasteboard))
+        #expect(pasteboard.string(forType: .string) == "| A | B |\n| --- | --- |\n| 1 | 2 |")
+        #expect(pasteboard.string(forType: .html)?.contains("<table") == true)
+        #expect(editor.string == before)
+        #expect(editor.tableMenuItems(at: 9).last?.title == "Copy Table")
+        #expect(editor.tableMenuItems(at: 0).isEmpty)
+    }
+
+    @Test func aTableAtTheEndOfTheDocumentGetsAParagraphUnderIt() {
+        func trailing(_ text: String) -> String? {
+            MarkdownTable.trailingParagraph(in: text).map { (text as NSString).replacingCharacters(in: NSRange(location: $0.location, length: 0), with: $0.text) }
+        }
+        #expect(trailing("| A |\n| - |\n| 1 |") == "| A |\n| - |\n| 1 |\n\n")
+        #expect(trailing("| A |\n| - |\n| 1 |\n") == "| A |\n| - |\n| 1 |\n\n")
+        // Already has the blank line, or text follows the table: nothing to add.
+        #expect(trailing("| A |\n| - |\n| 1 |\n\n") == nil)
+        #expect(trailing("| A |\n| - |\n| 1 |\n\nAfter") == nil)
+        #expect(trailing("Text only") == nil)
+    }
+
+    @Test @MainActor func downArrowInTheLastRowMovesBelowTheTable() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "| A | B |\n| --- | --- |\n| 1 | 2 |"
+        let header = (editor.string as NSString).range(of: "A").location
+        let last = (editor.string as NSString).range(of: "1").location
+        // Down from the header is not an exit: the arrow keeps its normal behavior.
+        #expect(editor.exitTableBelow(from: header) == false)
+        #expect(editor.string == "| A | B |\n| --- | --- |\n| 1 | 2 |")
+        // Down from the last row adds the paragraph under the table and moves the caret into it.
+        #expect(editor.exitTableBelow(from: last))
+        #expect(editor.string == "| A | B |\n| --- | --- |\n| 1 | 2 |\n\n")
+        #expect(editor.selectedRange().location == (editor.string as NSString).length)
     }
 
     /// Widths shorter than a row (MARKIFY-2X) fall back to an even share of the column width instead of trapping.
