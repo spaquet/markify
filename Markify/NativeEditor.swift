@@ -3694,11 +3694,11 @@ final class TableRowView: NSView {
     private var header = false
     weak var owner: MarkdownTextView?
     var rowStart = 0
-    var hoveredColumn: Int?
+    var hoveredColumn: Int? { didSet { window?.invalidateCursorRects(for: self) } }
     var widths: [CGFloat] = []
     var alignments: [NSTextAlignment] = []
     var idColumn: Int?
-    var expanded = false
+    var expanded = false { didSet { window?.invalidateCursorRects(for: self) } }
     var striped = false
     var first = false
     var last = false
@@ -3714,7 +3714,7 @@ final class TableRowView: NSView {
     /// The header's grip in its left margin drags the whole table.
     private var dragTable = false
     private var tableDrop: (location: Int, rule: NSRect)?
-    private var pointerInside = false
+    private var pointerInside = false { didSet { window?.invalidateCursorRects(for: self) } }
 
     private func column(atX x: CGFloat) -> Int? {
         var end: CGFloat = 0
@@ -3729,6 +3729,24 @@ final class TableRowView: NSView {
         addTrackingArea(area)
         tracking = area
     }
+    /// An open hand over the grips, so they read as something to drag.
+    override func resetCursorRects() {
+        if canDragRow { addCursorRect(NSRect(x: 0, y: 0, width: 12, height: bounds.height), cursor: .openHand) }
+        if header {
+            addCursorRect(NSRect(x: 0, y: 10, width: 12, height: bounds.height - 10), cursor: .openHand)
+            addCursorRect(NSRect(x: 12, y: 0, width: max(0, bounds.width - 12), height: 10), cursor: .openHand)
+        }
+    }
+
+    /// Holds a closed hand for the whole drag, however far the pointer travels.
+    private func beginGripDrag() {
+        NSCursor.closedHand.push()
+    }
+
+    private func endGripDrag() {
+        NSCursor.pop()
+    }
+
     override func mouseEntered(with event: NSEvent) {
         pointerInside = true
         onHover?(true)
@@ -3743,16 +3761,19 @@ final class TableRowView: NSView {
         let point = convert(event.locationInWindow, from: nil)
         if header, point.x < 12, point.y >= 10, let owner {
             dragTable = true
+            beginGripDrag()
             owner.tableDragging = true
             return
         }
         if header, point.y < 10, let owner, let column = column(atX: point.x) {
             dragColumn = column
+            beginGripDrag()
             owner.tableDragging = true
             return
         }
         guard canDragRow, point.x < 12, let owner else { return super.mouseDown(with: event) }
         dragging = true
+        beginGripDrag()
         owner.tableDragging = true
     }
     override func mouseDragged(with event: NSEvent) {
@@ -3773,6 +3794,7 @@ final class TableRowView: NSView {
     override func mouseUp(with event: NSEvent) {
         if dragTable, let owner {
             dragTable = false
+            endGripDrag()
             owner.tableDragging = false
             owner.showTableDropRule(nil)
             if let tableDrop { owner.moveTable(tableStart: rowStart, to: tableDrop.location) }
@@ -3781,6 +3803,7 @@ final class TableRowView: NSView {
         }
         if let column = dragColumn, let owner {
             dragColumn = nil
+            endGripDrag()
             owner.tableDragging = false
             owner.showTableDropRule(nil)
             if let columnDrop { owner.moveTableColumn(tableStart: rowStart, from: column, to: columnDrop.slot) }
@@ -3789,6 +3812,7 @@ final class TableRowView: NSView {
         }
         guard dragging, let owner else { return super.mouseUp(with: event) }
         dragging = false
+        endGripDrag()
         owner.tableDragging = false
         owner.showTableDropRule(nil)
         if let drop { owner.moveTableRow(rowStart: rowStart, to: drop.slot) }
