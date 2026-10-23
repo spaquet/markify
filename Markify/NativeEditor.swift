@@ -1837,6 +1837,28 @@ class MarkdownTextView: NSTextView {
         return (location, NSRect(x: 0, y: y - 1, width: columnWidth, height: 2))
     }
 
+    /// Gives a document that ends with a table an empty paragraph under it. Returns whether it added one.
+    @discardableResult
+    func ensureParagraphAfterTable() -> Bool {
+        guard let insertion = MarkdownTable.trailingParagraph(in: string) else { return false }
+        insertText(insertion.text, replacementRange: NSRange(location: insertion.location, length: 0))
+        return true
+    }
+
+    /// Moves the caret from a table's last row to the paragraph under the table, as the down arrow does in Word.
+    /// False when the caret is not in the last row, so the arrow keeps its normal behavior there.
+    func exitTableBelow(from location: Int) -> Bool {
+        guard let table = MarkdownTable.containing(model, location: location), table.current == table.rows.count - 1 else { return false }
+        ensureParagraphAfterTable()
+        let source = string as NSString
+        var target = table.rows[table.rows.count - 1].end
+        while target < source.length, source.character(at: target) == 10 { target += 1 }
+        window?.makeFirstResponder(self)
+        setSelectedRange(NSRange(location: target, length: 0))
+        scrollRangeToVisible(selectedRange())
+        return true
+    }
+
     /// Moves the whole table starting at `start` so it starts at `location`, a line start outside the table.
     @discardableResult
     func moveTable(tableStart start: Int, to location: Int) -> Bool {
@@ -3250,6 +3272,7 @@ class MarkdownTextView: NSTextView {
             _ = insertImage(data: png, name: "Pasted image \(stamp).png")
         } else {
             super.paste(sender)
+            ensureParagraphAfterTable()
         }
     }
 
@@ -3988,6 +4011,8 @@ final class TableCellField: NSTextField, NSTextFieldDelegate {
     func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
         if selector == #selector(NSResponder.insertTab(_:)) { onTab?(sourceRange, false); return true }
         if selector == #selector(NSResponder.insertBacktab(_:)) { onTab?(sourceRange, true); return true }
+        if selector == #selector(NSResponder.moveDown(_:)), let owner = (superview as? TableRowView)?.owner,
+           owner.exitTableBelow(from: sourceRange.location) { return true }
         return false
     }
 
@@ -4121,6 +4146,17 @@ struct MarkdownTable {
     }
 
     static func blocks(in text: String) -> [Self] { blocks(in: MarkdownModel(text)) }
+
+    /// The text that gives the document's last table an empty paragraph under it, as Word keeps one after a table. Nil
+    /// when text follows the table or the blank line is already there.
+    static func trailingParagraph(in text: String) -> (location: Int, text: String)? {
+        guard let table = MarkdownModel(text).tables.last else { return nil }
+        let source = text as NSString
+        let end = table.rows[table.rows.count - 1].end
+        let tail = source.substring(from: end)
+        guard tail.allSatisfy({ $0 == "\n" }), tail.count < 2 else { return nil }
+        return (end, String(repeating: "\n", count: 2 - tail.count))
+    }
 
     static func blocks(in model: MarkdownModel) -> [Self] {
         model.tables.map { Self(rows: $0.rows, current: 0) }

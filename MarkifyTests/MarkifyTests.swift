@@ -739,6 +739,32 @@ struct MarkifyTests {
         #expect(editor.tableMenuItems(at: 0).isEmpty)
     }
 
+    @Test func aTableAtTheEndOfTheDocumentGetsAParagraphUnderIt() {
+        func trailing(_ text: String) -> String? {
+            MarkdownTable.trailingParagraph(in: text).map { (text as NSString).replacingCharacters(in: NSRange(location: $0.location, length: 0), with: $0.text) }
+        }
+        #expect(trailing("| A |\n| - |\n| 1 |") == "| A |\n| - |\n| 1 |\n\n")
+        #expect(trailing("| A |\n| - |\n| 1 |\n") == "| A |\n| - |\n| 1 |\n\n")
+        // Already has the blank line, or text follows the table: nothing to add.
+        #expect(trailing("| A |\n| - |\n| 1 |\n\n") == nil)
+        #expect(trailing("| A |\n| - |\n| 1 |\n\nAfter") == nil)
+        #expect(trailing("Text only") == nil)
+    }
+
+    @Test @MainActor func downArrowInTheLastRowMovesBelowTheTable() {
+        let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.string = "| A | B |\n| --- | --- |\n| 1 | 2 |"
+        let header = (editor.string as NSString).range(of: "A").location
+        let last = (editor.string as NSString).range(of: "1").location
+        // Down from the header is not an exit: the arrow keeps its normal behavior.
+        #expect(editor.exitTableBelow(from: header) == false)
+        #expect(editor.string == "| A | B |\n| --- | --- |\n| 1 | 2 |")
+        // Down from the last row adds the paragraph under the table and moves the caret into it.
+        #expect(editor.exitTableBelow(from: last))
+        #expect(editor.string == "| A | B |\n| --- | --- |\n| 1 | 2 |\n\n")
+        #expect(editor.selectedRange().location == (editor.string as NSString).length)
+    }
+
     /// Widths shorter than a row (MARKIFY-2X) fall back to an even share of the column width instead of trapping.
     @Test @MainActor func rowColumnWidthFallsBackWhenWidthsAreShort() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
