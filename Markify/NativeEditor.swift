@@ -1816,6 +1816,35 @@ class MarkdownTextView: NSTextView {
         return (slot, NSRect(x: boundary - 1, y: frame.minY, width: 2, height: frame.height))
     }
 
+    /// The line start a table dragged to `point` (this view's coordinates) would land at, with the rule that marks it.
+    /// Nil over the table itself, and inside a block a table cannot go into: code, math, quotes, callouts, lists, HTML,
+    /// MDX and frontmatter.
+    func tableBlockGap(tableStart start: Int, point: NSPoint) -> (location: Int, rule: NSRect)? {
+        guard rendered, let table = model.tables.first(where: { $0.rows.first?.start == start }) else { return nil }
+        let source = string as NSString
+        let location = source.lineRange(for: NSRange(location: characterIndexForInsertion(at: point), length: 0)).location
+        guard MarkdownTable(rows: table.rows, current: 0).move(to: location, in: string) != nil else { return nil }
+        let closed = model.spans.contains { span in
+            switch span.kind {
+            case .codeBlock, .blockQuote, .callout, .listItem, .mathBlock, .htmlBlock, .frontmatter, .mdxBlock:
+                span.range.location < location && location < NSMaxRange(span.range)
+            default: false
+            }
+        }
+        guard !closed else { return nil }
+        // At the end of the text the rule goes under the last line.
+        let y = location < source.length ? textRect(NSRange(location: location, length: 1)).minY : textRect(NSRange(location: source.length - 1, length: 1)).maxY
+        return (location, NSRect(x: 0, y: y - 1, width: columnWidth, height: 2))
+    }
+
+    /// Moves the whole table starting at `start` so it starts at `location`, a line start outside the table.
+    @discardableResult
+    func moveTable(tableStart start: Int, to location: Int) -> Bool {
+        guard let table = model.tables.first(where: { $0.rows.first?.start == start }),
+              let moved = MarkdownTable(rows: table.rows, current: 0).move(to: location, in: string) else { return false }
+        return applyTable(moved.change, actionName: String(localized: "Move Table"), tableStart: moved.start, anchored: false)
+    }
+
     /// Moves the column at `index` into the gap before `slot` of the table starting at `start`.
     @discardableResult
     func moveTableColumn(tableStart start: Int, from index: Int, to slot: Int) -> Bool {
@@ -3664,6 +3693,10 @@ final class TableRowView: NSView {
     /// The header's grip sits along its top edge above the hovered column and drags that column.
     private var dragColumn: Int?
     private var columnDrop: (slot: Int, rule: NSRect)?
+    /// The header's grip in its left margin drags the whole table.
+    private var dragTable = false
+    private var tableDrop: (location: Int, rule: NSRect)?
+    private var pointerInside = false
 
     private func column(atX x: CGFloat) -> Int? {
         var end: CGFloat = 0
@@ -3678,14 +3711,23 @@ final class TableRowView: NSView {
         addTrackingArea(area)
         tracking = area
     }
-    override func mouseEntered(with event: NSEvent) { onHover?(true) }
+    override func mouseEntered(with event: NSEvent) {
+        pointerInside = true
+        onHover?(true)
+    }
     override func mouseExited(with event: NSEvent) {
+        pointerInside = false
         hoveredColumn = nil
         needsDisplay = true
         onHover?(false)
     }
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+        if header, point.x < 12, point.y >= 10, let owner {
+            dragTable = true
+            owner.tableDragging = true
+            return
+        }
         if header, point.y < 10, let owner, let column = column(atX: point.x) {
             dragColumn = column
             owner.tableDragging = true
@@ -3696,6 +3738,11 @@ final class TableRowView: NSView {
         owner.tableDragging = true
     }
     override func mouseDragged(with event: NSEvent) {
+        if dragTable, let owner {
+            tableDrop = owner.tableBlockGap(tableStart: rowStart, point: owner.convert(event.locationInWindow, from: nil))
+            owner.showTableDropRule(tableDrop?.rule)
+            return
+        }
         if dragColumn != nil, let owner {
             columnDrop = owner.tableColumnGap(tableStart: rowStart, x: owner.convert(event.locationInWindow, from: nil).x)
             owner.showTableDropRule(columnDrop?.rule)
@@ -3706,6 +3753,14 @@ final class TableRowView: NSView {
         owner.showTableDropRule(drop.map { NSRect(x: frame.minX, y: $0.rule - 1, width: frame.width, height: 2) })
     }
     override func mouseUp(with event: NSEvent) {
+        if dragTable, let owner {
+            dragTable = false
+            owner.tableDragging = false
+            owner.showTableDropRule(nil)
+            if let tableDrop { owner.moveTable(tableStart: rowStart, to: tableDrop.location) }
+            tableDrop = nil
+            return
+        }
         if let column = dragColumn, let owner {
             dragColumn = nil
             owner.tableDragging = false
@@ -3822,8 +3877,8 @@ final class TableRowView: NSView {
                 NSBezierPath(ovalIn: NSRect(x: center + offset - 0.75, y: 3.5, width: 1.5, height: 1.5)).fill()
             }
         }
-        if canDragRow {
-            // Six dots: the grip that drags the row.
+        // Six dots in the left margin: the grip that drags a body row, or the whole table from its header.
+        if canDragRow || (header && pointerInside) {
             NSColor.secondaryLabelColor.setFill()
             for column in [4.0, 7.5] {
                 for row in [-4.0, 0, 4.0] {

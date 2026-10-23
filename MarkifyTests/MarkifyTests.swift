@@ -710,6 +710,21 @@ struct MarkifyTests {
         #expect(table.moveColumn(1, to: 2, in: text) == nil)
     }
 
+    @Test func tablesMoveToALineStartOutsideThemselves() throws {
+        let text = "Intro\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\nAfter\n"
+        let table = try #require(MarkdownTable.blocks(in: text).first)
+        let up = try #require(table.move(to: 0, in: text))
+        #expect(applied(up.change, to: text) == "| A | B |\n| --- | --- |\n| 1 | 2 |\n\nIntro\n\nAfter\n")
+        #expect(up.start == 0)
+        let down = try #require(table.move(to: (text as NSString).length, in: text))
+        #expect(applied(down.change, to: text) == "Intro\n\nAfter\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n")
+        #expect((applied(down.change, to: text)! as NSString).substring(from: down.start).hasPrefix("| A | B |"))
+        // Inside the table, its own start, or the line it already sits above is no move.
+        #expect(table.move(to: 9, in: text) == nil)
+        #expect(table.move(to: 7, in: text) == nil)
+        #expect(table.move(to: (text as NSString).range(of: "After").location, in: text) == nil)
+    }
+
     /// Widths shorter than a row (MARKIFY-2X) fall back to an even share of the column width instead of trapping.
     @Test @MainActor func rowColumnWidthFallsBackWhenWidthsAreShort() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
