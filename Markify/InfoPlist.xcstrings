@@ -116,6 +116,24 @@
             "state" : "translated",
             "value" : "Documento Markdown"
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown-asiakirja"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown-dokument"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown-dokument"
+          }
         }
       }
     },
@@ -149,6 +167,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Documento MDX"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MDX-asiakirja"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MDX-dokument"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MDX-dokument"
           }
         }
       }
