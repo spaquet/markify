@@ -1283,6 +1283,8 @@ class MarkdownTextView: NSTextView {
     private(set) var tablePresentations: [Int: TableCellPresentation] = [:]
     private var reusableTablePresentations: [TableCellPresentation] = []
     private var hoveredTableRow: Int?
+    /// True while a table row, column or table is dragged from its grip; hover and layout hold still meanwhile.
+    var tableDragging = false
     private var tableHoverWork: DispatchWorkItem?
     private var tableAnimation: Task<Void, Never>?
     private var tableAnimatedHeights: [Int: CGFloat] = [:]
@@ -1306,6 +1308,7 @@ class MarkdownTextView: NSTextView {
     }
 
     func hoverTableRow(_ start: Int?) {
+        guard !tableDragging else { return }
         tableHoverWork?.cancel()
         guard hoveredTableRow != start else { return }
         let work = DispatchWorkItem { [weak self] in
@@ -1725,13 +1728,19 @@ class MarkdownTextView: NSTextView {
     @discardableResult
     func editTable(_ edit: MarkdownTable.Edit, at location: Int? = nil) -> Bool {
         let location = location ?? tableLocation
-        guard let table = MarkdownTable.containing(model, location: location), let change = table.change(edit, in: string, at: location),
-              let storage = textStorage else { return false }
+        guard let table = MarkdownTable.containing(model, location: location), let change = table.change(edit, in: string, at: location) else { return false }
+        return applyTable(change, actionName: edit.title, tableStart: table.rows[0].start, anchored: true)
+    }
+
+    /// Applies a table change as one undoable edit and moves the caret to the cell it leaves it in. `tableStart` is where
+    /// the table begins once the change is applied. An anchored change keeps the table where it is on screen.
+    @discardableResult
+    func applyTable(_ change: MarkdownTable.Change, actionName: String, tableStart start: Int, anchored: Bool) -> Bool {
+        guard let storage = textStorage else { return false }
         // The table stays where it is on screen. Restyling after the edit re-estimates the layout above it, and taking focus
         // back from a cell, selecting the new cell and refocusing it scroll, often to the top of the document (as ticking
         // a task did, issue #8), so the page is anchored on the table's first line rather than on a scroll offset.
-        let start = table.rows[0].start
-        let clip = enclosingScrollView?.contentView
+        let clip = anchored ? enclosingScrollView?.contentView : nil
         let offset = clip.map { textRect(NSRange(location: start, length: 1)).minY - $0.bounds.minY }
         func keepPage() {
             guard let clip, let offset else { return }
@@ -1744,7 +1753,7 @@ class MarkdownTextView: NSTextView {
         guard shouldChangeText(in: change.range, replacementString: change.replacement) else { return false }
         storage.replaceCharacters(in: change.range, with: change.replacement)
         didChangeText()
-        undoManager?.setActionName(edit.title)
+        undoManager?.setActionName(actionName)
         if let rows = model.tables.first(where: { $0.rows.first?.start == start })?.rows,
            rows.indices.contains(change.row), rows[change.row].cells.indices.contains(change.column) {
             setSelectedRange(rows[change.row].cells[change.column])
@@ -1766,6 +1775,44 @@ class MarkdownTextView: NSTextView {
             }
         }
         return true
+    }
+
+    /// The rule that marks where a dragged table row, column or table will land.
+    private lazy var tableDropRule: NSView = {
+        let rule = NSView()
+        rule.wantsLayer = true
+        rule.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+        rule.isHidden = true
+        addSubview(rule)
+        return rule
+    }()
+
+    /// Shows the drop rule at `y` (this view's coordinates), or hides it when nil.
+    func showTableDropRule(at y: CGFloat?) {
+        guard let y else { tableDropRule.isHidden = true; return }
+        tableDropRule.frame = NSRect(x: 0, y: y - 1, width: columnWidth, height: 2)
+        tableDropRule.isHidden = false
+    }
+
+    /// The gap a table row dragged to `y` (this view's coordinates) lands in: its index in the table's rows, and the y
+    /// of the rule that marks it. Nil when the row is not in a rendered table with body rows.
+    func tableRowGap(rowStart: Int, y: CGFloat) -> (slot: Int, rule: CGFloat)? {
+        guard rendered, let table = MarkdownTable.containing(model, location: rowStart), table.rows.count > 2 else { return nil }
+        func frame(_ row: MarkdownTable.Row) -> NSRect {
+            tableRowIndices[row.start].flatMap { tableOverlays[$0]?.frame } ?? textRect(NSRange(location: row.start, length: 1))
+        }
+        for slot in 2..<table.rows.count where y < frame(table.rows[slot]).midY {
+            return (slot, frame(table.rows[slot]).minY)
+        }
+        return (table.rows.count, frame(table.rows[table.rows.count - 1]).maxY)
+    }
+
+    /// Moves the body row starting at `rowStart` into the gap before `slot` (an index into its table's rows).
+    @discardableResult
+    func moveTableRow(rowStart: Int, to slot: Int) -> Bool {
+        guard let table = MarkdownTable.containing(model, location: rowStart), let index = table.rows.firstIndex(where: { $0.start == rowStart }),
+              let change = table.moveRow(index, to: slot, in: string) else { return false }
+        return applyTable(change, actionName: String(localized: "Move Row"), tableStart: table.rows[0].start, anchored: true)
     }
 
     private struct TableCommand {
@@ -3580,6 +3627,10 @@ final class TableRowView: NSView {
     var last = false
     var onHover: ((Bool) -> Void)?
     private var tracking: NSTrackingArea?
+    /// A body row's grip sits in the left margin; it is shown while the row is hovered.
+    private var canDragRow: Bool { expanded && !header }
+    private var dragging = false
+    private var drop: (slot: Int, rule: CGFloat)?
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -3594,6 +3645,24 @@ final class TableRowView: NSView {
         hoveredColumn = nil
         needsDisplay = true
         onHover?(false)
+    }
+    override func mouseDown(with event: NSEvent) {
+        guard canDragRow, convert(event.locationInWindow, from: nil).x < 12, let owner else { return super.mouseDown(with: event) }
+        dragging = true
+        owner.tableDragging = true
+    }
+    override func mouseDragged(with event: NSEvent) {
+        guard dragging, let owner else { return super.mouseDragged(with: event) }
+        drop = owner.tableRowGap(rowStart: rowStart, y: owner.convert(event.locationInWindow, from: nil).y)
+        owner.showTableDropRule(at: drop?.rule)
+    }
+    override func mouseUp(with event: NSEvent) {
+        guard dragging, let owner else { return super.mouseUp(with: event) }
+        dragging = false
+        owner.tableDragging = false
+        owner.showTableDropRule(at: nil)
+        if let drop { owner.moveTableRow(rowStart: rowStart, to: drop.slot) }
+        drop = nil
     }
     override func mouseMoved(with event: NSEvent) {
         let x = convert(event.locationInWindow, from: nil).x
@@ -3687,6 +3756,15 @@ final class TableRowView: NSView {
         if expanded {
             NSColor.controlAccentColor.setFill()
             NSBezierPath(roundedRect: NSRect(x: 0, y: 6, width: 3, height: bounds.height - 12), xRadius: 1.5, yRadius: 1.5).fill()
+        }
+        if canDragRow {
+            // Six dots: the grip that drags the row.
+            NSColor.secondaryLabelColor.setFill()
+            for column in [4.0, 7.5] {
+                for row in [-4.0, 0, 4.0] {
+                    NSBezierPath(ovalIn: NSRect(x: column, y: bounds.midY + row - 0.75, width: 1.5, height: 1.5)).fill()
+                }
+            }
         }
     }
 }
@@ -3970,9 +4048,7 @@ struct MarkdownTable {
     /// the header promotes the first body row. The delimiter row acts as the header.
     func change(_ edit: Edit, in source: String, at location: Int) -> Change? {
         let text = source as NSString
-        let start = rows[0].start, end = rows[rows.count - 1].end
-        let newline = rows.count > 1 ? text.substring(with: NSRange(location: rows[0].end, length: rows[1].start - rows[0].end)) : "\n"
-        var lines = rows.map { Line(text.substring(with: NSRange(location: $0.start, length: $0.end - $0.start)) as NSString) }
+        var lines = allLines(in: source)
         let columns = rows[0].cells.count
         let at = current == 1 ? 0 : current
         let column = rows[current].cells.firstIndex { location <= NSMaxRange($0) } ?? max(rows[current].cells.count - 1, 0)
@@ -4015,17 +4091,84 @@ struct MarkdownTable {
             for row in lines.indices where column < lines[row].cells.count { lines[row].cells.remove(at: column) }
             target.column = min(column, columns - 2)
         }
-        // Replace only what changed, so the rest of the table keeps its place in the undo history.
-        let old = text.substring(with: NSRange(location: start, length: end - start)) as NSString
-        let new = lines.map(\.text).joined(separator: newline) as NSString
+        return replacing(lines, row: target.row, column: target.column, in: source)
+    }
+
+    /// The change that moves body row `index` (an index into `rows`, at least 2) into the gap before `slot` (an index
+    /// into `rows`). The caret goes to the moved row's first cell. Nil when the row would not move.
+    func moveRow(_ index: Int, to slot: Int, in source: String) -> Change? {
+        guard index >= 2, index < rows.count, slot >= 2, slot <= rows.count, slot != index, slot != index + 1 else { return nil }
+        var lines = allLines(in: source)
+        let target = slot > index ? slot - 1 : slot
+        lines.insert(lines.remove(at: index), at: target)
+        return replacing(lines, row: target, column: 0, in: source)
+    }
+
+    /// The change that moves column `index` into the gap before `slot`, both counted from the first column. Every row
+    /// moves with it, so each column keeps its header, cells and alignment. Nil when the column would not move.
+    func moveColumn(_ index: Int, to slot: Int, in source: String) -> Change? {
+        let columns = rows[0].cells.count
+        guard index >= 0, index < columns, slot >= 0, slot <= columns, slot != index, slot != index + 1 else { return nil }
+        let target = slot > index ? slot - 1 : slot
+        let lines = allLines(in: source).map { line -> Line in
+            var line = line
+            while line.cells.count < columns { line.cells.append("  ") }
+            line.cells.insert(line.cells.remove(at: index), at: target)
+            return line
+        }
+        return replacing(lines, row: current, column: target, in: source)
+    }
+
+    /// The change that moves the whole table so it starts at `location`, a line start outside the table, and ends its
+    /// new place with a blank line. The table's blank lines below it go with it. Nil when `location` is inside the table
+    /// or the blank lines after it, or the table is already there. `start` is where the table begins after the change.
+    func move(to location: Int, in source: String) -> (change: Change, start: Int)? {
+        let text = source as NSString
+        let start = rows[0].start, end = rows[rows.count - 1].end
+        var removedEnd = end
+        while removedEnd < text.length, text.character(at: removedEnd) == 10 { removedEnd += 1 }
+        guard location == 0 || text.character(at: location - 1) == 10, location < start || location >= removedEnd,
+              location != start, location != removedEnd else { return nil }
+        let block = text.substring(with: NSRange(location: start, length: end - start))
+        if location < start {
+            // A blank line separates the table from the text above it, unless one is already there.
+            let lead = location < 2 || text.character(at: location - 2) == 10 ? "" : "\n"
+            let replacement = lead + block + "\n\n" + text.substring(with: NSRange(location: location, length: start - location))
+            return (Change(range: NSRange(location: location, length: removedEnd - location), replacement: replacement, row: 0, column: 0),
+                    location + lead.utf16.count)
+        }
+        let before = text.substring(with: NSRange(location: removedEnd, length: location - removedEnd))
+        let lead = before.hasSuffix("\n\n") ? "" : "\n"
+        let replacement = before + lead + block + "\n\n"
+        return (Change(range: NSRange(location: start, length: location - start), replacement: replacement, row: 0, column: 0),
+                start + before.utf16.count + lead.utf16.count)
+    }
+
+    private func allLines(in source: String) -> [Line] {
+        let text = source as NSString
+        return rows.map { Line(text.substring(with: NSRange(location: $0.start, length: $0.end - $0.start)) as NSString) }
+    }
+
+    /// The smallest source change that turns this table's rows into `lines`, with the caret target.
+    private func replacing(_ lines: [Line], row: Int, column: Int, in source: String) -> Change {
+        let text = source as NSString
+        let start = rows[0].start, end = rows[rows.count - 1].end
+        let newline = rows.count > 1 ? text.substring(with: NSRange(location: rows[0].end, length: rows[1].start - rows[0].end)) : "\n"
+        let change = Self.minimal(replacing: NSRange(location: start, length: end - start), in: text, with: lines.map(\.text).joined(separator: newline))
+        return Change(range: change.range, replacement: change.replacement, row: row, column: column)
+    }
+
+    /// Replaces only what differs between `range` and `new`, so the rest keeps its place in the undo history.
+    static func minimal(replacing range: NSRange, in text: NSString, with new: String) -> (range: NSRange, replacement: String) {
+        let old = text.substring(with: range) as NSString
+        let new = new as NSString
         var prefix = 0
         while prefix < old.length, prefix < new.length, old.character(at: prefix) == new.character(at: prefix) { prefix += 1 }
         var suffix = 0
         while suffix < old.length - prefix, suffix < new.length - prefix,
               old.character(at: old.length - 1 - suffix) == new.character(at: new.length - 1 - suffix) { suffix += 1 }
-        return Change(range: NSRange(location: start + prefix, length: old.length - prefix - suffix),
-                      replacement: new.substring(with: NSRange(location: prefix, length: new.length - prefix - suffix)),
-                      row: target.row, column: target.column)
+        return (NSRange(location: range.location + prefix, length: old.length - prefix - suffix),
+                new.substring(with: NSRange(location: prefix, length: new.length - prefix - suffix)))
     }
 }
 

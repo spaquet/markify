@@ -682,6 +682,34 @@ struct MarkifyTests {
         #expect((editor.string as NSString).substring(with: cell) == "Alpha")
     }
 
+    /// Applies a table change from `MarkdownTable` to `source`.
+    private func applied(_ change: MarkdownTable.Change?, to source: String) -> String? {
+        change.map { (source as NSString).replacingCharacters(in: $0.range, with: $0.replacement) }
+    }
+
+    @Test func tableRowsMoveWithinTheBody() throws {
+        let text = "| A | B |\n| --- | --- |\n| 1 | 2 |\n| 3 | 4 |\n| 5 | 6 |"
+        let table = try #require(MarkdownTable.blocks(in: text).first)
+        // Rows: header 0, delimiter 1, body 2...4. A slot is the gap before that row.
+        #expect(applied(table.moveRow(2, to: 5, in: text), to: text) == "| A | B |\n| --- | --- |\n| 3 | 4 |\n| 5 | 6 |\n| 1 | 2 |")
+        #expect(applied(table.moveRow(4, to: 2, in: text), to: text) == "| A | B |\n| --- | --- |\n| 5 | 6 |\n| 1 | 2 |\n| 3 | 4 |")
+        #expect(applied(table.moveRow(2, to: 4, in: text), to: text) == "| A | B |\n| --- | --- |\n| 3 | 4 |\n| 1 | 2 |\n| 5 | 6 |")
+        // A gap next to the row itself is no move; the header and delimiter never move.
+        #expect(table.moveRow(2, to: 2, in: text) == nil)
+        #expect(table.moveRow(2, to: 3, in: text) == nil)
+        #expect(table.moveRow(0, to: 2, in: text) == nil)
+        #expect(table.moveRow(1, to: 2, in: text) == nil)
+    }
+
+    @Test func tableColumnsMoveWithTheirAlignment() throws {
+        let text = "| A | B | C |\n| :-- | --- | ---: |\n| 1 | 2 | 3 |"
+        let table = try #require(MarkdownTable.blocks(in: text).first)
+        #expect(applied(table.moveColumn(0, to: 2, in: text), to: text) == "| B | A | C |\n| --- | :-- | ---: |\n| 2 | 1 | 3 |")
+        #expect(applied(table.moveColumn(2, to: 0, in: text), to: text) == "| C | A | B |\n| ---: | :-- | --- |\n| 3 | 1 | 2 |")
+        #expect(table.moveColumn(1, to: 1, in: text) == nil)
+        #expect(table.moveColumn(1, to: 2, in: text) == nil)
+    }
+
     /// Widths shorter than a row (MARKIFY-2X) fall back to an even share of the column width instead of trapping.
     @Test @MainActor func rowColumnWidthFallsBackWhenWidthsAreShort() {
         let editor = MarkdownTextView(usingTextLayoutManager: true)
