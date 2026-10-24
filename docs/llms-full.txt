@@ -1040,7 +1040,7 @@ Markify is built on the work of others. Thank you to everyone behind these proje
 | [swift-cmark](https://github.com/swiftlang/swift-cmark) (cmark-gfm) | CommonMark and GFM parser | John MacFarlane, GitHub, Apple and contributors | BSD 2-Clause and others |
 | [SwaTex](https://github.com/PhraseHQ/SwaTex) | Typesetting math | Phrase and SwaTex contributors | MIT |
 | [KaTeX fonts](https://github.com/KaTeX/katex-fonts) | Math typefaces, bundled with SwaTex | The KaTeX authors | SIL Open Font License 1.1 |
-| [Mermaid](https://github.com/mermaid-js/mermaid) 12 | Drawing diagrams | Knut Sveidqvist and contributors | MIT, with bundled dependencies under their own licenses |
+| [Ondine](https://github.com/wevm/ondine) | Compiling Mermaid diagrams to SVG | wevm and contributors | MIT |
 | [Sparkle](https://github.com/sparkle-project/Sparkle) | Software updates | Andy Matuschak and the Sparkle Project | MIT, with components under BSD and other licenses |
 | [Sentry Cocoa SDK](https://github.com/getsentry/sentry-cocoa) | Crash and performance reports | Functional Software, Inc. (Sentry) and contributors | MIT |
 | [Yams](https://github.com/jpsim/Yams) | Reading YAML frontmatter | JP Simard and contributors | MIT |

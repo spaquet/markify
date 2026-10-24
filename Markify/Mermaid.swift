@@ -149,7 +149,7 @@ import WebKit
 
     /// The diagram as SVG markup in the light theme, for export; nil when Ondine cannot compile it.
     func svg(for source: String) async -> String? {
-        guard source.utf8.count <= 64_000, let svg = try? OndineMermaid.compile(source).get(), svg.utf8.count <= 1_000_000 else { return nil }
+        guard source.utf8.count <= 64_000, case .success(let svg) = await OndineMermaid.compileInBackground(source), svg.utf8.count <= 1_000_000 else { return nil }
         return svg
     }
 
@@ -223,18 +223,24 @@ import WebKit
 
     private func render(_ job: (key: String, source: String, dark: Bool)) {
         let token = generation
-        let svg: String
-        switch OndineMermaid.compile(job.source) {
-        case .success(let compiled):
-            svg = compiled
-        case .failure(let error):
-            // Ondine's message is the same every time, so the failure is kept on disk for this source and theme.
-            persist(.error(error.message), for: job.key)
-            finish(job.key, .failed(error.message))
-            currentRaster = nil
-            completed()
-            return
+        // Ondine compiles on a background thread; the page is only touched once the SVG is ready.
+        Task {
+            let compiled = await OndineMermaid.compileInBackground(job.source)
+            guard self.generation == token else { return }
+            switch compiled {
+            case .success(let svg):
+                self.draw(job, svg: svg, token: token)
+            case .failure(let error):
+                // Ondine's message is the same every time, so the failure is kept on disk for this source and theme.
+                self.persist(.error(error.message), for: job.key)
+                self.finish(job.key, .failed(error.message))
+                self.currentRaster = nil
+                self.completed()
+            }
         }
+    }
+
+    private func draw(_ job: (key: String, source: String, dark: Bool), svg: String, token: UUID) {
         // Diagrams that fill their container (gantt) otherwise take the previous diagram's width.
         webView?.setFrameSize(NSSize(width: 800, height: 600))
         window?.setContentSize(NSSize(width: 800, height: 600))
@@ -378,6 +384,11 @@ import WebKit
 enum OndineMermaid {
     static let version = "0b589ec"
 
+    /// Compiles off the main thread: a large diagram takes milliseconds, and the window should not wait for it.
+    static func compileInBackground(_ source: String) async -> Result<String, OndineError> {
+        await Task.detached(priority: .userInitiated) { compile(source) }.value
+    }
+
     static func compile(_ source: String) -> Result<String, OndineError> {
         var svg: UnsafeMutablePointer<CChar>?
         var error: UnsafeMutablePointer<CChar>?
@@ -392,7 +403,7 @@ enum OndineMermaid {
     }
 }
 
-struct OndineError: LocalizedError {
+struct OndineError: LocalizedError, Sendable {
     let message: String
     var errorDescription: String? { message }
 }

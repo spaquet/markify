@@ -19,7 +19,7 @@ pub unsafe extern "C" fn ondine_render(
             true
         }
         Err(failure) => {
-            unsafe { *error = into_c_string(format!("{failure:?}")) };
+            unsafe { *error = into_c_string(failure.message) };
             false
         }
     }

@@ -45,7 +45,7 @@ final class DiagramDiskCache: @unchecked Sendable {
         queue.async { self.prune() }
     }
 
-    /// The file name for a diagram: a change to its source, theme, the bundled Mermaid or `renderVersion` gives a new one.
+    /// The file name for a diagram: a change to its source, theme, the renderer version or `renderVersion` gives a new one.
     static func digest(of source: String, dark: Bool, rendererVersion: String) -> String {
         Data([source, dark ? "dark" : "light", rendererVersion, String(renderVersion)].joined(separator: "\0").utf8).sha256Hex
     }

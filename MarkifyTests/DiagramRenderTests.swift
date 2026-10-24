@@ -108,6 +108,17 @@ import Testing
         }
     }
 
+    /// Ondine's message is shown to the writer, so it must not carry Rust's debug format.
+    @Test func ondineErrorsAreMessagesNotDebugOutput() async throws {
+        guard case .failure(let error) = await OndineMermaid.compileInBackground("flowchart LR\n A -->") else {
+            Issue.record("invalid source compiled")
+            return
+        }
+        #expect(!error.message.isEmpty)
+        #expect(!error.message.contains("Error {"))
+        #expect(!error.message.contains("snippet:"))
+    }
+
     @Test func exportSVGComesFromOndine() async {
         let svg = await MermaidRenderer(disk: nil).svg(for: "flowchart LR\n A[Write] --> B[Render]")
         #expect(svg?.contains("ondine-flowchart") == true)
