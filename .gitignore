@@ -81,3 +81,6 @@ marketing/
 # Sentry build settings are tracked; the local DSN is not (see Config/Sentry.xcconfig)
 !Config/Sentry.xcconfig
 Config/Sentry.local.xcconfig
+
+# Claude Code per-user settings; shared settings belong in .claude/settings.json
+.claude/settings.local.json
