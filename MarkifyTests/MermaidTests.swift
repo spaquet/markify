@@ -4,12 +4,9 @@ import Testing
 @testable import Markify
 
 @MainActor struct MermaidTests {
-    @Test func engineRecoverySettlesExportsAndCanRenderAgain() async {
+    @Test func exportsDoNotWaitForTheWebView() async {
         let renderer = MermaidRenderer()
-        let pending = Task { await renderer.svg(for: "graph TD\n A --> B") }
-        await Task.yield()
         renderer.recover("Injected engine failure")
-        #expect(await pending.value == nil)
         let svg = await renderer.svg(for: "graph TD\n A --> C")
         #expect(svg?.contains("<svg") == true)
         renderer.recover("Test complete")
@@ -244,8 +241,10 @@ import Testing
             let pdf = try #require(image.representations.first as? NSPDFImageRep)
             #expect(image.size.width * image.size.height > 524_288, "\(image.size)")
             #expect(MermaidRenderer.cost(of: image) < 1_000_000, "\(MermaidRenderer.cost(of: image)) bytes")
-            // Mermaid draws flowchart labels in <foreignObject>; they must survive into the PDF.
-            let text = try #require(PDFDocument(data: pdf.pdfRepresentation)?.string)
+            // Labels must survive into the PDF as text.
+            // Ondine wraps long labels, so the check compares words, not line breaks.
+            let raw = try #require(PDFDocument(data: pdf.pdfRepresentation)?.string)
+            let text = raw.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: " ")
             #expect(text.contains("Node 29 with a") && text.contains("label 29"))
             let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 1216, pixelsHigh: 1216, bitsPerSample: 8, samplesPerPixel: 4,
                                                        hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))

@@ -45,7 +45,7 @@ final class DiagramDiskCache: @unchecked Sendable {
         queue.async { self.prune() }
     }
 
-    /// The file name for a diagram: a change to its source, theme, the bundled Mermaid or `renderVersion` gives a new one.
+    /// The file name for a diagram: a change to its source, theme, the renderer version or `renderVersion` gives a new one.
     static func digest(of source: String, dark: Bool, rendererVersion: String) -> String {
         Data([source, dark ? "dark" : "light", rendererVersion, String(renderVersion)].joined(separator: "\0").utf8).sha256Hex
     }
@@ -104,13 +104,11 @@ final class DiagramDiskCache: @unchecked Sendable {
         return entry?.1
     }
 
-    /// The bundled Mermaid and its page, hashed once: an update renders every diagram again.
+    /// The Ondine compiler and the page that draws its SVG, hashed once: an update renders every diagram again.
     private func rendererVersion() -> String {
         if let cachedRendererVersion { return cachedRendererVersion }
-        var data = Data()
-        for (name, ext) in [("mermaid.min", "js"), ("mermaid", "html")] {
-            if let url = bundle.url(forResource: name, withExtension: ext), let contents = try? Data(contentsOf: url) { data.append(contents) }
-        }
+        var data = Data(OndineMermaid.version.utf8)
+        if let url = bundle.url(forResource: "diagram", withExtension: "html"), let contents = try? Data(contentsOf: url) { data.append(contents) }
         let version = data.sha256Hex
         cachedRendererVersion = version
         return version

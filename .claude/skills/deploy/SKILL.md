@@ -129,7 +129,7 @@ If the run fails, show the failing step's log (`gh run view <id> --log-failed | 
 scripts/check-release.sh v<version> <build>
 ```
 
-It checks the six assets, that the tag is Latest, that the live appcast names this version and build, and that the update archive verifies against `SUPublicEDKey`, has a valid code signature, holds the right build, and bundles the `markify` CLI in `Contents/Helpers`. Don't continue until it passes.
+It checks the ten assets, that the tag is Latest, that each live appcast (`appcast.xml` universal, `appcast-arm64.xml`, `appcast-intel.xml`) names this version and build, and that each update archive verifies against `SUPublicEDKey`, has a valid code signature, holds the right build and architectures, and bundles the `markify` CLI in `Contents/Helpers`. Don't continue until it passes.
 
 Then confirm the dSYMs reached Sentry: each of the three build jobs (`as`, `intel`, `update`) must have run its upload step.
 

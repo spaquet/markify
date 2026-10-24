@@ -1,0 +1,17 @@
+[package]
+name = "ondine_ffi"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+# Pinned to one commit: Ondine is not published to crates.io.
+compiler = { git = "https://github.com/wevm/ondine", rev = "0b589ec34481856b4153526f10a0a35558a201a8" }
+
+[workspace]
+
+[profile.release]
+panic = "abort"

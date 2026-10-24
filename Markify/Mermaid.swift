@@ -18,9 +18,6 @@ import WebKit
     private var states: [String: State] = [:]
     private var waiting: [String: [ObjectIdentifier: () -> Void]] = [:]
     private var queue: [(key: String, source: String, dark: Bool)] = []
-    /// Exports waiting for a diagram's SVG; they share the web view, so one render runs at a time.
-    private var svgJobs: [(source: String, id: String, done: (String?) -> Void)] = []
-    private var svgCount = 0
     private var busy = false
     private var ready = false
     private var webView: WKWebView?
@@ -28,14 +25,13 @@ import WebKit
     private var generation = UUID()
     private var deadline: DispatchWorkItem?
     private var currentRaster: String?
-    private var currentSVG: (source: String, id: String, done: (String?) -> Void)?
     private var costs: [String: Int] = [:]
     /// When each diagram was last drawn, on a counter; the least recently drawn are evicted first.
     private var lastUsed: [String: Int] = [:]
     private var clock = 0
     /// The bytes rendered diagrams may hold together, shared by every window.
     var memoryBudget = 32_000_000
-    var pendingCount: Int { queue.count + svgJobs.count + loading.count + (busy ? 1 : 0) }
+    var pendingCount: Int { queue.count + loading.count + (busy ? 1 : 0) }
     /// Rendered diagrams on disk, read before the web view renders one.
     private let disk: DiagramDiskCache?
     /// Diagrams being read from disk.
@@ -151,24 +147,10 @@ import WebKit
         disk.store(entry, for: digest)
     }
 
-    /// The diagram as SVG markup in the light theme, for export; nil when Mermaid cannot render it.
+    /// The diagram as SVG markup in the light theme, for export; nil when Ondine cannot compile it.
     func svg(for source: String) async -> String? {
-        guard !Task.isCancelled, source.utf8.count <= 64_000, pendingCount < 32 else { return nil }
-        svgCount += 1
-        let id = "markify-diagram-\(svgCount)"
-        return await withTaskCancellationHandler {
-            await withCheckedContinuation { continuation in
-                svgJobs.append((source, id, { continuation.resume(returning: $0) }))
-                start()
-            }
-        } onCancel: {
-            Task { @MainActor in self.cancelSVG(id) }
-        }
-    }
-
-    private func cancelSVG(_ id: String) {
-        if let index = svgJobs.firstIndex(where: { $0.id == id }) { svgJobs.remove(at: index).done(nil) }
-        if currentSVG?.id == id { currentSVG?.done(nil); currentSVG = nil }
+        guard source.utf8.count <= 64_000, case .success(let svg) = await OndineMermaid.compileInBackground(source), svg.utf8.count <= 1_000_000 else { return nil }
+        return svg
     }
 
     func release(owner: AnyObject, keeping sources: Set<String> = []) {
@@ -206,13 +188,11 @@ import WebKit
         webView = nil; window = nil; ready = false; busy = false
         if let key = currentRaster { finish(key, .failed(message)) }
         currentRaster = nil
-        currentSVG?.done(nil)
-        currentSVG = nil
         finishAll(.failed(message))
     }
 
     private func start() {
-        guard let page = Bundle.main.url(forResource: "mermaid", withExtension: "html") else {
+        guard let page = Bundle.main.url(forResource: "diagram", withExtension: "html") else {
             finishAll(.failed(String(localized: "Mermaid is missing from this build.")))
             return
         }
@@ -232,14 +212,6 @@ import WebKit
             return
         }
         guard ready, !busy else { return }
-        if !svgJobs.isEmpty {
-            busy = true
-            let job = svgJobs.removeFirst()
-            currentSVG = job
-            armDeadline()
-            renderSVG(job)
-            return
-        }
         guard !queue.isEmpty else { return }
         busy = true
         let next = queue.removeFirst()
@@ -249,30 +221,33 @@ import WebKit
         render(next)
     }
 
-    private func renderSVG(_ job: (source: String, id: String, done: (String?) -> Void)) {
-        let token = generation
-        webView?.callAsyncJavaScript("""
-            mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default' });
-            const { svg } = await mermaid.render(id, source);
-            return svg;
-            """, arguments: ["source": job.source, "id": job.id], in: nil, in: .page) { [weak self] result in
-                guard let self, self.generation == token else { return }
-                let svg = (try? result.get()) as? String
-                let current = self.currentSVG
-                self.currentSVG = nil
-                current?.done(svg.flatMap { $0.utf8.count <= 1_000_000 ? $0 : nil })
-                self.completed()
-            }
-    }
-
     private func render(_ job: (key: String, source: String, dark: Bool)) {
         let token = generation
+        // Ondine compiles on a background thread; the page is only touched once the SVG is ready.
+        Task {
+            let compiled = await OndineMermaid.compileInBackground(job.source)
+            guard self.generation == token else { return }
+            switch compiled {
+            case .success(let svg):
+                self.draw(job, svg: svg, token: token)
+            case .failure(let error):
+                // Ondine's message is the same every time, so the failure is kept on disk for this source and theme.
+                self.persist(.error(error.message), for: job.key)
+                self.finish(job.key, .failed(error.message))
+                self.currentRaster = nil
+                self.completed()
+            }
+        }
+    }
+
+    private func draw(_ job: (key: String, source: String, dark: Bool), svg: String, token: UUID) {
         // Diagrams that fill their container (gantt) otherwise take the previous diagram's width.
         webView?.setFrameSize(NSSize(width: 800, height: 600))
         window?.setContentSize(NSSize(width: 800, height: 600))
         webView?.callAsyncJavaScript("""
-            mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'default' });
-            const { svg } = await mermaid.render('diagram' + Date.now(), source);
+            // Ondine's SVG reads its colours from these custom properties, which the page resolves.
+            document.documentElement.style.setProperty('--ondine-bg', dark ? '#1e1e1e' : '#ffffff');
+            document.documentElement.style.setProperty('--ondine-fg', dark ? '#e6e6e6' : '#000000');
             const box = document.getElementById('diagram');
             box.innerHTML = svg;
             // Responsive SVGs otherwise inherit the previous diagram's width.
@@ -285,7 +260,7 @@ import WebKit
             }
             const rect = box.getBoundingClientRect();
             return [rect.width, rect.height];
-            """, arguments: ["source": job.source, "dark": job.dark], in: nil, in: .page) { [weak self] result in
+            """, arguments: ["svg": svg, "dark": job.dark], in: nil, in: .page) { [weak self] result in
                 guard let self, self.generation == token else { return }
                 do {
                     let dimensions = try result.get() as? [Double] ?? []
@@ -315,11 +290,7 @@ import WebKit
                         self.completed()
                     }
                 } catch {
-                    // Mermaid's own message is the same every time, so it is kept; other failures are retried.
-                    let mermaid = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String
-                    let message = String((mermaid ?? error.localizedDescription).prefix(2000)).replacingOccurrences(of: "Error: ", with: "")
-                    if mermaid != nil { self.persist(.error(message), for: job.key) }
-                    self.finish(job.key, .failed(message))
+                    self.finish(job.key, .failed(error.localizedDescription))
                     self.currentRaster = nil
                     self.completed()
                 }
@@ -381,8 +352,6 @@ import WebKit
     private func finishAll(_ state: State) {
         for job in queue { finish(job.key, state) }
         queue.removeAll()
-        svgJobs.forEach { $0.done(nil) }
-        svgJobs.removeAll()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -408,4 +377,33 @@ import WebKit
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         navigationAction.request.url?.isFileURL == true && navigationAction.navigationType == .other ? .allow : .cancel
     }
+}
+
+/// Ondine compiles Mermaid source to SVG in Rust (`OndineFFI`). `version` names the pinned Ondine commit in that crate;
+/// it keys the disk cache, so bump it with the crate.
+enum OndineMermaid {
+    static let version = "0b589ec"
+
+    /// Compiles off the main thread: a large diagram takes milliseconds, and the window should not wait for it.
+    static func compileInBackground(_ source: String) async -> Result<String, OndineError> {
+        await Task.detached(priority: .userInitiated) { compile(source) }.value
+    }
+
+    static func compile(_ source: String) -> Result<String, OndineError> {
+        var svg: UnsafeMutablePointer<CChar>?
+        var error: UnsafeMutablePointer<CChar>?
+        let now = Date().timeIntervalSince1970 * 1000
+        guard ondine_render(source, now, &svg, &error), let svg else {
+            let message = error.map { String(cString: $0) } ?? "Ondine failed."
+            ondine_free(error)
+            return .failure(OndineError(message: message))
+        }
+        defer { ondine_free(svg) }
+        return .success(String(cString: svg))
+    }
+}
+
+struct OndineError: LocalizedError, Sendable {
+    let message: String
+    var errorDescription: String? { message }
 }

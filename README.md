@@ -165,7 +165,7 @@ See [AGENTS.md](AGENTS.md) for development notes.
 
 - [swift-markdown](https://github.com/swiftlang/swift-markdown) - Markdown parsing (cmark-gfm)
 - [SwaTex](https://github.com/PhraseHQ/SwaTex) - Math rendering
-- [Mermaid](https://github.com/mermaid-js/mermaid) 12.0.0 - Diagram rendering, bundled in `Markify/Resources/Mermaid` (MIT, see `mermaid-LICENSE.txt`)
+- [Ondine](https://github.com/wevm/ondine) (commit `0b589ec`, Mermaid 12.1 syntax) - Diagram compiler, built from `OndineFFI` (MIT, see the repository)
 
 ## License
 
