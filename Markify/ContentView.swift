@@ -2264,10 +2264,7 @@ private struct WindowConfiguration: NSViewRepresentable {
         DispatchQueue.main.async {
             view.watchDocument()
             guard let window = view.window else { return }
-            window.titlebarAppearsTransparent = true
-            window.titleVisibility = .hidden
-            window.title = ""
-            window.styleMask.insert(.fullSizeContentView)
+            Self.configureChrome(window)
             // Settings › On launch decides which documents reopen, not system window restoration.
             window.isRestorable = false
         }
@@ -2284,11 +2281,18 @@ private struct WindowConfiguration: NSViewRepresentable {
         (nsView as? DocumentWindowView)?.onSave = onSave
         DispatchQueue.main.async {
             (nsView as? DocumentWindowView)?.watchDocument()
-            nsView.window?.titleVisibility = .hidden
-            nsView.window?.titlebarAppearsTransparent = true
-            nsView.window?.title = ""
-            if nsView.window?.tab.title != tabTitle { nsView.window?.tab.title = tabTitle }
+            guard let window = nsView.window else { return }
+            Self.configureChrome(window)
+            if window.tab.title != tabTitle { window.tab.title = tabTitle }
         }
+    }
+    /// Hides the titlebar text and makes the content full size. Each property is assigned only when it differs:
+    /// every assignment runs an AppKit window transaction that waits on WindowServer (MARKIFY-32).
+    private static func configureChrome(_ window: NSWindow) {
+        if window.titlebarAppearsTransparent != true { window.titlebarAppearsTransparent = true }
+        if window.titleVisibility != .hidden { window.titleVisibility = .hidden }
+        if !window.title.isEmpty { window.title = "" }
+        if !window.styleMask.contains(.fullSizeContentView) { window.styleMask.insert(.fullSizeContentView) }
     }
 }
 
