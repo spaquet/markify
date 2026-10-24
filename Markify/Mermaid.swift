@@ -212,6 +212,7 @@ import WebKit
     }
 
     private func start() {
+        if OndineMermaid.isEnabled { renderWithOndine(); return }
         guard let page = Bundle.main.url(forResource: "mermaid", withExtension: "html") else {
             finishAll(.failed(String(localized: "Mermaid is missing from this build.")))
             return
@@ -326,6 +327,25 @@ import WebKit
             }
     }
 
+    /// Spike: Ondine renders synchronously, so the queue drains here without the web view.
+    private func renderWithOndine() {
+        for job in svgJobs { job.done(try? OndineMermaid.render(job.source, dark: false).get()) }
+        svgJobs.removeAll()
+        for job in queue {
+            switch OndineMermaid.render(job.source, dark: job.dark) {
+            case .success(let svg):
+                if let image = NSImage(data: Data(svg.utf8)) {
+                    finish(job.key, .rendered(image))
+                } else {
+                    finish(job.key, .failed("Ondine's SVG could not be read."))
+                }
+            case .failure(let error):
+                finish(job.key, .failed(error.localizedDescription))
+            }
+        }
+        queue.removeAll()
+    }
+
     private func completed() {
         deadline?.cancel()
         deadline = nil
@@ -408,4 +428,100 @@ import WebKit
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         navigationAction.request.url?.isFileURL == true && navigationAction.navigationType == .other ? .allow : .cancel
     }
+}
+
+/// On with `defaults write com.stephanepaquet.Markify ondineMermaid -bool YES`.
+enum OndineMermaid {
+    static var isEnabled: Bool { UserDefaults.standard.bool(forKey: "ondineMermaid") }
+
+    /// Ondine's SVG with its colour variables replaced by fixed values, since NSImage cannot resolve CSS variables.
+    static func render(_ source: String, dark: Bool) -> Result<String, Error> {
+        var svg: UnsafeMutablePointer<CChar>?
+        var error: UnsafeMutablePointer<CChar>?
+        let now = Date().timeIntervalSince1970 * 1000
+        guard ondine_render(source, now, &svg, &error), let svg else {
+            let message = error.map { String(cString: $0) } ?? "Ondine failed."
+            ondine_free(error)
+            return .failure(OndineError(message: message))
+        }
+        defer { ondine_free(svg) }
+        return .success(resolved(String(cString: svg), dark: dark))
+    }
+
+    /// The app's theme for Ondine's `--ondine-*` properties; every other property resolves from the SVG itself.
+    private static func themeOverrides(dark isDark: Bool) -> [String: String] {
+        [
+            "--ondine-bg": isDark ? "#1e1e1e" : "#ffffff",
+            "--ondine-fg": isDark ? "#e6e6e6" : "#000000",
+        ]
+    }
+
+    /// Replaces `var()` and `color-mix()` the way a CSS engine would, because NSImage does not resolve them.
+    /// A custom property takes the theme value, else its declaration on the root element, else its fallback.
+    static func resolved(_ svg: String, dark isDark: Bool) -> String {
+        var declared: [String: String] = [:]
+        if let style = svg.firstMatch(of: #/<svg[^>]*? style="([^"]*)"/#)?.1 {
+            for declaration in style.split(separator: ";") {
+                let parts = declaration.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+                if parts.count == 2, parts[0].hasPrefix("--") { declared[parts[0]] = parts[1] }
+            }
+        }
+        let overrides = themeOverrides(dark: isDark)
+        var text = svg
+        // Innermost functions first: a fallback that holds another `var()` or `color-mix()` resolves on a later pass.
+        for _ in 0..<20 {
+            let next = substituteVariables(in: text) { name, fallback in
+                overrides[name] ?? declared[name] ?? fallback ?? "none"
+            }
+            let mixed = mixColors(in: next)
+            if mixed == text { break }
+            text = mixed
+        }
+        return text
+    }
+
+    private static func substituteVariables(in text: String, lookup: (String, String?) -> String) -> String {
+        replacing(in: text, pattern: #"var\((--[\w-]+)(?:,([^()]*))?\)"#) { groups in
+            lookup(groups[1], groups.count > 2 && !groups[2].isEmpty ? groups[2].trimmingCharacters(in: .whitespaces) : nil)
+        }
+    }
+
+    private static func mixColors(in text: String) -> String {
+        replacing(in: text, pattern: #"color-mix\(in srgb,\s*([^,()]+?)\s+(\d+(?:\.\d+)?)%\s*,\s*([^,()]+?)\s*\)"#) { groups in
+            guard let first = rgb(groups[1]), let second = rgb(groups[3]), let percent = Double(groups[2]) else { return groups[1] }
+            let share = percent / 100
+            let channels = zip(first, second).map { Int(($0 * share + $1 * (1 - share)).rounded()) }
+            return String(format: "#%02x%02x%02x", channels[0], channels[1], channels[2])
+        }
+    }
+
+    private static func rgb(_ color: String) -> [Double]? {
+        var hex = color.trimmingCharacters(in: .whitespaces).dropFirst()
+        if hex.count == 3 { hex = Substring(hex.flatMap { [$0, $0] }) }
+        guard hex.count == 6, let value = Int(hex, radix: 16) else { return nil }
+        return [Double((value >> 16) & 0xff), Double((value >> 8) & 0xff), Double(value & 0xff)]
+    }
+
+    /// Replaces each match of `pattern`; `transform` receives the whole match and its groups.
+    private static func replacing(in text: String, pattern: String, with transform: ([String]) -> String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return text }
+        let source = text as NSString
+        var result = ""
+        var position = 0
+        for match in regex.matches(in: text, range: NSRange(location: 0, length: source.length)) {
+            result += source.substring(with: NSRange(location: position, length: match.range.location - position))
+            let groups = (0..<match.numberOfRanges).map { index -> String in
+                let range = match.range(at: index)
+                return range.location == NSNotFound ? "" : source.substring(with: range)
+            }
+            result += transform(groups)
+            position = match.range.location + match.range.length
+        }
+        return result + source.substring(from: position)
+    }
+}
+
+struct OndineError: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
 }
