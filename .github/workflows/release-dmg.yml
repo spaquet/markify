@@ -237,6 +237,9 @@ jobs:
       TAG: ${{ github.ref_name }}
 
     steps:
+      - name: Check out the scripts
+        uses: actions/checkout@v7
+
       - name: Download DMGs
         uses: actions/download-artifact@v8
         with:
@@ -253,9 +256,6 @@ jobs:
           else
             gh release create "$TAG" --draft --verify-tag --title "Markify ${TAG#v}" --generate-notes
           fi
-
-      - name: Check out the scripts
-        uses: actions/checkout@v7
 
       - name: Write the Sparkle appcasts
         run: |
