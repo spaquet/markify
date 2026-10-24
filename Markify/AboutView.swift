@@ -65,7 +65,7 @@ struct AboutView: View {
             .padding(.top, 24)
 
             VStack(spacing: 6) {
-                Text("Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Mermaid, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format.")
+                Text("Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Ondine, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                 Button("Acknowledgements & License") { HelpBook.open("legal") }

@@ -6290,54 +6290,54 @@
         }
       }
     },
-    "Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Mermaid, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format." : {
+    "Built with swift-markdown, cmark-gfm, SwaTex, KaTeX fonts, Ondine, Sparkle, Sentry and Yams. Reads Google Cloud's Open Knowledge Format." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erstellt mit swift-markdown, cmark-gfm, SwaTex, KaTeX-Schriften, Mermaid, Sparkle, Sentry und Yams. Liest das Open Knowledge Format von Google Cloud."
+            "value" : "Erstellt mit swift-markdown, cmark-gfm, SwaTex, KaTeX-Schriften, Ondine, Sparkle, Sentry und Yams. Liest das Open Knowledge Format von Google Cloud."
           }
         },
         "es-ES" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creado con swift-markdown, cmark-gfm, SwaTex, las fuentes de KaTeX, Mermaid, Sparkle, Sentry y Yams. Compatible con Open Knowledge Format de Google Cloud."
+            "value" : "Creado con swift-markdown, cmark-gfm, SwaTex, las fuentes de KaTeX, Ondine, Sparkle, Sentry y Yams. Compatible con Open Knowledge Format de Google Cloud."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conçu avec swift-markdown, cmark-gfm, SwaTex, les polices KaTeX, Mermaid, Sparkle, Sentry et Yams. Prend en charge le format Open Knowledge Format de Google Cloud."
+            "value" : "Conçu avec swift-markdown, cmark-gfm, SwaTex, les polices KaTeX, Ondine, Sparkle, Sentry et Yams. Prend en charge le format Open Knowledge Format de Google Cloud."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Realizzato con swift-markdown, cmark-gfm, SwaTex, i font KaTeX, Mermaid, Sparkle, Sentry e Yams. Supporta l’Open Knowledge Format di Google Cloud."
+            "value" : "Realizzato con swift-markdown, cmark-gfm, SwaTex, i font KaTeX, Ondine, Sparkle, Sentry e Yams. Supporta l’Open Knowledge Format di Google Cloud."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Criado com swift-markdown, cmark-gfm, SwaTex, tipos de letra KaTeX, Mermaid, Sparkle, Sentry e Yams. Lê o Open Knowledge Format da Google Cloud."
+            "value" : "Criado com swift-markdown, cmark-gfm, SwaTex, tipos de letra KaTeX, Ondine, Sparkle, Sentry e Yams. Lê o Open Knowledge Format da Google Cloud."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sisältää swift-markdown, cmark-gfm, SwaTex, KaTeX-fontit, Mermaid, Sparkle, Sentry ja Yams. Lukee Google Cloudin Open Knowledge Format -muotoa."
+            "value" : "Sisältää swift-markdown, cmark-gfm, SwaTex, KaTeX-fontit, Ondine, Sparkle, Sentry ja Yams. Lukee Google Cloudin Open Knowledge Format -muotoa."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bygget med swift-markdown, cmark-gfm, SwaTex, KaTeX-skrifter, Mermaid, Sparkle, Sentry og Yams. Leser Googles Open Knowledge Format."
+            "value" : "Bygget med swift-markdown, cmark-gfm, SwaTex, KaTeX-skrifter, Ondine, Sparkle, Sentry og Yams. Leser Googles Open Knowledge Format."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Byggd med swift-markdown, cmark-gfm, SwaTex, KaTeX-typsnitt, Mermaid, Sparkle, Sentry och Yams. Läser Google Clouds Open Knowledge Format."
+            "value" : "Byggd med swift-markdown, cmark-gfm, SwaTex, KaTeX-typsnitt, Ondine, Sparkle, Sentry och Yams. Läser Google Clouds Open Knowledge Format."
           }
         }
       }

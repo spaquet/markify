@@ -104,15 +104,11 @@ final class DiagramDiskCache: @unchecked Sendable {
         return entry?.1
     }
 
-    /// The bundled Mermaid and its page, hashed once: an update renders every diagram again.
+    /// The Ondine compiler and the page that draws its SVG, hashed once: an update renders every diagram again.
     private func rendererVersion() -> String {
-        // Spike: Ondine output must not reuse PDFs drawn by the bundled Mermaid.
-        if UserDefaults.standard.bool(forKey: "ondineMermaid") { return "ondine-0b589ec" }
         if let cachedRendererVersion { return cachedRendererVersion }
-        var data = Data()
-        for (name, ext) in [("mermaid.min", "js"), ("mermaid", "html")] {
-            if let url = bundle.url(forResource: name, withExtension: ext), let contents = try? Data(contentsOf: url) { data.append(contents) }
-        }
+        var data = Data(OndineMermaid.version.utf8)
+        if let url = bundle.url(forResource: "diagram", withExtension: "html"), let contents = try? Data(contentsOf: url) { data.append(contents) }
         let version = data.sha256Hex
         cachedRendererVersion = version
         return version

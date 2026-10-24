@@ -18,9 +18,6 @@ import WebKit
     private var states: [String: State] = [:]
     private var waiting: [String: [ObjectIdentifier: () -> Void]] = [:]
     private var queue: [(key: String, source: String, dark: Bool)] = []
-    /// Exports waiting for a diagram's SVG; they share the web view, so one render runs at a time.
-    private var svgJobs: [(source: String, id: String, done: (String?) -> Void)] = []
-    private var svgCount = 0
     private var busy = false
     private var ready = false
     private var webView: WKWebView?
@@ -28,14 +25,13 @@ import WebKit
     private var generation = UUID()
     private var deadline: DispatchWorkItem?
     private var currentRaster: String?
-    private var currentSVG: (source: String, id: String, done: (String?) -> Void)?
     private var costs: [String: Int] = [:]
     /// When each diagram was last drawn, on a counter; the least recently drawn are evicted first.
     private var lastUsed: [String: Int] = [:]
     private var clock = 0
     /// The bytes rendered diagrams may hold together, shared by every window.
     var memoryBudget = 32_000_000
-    var pendingCount: Int { queue.count + svgJobs.count + loading.count + (busy ? 1 : 0) }
+    var pendingCount: Int { queue.count + loading.count + (busy ? 1 : 0) }
     /// Rendered diagrams on disk, read before the web view renders one.
     private let disk: DiagramDiskCache?
     /// Diagrams being read from disk.
@@ -151,24 +147,10 @@ import WebKit
         disk.store(entry, for: digest)
     }
 
-    /// The diagram as SVG markup in the light theme, for export; nil when Mermaid cannot render it.
+    /// The diagram as SVG markup in the light theme, for export; nil when Ondine cannot compile it.
     func svg(for source: String) async -> String? {
-        guard !Task.isCancelled, source.utf8.count <= 64_000, pendingCount < 32 else { return nil }
-        svgCount += 1
-        let id = "markify-diagram-\(svgCount)"
-        return await withTaskCancellationHandler {
-            await withCheckedContinuation { continuation in
-                svgJobs.append((source, id, { continuation.resume(returning: $0) }))
-                start()
-            }
-        } onCancel: {
-            Task { @MainActor in self.cancelSVG(id) }
-        }
-    }
-
-    private func cancelSVG(_ id: String) {
-        if let index = svgJobs.firstIndex(where: { $0.id == id }) { svgJobs.remove(at: index).done(nil) }
-        if currentSVG?.id == id { currentSVG?.done(nil); currentSVG = nil }
+        guard source.utf8.count <= 64_000, let svg = try? OndineMermaid.compile(source).get(), svg.utf8.count <= 1_000_000 else { return nil }
+        return svg
     }
 
     func release(owner: AnyObject, keeping sources: Set<String> = []) {
@@ -206,14 +188,11 @@ import WebKit
         webView = nil; window = nil; ready = false; busy = false
         if let key = currentRaster { finish(key, .failed(message)) }
         currentRaster = nil
-        currentSVG?.done(nil)
-        currentSVG = nil
         finishAll(.failed(message))
     }
 
     private func start() {
-        if OndineMermaid.isEnabled { renderWithOndine(); return }
-        guard let page = Bundle.main.url(forResource: "mermaid", withExtension: "html") else {
+        guard let page = Bundle.main.url(forResource: "diagram", withExtension: "html") else {
             finishAll(.failed(String(localized: "Mermaid is missing from this build.")))
             return
         }
@@ -233,14 +212,6 @@ import WebKit
             return
         }
         guard ready, !busy else { return }
-        if !svgJobs.isEmpty {
-            busy = true
-            let job = svgJobs.removeFirst()
-            currentSVG = job
-            armDeadline()
-            renderSVG(job)
-            return
-        }
         guard !queue.isEmpty else { return }
         busy = true
         let next = queue.removeFirst()
@@ -250,30 +221,27 @@ import WebKit
         render(next)
     }
 
-    private func renderSVG(_ job: (source: String, id: String, done: (String?) -> Void)) {
-        let token = generation
-        webView?.callAsyncJavaScript("""
-            mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default' });
-            const { svg } = await mermaid.render(id, source);
-            return svg;
-            """, arguments: ["source": job.source, "id": job.id], in: nil, in: .page) { [weak self] result in
-                guard let self, self.generation == token else { return }
-                let svg = (try? result.get()) as? String
-                let current = self.currentSVG
-                self.currentSVG = nil
-                current?.done(svg.flatMap { $0.utf8.count <= 1_000_000 ? $0 : nil })
-                self.completed()
-            }
-    }
-
     private func render(_ job: (key: String, source: String, dark: Bool)) {
         let token = generation
+        let svg: String
+        switch OndineMermaid.compile(job.source) {
+        case .success(let compiled):
+            svg = compiled
+        case .failure(let error):
+            // Ondine's message is the same every time, so the failure is kept on disk for this source and theme.
+            persist(.error(error.message), for: job.key)
+            finish(job.key, .failed(error.message))
+            currentRaster = nil
+            completed()
+            return
+        }
         // Diagrams that fill their container (gantt) otherwise take the previous diagram's width.
         webView?.setFrameSize(NSSize(width: 800, height: 600))
         window?.setContentSize(NSSize(width: 800, height: 600))
         webView?.callAsyncJavaScript("""
-            mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'default' });
-            const { svg } = await mermaid.render('diagram' + Date.now(), source);
+            // Ondine's SVG reads its colours from these custom properties, which the page resolves.
+            document.documentElement.style.setProperty('--ondine-bg', dark ? '#1e1e1e' : '#ffffff');
+            document.documentElement.style.setProperty('--ondine-fg', dark ? '#e6e6e6' : '#000000');
             const box = document.getElementById('diagram');
             box.innerHTML = svg;
             // Responsive SVGs otherwise inherit the previous diagram's width.
@@ -286,7 +254,7 @@ import WebKit
             }
             const rect = box.getBoundingClientRect();
             return [rect.width, rect.height];
-            """, arguments: ["source": job.source, "dark": job.dark], in: nil, in: .page) { [weak self] result in
+            """, arguments: ["svg": svg, "dark": job.dark], in: nil, in: .page) { [weak self] result in
                 guard let self, self.generation == token else { return }
                 do {
                     let dimensions = try result.get() as? [Double] ?? []
@@ -316,34 +284,11 @@ import WebKit
                         self.completed()
                     }
                 } catch {
-                    // Mermaid's own message is the same every time, so it is kept; other failures are retried.
-                    let mermaid = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String
-                    let message = String((mermaid ?? error.localizedDescription).prefix(2000)).replacingOccurrences(of: "Error: ", with: "")
-                    if mermaid != nil { self.persist(.error(message), for: job.key) }
-                    self.finish(job.key, .failed(message))
+                    self.finish(job.key, .failed(error.localizedDescription))
                     self.currentRaster = nil
                     self.completed()
                 }
             }
-    }
-
-    /// Spike: Ondine renders synchronously, so the queue drains here without the web view.
-    private func renderWithOndine() {
-        for job in svgJobs { job.done(try? OndineMermaid.render(job.source, dark: false).get()) }
-        svgJobs.removeAll()
-        for job in queue {
-            switch OndineMermaid.render(job.source, dark: job.dark) {
-            case .success(let svg):
-                if let image = NSImage(data: Data(svg.utf8)) {
-                    finish(job.key, .rendered(image))
-                } else {
-                    finish(job.key, .failed("Ondine's SVG could not be read."))
-                }
-            case .failure(let error):
-                finish(job.key, .failed(error.localizedDescription))
-            }
-        }
-        queue.removeAll()
     }
 
     private func completed() {
@@ -401,8 +346,6 @@ import WebKit
     private func finishAll(_ state: State) {
         for job in queue { finish(job.key, state) }
         queue.removeAll()
-        svgJobs.forEach { $0.done(nil) }
-        svgJobs.removeAll()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -430,12 +373,12 @@ import WebKit
     }
 }
 
-/// On with `defaults write com.stephanepaquet.Markify ondineMermaid -bool YES`.
+/// Ondine compiles Mermaid source to SVG in Rust (`OndineFFI`). `version` names the pinned Ondine commit in that crate;
+/// it keys the disk cache, so bump it with the crate.
 enum OndineMermaid {
-    static var isEnabled: Bool { UserDefaults.standard.bool(forKey: "ondineMermaid") }
+    static let version = "0b589ec"
 
-    /// Ondine's SVG with its colour variables replaced by fixed values, since NSImage cannot resolve CSS variables.
-    static func render(_ source: String, dark: Bool) -> Result<String, Error> {
+    static func compile(_ source: String) -> Result<String, OndineError> {
         var svg: UnsafeMutablePointer<CChar>?
         var error: UnsafeMutablePointer<CChar>?
         let now = Date().timeIntervalSince1970 * 1000
@@ -445,79 +388,7 @@ enum OndineMermaid {
             return .failure(OndineError(message: message))
         }
         defer { ondine_free(svg) }
-        return .success(resolved(String(cString: svg), dark: dark))
-    }
-
-    /// The app's theme for Ondine's `--ondine-*` properties; every other property resolves from the SVG itself.
-    private static func themeOverrides(dark isDark: Bool) -> [String: String] {
-        [
-            "--ondine-bg": isDark ? "#1e1e1e" : "#ffffff",
-            "--ondine-fg": isDark ? "#e6e6e6" : "#000000",
-        ]
-    }
-
-    /// Replaces `var()` and `color-mix()` the way a CSS engine would, because NSImage does not resolve them.
-    /// A custom property takes the theme value, else its declaration on the root element, else its fallback.
-    static func resolved(_ svg: String, dark isDark: Bool) -> String {
-        var declared: [String: String] = [:]
-        if let style = svg.firstMatch(of: #/<svg[^>]*? style="([^"]*)"/#)?.1 {
-            for declaration in style.split(separator: ";") {
-                let parts = declaration.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-                if parts.count == 2, parts[0].hasPrefix("--") { declared[parts[0]] = parts[1] }
-            }
-        }
-        let overrides = themeOverrides(dark: isDark)
-        var text = svg
-        // Innermost functions first: a fallback that holds another `var()` or `color-mix()` resolves on a later pass.
-        for _ in 0..<20 {
-            let next = substituteVariables(in: text) { name, fallback in
-                overrides[name] ?? declared[name] ?? fallback ?? "none"
-            }
-            let mixed = mixColors(in: next)
-            if mixed == text { break }
-            text = mixed
-        }
-        return text
-    }
-
-    private static func substituteVariables(in text: String, lookup: (String, String?) -> String) -> String {
-        replacing(in: text, pattern: #"var\((--[\w-]+)(?:,([^()]*))?\)"#) { groups in
-            lookup(groups[1], groups.count > 2 && !groups[2].isEmpty ? groups[2].trimmingCharacters(in: .whitespaces) : nil)
-        }
-    }
-
-    private static func mixColors(in text: String) -> String {
-        replacing(in: text, pattern: #"color-mix\(in srgb,\s*([^,()]+?)\s+(\d+(?:\.\d+)?)%\s*,\s*([^,()]+?)\s*\)"#) { groups in
-            guard let first = rgb(groups[1]), let second = rgb(groups[3]), let percent = Double(groups[2]) else { return groups[1] }
-            let share = percent / 100
-            let channels = zip(first, second).map { Int(($0 * share + $1 * (1 - share)).rounded()) }
-            return String(format: "#%02x%02x%02x", channels[0], channels[1], channels[2])
-        }
-    }
-
-    private static func rgb(_ color: String) -> [Double]? {
-        var hex = color.trimmingCharacters(in: .whitespaces).dropFirst()
-        if hex.count == 3 { hex = Substring(hex.flatMap { [$0, $0] }) }
-        guard hex.count == 6, let value = Int(hex, radix: 16) else { return nil }
-        return [Double((value >> 16) & 0xff), Double((value >> 8) & 0xff), Double(value & 0xff)]
-    }
-
-    /// Replaces each match of `pattern`; `transform` receives the whole match and its groups.
-    private static func replacing(in text: String, pattern: String, with transform: ([String]) -> String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return text }
-        let source = text as NSString
-        var result = ""
-        var position = 0
-        for match in regex.matches(in: text, range: NSRange(location: 0, length: source.length)) {
-            result += source.substring(with: NSRange(location: position, length: match.range.location - position))
-            let groups = (0..<match.numberOfRanges).map { index -> String in
-                let range = match.range(at: index)
-                return range.location == NSNotFound ? "" : source.substring(with: range)
-            }
-            result += transform(groups)
-            position = match.range.location + match.range.length
-        }
-        return result + source.substring(from: position)
+        return .success(String(cString: svg))
     }
 }
 

@@ -68,8 +68,7 @@ struct QuickLookTests {
         #expect(info["NSExtensionPointIdentifier"] as? String == "com.apple.quicklook.preview")
         #expect(attributes["QLIsDataBasedPreview"] as? Bool == false)
         #expect(Set(attributes["QLSupportedContentTypes"] as? [String] ?? []) == ["net.daringfireball.markdown", "com.mdx"])
-        #expect(bundle.url(forResource: "mermaid", withExtension: "html") != nil)
-        #expect(bundle.url(forResource: "mermaid.min", withExtension: "js") != nil)
+        #expect(bundle.url(forResource: "diagram", withExtension: "html") != nil)
         let helper = bundle.bundleURL.appendingPathComponent("Contents/XPCServices/PreviewImages.xpc")
         #expect(Bundle(url: helper)?.bundleIdentifier == "com.stephanepaquet.Markify.PreviewImages")
     }
