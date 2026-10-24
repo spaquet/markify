@@ -1,12 +1,12 @@
 # Releasing Markify
 
-Releases are built by GitHub Actions ([`release-dmg.yml`](.github/workflows/release-dmg.yml)) when you push a version tag. The workflow builds a DMG for Apple silicon, one for Intel and a universal update archive for Sparkle, attaches them and the Sparkle appcast to a draft release, and then publishes it.
+Releases are built by GitHub Actions ([`release-dmg.yml`](.github/workflows/release-dmg.yml)) when you push a version tag. The workflow builds a DMG and a Sparkle update archive for each architecture, attaches them and the two Sparkle appcasts to a draft release, and then publishes it.
 
 > **Why tag first?** This repository has **immutable releases** turned on. Once a release is published, its assets and tag are locked, so nothing can be uploaded to it afterwards (GitHub answers `HTTP 422: Cannot upload assets to an immutable release`). The workflow therefore attaches the DMGs while the release is still a draft and publishes it last. Never publish a release by hand before the workflow has run.
 
 ## In-App Updates (Sparkle)
 
-Markify checks for updates with [Sparkle](https://sparkle-project.org). Its feed is `https://github.com/spaquet/markify/releases/latest/download/appcast.xml` (`SUFeedURL` in `Markify/Info.plist`), so it always serves the appcast attached to the latest published release. Settings › General › Updates turns automatic checks and automatic installs on or off; the app menu has **Check for Updates…**.
+Markify checks for updates with [Sparkle](https://sparkle-project.org). Each architecture has its own feed, set by `SU_FEED_URL` at build time (`SUFeedURL` in `Markify/Info.plist` reads it): Apple silicon builds read `https://github.com/spaquet/markify/releases/latest/download/appcast.xml` and Intel builds read `appcast-intel.xml` beside it, so each serves the appcast attached to the latest published release. Settings › General › Updates turns automatic checks and automatic installs on or off; the app menu has **Check for Updates…**.
 
 Each update is signed with an EdDSA key. The public key is `SUPublicEDKey` in `Markify/Info.plist`; the private key is the `SPARKLE_PRIVATE_KEY` repository secret. A tag build fails when the secret is missing, or when the update's signature doesn't verify against `SUPublicEDKey` ([`scripts/verify-update-signature.swift`](scripts/verify-update-signature.swift)), so a placeholder or mismatched key never reaches users.
 
@@ -104,8 +104,8 @@ git push origin v1.27
 Pushing the tag starts **Build and Release DMG**:
 
 1. **build** (two jobs in parallel, one per architecture): checks out the tag, builds Markify in Release, creates the DMG and its SHA256 checksum, and uploads them as workflow artifacts. One architecture failing doesn't cancel the other.
-   A third job builds a universal app, zips it as `markify-update.zip` and signs it with the Sparkle key.
-2. **release**: downloads the builds, uses the draft for the tag (or creates one), writes `appcast.xml` with the release notes, attaches the files, and publishes the release as **Latest**. Installed copies see the update as soon as it is published.
+   The same build jobs zip each app as `markify-as-update.zip` or `markify-intel-update.zip` and sign it with the Sparkle key.
+2. **release**: downloads the builds, uses the draft for the tag (or creates one), writes `appcast.xml` and `appcast-intel.xml` with the release notes, attaches the files, and publishes the release as **Latest**. Installed copies see the update as soon as it is published.
 
 ⏱️ About 5–10 minutes. Follow it in the **Actions** tab.
 
@@ -125,7 +125,8 @@ Update `Casks/markify.rb` to the published version and both verified DMG SHA-256
 
 - `markify-as.dmg` and `markify-as.dmg.sha256` for Apple silicon (M1 and later)
 - `markify-intel.dmg` and `markify-intel.dmg.sha256` for Intel Macs
-- `markify-update.zip` and `appcast.xml` for Sparkle
+- `markify-as-update.zip` and `appcast.xml` for Apple silicon's Sparkle updates
+- `markify-intel-update.zip` and `appcast-intel.xml` for Intel's Sparkle updates
 
 The website's download buttons use `https://github.com/spaquet/markify/releases/latest/download/<file>`, so they point to the new release as soon as it is published. Keep the asset names unchanged.
 
