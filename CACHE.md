@@ -33,7 +33,7 @@ The web view renders only on a T1 miss: a new diagram, an edited one, a theme th
 - Replace `takeSnapshot` with `WKWebView.createPDF(configuration:)` over the diagram's bounds.
 - The result is vector: sharp at any zoom and column width, typically tens of KB instead of megabytes. `snapshotArea` and the 2048 pt downscale go away.
 - Draw with `NSPDFImageRep` (or `NSImage(data:)`), so Core Graphics rasterizes only the fragment being drawn, at the screen's scale.
-- Do not use `NSImage`'s SVG loading: Mermaid draws labels in `<foreignObject>`, which the native SVG renderer drops. WebKit's PDF keeps them.
+- Do not use `NSImage`'s SVG loading: it does not resolve Ondine's CSS variables and places some text (class titles) wrongly. The page draws the SVG and WebKit's PDF keeps it right.
 - Keep the sanity limits: 64 KB of source, 4096 pt bounds, 32 pending renders.
 - Export is unchanged: `svg(for:)` still renders SVG on demand.
 
@@ -41,16 +41,16 @@ The web view renders only on a T1 miss: a new diagram, an edited one, a theme th
 
 - **In memory (T0, T2):** the current string key, `"\(dark):\(source)"`. `state(of:)` runs on every style pass for every diagram, and a dictionary hashes the string anyway, so no digest is computed there.
 - **On disk (T1, persisted T0):** SHA-256 (CryptoKit) of
-  `source + "\0" + theme + "\0" + mermaidVersion + "\0" + renderVersion`, as lowercase hex.
+  `source + "\0" + theme + "\0" + renderer version + "\0" + renderVersion`, as lowercase hex.
   - Swift's `Hasher` is seeded per launch, so it cannot name files.
-  - `mermaidVersion` is read from the bundled script, so a Mermaid update invalidates the cache by itself.
+  - The renderer version is the SHA-256 of `OndineMermaid.version` (the pinned Ondine commit) and the bundled `diagram.html`, so an Ondine update or a page change invalidates the cache by itself.
   - `renderVersion` is a constant bumped when the render code or page changes output.
   - The digest is computed only on a T2 miss and stored on the entry, once per source.
 - CryptoKit SHA-256 with the hex idiom already appears in `LinksPanel.swift`, `LibrarySearch.swift` and `MarkifyApp.swift`; factor it into one helper and use it in all four places.
 
 ### Failures
 
-- **Stored** (T0, persisted): Mermaid's parse errors only. They are deterministic, so a reopened document shows the error without rendering.
+- **Stored** (T0, persisted): Ondine's compile errors only. They are deterministic, so a reopened document shows the error without rendering.
 - **Never stored**: memory limits, timeouts, snapshot or PDF errors. They are shown for that request and retried on the next one.
 - "Diagram cache exceeds its memory limit." is removed: a full budget evicts, it never refuses.
 
@@ -83,7 +83,7 @@ Each step ships on its own and keeps the tests green.
 
 ### 2. PDF payload and the T0 split — done, build 325
 
-Results: a 360 × 3340 pt flowchart is 18 KB of PDF in the light theme and 62 KB in the dark one (the bitmap was capped at ~8 MB); it draws into a 1216 px square in 10–16 ms. Flowchart labels from `<foreignObject>` are in the PDF as text, and the background stays transparent in both themes, so `mermaid.html` is unchanged. In memory, T0 is `State.evicted(size)`: an evicted entry keeps only its size, and step 3 persists it. The memory budget is now 32 MB.
+Results: a 360 × 3340 pt flowchart is 18 KB of PDF in the light theme and 62 KB in the dark one (the bitmap was capped at ~8 MB); it draws into a 1216 px square in 10–16 ms. Flowchart labels from `<foreignObject>` are in the PDF as text, and the background stays transparent in both themes, so `diagram.html` is unchanged. In memory, T0 is `State.evicted(size)`: an evicted entry keeps only its size, and step 3 persists it. The memory budget is now 32 MB.
 
 - Render with `createPDF`; `State.rendered` carries the PDF image and its intrinsic size.
 - Keep T0 (size or parse error) apart from T2 (the PDF), so dropping T2 keeps heights.
@@ -91,7 +91,7 @@ Results: a 360 × 3340 pt flowchart is 18 KB of PDF in the light theme and 62 KB
 - Cost per entry becomes the PDF's byte count.
 - Verify first, against the README diagrams and the editor fixture:
   - `<foreignObject>` labels appear in the PDF.
-  - The PDF background is transparent in the dark theme (clear the page background in `mermaid.html` if not).
+  - The PDF background is transparent in the dark theme (clear the page background in `diagram.html` if not).
   - PDF size with embedded fonts.
   - Scrolling performance on a large flowchart (decides step 5).
 - Remove `snapshotArea` and the downscale.
@@ -99,13 +99,13 @@ Results: a 360 × 3340 pt flowchart is 18 KB of PDF in the light theme and 62 KB
 
 ### 3. T1 disk tier — done, build 326
 
-As built (`Markify/DiagramCache.swift`, `DiagramDiskCache`): no JSON sidecar. A cached PDF's page size is the diagram's size, and a parse error is a `<sha256>.error` file holding Mermaid's message, so T0 needs nothing beside T1. The renderer version is the SHA-256 of the bundled `mermaid.min.js` and `mermaid.html`, hashed once on the cache's queue, rather than a version string. Pruning runs when the cache is first used and whenever a write takes it over 50 MB, and stops at three quarters of the limit. Under tests the cache is a throwaway folder. The Quick Look extension compiles the same file and keeps its own cache in its container.
+As built (`Markify/DiagramCache.swift`, `DiagramDiskCache`): no JSON sidecar. A cached PDF's page size is the diagram's size, and a compile error is a `<sha256>.error` file holding Ondine's message, so T0 needs nothing beside T1. The renderer version is the SHA-256 of `OndineMermaid.version` and the bundled `diagram.html`, hashed once on the cache's queue. Pruning runs when the cache is first used and whenever a write takes it over 50 MB, and stops at three quarters of the limit. Under tests the cache is a throwaway folder. The Quick Look extension compiles the same file and keeps its own cache in its container.
 
 The plan as written:
 
 
 - Add the shared SHA-256 hex helper; switch the three existing call sites to it.
-- Read `mermaidVersion` from the bundled script once; add `renderVersion`.
+- Read the renderer version once from the Ondine version and the page; add `renderVersion`.
 - On a T2 miss: compute the digest, look in T1, decode off the main thread; render only when T1 misses, then write the PDF atomically.
 - Persist T0 (sizes and parse errors) in a JSON sidecar keyed by digest; load it lazily.
 - Touch the file's modification date on read; prune to 50 MB at launch and when idle.

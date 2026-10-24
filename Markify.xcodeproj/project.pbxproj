@@ -18,8 +18,7 @@
 		B10000000000000000000004 /* SwaTexRender in Frameworks */ = {isa = PBXBuildFile; productRef = A1F9C0022DC953870033A6AC /* SwaTexRender */; };
 		B10000000000000000000005 /* Markify/MathSVG.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* Markify/MathSVG.swift */; };
 		B10000000000000000000007 /* Markify/Mermaid.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* Markify/Mermaid.swift */; };
-		B10000000000000000000009 /* Markify/Resources/Mermaid/mermaid.html in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */; };
-		B1000000000000000000000B /* Markify/Resources/Mermaid/mermaid.min.js in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */; };
+		B10000000000000000000009 /* Markify/Resources/Diagram/diagram.html in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* Markify/Resources/Diagram/diagram.html */; };
 		B10000000000000000000019 /* Markify/DiagramCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000001A /* Markify/DiagramCache.swift */; };
 		C10000000000000000000001 /* PreviewImages.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* PreviewImages.xpc */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C10000000000000000000003 /* QuickLook/PreviewImageProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000004 /* QuickLook/PreviewImageProtocol.swift */; };
@@ -89,8 +88,7 @@
 		B10000000000000000000002 /* MarkifyQuickLook.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MarkifyQuickLook.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000006 /* Markify/MathSVG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/MathSVG.swift; sourceTree = SOURCE_ROOT; };
 		B10000000000000000000008 /* Markify/Mermaid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/Mermaid.swift; sourceTree = SOURCE_ROOT; };
-		B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Markify/Resources/Mermaid/mermaid.html; sourceTree = SOURCE_ROOT; };
-		B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Markify/Resources/Mermaid/mermaid.min.js; sourceTree = SOURCE_ROOT; };
+		B1000000000000000000000A /* Markify/Resources/Diagram/diagram.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = Markify/Resources/Diagram/diagram.html; sourceTree = SOURCE_ROOT; };
 		B1000000000000000000001A /* Markify/DiagramCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Markify/DiagramCache.swift; sourceTree = SOURCE_ROOT; };
 		C10000000000000000000002 /* PreviewImages.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; path = PreviewImages.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		C10000000000000000000004 /* QuickLook/PreviewImageProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLook/PreviewImageProtocol.swift; sourceTree = SOURCE_ROOT; };
@@ -239,8 +237,7 @@
 				B10000000000000000000006 /* Markify/MathSVG.swift */,
 				B10000000000000000000008 /* Markify/Mermaid.swift */,
 				B1000000000000000000001A /* Markify/DiagramCache.swift */,
-				B1000000000000000000000A /* Markify/Resources/Mermaid/mermaid.html */,
-				B1000000000000000000000C /* Markify/Resources/Mermaid/mermaid.min.js */,
+				B1000000000000000000000A /* Markify/Resources/Diagram/diagram.html */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -252,6 +249,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 76A591092DC952980033A6AC /* Build configuration list for PBXNativeTarget "Markify" */;
 			buildPhases = (
+				B10000000000000000000030 /* Build Ondine FFI */,
 				76A590E32DC952970033A6AC /* Sources */,
 				76A590E42DC952970033A6AC /* Frameworks */,
 				76A590E52DC952970033A6AC /* Resources */,
@@ -329,6 +327,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B10000000000000000000014 /* Build configuration list for PBXNativeTarget "MarkifyQuickLook" */;
 			buildPhases = (
+				B10000000000000000000031 /* Build Ondine FFI */,
 				B10000000000000000000015 /* Sources */,
 				B10000000000000000000012 /* Frameworks */,
 				B10000000000000000000016 /* Resources */,
@@ -472,8 +471,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000000000000000000009 /* Markify/Resources/Mermaid/mermaid.html in Resources */,
-				B1000000000000000000000B /* Markify/Resources/Mermaid/mermaid.min.js in Resources */,
+				B10000000000000000000009 /* Markify/Resources/Diagram/diagram.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -494,6 +492,44 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# This script is responsible for uploading debug symbols and source context for Sentry.\nif which sentry-cli >/dev/null; then\n  export SENTRY_ORG=markify-ax\n  export SENTRY_PROJECT=markify\n  ERROR=$(sentry-cli debug-files upload --include-sources \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\n  if [ ! $? -eq 0 ]; then\n    echo \"warning: sentry-cli - $ERROR\"\n  fi\nelse\n  echo \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+		};
+		B10000000000000000000030 /* Build Ondine FFI */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Ondine FFI";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\nexport PATH=\"$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\nif ! command -v cargo >/dev/null 2>&1; then\n  echo \"error: cargo is required to build OndineFFI (install Rust from https://rustup.rs)\" >&2\n  exit 1\nfi\ncd \"$SRCROOT/OndineFFI\"\nOUT=\"$PROJECT_TEMP_DIR/ondine-ffi\"\nLIBS=()\nfor ARCH in $ARCHS; do\n  case \"$ARCH\" in\n    arm64) TRIPLE=aarch64-apple-darwin ;;\n    x86_64) TRIPLE=x86_64-apple-darwin ;;\n    *) echo \"error: no Rust target for $ARCH\" >&2; exit 1 ;;\n  esac\n  if [ \"$TRIPLE\" != \"$(rustc -vV | sed -n 's/^host: //p')\" ]; then rustup target add \"$TRIPLE\"; fi\n  MACOSX_DEPLOYMENT_TARGET=15.6 CARGO_TARGET_DIR=\"$OUT\" cargo build --release --target \"$TRIPLE\"\n  LIBS+=(\"$OUT/$TRIPLE/release/libondine_ffi.a\")\ndone\nmkdir -p \"$OUT/release\"\nlipo -create \"${LIBS[@]}\" -output \"$OUT/release/libondine_ffi.a\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B10000000000000000000031 /* Build Ondine FFI */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Ondine FFI";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\nexport PATH=\"$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\nif ! command -v cargo >/dev/null 2>&1; then\n  echo \"error: cargo is required to build OndineFFI (install Rust from https://rustup.rs)\" >&2\n  exit 1\nfi\ncd \"$SRCROOT/OndineFFI\"\nOUT=\"$PROJECT_TEMP_DIR/ondine-ffi\"\nLIBS=()\nfor ARCH in $ARCHS; do\n  case \"$ARCH\" in\n    arm64) TRIPLE=aarch64-apple-darwin ;;\n    x86_64) TRIPLE=x86_64-apple-darwin ;;\n    *) echo \"error: no Rust target for $ARCH\" >&2; exit 1 ;;\n  esac\n  if [ \"$TRIPLE\" != \"$(rustc -vV | sed -n 's/^host: //p')\" ]; then rustup target add \"$TRIPLE\"; fi\n  MACOSX_DEPLOYMENT_TARGET=15.6 CARGO_TARGET_DIR=\"$OUT\" cargo build --release --target \"$TRIPLE\"\n  LIBS+=(\"$OUT/$TRIPLE/release/libondine_ffi.a\")\ndone\nmkdir -p \"$OUT/release\"\nlipo -create \"${LIBS[@]}\" -output \"$OUT/release/libondine_ffi.a\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -693,12 +729,16 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D10000000000000000000001 /* Sentry.xcconfig */;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_TEMP_DIR)/ondine-ffi/release";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				OTHER_LDFLAGS = "-londine_ffi";
+				SWIFT_OBJC_BRIDGING_HEADER = "OndineFFI/include/bridging.h";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 365;
+				CURRENT_PROJECT_VERSION = 366;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -718,7 +758,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.5.5;
+				MARKETING_VERSION = 2.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -731,12 +771,16 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D10000000000000000000001 /* Sentry.xcconfig */;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_TEMP_DIR)/ondine-ffi/release";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				OTHER_LDFLAGS = "-londine_ffi";
+				SWIFT_OBJC_BRIDGING_HEADER = "OndineFFI/include/bridging.h";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Markify/Markify.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 365;
+				CURRENT_PROJECT_VERSION = 366;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 342L82G5GB;
@@ -756,7 +800,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.5.5;
+				MARKETING_VERSION = 2.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -840,10 +884,14 @@
 		B10000000000000000000017 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_TEMP_DIR)/ondine-ffi/release";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				OTHER_LDFLAGS = "-londine_ffi";
+				SWIFT_OBJC_BRIDGING_HEADER = "OndineFFI/include/bridging.h";
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 365;
+				CURRENT_PROJECT_VERSION = 366;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -851,7 +899,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickLook/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.5.5;
+				MARKETING_VERSION = 2.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.QuickLook;
 				PRODUCT_MODULE_NAME = MarkifyQuickLook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -863,10 +911,14 @@
 		B10000000000000000000018 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_TEMP_DIR)/ondine-ffi/release";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				OTHER_LDFLAGS = "-londine_ffi";
+				SWIFT_OBJC_BRIDGING_HEADER = "OndineFFI/include/bridging.h";
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = QuickLook/QuickLook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 365;
+				CURRENT_PROJECT_VERSION = 366;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -874,7 +926,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickLook/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.5.5;
+				MARKETING_VERSION = 2.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.QuickLook;
 				PRODUCT_MODULE_NAME = MarkifyQuickLook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -887,7 +939,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 365;
+				CURRENT_PROJECT_VERSION = 366;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -898,7 +950,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.5.5;
+				MARKETING_VERSION = 2.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.PreviewImages;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -910,7 +962,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 365;
+				CURRENT_PROJECT_VERSION = 366;
 				DEVELOPMENT_TEAM = 342L82G5GB;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -921,7 +973,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 2.5.5;
+				MARKETING_VERSION = 2.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stephanepaquet.Markify.PreviewImages;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

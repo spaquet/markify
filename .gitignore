@@ -84,3 +84,6 @@ Config/Sentry.local.xcconfig
 
 # Claude Code per-user settings; shared settings belong in .claude/settings.json
 .claude/settings.local.json
+
+# Rust FFI build output (Ondine)
+OndineFFI/target/
