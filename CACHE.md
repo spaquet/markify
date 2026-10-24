@@ -33,7 +33,7 @@ The web view renders only on a T1 miss: a new diagram, an edited one, a theme th
 - Replace `takeSnapshot` with `WKWebView.createPDF(configuration:)` over the diagram's bounds.
 - The result is vector: sharp at any zoom and column width, typically tens of KB instead of megabytes. `snapshotArea` and the 2048 pt downscale go away.
 - Draw with `NSPDFImageRep` (or `NSImage(data:)`), so Core Graphics rasterizes only the fragment being drawn, at the screen's scale.
-- Do not use `NSImage`'s SVG loading: it does not resolve Ondine's CSS variables and places some text (class titles) wrongly. The page draws the SVG and WebKit's PDF keeps it right.
+- Do not use `NSImage`'s SVG loading: it does not resolve [Ondine](https://github.com/wevm/ondine)'s CSS variables and places some text (class titles) wrongly. The page draws the SVG and WebKit's PDF keeps it right.
 - Keep the sanity limits: 64 KB of source, 4096 pt bounds, 32 pending renders.
 - Export is unchanged: `svg(for:)` still renders SVG on demand.
 
@@ -43,7 +43,7 @@ The web view renders only on a T1 miss: a new diagram, an edited one, a theme th
 - **On disk (T1, persisted T0):** SHA-256 (CryptoKit) of
   `source + "\0" + theme + "\0" + renderer version + "\0" + renderVersion`, as lowercase hex.
   - Swift's `Hasher` is seeded per launch, so it cannot name files.
-  - The renderer version is the SHA-256 of `OndineMermaid.version` (the pinned Ondine commit) and the bundled `diagram.html`, so an Ondine update or a page change invalidates the cache by itself.
+  - The renderer version is the SHA-256 of `OndineMermaid.version` (the pinned [Ondine](https://github.com/wevm/ondine) commit) and the bundled `diagram.html`, so an Ondine update or a page change invalidates the cache by itself.
   - `renderVersion` is a constant bumped when the render code or page changes output.
   - The digest is computed only on a T2 miss and stored on the entry, once per source.
 - CryptoKit SHA-256 with the hex idiom already appears in `LinksPanel.swift`, `LibrarySearch.swift` and `MarkifyApp.swift`; factor it into one helper and use it in all four places.
