@@ -129,14 +129,14 @@ If the run fails, show the failing step's log (`gh run view <id> --log-failed | 
 scripts/check-release.sh v<version> <build>
 ```
 
-It checks the eight assets, that the tag is Latest, that each architecture's live appcast (`appcast.xml` for Apple silicon, `appcast-intel.xml` for Intel) names this version and build, and that each update archive verifies against `SUPublicEDKey`, has a valid code signature, holds the right build and architecture, and bundles the `markify` CLI in `Contents/Helpers`. Don't continue until it passes.
+It checks the ten assets, that the tag is Latest, that each live appcast (`appcast.xml` universal, `appcast-arm64.xml`, `appcast-intel.xml`) names this version and build, and that each update archive verifies against `SUPublicEDKey`, has a valid code signature, holds the right build and architectures, and bundles the `markify` CLI in `Contents/Helpers`. Don't continue until it passes.
 
-Then confirm the dSYMs reached Sentry: each of the two build jobs (`as`, `intel`) must have run its upload step.
+Then confirm the dSYMs reached Sentry: each of the three build jobs (`as`, `intel`, `update`) must have run its upload step.
 
 ```bash
 gh run view <run id> --json jobs \
   -q '.jobs[] | select(.name|startswith("build")) | [.name, (.steps[] | select(.name=="Upload debug symbols to Sentry") | .conclusion)] | @tsv'
-# two lines, each ending in "success"
+# three lines, each ending in "success"
 ```
 
 The step exits early without a token, but tag builds fail before that, so `success` means `sentry-cli --wait` uploaded them. If the Sentry MCP tools are available, optionally confirm that the update archive's UUIDs (`dwarfdump --uuid Markify.app/Contents/MacOS/Markify`) appear as debug files in `markify-ax/markify`.
@@ -174,4 +174,4 @@ Commit everything under `docs/` as `Update website to version <version>` and pus
 
 ## 10. Report
 
-Tell the user: the release URL, the checks that passed (including the two Sentry dSYM uploads), the cask commit, the help pages updated (or that none needed it), the website commit, and anything skipped. Remind them that the private Sparkle key must stay backed up.
+Tell the user: the release URL, the checks that passed (including the three Sentry dSYM uploads), the cask commit, the help pages updated (or that none needed it), the website commit, and anything skipped. Remind them that the private Sparkle key must stay backed up.

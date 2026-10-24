@@ -1,8 +1,8 @@
 #!/bin/bash
-# Checks a published release the way installed copies will see it: all eight assets are attached, each
-# architecture's live appcast names this version and build, and its update archive verifies against
-# SUPublicEDKey in Info.plist, has a valid code signature, holds the right build and architecture, and
-# bundles the CLI.
+# Checks a published release the way installed copies will see it: all ten assets are attached, each live
+# appcast (universal, Apple silicon and Intel) names this version and build, and its update archive verifies
+# against SUPublicEDKey in Info.plist, has a valid code signature, holds the right build and architectures,
+# and bundles the CLI.
 #
 # Usage: scripts/check-release.sh v1.61 [build]
 set -euo pipefail
@@ -15,14 +15,18 @@ WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
 ASSETS=$(gh release view "$TAG" --json assets -q '.assets[].name' | sort | tr '\n' ' ')
-EXPECTED="appcast-intel.xml appcast.xml markify-as-update.zip markify-as.dmg markify-as.dmg.sha256 markify-intel-update.zip markify-intel.dmg markify-intel.dmg.sha256 "
+EXPECTED=$(printf '%s\n' appcast.xml appcast-arm64.xml appcast-intel.xml markify-as.dmg markify-as.dmg.sha256 \
+    markify-as-update.zip markify-intel.dmg markify-intel.dmg.sha256 markify-intel-update.zip markify-update.zip | sort | tr '\n' ' ')
 [ "$ASSETS" = "$EXPECTED" ] || { echo "Assets on $TAG: $ASSETS(expected $EXPECTED)" >&2; exit 1; }
-echo "✓ $TAG has all eight assets"
+echo "✓ $TAG has all ten assets"
 
 LATEST=$(gh release view --json tagName -q .tagName)
 [ "$LATEST" = "$TAG" ] || { echo "Latest release is $LATEST, not $TAG" >&2; exit 1; }
 
-# Each feed is checked against the architecture its archive was built for.
+# Architectures as a sorted, space-separated list, so lipo's order doesn't matter.
+sorted_archs() { tr ' ' '\n' <<<"$1" | sort | tr '\n' ' '; }
+
+# Each feed is checked against the architectures its archive was built for.
 check_feed() {
     local FEED=$1 ARCH=$2 NAME=$3
     local DIR="$WORK/$NAME"
@@ -49,7 +53,7 @@ check_feed() {
     APP_BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$DIR/app/Markify.app/Contents/Info.plist")
     [ "$APP_BUILD" = "$FEED_BUILD" ] || { echo "The $NAME archive's app is build $APP_BUILD, $FEED says $FEED_BUILD" >&2; exit 1; }
     ARCHS=$(lipo -archs "$DIR/app/Markify.app/Contents/MacOS/Markify")
-    [ "$ARCHS" = "$ARCH" ] || { echo "The $NAME archive is $ARCHS, not $ARCH" >&2; exit 1; }
+    [ "$(sorted_archs "$ARCHS")" = "$(sorted_archs "$ARCH")" ] || { echo "The $NAME archive is $ARCHS, not $ARCH" >&2; exit 1; }
     echo "✓ $NAME update archive: valid code signature, build $APP_BUILD, $ARCHS"
     otool -L "$DIR/app/Markify.app/Contents/MacOS/Markify" | grep -q 'SwiftUI.framework' \
         || { echo "Contents/MacOS/Markify is not the app (the CLI replaced it?)" >&2; exit 1; }
@@ -58,5 +62,6 @@ check_feed() {
     echo "✓ $NAME update archive: app executable and bundled CLI"
 }
 
-check_feed appcast.xml arm64 as
+check_feed appcast.xml "arm64 x86_64" universal
+check_feed appcast-arm64.xml arm64 as
 check_feed appcast-intel.xml x86_64 intel

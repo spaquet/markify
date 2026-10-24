@@ -1,11 +1,12 @@
 name: Build and Release DMG
 
 # Releases are immutable in this repo, so assets can't be added after a
-# release is published. Pushing a vX.Y tag builds each architecture's DMG and
-# Sparkle update archive, attaches them and the two Sparkle appcasts to a draft
-# release (reusing a draft you prepared for that tag, with its notes), and only
-# then publishes it. Apple silicon builds read releases/latest/download/appcast.xml;
-# Intel builds read appcast-intel.xml (SU_FEED_URL), so no update archive is universal.
+# release is published. Pushing a vX.Y tag builds the Apple silicon and Intel
+# DMGs and three Sparkle update archives (Apple silicon, Intel and universal),
+# attaches them and their appcasts to a draft release (reusing a draft you
+# prepared for that tag, with its notes), and only then publishes it. Each Mac
+# reads the appcast for its processor (appcast-arm64.xml or appcast-intel.xml);
+# appcast.xml is the universal feed that builds before the split read.
 on:
   push:
     tags: ['v*']
@@ -25,13 +26,17 @@ jobs:
           - archs: arm64
             suffix: as
             derived_data_path: build-as
-            feed: appcast.xml
-            hardware: arm64
+            archive: markify-as-update
           - archs: x86_64
             suffix: intel
             derived_data_path: build-intel
-            feed: appcast-intel.xml
-            hardware: ""
+            archive: markify-intel-update
+          # Sparkle update archive, universal: the feed for builds before the split, and the archive a Mac
+          # without its own feed falls back to
+          - archs: arm64 x86_64
+            suffix: update
+            derived_data_path: build-update
+            archive: markify-update
 
     steps:
       - name: Checkout code
@@ -79,7 +84,6 @@ jobs:
             -scheme Markify \
             -configuration Release \
             ARCHS="${{ matrix.archs }}" \
-            SU_FEED_URL="https://github.com/${{ github.repository }}/releases/latest/download/${{ matrix.feed }}" \
             ONLY_ACTIVE_ARCH=NO \
             CLANG_COVERAGE_MAPPING=NO \
             ENABLE_CODE_COVERAGE=NO \
@@ -92,8 +96,9 @@ jobs:
             SENTRY_DSN="$SENTRY_DSN" \
             clean build
 
-      # Without the dSYMs, Sentry shows Markify's own frames as <unknown>. Each architecture has its own
-      # UUIDs, so both builds upload. Ad hoc signing later doesn't change them.
+      # Without the dSYMs, Sentry shows Markify's own frames as <unknown>. Each matrix build has its own
+      # UUIDs (each DMG and update archive), so all three upload. Ad hoc signing later
+      # doesn't change them.
       - name: Upload debug symbols to Sentry
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -107,15 +112,22 @@ jobs:
 
       - name: Build and bundle markify CLI
         run: |
-          ARCH=${{ matrix.archs }}
-          swift build --package-path MarkifyCLI -c release --arch "$ARCH" --scratch-path "cli-build-$ARCH"
-          CLI_BINARY="$(swift build --package-path MarkifyCLI -c release --arch "$ARCH" --scratch-path "cli-build-$ARCH" --show-bin-path)/markify"
+          CLI_BINARIES=()
+          for ARCH in ${{ matrix.archs }}; do
+            swift build --package-path MarkifyCLI -c release --arch "$ARCH" --scratch-path "cli-build-$ARCH"
+            CLI_BINARIES+=("$(swift build --package-path MarkifyCLI -c release --arch "$ARCH" --scratch-path "cli-build-$ARCH" --show-bin-path)/markify")
+          done
           # Contents/Helpers, not Contents/MacOS: on a case-insensitive volume
           # MacOS/markify is MacOS/Markify, and the CLI would replace the app.
           APP="${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
           mkdir -p "$APP/Contents/Helpers"
-          cp "$CLI_BINARY" "$APP/Contents/Helpers/markify"
-          chmod +x "$APP/Contents/Helpers/markify"
+          APP_CLI="$APP/Contents/Helpers/markify"
+          if [ "${#CLI_BINARIES[@]}" -eq 1 ]; then
+            cp "${CLI_BINARIES[0]}" "$APP_CLI"
+          else
+            lipo -create "${CLI_BINARIES[@]}" -output "$APP_CLI"
+          fi
+          chmod +x "$APP_CLI"
 
       - name: Check the app and CLI executables
         run: |
@@ -148,9 +160,11 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
 
       - name: Install create-dmg
+        if: matrix.suffix != 'update'
         run: brew install create-dmg
 
       - name: Create DMG for ${{ matrix.archs }}
+        if: matrix.suffix != 'update'
         run: |
           create-dmg \
             --volname "Markify ${{ env.VERSION }} (${{ matrix.suffix == 'as' && 'Apple Silicon' || 'Intel' }})" \
@@ -164,6 +178,7 @@ jobs:
             "${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
 
       - name: Generate SHA256 checksum
+        if: matrix.suffix != 'update'
         run: |
           shasum -a 256 "markify-${{ matrix.suffix }}.dmg" > \
             "markify-${{ matrix.suffix }}.dmg.sha256"
@@ -174,17 +189,16 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           APP="${{ matrix.derived_data_path }}/Build/Products/Release/Markify.app"
-          ARCHIVE="markify-${{ matrix.suffix }}-update.zip"
-          ENV_FILE="markify-${{ matrix.suffix }}-update.env"
+          ARCHIVE="${{ matrix.archive }}.zip"
+          ENV_FILE="${{ matrix.archive }}.env"
           ditto -c -k --sequesterRsrc --keepParent "$APP" "$ARCHIVE"
-          # Build number, version, minimum macOS and the hardware the appcast item is for
+          # Build number, version and minimum macOS for the appcast item
           PLIST="$APP/Contents/Info.plist"
           {
             echo "ARCHIVE=$ARCHIVE"
             echo "BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")"
             echo "SHORT_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")"
             echo "MIN_SYSTEM=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$PLIST")"
-            echo "HARDWARE_REQUIREMENT=${{ matrix.hardware }}"
           } > "$ENV_FILE"
           # Only tag builds are signed; manual runs have nothing to publish.
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
@@ -208,8 +222,8 @@ jobs:
           path: |
             markify-${{ matrix.suffix }}.dmg
             markify-${{ matrix.suffix }}.dmg.sha256
-            markify-${{ matrix.suffix }}-update.zip
-            markify-${{ matrix.suffix }}-update.env
+            ${{ matrix.archive }}.zip
+            ${{ matrix.archive }}.env
           if-no-files-found: error
           retention-days: 90
 
@@ -245,10 +259,11 @@ jobs:
 
       - name: Write the Sparkle appcasts
         run: |
-          scripts/write-appcast.sh "$TAG" "$GH_REPO" dist/markify-as-update.env dist/appcast.xml
+          scripts/write-appcast.sh "$TAG" "$GH_REPO" dist/markify-update.env dist/appcast.xml
+          scripts/write-appcast.sh "$TAG" "$GH_REPO" dist/markify-as-update.env dist/appcast-arm64.xml
           scripts/write-appcast.sh "$TAG" "$GH_REPO" dist/markify-intel-update.env dist/appcast-intel.xml
           rm dist/*-update.env
-          cat dist/appcast.xml dist/appcast-intel.xml
+          cat dist/appcast.xml dist/appcast-arm64.xml dist/appcast-intel.xml
 
       - name: Attach DMGs and publish
         run: |

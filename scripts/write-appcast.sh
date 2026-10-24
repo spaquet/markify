@@ -1,5 +1,5 @@
 #!/bin/bash
-# Writes one Sparkle appcast for a release: a single item for one architecture's update archive, with the
+# Writes one Sparkle appcast for a release: a single item for one update archive, with the
 # release notes and the archive's EdDSA signature. The build job writes the env file (see release-dmg.yml).
 #
 # Usage: scripts/write-appcast.sh <tag> <repo> <update env file> <appcast output>
@@ -13,10 +13,6 @@ source "$ENV_FILE"
 if [ -z "${ENCLOSURE_ATTRIBUTES:-}" ]; then
   echo "::error::The update archive $ARCHIVE wasn't signed." >&2
   exit 1
-fi
-REQUIREMENT=""
-if [ -n "${HARDWARE_REQUIREMENT:-}" ]; then
-  REQUIREMENT="<sparkle:hardwareRequirements>${HARDWARE_REQUIREMENT}</sparkle:hardwareRequirements>"
 fi
 # The release notes, shown by Sparkle as Markdown; CDATA can't contain "]]>".
 NOTES=$(gh release view "$TAG" --json body -q .body | sed 's/]]>/]]]]><![CDATA[>/g')
@@ -33,7 +29,6 @@ cat > "$OUT" <<XML
       <sparkle:version>${BUILD}</sparkle:version>
       <sparkle:shortVersionString>${SHORT_VERSION}</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>${MIN_SYSTEM}</sparkle:minimumSystemVersion>
-      ${REQUIREMENT}
       <pubDate>$(date -u -R)</pubDate>
       <description sparkle:format="markdown"><![CDATA[${NOTES}]]></description>
       <enclosure url="https://github.com/${REPO}/releases/download/${TAG}/${ARCHIVE}" ${ENCLOSURE_ATTRIBUTES} type="application/octet-stream" />
