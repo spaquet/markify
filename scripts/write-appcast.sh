@@ -36,5 +36,6 @@ cat > "$OUT" <<XML
   </channel>
 </rss>
 XML
-xmllint --noout "$OUT"
+# Python is on the Ubuntu runner; xmllint is not.
+python3 -c 'import sys, xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])' "$OUT"
 cat "$OUT"
