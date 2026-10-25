@@ -4245,7 +4245,6 @@ struct MarkdownTable {
     /// the header and the old header the first body row; a new row below the header goes under the delimiter; deleting
     /// the header promotes the first body row. The delimiter row acts as the header.
     func change(_ edit: Edit, in source: String, at location: Int) -> Change? {
-        let text = source as NSString
         var lines = allLines(in: source)
         let columns = rows[0].cells.count
         let at = current == 1 ? 0 : current
