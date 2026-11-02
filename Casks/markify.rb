@@ -1,9 +1,9 @@
 cask "markify" do
   arch arm: "as", intel: "intel"
 
-  version "2.5.6"
-  sha256 arm:   "6299681bc34322034ba6c75204462b92a2ecef0389db3ca9a837ff56acc3b174",
-         intel: "e37033bcd917b90b1e3b0733b15ac0cda1b5b05e935a567939d9e3f960d85f8e"
+  version "2.5.7"
+  sha256 arm:   "dbbb254ea12482f2a67f6bf80d0c61d62137346608011e521f978d61c7edf164",
+         intel: "36814769192bf06da16fb32feab98e428bfb6b5164f021ec7eaf2ac56a6763bc"
 
   url "https://github.com/spaquet/markify/releases/download/v#{version}/markify-#{arch}.dmg"
   name "Markify"
