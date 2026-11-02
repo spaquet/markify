@@ -1575,20 +1575,22 @@ class MarkdownTextView: NSTextView {
 
     func refreshTableHeights(changed: Set<Int>? = nil) {
         guard rendered, let storage = textStorage else { return }
-        storage.beginEditing()
-        for table in model.tables {
-            for row in table.rows where !row.separator && (changed?.contains(row.start) ?? true) {
-                let style = NSMutableParagraphStyle()
-                style.minimumLineHeight = tableRowHeight(row, table: table)
-                style.maximumLineHeight = style.minimumLineHeight
-                style.lineBreakMode = .byClipping
-                if storage.attribute(.paragraphStyle, at: row.start, effectiveRange: nil) as? NSParagraphStyle != style {
-                    storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: row.start, length: row.end - row.start))
+        preservingVisibleSelection {
+            storage.beginEditing()
+            for table in model.tables {
+                for row in table.rows where !row.separator && (changed?.contains(row.start) ?? true) {
+                    let style = NSMutableParagraphStyle()
+                    style.minimumLineHeight = tableRowHeight(row, table: table)
+                    style.maximumLineHeight = style.minimumLineHeight
+                    style.lineBreakMode = .byClipping
+                    if storage.attribute(.paragraphStyle, at: row.start, effectiveRange: nil) as? NSParagraphStyle != style {
+                        storage.addAttribute(.paragraphStyle, value: style, range: NSRange(location: row.start, length: row.end - row.start))
+                    }
                 }
             }
+            storage.endEditing()
+            refreshTables()
         }
-        storage.endEditing()
-        refreshTables()
     }
 
     func tableWidths(_ table: MarkdownModel.Table) -> [CGFloat] {
@@ -2297,12 +2299,33 @@ class MarkdownTextView: NSTextView {
         setSelectedRange(range)
         window?.makeFirstResponder(self)
         guard let scroll = enclosingScrollView else { return scrollRangeToVisible(range) }
+        // A distant heading still has estimated paragraphs above it. Resolve that prefix
+        // before reading its position, so the first jump lands where layout will draw it.
+        settleLayout(through: NSMaxRange(range))
         let clip = scroll.contentView
         let top = convert(textRect(range), to: clip).minY - 24
         var bounds = clip.bounds
         bounds.origin.y = max(0, top)
         clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
         scroll.reflectScrolledClipView(clip)
+    }
+
+    /// Asset and table heights can change after a Contents jump. Keep a visible caret's
+    /// source line in place, but leave a reader who has scrolled away from it alone.
+    private func preservingVisibleSelection(_ update: () -> Void) {
+        let selection = selectedRange()
+        let anchor = NSRange(location: selection.location, length: 0)
+        guard let clip = enclosingScrollView?.contentView, clip.documentView === self,
+              visibleRect.intersects(textRect(anchor)) else { return update() }
+        let offset = textRect(anchor).minY - clip.bounds.minY
+        let version = textVersion
+        update()
+        guard textVersion == version, selectedRange() == selection else { return }
+        settleLayout(through: selection.location)
+        var bounds = clip.bounds
+        bounds.origin.y = textRect(anchor).minY - offset
+        clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
+        enclosingScrollView?.reflectScrolledClipView(clip)
     }
 
     /// Moves to the heading whose anchor (as export writes it) is `anchor`. Returns false when there is none.
@@ -2781,7 +2804,7 @@ class MarkdownTextView: NSTextView {
 
     private func remoteImageLoaded() {
         // Fragments draw images; restyling lays them out again with the loaded image.
-        restyle?()
+        preservingVisibleSelection { restyle?() }
         if let previewSpan { showImagePreview(for: previewSpan, force: true) }
     }
 
