@@ -355,8 +355,14 @@ struct NativeEditor: NSViewRepresentable {
         var italicFonts: [NSFont: NSFont] = [:]
         func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
             guard range.length > 0 else { return }
-            storage.enumerateAttribute(.font, in: range) { value, segment, _ in
-                guard var font = value as? NSFont else { return }
+            // A plain loop over the font runs, not enumerateAttribute: its closure would capture the caches
+            // and storage, which Xcode 26's concurrency checks reject in the Release build.
+            var location = range.location
+            while location < NSMaxRange(range) {
+                var segment = NSRange()
+                let value = storage.attribute(.font, at: location, longestEffectiveRange: &segment, in: range)
+                location = NSMaxRange(segment)
+                guard var font = value as? NSFont else { continue }
                 if bold {
                     let converted = boldFonts[font] ?? theme.adding(.bold, to: font)
                     boldFonts[font] = converted
