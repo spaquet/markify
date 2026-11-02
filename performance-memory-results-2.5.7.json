@@ -1,0 +1,3771 @@
+{
+  "date": "2026-10-26",
+  "branch": "fix/memory-2.5.7",
+  "baseCommit": "380e0fc",
+  "version": "2.5.7",
+  "build": 370,
+  "environment": {
+    "machine": "MacBookPro18,2",
+    "memoryBytes": 34359738368,
+    "macOS": "27.2 (26B118)",
+    "xcode": "27.2 (27B48)",
+    "architecture": "arm64",
+    "configuration": "Release",
+    "codeSigning": false,
+    "coverage": false,
+    "testabilityForBenchmarks": true
+  },
+  "editorWork": [
+    {
+      "bytes": 7309,
+      "milliseconds": [
+        5.196834,
+        3.477375,
+        3.444792
+      ],
+      "operation": "parse",
+      "workload": "prose-100"
+    },
+    {
+      "bytes": 7309,
+      "milliseconds": [
+        16.895,
+        9.2035,
+        9.116959
+      ],
+      "operation": "full-style",
+      "workload": "prose-100"
+    },
+    {
+      "bytes": 7309,
+      "milliseconds": [
+        5.775833,
+        4.568625,
+        4.503209
+      ],
+      "operation": "edit-and-incremental-style",
+      "workload": "prose-100"
+    },
+    {
+      "bytes": 7309,
+      "milliseconds": [
+        1.644666,
+        1.631958,
+        1.610084
+      ],
+      "operation": "word-count",
+      "workload": "prose-100"
+    },
+    {
+      "bytes": 7309,
+      "milliseconds": [
+        0.436583,
+        0.431708,
+        0.431125
+      ],
+      "operation": "word-count-cached-cold",
+      "workload": "prose-100"
+    },
+    {
+      "bytes": 7309,
+      "milliseconds": [
+        0.00025,
+        4.1e-05,
+        4.1e-05
+      ],
+      "operation": "word-count-cached-warm",
+      "workload": "prose-100"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        33.342958,
+        32.67275,
+        32.538708
+      ],
+      "operation": "parse",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        137.124292,
+        102.138333,
+        102.94425
+      ],
+      "operation": "full-style",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        41.270375,
+        40.404375,
+        40.319208
+      ],
+      "operation": "edit-and-incremental-style",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        16.3765,
+        16.249916,
+        16.310666
+      ],
+      "operation": "word-count",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        4.326167,
+        4.307958,
+        4.309125
+      ],
+      "operation": "word-count-cached-cold",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        0.000291,
+        4.1e-05,
+        4.1e-05
+      ],
+      "operation": "word-count-cached-warm",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        166.1375,
+        164.516375,
+        162.823334
+      ],
+      "operation": "parse",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        1190.650958,
+        1028.590708,
+        1008.805875
+      ],
+      "operation": "full-style",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        201.263125,
+        199.951916,
+        201.112958
+      ],
+      "operation": "edit-and-incremental-style",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        81.861417,
+        80.741292,
+        80.852917
+      ],
+      "operation": "word-count",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        21.635041,
+        21.569708,
+        21.564709
+      ],
+      "operation": "word-count-cached-cold",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        0.00075,
+        4.2e-05,
+        4.2e-05
+      ],
+      "operation": "word-count-cached-warm",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 3700,
+      "milliseconds": [
+        2.042292,
+        1.813208,
+        1.809292
+      ],
+      "operation": "parse",
+      "workload": "long-line-100"
+    },
+    {
+      "bytes": 2700,
+      "milliseconds": [
+        1.3635,
+        1.263458,
+        1.254542
+      ],
+      "operation": "parse",
+      "workload": "inline-math-100"
+    },
+    {
+      "bytes": 2700,
+      "milliseconds": [
+        3.093667,
+        3.063708,
+        3.112625
+      ],
+      "operation": "warm-style",
+      "workload": "inline-math-100"
+    },
+    {
+      "bytes": 18500,
+      "milliseconds": [
+        8.93575,
+        8.79225,
+        8.76475
+      ],
+      "operation": "parse",
+      "workload": "long-line-500"
+    },
+    {
+      "bytes": 13500,
+      "milliseconds": [
+        6.015916,
+        5.961583,
+        5.945792
+      ],
+      "operation": "parse",
+      "workload": "inline-math-500"
+    },
+    {
+      "bytes": 13500,
+      "milliseconds": [
+        14.7695,
+        14.840792,
+        14.634833
+      ],
+      "operation": "warm-style",
+      "workload": "inline-math-500"
+    },
+    {
+      "bytes": 55500,
+      "milliseconds": [
+        26.327833,
+        26.370416,
+        26.21525
+      ],
+      "operation": "parse",
+      "workload": "long-line-1500"
+    },
+    {
+      "bytes": 40500,
+      "milliseconds": [
+        17.782417,
+        17.638875,
+        17.62575
+      ],
+      "operation": "parse",
+      "workload": "inline-math-1500"
+    },
+    {
+      "bytes": 40500,
+      "milliseconds": [
+        43.489958,
+        44.5275,
+        43.504375
+      ],
+      "operation": "warm-style",
+      "workload": "inline-math-1500"
+    },
+    {
+      "bytes": 2845,
+      "milliseconds": [
+        53.230708
+      ],
+      "operation": "initial-overlays",
+      "workload": "table-50"
+    },
+    {
+      "bytes": 2845,
+      "milliseconds": [
+        49.666333,
+        2.496791,
+        2.362375
+      ],
+      "operation": "unchanged-overlays",
+      "workload": "table-50"
+    },
+    {
+      "bytes": 2845,
+      "milliseconds": [
+        7.073292,
+        6.41825,
+        6.169459
+      ],
+      "operation": "edit-style-and-overlays",
+      "workload": "table-50"
+    },
+    {
+      "bytes": 11445,
+      "milliseconds": [
+        59.984542
+      ],
+      "operation": "initial-overlays",
+      "workload": "table-200"
+    },
+    {
+      "bytes": 11445,
+      "milliseconds": [
+        71.467542,
+        2.800291,
+        2.642708
+      ],
+      "operation": "unchanged-overlays",
+      "workload": "table-200"
+    },
+    {
+      "bytes": 11445,
+      "milliseconds": [
+        14.000542,
+        13.295416,
+        13.21275
+      ],
+      "operation": "edit-style-and-overlays",
+      "workload": "table-200"
+    },
+    {
+      "bytes": 28845,
+      "milliseconds": [
+        64.436458
+      ],
+      "operation": "initial-overlays",
+      "workload": "table-500"
+    },
+    {
+      "bytes": 28845,
+      "milliseconds": [
+        108.382208,
+        3.355125,
+        2.991417
+      ],
+      "operation": "unchanged-overlays",
+      "workload": "table-500"
+    },
+    {
+      "bytes": 28845,
+      "milliseconds": [
+        29.126291,
+        29.736084,
+        28.748958
+      ],
+      "operation": "edit-style-and-overlays",
+      "workload": "table-500"
+    },
+    {
+      "bytes": 1200000,
+      "milliseconds": [
+        0.26775,
+        0.004167,
+        0.002666,
+        0.0025,
+        0.0025,
+        0.0025,
+        0.002375,
+        0.002375,
+        0.002375,
+        0.00525
+      ],
+      "operation": "refresh",
+      "workload": "poll-unchanged-local"
+    }
+  ],
+  "editingFallbacks": [
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        280.468208,
+        278.662125,
+        274.145208
+      ],
+      "operation": "unchanged-incremental-restyle",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        163.17325,
+        158.309458,
+        159.115584
+      ],
+      "operation": "lens-style-roundtrip",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        41.450583,
+        40.235625,
+        40.186542
+      ],
+      "operation": "heading-edit-and-style",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        114.168166,
+        112.899833,
+        112.866291
+      ],
+      "operation": "find-full-style",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        5.85275,
+        2.008875,
+        2.022125
+      ],
+      "operation": "find-highlight-move",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73009,
+      "milliseconds": [
+        0.004542,
+        0.003291,
+        0.003083
+      ],
+      "operation": "literal-equality-independent-copy",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73026,
+      "milliseconds": [
+        278.811584,
+        287.355667,
+        279.184541
+      ],
+      "operation": "asset-full-restyle",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 73026,
+      "milliseconds": [
+        14.650166,
+        14.271375,
+        14.261959
+      ],
+      "operation": "asset-block-restyle",
+      "workload": "prose-1000"
+    },
+    {
+      "bytes": 78009,
+      "milliseconds": [
+        331.156917,
+        312.273625,
+        313.94975
+      ],
+      "operation": "unchanged-incremental-restyle",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 78009,
+      "milliseconds": [
+        175.077125,
+        175.614125,
+        176.89025
+      ],
+      "operation": "lens-style-roundtrip",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 78009,
+      "milliseconds": [
+        42.579542,
+        41.510292,
+        41.81775
+      ],
+      "operation": "heading-edit-and-style",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 78009,
+      "milliseconds": [
+        127.271875,
+        127.117792,
+        127.496375
+      ],
+      "operation": "find-full-style",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 78009,
+      "milliseconds": [
+        1.825792,
+        1.821666,
+        1.828875
+      ],
+      "operation": "find-highlight-move",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 78009,
+      "milliseconds": [
+        0.1275,
+        0.003625,
+        0.00325
+      ],
+      "operation": "literal-equality-independent-copy",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 78026,
+      "milliseconds": [
+        330.574875,
+        312.118958,
+        313.863583
+      ],
+      "operation": "asset-full-restyle",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 78026,
+      "milliseconds": [
+        17.219,
+        17.173042,
+        16.86375
+      ],
+      "operation": "asset-block-restyle",
+      "workload": "unicode-1000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        1931.9340419999999,
+        1924.5117500000001,
+        1920.350708
+      ],
+      "operation": "unchanged-incremental-restyle",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        1449.768959,
+        1426.8996670000001,
+        1412.262666
+      ],
+      "operation": "lens-style-roundtrip",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        201.373292,
+        200.85,
+        200.830708
+      ],
+      "operation": "heading-edit-and-style",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        1153.473333,
+        1155.170541,
+        1163.43875
+      ],
+      "operation": "find-full-style",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        29.451084,
+        10.1615,
+        10.146167
+      ],
+      "operation": "find-highlight-move",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365009,
+      "milliseconds": [
+        0.0115,
+        0.010666,
+        0.01025
+      ],
+      "operation": "literal-equality-independent-copy",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365026,
+      "milliseconds": [
+        1895.491041,
+        1888.72875,
+        1889.025792
+      ],
+      "operation": "asset-full-restyle",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 365026,
+      "milliseconds": [
+        39.779459,
+        39.343916,
+        39.536792
+      ],
+      "operation": "asset-block-restyle",
+      "workload": "prose-5000"
+    },
+    {
+      "bytes": 390009,
+      "milliseconds": [
+        2418.255,
+        2297.6139590000002,
+        2265.814959
+      ],
+      "operation": "unchanged-incremental-restyle",
+      "workload": "unicode-5000"
+    },
+    {
+      "bytes": 390009,
+      "milliseconds": [
+        4244.685208,
+        1478.440667,
+        1465.610125
+      ],
+      "operation": "lens-style-roundtrip",
+      "workload": "unicode-5000"
+    },
+    {
+      "bytes": 390009,
+      "milliseconds": [
+        208.280541,
+        207.424959,
+        206.233084
+      ],
+      "operation": "heading-edit-and-style",
+      "workload": "unicode-5000"
+    },
+    {
+      "bytes": 390009,
+      "milliseconds": [
+        1203.674791,
+        1208.699083,
+        1202.356708
+      ],
+      "operation": "find-full-style",
+      "workload": "unicode-5000"
+    },
+    {
+      "bytes": 390009,
+      "milliseconds": [
+        28.386042,
+        9.063083,
+        9.039917
+      ],
+      "operation": "find-highlight-move",
+      "workload": "unicode-5000"
+    },
+    {
+      "bytes": 390009,
+      "milliseconds": [
+        0.614584,
+        0.010875,
+        0.010666
+      ],
+      "operation": "literal-equality-independent-copy",
+      "workload": "unicode-5000"
+    },
+    {
+      "bytes": 390026,
+      "milliseconds": [
+        2387.363709,
+        2293.153208,
+        2287.3705840000002
+      ],
+      "operation": "asset-full-restyle",
+      "workload": "unicode-5000"
+    },
+    {
+      "bytes": 390026,
+      "milliseconds": [
+        42.93575,
+        42.197625,
+        42.512791
+      ],
+      "operation": "asset-block-restyle",
+      "workload": "unicode-5000"
+    }
+  ],
+  "appSnapshots": [
+    {
+      "workload": "two stress documents",
+      "sourceBytes": 78863,
+      "physicalFootprintMiB": 88.4,
+      "peakFootprintMiB": 90.7,
+      "liveMallocBytes": 41949099,
+      "mallocNodes": 245832,
+      "attributeRunBytes": 114400,
+      "spanArrayBytes": 76928,
+      "unreachableLeaks": 0
+    },
+    {
+      "workload": "prose-1m",
+      "sourceBytes": 1000109,
+      "physicalFootprintMiB": 102.9,
+      "peakFootprintMiB": 120.7,
+      "liveMallocBytes": 49632952,
+      "mallocNodes": 224726,
+      "attributeRunBytes": 14904272,
+      "spanArrayBytes": 4947968,
+      "dictionaryStorageBytes": 541600,
+      "dictionaryStorageCount": 1515
+    },
+    {
+      "workload": "prose-5m",
+      "sourceBytes": 5000509,
+      "physicalFootprintMiB": 346.5,
+      "peakFootprintMiB": 407.0,
+      "liveMallocBytes": 174241600,
+      "mallocNodes": 469783,
+      "attributeRunBytes": 83586720,
+      "spanArrayBytes": 24674304,
+      "dictionaryStorageBytes": 553488,
+      "dictionaryStorageCount": 1573,
+      "firstObservedIdleElapsedSeconds": 257,
+      "cpuSecondsAtFirstObservedIdle": 253.45,
+      "mallocZoneAllocatedMiB": 166.2,
+      "mallocZoneDirtyFragmentationMiB": 162.0
+    }
+  ],
+  "limitations": [
+    "One fresh launch per app workload; no controlled revision A/B.",
+    "Stress-document run did not force a lens; synthetic runs explicitly selected Rendered.",
+    "Main-process footprints exclude helper processes.",
+    "Allocations attach failed; system-wide Time Profiler succeeded.",
+    "Command-line telemetry disable was not established; Sentry threads remained present.",
+    "Final candidate: 1 MB footprint 112.4/123.4 MiB versus a single 102.5 MiB control; stress pair 113.5/88.8/114.5 MiB versus a single 85.8 MiB control. Small-workload baseline distributions are not established; do not claim uniform memory savings or attribute all variation to this patch."
+  ],
+  "markerBatching": {
+    "method": "Shared 1 pt monospaced marker font; grouped equal-advance kern writes; ordered marker overlay/content-run merge; autorelease pools outside batches of 1024 markers and 16384 UTF-16 units; compact retained span array. No allocator relief API. Per-pass full-NSFont-keyed bold/italic conversion reuse.",
+    "normalAppTests": {
+      "configuration": "Debug",
+      "passed": 225,
+      "expandedPassedExecutions": 274,
+      "skippedOptInDiagnostics": 4,
+      "failed": 0
+    },
+    "regressions": {
+      "originalDebugMarkerDense2MBTestSeconds": 24.624,
+      "optInLimitSeconds": 12,
+      "sourceInvariant": true,
+      "composedCharacterCoverage": true,
+      "goldensChanged": "14 rendered-lens invisible-marker probes add the monospaced trait; visible probes and Markdown-lens goldens unchanged.",
+      "preBoundedPoolsDebugMarkerDense2MBTestSeconds": 5.541,
+      "finalReleaseMarkerDense2MBGuardPassed": true,
+      "finalReleaseTimingNote": "Xcode reports overlapping 30.76-second host wall durations for all three concurrent main-actor tests; use the in-test 12-second style guard, not that duration, as performance proof."
+    },
+    "editorWork": [
+      {
+        "bytes": 7309,
+        "milliseconds": [
+          3.550875,
+          3.352291,
+          3.34375
+        ],
+        "operation": "parse",
+        "workload": "prose-100"
+      },
+      {
+        "bytes": 7309,
+        "milliseconds": [
+          11.582125,
+          7.131667,
+          7.36075
+        ],
+        "operation": "full-style",
+        "workload": "prose-100"
+      },
+      {
+        "bytes": 7309,
+        "milliseconds": [
+          5.103042,
+          4.447334,
+          4.432542
+        ],
+        "operation": "edit-and-incremental-style",
+        "workload": "prose-100"
+      },
+      {
+        "bytes": 7309,
+        "milliseconds": [
+          1.699833,
+          1.684167,
+          1.70875
+        ],
+        "operation": "word-count",
+        "workload": "prose-100"
+      },
+      {
+        "bytes": 7309,
+        "milliseconds": [
+          0.438375,
+          0.433375,
+          0.444958
+        ],
+        "operation": "word-count-cached-cold",
+        "workload": "prose-100"
+      },
+      {
+        "bytes": 7309,
+        "milliseconds": [
+          0.000292,
+          4.2e-05,
+          8.3e-05
+        ],
+        "operation": "word-count-cached-warm",
+        "workload": "prose-100"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          33.35425,
+          32.874,
+          33.168083
+        ],
+        "operation": "parse",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          102.778959,
+          67.138417,
+          69.751792
+        ],
+        "operation": "full-style",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          43.088708,
+          40.783791,
+          40.73175
+        ],
+        "operation": "edit-and-incremental-style",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          16.383834,
+          16.099834,
+          16.189083
+        ],
+        "operation": "word-count",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          4.415917,
+          4.414875,
+          4.443917
+        ],
+        "operation": "word-count-cached-cold",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          0.000584,
+          4.2e-05,
+          4.2e-05
+        ],
+        "operation": "word-count-cached-warm",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          165.649334,
+          163.892,
+          163.703333
+        ],
+        "operation": "parse",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          513.441583,
+          330.333042,
+          329.593584
+        ],
+        "operation": "full-style",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          203.194542,
+          202.086666,
+          202.068875
+        ],
+        "operation": "edit-and-incremental-style",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          81.786333,
+          81.635167,
+          81.202625
+        ],
+        "operation": "word-count",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          21.657792,
+          21.700083,
+          21.677625
+        ],
+        "operation": "word-count-cached-cold",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          0.001667,
+          8.3e-05,
+          4.1e-05
+        ],
+        "operation": "word-count-cached-warm",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 3700,
+        "milliseconds": [
+          2.263167,
+          1.831916,
+          1.821208
+        ],
+        "operation": "parse",
+        "workload": "long-line-100"
+      },
+      {
+        "bytes": 2700,
+        "milliseconds": [
+          1.38375,
+          1.267959,
+          1.2445
+        ],
+        "operation": "parse",
+        "workload": "inline-math-100"
+      },
+      {
+        "bytes": 2700,
+        "milliseconds": [
+          2.718792,
+          2.646,
+          2.622417
+        ],
+        "operation": "warm-style",
+        "workload": "inline-math-100"
+      },
+      {
+        "bytes": 18500,
+        "milliseconds": [
+          8.954625,
+          8.886542,
+          8.860083
+        ],
+        "operation": "parse",
+        "workload": "long-line-500"
+      },
+      {
+        "bytes": 13500,
+        "milliseconds": [
+          6.016291,
+          5.985916,
+          5.952959
+        ],
+        "operation": "parse",
+        "workload": "inline-math-500"
+      },
+      {
+        "bytes": 13500,
+        "milliseconds": [
+          12.859042,
+          12.768792,
+          12.628041
+        ],
+        "operation": "warm-style",
+        "workload": "inline-math-500"
+      },
+      {
+        "bytes": 55500,
+        "milliseconds": [
+          26.564708,
+          26.452584,
+          26.480875
+        ],
+        "operation": "parse",
+        "workload": "long-line-1500"
+      },
+      {
+        "bytes": 40500,
+        "milliseconds": [
+          17.83675,
+          17.751333,
+          17.722166
+        ],
+        "operation": "parse",
+        "workload": "inline-math-1500"
+      },
+      {
+        "bytes": 40500,
+        "milliseconds": [
+          38.331167,
+          38.275625,
+          38.4965
+        ],
+        "operation": "warm-style",
+        "workload": "inline-math-1500"
+      },
+      {
+        "bytes": 2845,
+        "milliseconds": [
+          49.757083
+        ],
+        "operation": "initial-overlays",
+        "workload": "table-50"
+      },
+      {
+        "bytes": 2845,
+        "milliseconds": [
+          46.025667,
+          2.522709,
+          2.394875
+        ],
+        "operation": "unchanged-overlays",
+        "workload": "table-50"
+      },
+      {
+        "bytes": 2845,
+        "milliseconds": [
+          6.474041,
+          5.66025,
+          5.537917
+        ],
+        "operation": "edit-style-and-overlays",
+        "workload": "table-50"
+      },
+      {
+        "bytes": 11445,
+        "milliseconds": [
+          51.248167
+        ],
+        "operation": "initial-overlays",
+        "workload": "table-200"
+      },
+      {
+        "bytes": 11445,
+        "milliseconds": [
+          59.198291,
+          2.86875,
+          2.642
+        ],
+        "operation": "unchanged-overlays",
+        "workload": "table-200"
+      },
+      {
+        "bytes": 11445,
+        "milliseconds": [
+          14.039417,
+          13.325667,
+          13.247834
+        ],
+        "operation": "edit-style-and-overlays",
+        "workload": "table-200"
+      },
+      {
+        "bytes": 28845,
+        "milliseconds": [
+          59.84475
+        ],
+        "operation": "initial-overlays",
+        "workload": "table-500"
+      },
+      {
+        "bytes": 28845,
+        "milliseconds": [
+          81.3035,
+          3.407083,
+          3.024041
+        ],
+        "operation": "unchanged-overlays",
+        "workload": "table-500"
+      },
+      {
+        "bytes": 28845,
+        "milliseconds": [
+          29.385125,
+          28.686583,
+          28.60175
+        ],
+        "operation": "edit-style-and-overlays",
+        "workload": "table-500"
+      },
+      {
+        "bytes": 1200000,
+        "milliseconds": [
+          0.359334,
+          0.006209,
+          0.002833,
+          0.002709,
+          0.002708,
+          0.002625,
+          0.003,
+          0.003083,
+          0.002917,
+          0.003458
+        ],
+        "operation": "refresh",
+        "workload": "poll-unchanged-local"
+      }
+    ],
+    "editingFallbacks": [
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          136.255459,
+          135.881458,
+          135.166834
+        ],
+        "operation": "unchanged-incremental-restyle",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          132.426792,
+          128.910333,
+          133.373959
+        ],
+        "operation": "lens-style-roundtrip",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          44.539042,
+          41.855917,
+          41.468667
+        ],
+        "operation": "heading-edit-and-style",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          73.567791,
+          73.745084,
+          71.541042
+        ],
+        "operation": "find-full-style",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          4.034458,
+          2.022084,
+          2.022708
+        ],
+        "operation": "find-highlight-move",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73009,
+        "milliseconds": [
+          0.004875,
+          0.003375,
+          0.003125
+        ],
+        "operation": "literal-equality-independent-copy",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73026,
+        "milliseconds": [
+          139.451583,
+          138.032875,
+          138.970041
+        ],
+        "operation": "asset-full-restyle",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 73026,
+        "milliseconds": [
+          10.724,
+          10.257208,
+          10.142125
+        ],
+        "operation": "asset-block-restyle",
+        "workload": "prose-1000"
+      },
+      {
+        "bytes": 78009,
+        "milliseconds": [
+          179.288208,
+          170.274292,
+          169.215333
+        ],
+        "operation": "unchanged-incremental-restyle",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 78009,
+        "milliseconds": [
+          139.242583,
+          139.567875,
+          139.412584
+        ],
+        "operation": "lens-style-roundtrip",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 78009,
+        "milliseconds": [
+          45.541959,
+          42.66275,
+          43.515792
+        ],
+        "operation": "heading-edit-and-style",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 78009,
+        "milliseconds": [
+          86.306417,
+          84.161125,
+          83.124083
+        ],
+        "operation": "find-full-style",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 78009,
+        "milliseconds": [
+          1.992125,
+          1.891459,
+          1.92375
+        ],
+        "operation": "find-highlight-move",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 78009,
+        "milliseconds": [
+          0.135209,
+          0.003667,
+          0.003292
+        ],
+        "operation": "literal-equality-independent-copy",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 78026,
+        "milliseconds": [
+          176.770584,
+          168.916166,
+          165.083834
+        ],
+        "operation": "asset-full-restyle",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 78026,
+        "milliseconds": [
+          11.833958,
+          11.781042,
+          11.8035
+        ],
+        "operation": "asset-block-restyle",
+        "workload": "unicode-1000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          684.026375,
+          672.354041,
+          684.360167
+        ],
+        "operation": "unchanged-incremental-restyle",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          682.345625,
+          676.205333,
+          681.913958
+        ],
+        "operation": "lens-style-roundtrip",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          212.279208,
+          206.222375,
+          208.122125
+        ],
+        "operation": "heading-edit-and-style",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          395.615084,
+          395.382584,
+          396.94625
+        ],
+        "operation": "find-full-style",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          19.3115,
+          10.331791,
+          10.256375
+        ],
+        "operation": "find-highlight-move",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365009,
+        "milliseconds": [
+          0.011333,
+          0.010792,
+          0.01025
+        ],
+        "operation": "literal-equality-independent-copy",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365026,
+        "milliseconds": [
+          699.152583,
+          676.995208,
+          678.983708
+        ],
+        "operation": "asset-full-restyle",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 365026,
+        "milliseconds": [
+          30.615583,
+          30.21925,
+          30.424167
+        ],
+        "operation": "asset-block-restyle",
+        "workload": "prose-5000"
+      },
+      {
+        "bytes": 390009,
+        "milliseconds": [
+          878.823959,
+          827.39875,
+          836.370042
+        ],
+        "operation": "unchanged-incremental-restyle",
+        "workload": "unicode-5000"
+      },
+      {
+        "bytes": 390009,
+        "milliseconds": [
+          706.615708,
+          720.410167,
+          713.962083
+        ],
+        "operation": "lens-style-roundtrip",
+        "workload": "unicode-5000"
+      },
+      {
+        "bytes": 390009,
+        "milliseconds": [
+          209.833542,
+          209.290792,
+          208.928708
+        ],
+        "operation": "heading-edit-and-style",
+        "workload": "unicode-5000"
+      },
+      {
+        "bytes": 390009,
+        "milliseconds": [
+          443.598167,
+          431.502875,
+          435.874375
+        ],
+        "operation": "find-full-style",
+        "workload": "unicode-5000"
+      },
+      {
+        "bytes": 390009,
+        "milliseconds": [
+          17.489875,
+          8.967,
+          8.906667
+        ],
+        "operation": "find-highlight-move",
+        "workload": "unicode-5000"
+      },
+      {
+        "bytes": 390009,
+        "milliseconds": [
+          0.61375,
+          0.010875,
+          0.010666
+        ],
+        "operation": "literal-equality-independent-copy",
+        "workload": "unicode-5000"
+      },
+      {
+        "bytes": 390026,
+        "milliseconds": [
+          883.031667,
+          845.95975,
+          827.480125
+        ],
+        "operation": "asset-full-restyle",
+        "workload": "unicode-5000"
+      },
+      {
+        "bytes": 390026,
+        "milliseconds": [
+          33.295458,
+          32.903875,
+          32.933792
+        ],
+        "operation": "asset-block-restyle",
+        "workload": "unicode-5000"
+      }
+    ],
+    "releaseAuditTests": {
+      "passed": 3,
+      "failed": 0
+    },
+    "boundedPoolsBeforeFontReuse": {
+      "profiles": [
+        {
+          "workload": "prose-1m",
+          "firstObservedIdleSeconds": 6.17026879201876,
+          "statusAtMeasurement": "0.0   0:04.44 00:14",
+          "polls": [
+            {
+              "elapsed": 3.161178416979965,
+              "status": "98.0   0:03.04 00:03"
+            },
+            {
+              "elapsed": 6.17026879201876,
+              "status": "1.1   0:04.43 00:06"
+            }
+          ],
+          "physicalFootprintMiB": 95.0,
+          "peakFootprintMiB": 124.3,
+          "attributeRunBytes": 6313296,
+          "liveMallocBytes": 40812934
+        },
+        {
+          "workload": "prose-5m-1",
+          "firstObservedIdleSeconds": 21.29149795899866,
+          "statusAtMeasurement": "0.0   0:19.65 00:29",
+          "polls": [
+            {
+              "elapsed": 3.1728437499841675,
+              "status": "100.2   0:03.13 00:03"
+            },
+            {
+              "elapsed": 6.197075875010341,
+              "status": "99.1   0:06.15 00:06"
+            },
+            {
+              "elapsed": 9.219414916995447,
+              "status": "99.0   0:09.17 00:09"
+            },
+            {
+              "elapsed": 12.23668433399871,
+              "status": "100.9   0:12.19 00:12"
+            },
+            {
+              "elapsed": 15.261244542023633,
+              "status": "99.0   0:15.22 00:15"
+            },
+            {
+              "elapsed": 18.286845083988737,
+              "status": "99.0   0:18.25 00:18"
+            },
+            {
+              "elapsed": 21.29149795899866,
+              "status": "0.5   0:19.65 00:21"
+            }
+          ],
+          "physicalFootprintMiB": 355.2,
+          "peakFootprintMiB": 412.6,
+          "attributeRunBytes": 26465536,
+          "liveMallocBytes": 113581878
+        },
+        {
+          "workload": "prose-5m-2",
+          "firstObservedIdleSeconds": 21.28396533295745,
+          "statusAtMeasurement": "0.0   0:19.88 00:30",
+          "polls": [
+            {
+              "elapsed": 3.153943041979801,
+              "status": "99.9   0:03.11 00:03"
+            },
+            {
+              "elapsed": 6.177343416959047,
+              "status": "100.0   0:06.14 00:06"
+            },
+            {
+              "elapsed": 9.204922832956072,
+              "status": "100.0   0:09.17 00:09"
+            },
+            {
+              "elapsed": 12.218970457965042,
+              "status": "100.0   0:12.16 00:12"
+            },
+            {
+              "elapsed": 15.244836749974638,
+              "status": "100.0   0:15.20 00:16"
+            },
+            {
+              "elapsed": 18.270761666994076,
+              "status": "99.0   0:18.22 00:19"
+            },
+            {
+              "elapsed": 21.28396533295745,
+              "status": "2.0   0:19.87 00:22"
+            }
+          ],
+          "physicalFootprintMiB": 355.2,
+          "peakFootprintMiB": 420.0,
+          "attributeRunBytes": 26465536,
+          "liveMallocBytes": 113594134
+        },
+        {
+          "workload": "prose-5m-3",
+          "firstObservedIdleSeconds": 21.295726959011517,
+          "statusAtMeasurement": "0.0   0:19.67 00:29",
+          "polls": [
+            {
+              "elapsed": 3.1636912089888938,
+              "status": "99.6   0:03.11 00:03"
+            },
+            {
+              "elapsed": 6.187147625023499,
+              "status": "100.0   0:06.14 00:06"
+            },
+            {
+              "elapsed": 9.215538666991051,
+              "status": "100.0   0:09.17 00:09"
+            },
+            {
+              "elapsed": 12.23361658398062,
+              "status": "100.9   0:12.19 00:12"
+            },
+            {
+              "elapsed": 15.254514041997027,
+              "status": "100.0   0:15.21 00:15"
+            },
+            {
+              "elapsed": 18.280299499980174,
+              "status": "100.0   0:18.23 00:18"
+            },
+            {
+              "elapsed": 21.295726959011517,
+              "status": "0.7   0:19.66 00:21"
+            }
+          ],
+          "physicalFootprintMiB": 354.8,
+          "peakFootprintMiB": 413.2,
+          "attributeRunBytes": 26465536,
+          "liveMallocBytes": 113383030
+        },
+        {
+          "workload": "stress",
+          "firstObservedIdleSeconds": 15.302541833021678,
+          "statusAtMeasurement": "0.0   0:01.22 00:23",
+          "polls": [
+            {
+              "elapsed": 3.1970242080278695,
+              "status": "0.1   0:01.17 00:03"
+            },
+            {
+              "elapsed": 6.221163083042484,
+              "status": "0.1   0:01.19 00:06"
+            },
+            {
+              "elapsed": 9.244698583032005,
+              "status": "0.0   0:01.20 00:09"
+            },
+            {
+              "elapsed": 12.272135042003356,
+              "status": "0.1   0:01.20 00:12"
+            },
+            {
+              "elapsed": 15.302541833021678,
+              "status": "0.0   0:01.21 00:15"
+            }
+          ],
+          "physicalFootprintMiB": 89.2,
+          "peakFootprintMiB": 97.6,
+          "attributeRunBytes": 96816,
+          "liveMallocBytes": 43347413
+        }
+      ],
+      "editorWork": [
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            3.739458,
+            3.505958,
+            3.338958
+          ],
+          "operation": "parse",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            14.793875,
+            9.292209,
+            9.221583
+          ],
+          "operation": "full-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            5.398833,
+            4.537958,
+            4.437208
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            1.641709,
+            1.640917,
+            1.608917
+          ],
+          "operation": "word-count",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.4435,
+            0.432542,
+            0.432792
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 7309,
+          "milliseconds": [
+            0.00025,
+            8.3e-05,
+            4.2e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-100"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            32.904292,
+            32.557084,
+            32.505458
+          ],
+          "operation": "parse",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            123.695167,
+            87.005375,
+            87.299375
+          ],
+          "operation": "full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            41.100625,
+            40.228333,
+            40.3515
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            16.309709,
+            16.339916,
+            16.216083
+          ],
+          "operation": "word-count",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            4.340292,
+            4.321459,
+            4.31775
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.000292,
+            0.000125,
+            8.3e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            164.391542,
+            162.883,
+            164.12475
+          ],
+          "operation": "parse",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            620.3425,
+            446.925083,
+            434.751334
+          ],
+          "operation": "full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            201.857708,
+            200.737042,
+            200.681917
+          ],
+          "operation": "edit-and-incremental-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            81.627625,
+            81.8775,
+            81.783833
+          ],
+          "operation": "word-count",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            21.57825,
+            21.638417,
+            21.586667
+          ],
+          "operation": "word-count-cached-cold",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.000792,
+            8.4e-05,
+            4.2e-05
+          ],
+          "operation": "word-count-cached-warm",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 3700,
+          "milliseconds": [
+            2.204167,
+            1.826042,
+            1.802458
+          ],
+          "operation": "parse",
+          "workload": "long-line-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            1.414584,
+            1.26575,
+            1.241917
+          ],
+          "operation": "parse",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 2700,
+          "milliseconds": [
+            2.700208,
+            2.621958,
+            2.618958
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-100"
+        },
+        {
+          "bytes": 18500,
+          "milliseconds": [
+            8.922375,
+            8.817125,
+            8.82975
+          ],
+          "operation": "parse",
+          "workload": "long-line-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            5.96225,
+            5.945166,
+            5.9265
+          ],
+          "operation": "parse",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 13500,
+          "milliseconds": [
+            12.620125,
+            12.83225,
+            12.733459
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-500"
+        },
+        {
+          "bytes": 55500,
+          "milliseconds": [
+            26.503541,
+            26.27825,
+            26.372833
+          ],
+          "operation": "parse",
+          "workload": "long-line-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            17.757792,
+            17.658083,
+            17.688167
+          ],
+          "operation": "parse",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 40500,
+          "milliseconds": [
+            37.890625,
+            38.53425,
+            38.81025
+          ],
+          "operation": "warm-style",
+          "workload": "inline-math-1500"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            48.76125
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            46.009208,
+            2.482958,
+            2.363333
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 2845,
+          "milliseconds": [
+            6.398125,
+            5.558959,
+            5.536834
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-50"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            51.486583
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            58.516417,
+            2.758958,
+            2.614875
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 11445,
+          "milliseconds": [
+            13.877625,
+            13.242083,
+            13.206625
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-200"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            59.66175
+          ],
+          "operation": "initial-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            80.991458,
+            3.351125,
+            3.000667
+          ],
+          "operation": "unchanged-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 28845,
+          "milliseconds": [
+            29.1275,
+            28.475208,
+            28.4335
+          ],
+          "operation": "edit-style-and-overlays",
+          "workload": "table-500"
+        },
+        {
+          "bytes": 1200000,
+          "milliseconds": [
+            0.288292,
+            0.004166,
+            0.002917,
+            0.002792,
+            0.00275,
+            0.002541,
+            0.002708,
+            0.002625,
+            0.002666,
+            0.002875
+          ],
+          "operation": "refresh",
+          "workload": "poll-unchanged-local"
+        }
+      ],
+      "editingFallbacks": [
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            152.671292,
+            149.9705,
+            151.662583
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            159.240084,
+            157.658625,
+            159.690541
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            41.290417,
+            40.349584,
+            40.423083
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            87.814542,
+            86.728667,
+            85.763375
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            3.823458,
+            2.030958,
+            2.039375
+          ],
+          "operation": "find-highlight-move",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73009,
+          "milliseconds": [
+            0.005042,
+            0.003291,
+            0.003084
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73026,
+          "milliseconds": [
+            152.399583,
+            151.452167,
+            152.792875
+          ],
+          "operation": "asset-full-restyle",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 73026,
+          "milliseconds": [
+            10.373625,
+            10.189125,
+            10.190417
+          ],
+          "operation": "asset-block-restyle",
+          "workload": "prose-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            195.205833,
+            182.6685,
+            182.479334
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            172.191417,
+            171.917542,
+            173.614458
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            42.549375,
+            41.95775,
+            41.657125
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            99.682583,
+            101.681791,
+            100.228292
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            1.855042,
+            1.851458,
+            1.855709
+          ],
+          "operation": "find-highlight-move",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78009,
+          "milliseconds": [
+            0.131584,
+            0.003709,
+            0.003208
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78026,
+          "milliseconds": [
+            191.977334,
+            185.024583,
+            181.249917
+          ],
+          "operation": "asset-full-restyle",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 78026,
+          "milliseconds": [
+            11.968125,
+            11.890084,
+            11.882917
+          ],
+          "operation": "asset-block-restyle",
+          "workload": "unicode-1000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            765.551125,
+            765.865958,
+            756.872708
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            828.46075,
+            828.340333,
+            821.717542
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            202.270292,
+            200.978875,
+            201.09825
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            470.952,
+            471.101791,
+            475.233083
+          ],
+          "operation": "find-full-style",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            18.887791,
+            10.214666,
+            10.266916
+          ],
+          "operation": "find-highlight-move",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365009,
+          "milliseconds": [
+            0.01375,
+            0.010417,
+            0.010333
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365026,
+          "milliseconds": [
+            764.733167,
+            768.688167,
+            769.07675
+          ],
+          "operation": "asset-full-restyle",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 365026,
+          "milliseconds": [
+            31.670791,
+            30.494125,
+            30.533708
+          ],
+          "operation": "asset-block-restyle",
+          "workload": "prose-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            1014.081583,
+            969.16225,
+            964.914667
+          ],
+          "operation": "unchanged-incremental-restyle",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            885.752208,
+            881.276375,
+            883.123708
+          ],
+          "operation": "lens-style-roundtrip",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            207.904333,
+            206.655083,
+            206.105416
+          ],
+          "operation": "heading-edit-and-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            535.71825,
+            525.91925,
+            528.682292
+          ],
+          "operation": "find-full-style",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            19.088958,
+            9.148708,
+            9.174084
+          ],
+          "operation": "find-highlight-move",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390009,
+          "milliseconds": [
+            0.61625,
+            0.010833,
+            0.011166
+          ],
+          "operation": "literal-equality-independent-copy",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390026,
+          "milliseconds": [
+            1003.032709,
+            961.244875,
+            957.729375
+          ],
+          "operation": "asset-full-restyle",
+          "workload": "unicode-5000"
+        },
+        {
+          "bytes": 390026,
+          "milliseconds": [
+            33.75,
+            35.637958,
+            33.338292
+          ],
+          "operation": "asset-block-restyle",
+          "workload": "unicode-5000"
+        }
+      ]
+    },
+    "appProfiles": [
+      {
+        "workload": "prose-1m",
+        "firstObservedIdleSeconds": 6.17917966604,
+        "statusAtMeasurement": "0.5   0:04.08 00:15",
+        "polls": [
+          {
+            "elapsed": 3.1521578329848126,
+            "status": "100.1   0:03.07 00:03"
+          },
+          {
+            "elapsed": 6.17917966604,
+            "status": "0.0   0:03.89 00:06"
+          }
+        ],
+        "physicalFootprintMiB": 112.4,
+        "peakFootprintMiB": 116.1,
+        "attributeRunBytes": 3160768,
+        "liveMallocBytes": 36162892
+      },
+      {
+        "workload": "prose-5m-1",
+        "firstObservedIdleSeconds": 18.23356750002131,
+        "statusAtMeasurement": "0.3   0:16.91 00:26",
+        "polls": [
+          {
+            "elapsed": 3.146062083018478,
+            "status": "100.3   0:03.10 00:03"
+          },
+          {
+            "elapsed": 6.1549342080252245,
+            "status": "100.1   0:06.11 00:06"
+          },
+          {
+            "elapsed": 9.174094124988187,
+            "status": "100.4   0:09.11 00:09"
+          },
+          {
+            "elapsed": 12.20099158299854,
+            "status": "98.4   0:12.15 00:12"
+          },
+          {
+            "elapsed": 15.219980082998518,
+            "status": "98.8   0:15.16 00:15"
+          },
+          {
+            "elapsed": 18.23356750002131,
+            "status": "1.6   0:16.88 00:18"
+          }
+        ],
+        "physicalFootprintMiB": 341.5,
+        "peakFootprintMiB": 387.6,
+        "attributeRunBytes": 26469536,
+        "liveMallocBytes": 165178803
+      },
+      {
+        "workload": "prose-5m-2",
+        "firstObservedIdleSeconds": 21.246875084005296,
+        "statusAtMeasurement": "0.0   0:17.07 00:29",
+        "polls": [
+          {
+            "elapsed": 3.1540422500111163,
+            "status": "99.9   0:03.10 00:03"
+          },
+          {
+            "elapsed": 6.167574041988701,
+            "status": "100.0   0:06.11 00:06"
+          },
+          {
+            "elapsed": 9.18258662498556,
+            "status": "100.8   0:09.13 00:09"
+          },
+          {
+            "elapsed": 12.197588042006828,
+            "status": "99.4   0:12.14 00:12"
+          },
+          {
+            "elapsed": 15.20394379197387,
+            "status": "100.0   0:15.15 00:15"
+          },
+          {
+            "elapsed": 18.221492416982073,
+            "status": "5.8   0:17.06 00:18"
+          },
+          {
+            "elapsed": 21.246875084005296,
+            "status": "0.0   0:17.06 00:21"
+          }
+        ],
+        "physicalFootprintMiB": 340.2,
+        "peakFootprintMiB": 388.8,
+        "attributeRunBytes": 26465856,
+        "liveMallocBytes": 113194032
+      },
+      {
+        "workload": "prose-5m-3",
+        "firstObservedIdleSeconds": 18.227712583029643,
+        "statusAtMeasurement": "0.3   0:16.82 00:26",
+        "polls": [
+          {
+            "elapsed": 3.1511398750008084,
+            "status": "99.9   0:03.12 00:03"
+          },
+          {
+            "elapsed": 6.165536165994126,
+            "status": "100.0   0:06.13 00:06"
+          },
+          {
+            "elapsed": 9.179129874974024,
+            "status": "100.5   0:09.12 00:09"
+          },
+          {
+            "elapsed": 12.19907258299645,
+            "status": "99.6   0:12.15 00:12"
+          },
+          {
+            "elapsed": 15.215006083017215,
+            "status": "100.0   0:15.16 00:15"
+          },
+          {
+            "elapsed": 18.227712583029643,
+            "status": "1.3   0:16.79 00:18"
+          }
+        ],
+        "physicalFootprintMiB": 340.8,
+        "peakFootprintMiB": 387.8,
+        "attributeRunBytes": 26470576,
+        "liveMallocBytes": 165099923
+      },
+      {
+        "workload": "stress",
+        "firstObservedIdleSeconds": 15.269367708009668,
+        "statusAtMeasurement": "0.0   0:01.43 00:23",
+        "polls": [
+          {
+            "elapsed": 3.157867415982764,
+            "status": "4.1   0:01.37 00:03"
+          },
+          {
+            "elapsed": 6.1809452080051415,
+            "status": "0.0   0:01.40 00:06"
+          },
+          {
+            "elapsed": 9.219374208012596,
+            "status": "0.0   0:01.40 00:09"
+          },
+          {
+            "elapsed": 12.242890082998201,
+            "status": "0.1   0:01.41 00:12"
+          },
+          {
+            "elapsed": 15.269367708009668,
+            "status": "0.0   0:01.41 00:15"
+          }
+        ],
+        "physicalFootprintMiB": 113.5,
+        "peakFootprintMiB": 120.4,
+        "attributeRunBytes": 77856,
+        "liveMallocBytes": 50399058
+      }
+    ],
+    "smallWorkloadRepeats": [
+      {
+        "workload": "prose-1m-repeat",
+        "firstObservedIdleSeconds": 6.176856665988453,
+        "statusAtMeasurement": "0.1   0:04.10 00:14",
+        "polls": [
+          {
+            "elapsed": 3.1610455000190996,
+            "status": "100.0   0:03.14 00:03"
+          },
+          {
+            "elapsed": 6.176856665988453,
+            "status": "2.1   0:04.09 00:06"
+          }
+        ],
+        "physicalFootprintMiB": 123.4,
+        "peakFootprintMiB": 124.5,
+        "attributeRunBytes": 3160768,
+        "liveMallocBytes": 35933800
+      },
+      {
+        "workload": "stress-repeat-1",
+        "firstObservedIdleSeconds": 15.199609000002965,
+        "statusAtMeasurement": "0.0   0:01.28 00:24",
+        "polls": [
+          {
+            "elapsed": 3.1421387500013225,
+            "status": "3.4   0:01.14 00:03"
+          },
+          {
+            "elapsed": 6.152082499989774,
+            "status": "0.8   0:01.25 00:06"
+          },
+          {
+            "elapsed": 9.17073941702256,
+            "status": "0.0   0:01.25 00:09"
+          },
+          {
+            "elapsed": 12.181157167011406,
+            "status": "0.1   0:01.26 00:12"
+          },
+          {
+            "elapsed": 15.199609000002965,
+            "status": "0.0   0:01.26 00:15"
+          }
+        ],
+        "physicalFootprintMiB": 88.8,
+        "peakFootprintMiB": 92.5,
+        "attributeRunBytes": 76288,
+        "liveMallocBytes": 41831931
+      },
+      {
+        "workload": "stress-repeat-2",
+        "firstObservedIdleSeconds": 15.20837562502129,
+        "statusAtMeasurement": "0.0   0:01.45 00:23",
+        "polls": [
+          {
+            "elapsed": 3.1523137090262026,
+            "status": "2.1   0:01.22 00:03"
+          },
+          {
+            "elapsed": 6.166773417033255,
+            "status": "0.1   0:01.41 00:06"
+          },
+          {
+            "elapsed": 9.181757999991532,
+            "status": "0.0   0:01.42 00:09"
+          },
+          {
+            "elapsed": 12.195393125002738,
+            "status": "0.1   0:01.42 00:12"
+          },
+          {
+            "elapsed": 15.20837562502129,
+            "status": "0.0   0:01.42 00:15"
+          }
+        ],
+        "physicalFootprintMiB": 114.5,
+        "peakFootprintMiB": 116.1,
+        "attributeRunBytes": 75008,
+        "liveMallocBytes": 51970024
+      }
+    ],
+    "acceptance": "Repeatable large-document latency improvement, modest 5 MB physical-footprint improvement. Uniform footprint acceptance not established: 1 MB settled footprint increased; stress pair varied across fresh launches. No Sentry hang resolution claimed."
+  },
+  "controlBaseline": {
+    "sourceCommit": "380e0fc",
+    "sourceFiles": [
+      "Markify/NativeEditor.swift",
+      "MarkifyMarkdown/Sources/MarkifyMarkdown/MarkdownModel.swift"
+    ],
+    "version": "2.5.7 (370)",
+    "configuration": "Release, testability enabled, signing disabled",
+    "snapshots": [
+      {
+        "workload": "prose-1m",
+        "firstObservedIdleSeconds": 15.209687041991856,
+        "statusAtMeasurement": "0.0   0:13.35 00:23",
+        "polls": [
+          {
+            "elapsed": 3.1557407500222325,
+            "status": "100.0   0:02.85 00:03"
+          },
+          {
+            "elapsed": 6.169532250030898,
+            "status": "100.0   0:05.87 00:06"
+          },
+          {
+            "elapsed": 9.183447999996133,
+            "status": "100.0   0:08.87 00:09"
+          },
+          {
+            "elapsed": 12.194539833988529,
+            "status": "100.0   0:11.89 00:12"
+          },
+          {
+            "elapsed": 15.209687041991856,
+            "status": "1.3   0:13.33 00:15"
+          }
+        ],
+        "physicalFootprintMiB": 102.5,
+        "peakFootprintMiB": 121.4,
+        "attributeRunBytes": 14904352,
+        "liveMallocBytes": 50016982
+      },
+      {
+        "workload": "prose-5m-1",
+        "firstObservedIdleSeconds": 250.7051506669959,
+        "statusAtMeasurement": "0.0   4:09.44 04:19",
+        "polls": [
+          {
+            "elapsed": 3.148383499996271,
+            "status": "100.5   0:03.12 00:03"
+          },
+          {
+            "elapsed": 6.167399375000969,
+            "status": "100.0   0:06.14 00:06"
+          },
+          {
+            "elapsed": 9.183152458048426,
+            "status": "100.0   0:09.15 00:09"
+          },
+          {
+            "elapsed": 12.197908041998744,
+            "status": "99.1   0:12.17 00:12"
+          },
+          {
+            "elapsed": 15.217218750040047,
+            "status": "99.7   0:15.19 00:15"
+          },
+          {
+            "elapsed": 18.233838417043444,
+            "status": "99.7   0:18.21 00:18"
+          },
+          {
+            "elapsed": 21.25014308304526,
+            "status": "100.0   0:21.23 00:21"
+          },
+          {
+            "elapsed": 24.26575787505135,
+            "status": "100.0   0:24.24 00:24"
+          },
+          {
+            "elapsed": 27.282978917006403,
+            "status": "100.0   0:27.26 00:27"
+          },
+          {
+            "elapsed": 30.29670004203217,
+            "status": "100.0   0:30.27 00:30"
+          },
+          {
+            "elapsed": 33.313003042014316,
+            "status": "100.0   0:33.29 00:33"
+          },
+          {
+            "elapsed": 36.32790512504289,
+            "status": "100.0   0:36.31 00:36"
+          },
+          {
+            "elapsed": 39.34153095801594,
+            "status": "99.0   0:39.32 00:39"
+          },
+          {
+            "elapsed": 42.355228333035484,
+            "status": "99.0   0:42.33 00:42"
+          },
+          {
+            "elapsed": 45.370768917026,
+            "status": "99.1   0:45.34 00:45"
+          },
+          {
+            "elapsed": 48.38756508304505,
+            "status": "99.3   0:48.36 00:48"
+          },
+          {
+            "elapsed": 51.405618375050835,
+            "status": "100.0   0:51.38 00:51"
+          },
+          {
+            "elapsed": 54.419401207997,
+            "status": "100.0   0:54.39 00:54"
+          },
+          {
+            "elapsed": 57.43180179200135,
+            "status": "99.0   0:57.40 00:57"
+          },
+          {
+            "elapsed": 60.44051554199541,
+            "status": "99.7   1:00.42 01:01"
+          },
+          {
+            "elapsed": 63.45895087503595,
+            "status": "99.3   1:03.44 01:04"
+          },
+          {
+            "elapsed": 66.47363800002495,
+            "status": "100.0   1:06.45 01:07"
+          },
+          {
+            "elapsed": 69.49896954203723,
+            "status": "100.0   1:09.48 01:10"
+          },
+          {
+            "elapsed": 72.51792308303993,
+            "status": "100.0   1:12.49 01:13"
+          },
+          {
+            "elapsed": 75.53240783303045,
+            "status": "100.0   1:15.51 01:16"
+          },
+          {
+            "elapsed": 78.5453129580128,
+            "status": "100.0   1:18.52 01:19"
+          },
+          {
+            "elapsed": 81.56441166700097,
+            "status": "99.0   1:21.54 01:22"
+          },
+          {
+            "elapsed": 84.5766705420101,
+            "status": "99.7   1:24.55 01:25"
+          },
+          {
+            "elapsed": 87.60414062504424,
+            "status": "99.7   1:27.58 01:28"
+          },
+          {
+            "elapsed": 90.62328716705088,
+            "status": "100.0   1:30.60 01:31"
+          },
+          {
+            "elapsed": 93.63709395803744,
+            "status": "100.0   1:33.62 01:34"
+          },
+          {
+            "elapsed": 96.65335445804521,
+            "status": "99.7   1:36.63 01:37"
+          },
+          {
+            "elapsed": 99.67978316702647,
+            "status": "99.0   1:39.66 01:40"
+          },
+          {
+            "elapsed": 102.70111345802434,
+            "status": "100.0   1:42.68 01:43"
+          },
+          {
+            "elapsed": 105.72000233305153,
+            "status": "100.0   1:45.70 01:46"
+          },
+          {
+            "elapsed": 108.73978570802137,
+            "status": "100.0   1:48.72 01:49"
+          },
+          {
+            "elapsed": 111.75864166702377,
+            "status": "100.0   1:51.74 01:52"
+          },
+          {
+            "elapsed": 114.77556354203261,
+            "status": "100.0   1:54.76 01:55"
+          },
+          {
+            "elapsed": 117.79694591701264,
+            "status": "100.0   1:57.78 01:58"
+          },
+          {
+            "elapsed": 120.81562466704054,
+            "status": "100.0   2:00.80 02:01"
+          },
+          {
+            "elapsed": 123.82838691701181,
+            "status": "98.8   2:03.81 02:04"
+          },
+          {
+            "elapsed": 126.8394185420475,
+            "status": "100.0   2:06.82 02:07"
+          },
+          {
+            "elapsed": 129.8591914169956,
+            "status": "98.4   2:09.84 02:10"
+          },
+          {
+            "elapsed": 132.86873520800145,
+            "status": "100.0   2:12.85 02:13"
+          },
+          {
+            "elapsed": 135.89577654202003,
+            "status": "100.0   2:15.88 02:16"
+          },
+          {
+            "elapsed": 138.9144320000196,
+            "status": "99.4   2:18.90 02:19"
+          },
+          {
+            "elapsed": 141.92603729199618,
+            "status": "99.0   2:21.91 02:22"
+          },
+          {
+            "elapsed": 144.94906500005163,
+            "status": "100.0   2:24.93 02:25"
+          },
+          {
+            "elapsed": 147.97054266702617,
+            "status": "99.1   2:27.95 02:28"
+          },
+          {
+            "elapsed": 150.988412042032,
+            "status": "99.4   2:30.97 02:31"
+          },
+          {
+            "elapsed": 154.02054737502476,
+            "status": "100.0   2:34.00 02:34"
+          },
+          {
+            "elapsed": 157.04169695801102,
+            "status": "99.6   2:37.02 02:37"
+          },
+          {
+            "elapsed": 160.05443179199938,
+            "status": "99.8   2:40.03 02:40"
+          },
+          {
+            "elapsed": 163.0698764580302,
+            "status": "99.2   2:43.05 02:43"
+          },
+          {
+            "elapsed": 166.08984966704156,
+            "status": "100.0   2:46.07 02:46"
+          },
+          {
+            "elapsed": 169.1213097080472,
+            "status": "98.4   2:49.10 02:49"
+          },
+          {
+            "elapsed": 172.1535244170227,
+            "status": "99.1   2:52.14 02:52"
+          },
+          {
+            "elapsed": 175.18108829203993,
+            "status": "98.5   2:55.16 02:55"
+          },
+          {
+            "elapsed": 178.19970154203475,
+            "status": "100.0   2:58.18 02:58"
+          },
+          {
+            "elapsed": 181.21843566704774,
+            "status": "100.0   3:01.19 03:01"
+          },
+          {
+            "elapsed": 184.23834183299914,
+            "status": "97.3   3:04.21 03:04"
+          },
+          {
+            "elapsed": 187.2560027500149,
+            "status": "99.3   3:07.24 03:07"
+          },
+          {
+            "elapsed": 190.27526041702367,
+            "status": "100.0   3:10.25 03:10"
+          },
+          {
+            "elapsed": 193.29489191703033,
+            "status": "100.0   3:13.28 03:13"
+          },
+          {
+            "elapsed": 196.31089641700964,
+            "status": "98.6   3:16.29 03:16"
+          },
+          {
+            "elapsed": 199.33087050000904,
+            "status": "100.0   3:19.31 03:19"
+          },
+          {
+            "elapsed": 202.34819104202325,
+            "status": "100.0   3:22.33 03:22"
+          },
+          {
+            "elapsed": 205.36593462503515,
+            "status": "98.9   3:25.35 03:25"
+          },
+          {
+            "elapsed": 208.38494654203532,
+            "status": "100.0   3:28.36 03:28"
+          },
+          {
+            "elapsed": 211.4077554170508,
+            "status": "100.0   3:31.39 03:31"
+          },
+          {
+            "elapsed": 214.4233446670114,
+            "status": "99.7   3:34.40 03:34"
+          },
+          {
+            "elapsed": 217.44916537503013,
+            "status": "99.4   3:37.43 03:38"
+          },
+          {
+            "elapsed": 220.47164674999658,
+            "status": "99.6   3:40.45 03:41"
+          },
+          {
+            "elapsed": 223.49368516705,
+            "status": "99.9   3:43.47 03:44"
+          },
+          {
+            "elapsed": 226.51654579205206,
+            "status": "100.0   3:46.49 03:47"
+          },
+          {
+            "elapsed": 229.53881975001423,
+            "status": "99.1   3:49.52 03:50"
+          },
+          {
+            "elapsed": 232.56207037501736,
+            "status": "100.0   3:52.54 03:53"
+          },
+          {
+            "elapsed": 235.586182958039,
+            "status": "100.0   3:55.56 03:56"
+          },
+          {
+            "elapsed": 238.60885687504197,
+            "status": "100.0   3:58.59 03:59"
+          },
+          {
+            "elapsed": 241.62543737504166,
+            "status": "98.7   4:01.60 04:02"
+          },
+          {
+            "elapsed": 244.6565207920503,
+            "status": "98.8   4:04.63 04:05"
+          },
+          {
+            "elapsed": 247.6861137500382,
+            "status": "100.0   4:07.66 04:08"
+          },
+          {
+            "elapsed": 250.7051506669959,
+            "status": "3.6   4:09.44 04:11"
+          }
+        ],
+        "physicalFootprintMiB": 349.0,
+        "peakFootprintMiB": 408.3,
+        "attributeRunBytes": 83585840,
+        "liveMallocBytes": 172619286
+      },
+      {
+        "workload": "prose-5m-2",
+        "firstObservedIdleSeconds": 253.80622425000183,
+        "statusAtMeasurement": "0.0   4:12.33 04:22",
+        "polls": [
+          {
+            "elapsed": 3.16764195804717,
+            "status": "100.3   0:03.13 00:04"
+          },
+          {
+            "elapsed": 6.190985666995402,
+            "status": "100.0   0:06.16 00:07"
+          },
+          {
+            "elapsed": 9.213455292047001,
+            "status": "99.1   0:09.17 00:10"
+          },
+          {
+            "elapsed": 12.231510833022185,
+            "status": "100.0   0:12.20 00:13"
+          },
+          {
+            "elapsed": 15.2494381670258,
+            "status": "99.0   0:15.22 00:16"
+          },
+          {
+            "elapsed": 18.269449125044048,
+            "status": "100.0   0:18.24 00:19"
+          },
+          {
+            "elapsed": 21.29892375000054,
+            "status": "99.0   0:21.27 00:22"
+          },
+          {
+            "elapsed": 24.3092813330004,
+            "status": "99.0   0:24.28 00:25"
+          },
+          {
+            "elapsed": 27.328827499994077,
+            "status": "99.0   0:27.30 00:28"
+          },
+          {
+            "elapsed": 30.362256583001,
+            "status": "100.0   0:30.33 00:31"
+          },
+          {
+            "elapsed": 33.373835333040915,
+            "status": "99.1   0:33.35 00:34"
+          },
+          {
+            "elapsed": 36.38993008300895,
+            "status": "99.0   0:36.36 00:37"
+          },
+          {
+            "elapsed": 39.424318375007715,
+            "status": "100.0   0:39.40 00:40"
+          },
+          {
+            "elapsed": 42.44044754200149,
+            "status": "100.0   0:42.41 00:43"
+          },
+          {
+            "elapsed": 45.469536749995314,
+            "status": "99.1   0:45.44 00:46"
+          },
+          {
+            "elapsed": 48.4916535000084,
+            "status": "100.0   0:48.46 00:49"
+          },
+          {
+            "elapsed": 51.51492483302718,
+            "status": "100.0   0:51.49 00:52"
+          },
+          {
+            "elapsed": 54.529969083028845,
+            "status": "99.1   0:54.50 00:55"
+          },
+          {
+            "elapsed": 57.54828391701449,
+            "status": "99.0   0:57.52 00:58"
+          },
+          {
+            "elapsed": 60.567410707997624,
+            "status": "100.0   1:00.54 01:01"
+          },
+          {
+            "elapsed": 63.57938729203306,
+            "status": "100.0   1:03.55 01:04"
+          },
+          {
+            "elapsed": 66.61293533304706,
+            "status": "99.0   1:06.58 01:07"
+          },
+          {
+            "elapsed": 69.63048074999824,
+            "status": "99.1   1:09.60 01:10"
+          },
+          {
+            "elapsed": 72.64583150000544,
+            "status": "100.0   1:12.62 01:13"
+          },
+          {
+            "elapsed": 75.66700662503717,
+            "status": "100.0   1:15.64 01:16"
+          },
+          {
+            "elapsed": 78.68570324999746,
+            "status": "100.0   1:18.66 01:19"
+          },
+          {
+            "elapsed": 81.71131437504664,
+            "status": "99.0   1:21.68 01:22"
+          },
+          {
+            "elapsed": 84.73493204201804,
+            "status": "100.0   1:24.71 01:25"
+          },
+          {
+            "elapsed": 87.76639587501995,
+            "status": "100.0   1:27.74 01:28"
+          },
+          {
+            "elapsed": 90.79074504203163,
+            "status": "99.2   1:30.77 01:31"
+          },
+          {
+            "elapsed": 93.80713341699447,
+            "status": "97.9   1:33.78 01:34"
+          },
+          {
+            "elapsed": 96.82920712500345,
+            "status": "100.0   1:36.80 01:37"
+          },
+          {
+            "elapsed": 99.84683237504214,
+            "status": "99.1   1:39.82 01:40"
+          },
+          {
+            "elapsed": 102.86728554201545,
+            "status": "99.1   1:42.85 01:43"
+          },
+          {
+            "elapsed": 105.88187208300224,
+            "status": "99.7   1:45.86 01:46"
+          },
+          {
+            "elapsed": 108.90137983299792,
+            "status": "99.7   1:48.88 01:49"
+          },
+          {
+            "elapsed": 111.92317250004271,
+            "status": "100.0   1:51.90 01:52"
+          },
+          {
+            "elapsed": 114.94111112499377,
+            "status": "99.7   1:54.92 01:55"
+          },
+          {
+            "elapsed": 117.95586791704409,
+            "status": "100.0   1:57.93 01:58"
+          },
+          {
+            "elapsed": 120.96927116700681,
+            "status": "100.0   2:00.94 02:01"
+          },
+          {
+            "elapsed": 123.98955500003649,
+            "status": "100.0   2:03.96 02:04"
+          },
+          {
+            "elapsed": 127.01069166703383,
+            "status": "99.0   2:07.00 02:07"
+          },
+          {
+            "elapsed": 130.02166387502803,
+            "status": "100.5   2:10.00 02:10"
+          },
+          {
+            "elapsed": 133.03797920804936,
+            "status": "100.0   2:13.02 02:13"
+          },
+          {
+            "elapsed": 136.05905633303337,
+            "status": "99.0   2:16.03 02:16"
+          },
+          {
+            "elapsed": 139.07825612503802,
+            "status": "100.0   2:19.06 02:19"
+          },
+          {
+            "elapsed": 142.09751920803683,
+            "status": "100.0   2:22.07 02:23"
+          },
+          {
+            "elapsed": 145.12351983302506,
+            "status": "100.0   2:25.10 02:26"
+          },
+          {
+            "elapsed": 148.14512270799605,
+            "status": "99.7   2:28.12 02:29"
+          },
+          {
+            "elapsed": 151.16052249999484,
+            "status": "100.0   2:31.14 02:32"
+          },
+          {
+            "elapsed": 154.18276633304777,
+            "status": "99.1   2:34.16 02:35"
+          },
+          {
+            "elapsed": 157.1972867080476,
+            "status": "100.0   2:37.17 02:38"
+          },
+          {
+            "elapsed": 160.2187734580366,
+            "status": "99.0   2:40.20 02:41"
+          },
+          {
+            "elapsed": 163.24251000001095,
+            "status": "100.0   2:43.23 02:44"
+          },
+          {
+            "elapsed": 166.2640488750185,
+            "status": "99.1   2:46.25 02:47"
+          },
+          {
+            "elapsed": 169.2796172920498,
+            "status": "99.3   2:49.27 02:50"
+          },
+          {
+            "elapsed": 172.29933658300433,
+            "status": "99.7   2:52.29 02:53"
+          },
+          {
+            "elapsed": 175.31955416704295,
+            "status": "100.0   2:55.31 02:56"
+          },
+          {
+            "elapsed": 178.34516116703162,
+            "status": "99.1   2:58.33 02:59"
+          },
+          {
+            "elapsed": 181.3679632919957,
+            "status": "99.1   3:01.36 03:02"
+          },
+          {
+            "elapsed": 184.39104675001,
+            "status": "100.0   3:04.38 03:05"
+          },
+          {
+            "elapsed": 187.4058540420374,
+            "status": "100.0   3:07.40 03:08"
+          },
+          {
+            "elapsed": 190.42616683302913,
+            "status": "100.0   3:10.42 03:11"
+          },
+          {
+            "elapsed": 193.44171958300285,
+            "status": "100.0   3:13.43 03:14"
+          },
+          {
+            "elapsed": 196.4580034580431,
+            "status": "100.0   3:16.45 03:17"
+          },
+          {
+            "elapsed": 199.47925812500762,
+            "status": "99.3   3:19.47 03:20"
+          },
+          {
+            "elapsed": 202.49876991700148,
+            "status": "99.1   3:22.49 03:23"
+          },
+          {
+            "elapsed": 205.52142500004265,
+            "status": "100.0   3:25.51 03:26"
+          },
+          {
+            "elapsed": 208.54372104204958,
+            "status": "99.1   3:28.54 03:29"
+          },
+          {
+            "elapsed": 211.55849833303364,
+            "status": "98.5   3:31.55 03:32"
+          },
+          {
+            "elapsed": 214.57744483300485,
+            "status": "99.3   3:34.57 03:35"
+          },
+          {
+            "elapsed": 217.58851283299737,
+            "status": "98.8   3:37.58 03:38"
+          },
+          {
+            "elapsed": 220.60694162501022,
+            "status": "99.0   3:40.60 03:41"
+          },
+          {
+            "elapsed": 223.62182450003456,
+            "status": "99.1   3:43.61 03:44"
+          },
+          {
+            "elapsed": 226.6459255000227,
+            "status": "100.0   3:46.64 03:47"
+          },
+          {
+            "elapsed": 229.66151462501148,
+            "status": "100.0   3:49.65 03:50"
+          },
+          {
+            "elapsed": 232.684359875042,
+            "status": "100.0   3:52.68 03:53"
+          },
+          {
+            "elapsed": 235.7006395420176,
+            "status": "99.3   3:55.69 03:56"
+          },
+          {
+            "elapsed": 238.72106845804956,
+            "status": "100.0   3:58.71 03:59"
+          },
+          {
+            "elapsed": 241.7353087500087,
+            "status": "100.0   4:01.73 04:02"
+          },
+          {
+            "elapsed": 244.74933354201494,
+            "status": "99.3   4:04.74 04:05"
+          },
+          {
+            "elapsed": 247.76951175002614,
+            "status": "99.3   4:07.76 04:08"
+          },
+          {
+            "elapsed": 250.79041887499625,
+            "status": "99.1   4:10.79 04:11"
+          },
+          {
+            "elapsed": 253.80622425000183,
+            "status": "0.7   4:12.32 04:14"
+          }
+        ],
+        "physicalFootprintMiB": 362.5,
+        "peakFootprintMiB": 409.7,
+        "attributeRunBytes": 83589360,
+        "liveMallocBytes": 224399048
+      },
+      {
+        "workload": "prose-5m-3",
+        "firstObservedIdleSeconds": 250.8170428329613,
+        "statusAtMeasurement": "0.2   4:08.59 04:19",
+        "polls": [
+          {
+            "elapsed": 3.1456403330084868,
+            "status": "99.4   0:03.09 00:03"
+          },
+          {
+            "elapsed": 6.164094165957067,
+            "status": "100.0   0:06.10 00:06"
+          },
+          {
+            "elapsed": 9.185089415987022,
+            "status": "100.0   0:09.13 00:09"
+          },
+          {
+            "elapsed": 12.20482699997956,
+            "status": "99.1   0:12.15 00:12"
+          },
+          {
+            "elapsed": 15.217452250013594,
+            "status": "99.8   0:15.16 00:15"
+          },
+          {
+            "elapsed": 18.236520582984667,
+            "status": "99.3   0:18.18 00:18"
+          },
+          {
+            "elapsed": 21.255508958012797,
+            "status": "99.7   0:21.20 00:21"
+          },
+          {
+            "elapsed": 24.27072049997514,
+            "status": "100.0   0:24.22 00:24"
+          },
+          {
+            "elapsed": 27.293787666014396,
+            "status": "99.1   0:27.24 00:27"
+          },
+          {
+            "elapsed": 30.30990033299895,
+            "status": "100.0   0:30.26 00:30"
+          },
+          {
+            "elapsed": 33.3283102500136,
+            "status": "100.0   0:33.28 00:33"
+          },
+          {
+            "elapsed": 36.34095874999184,
+            "status": "100.0   0:36.29 00:36"
+          },
+          {
+            "elapsed": 39.37330799998017,
+            "status": "99.1   0:39.32 00:39"
+          },
+          {
+            "elapsed": 42.40528604097199,
+            "status": "99.3   0:42.35 00:42"
+          },
+          {
+            "elapsed": 45.42017170798499,
+            "status": "100.0   0:45.36 00:45"
+          },
+          {
+            "elapsed": 48.44045854097931,
+            "status": "99.1   0:48.38 00:48"
+          },
+          {
+            "elapsed": 51.462787790980656,
+            "status": "100.0   0:51.41 00:51"
+          },
+          {
+            "elapsed": 54.48638445796678,
+            "status": "100.0   0:54.43 00:55"
+          },
+          {
+            "elapsed": 57.509543457999825,
+            "status": "100.0   0:57.45 00:58"
+          },
+          {
+            "elapsed": 60.52521291596349,
+            "status": "99.3   1:00.46 01:01"
+          },
+          {
+            "elapsed": 63.54409341601422,
+            "status": "100.0   1:03.49 01:04"
+          },
+          {
+            "elapsed": 66.56434929097304,
+            "status": "99.3   1:06.51 01:07"
+          },
+          {
+            "elapsed": 69.58735845796764,
+            "status": "100.0   1:09.54 01:10"
+          },
+          {
+            "elapsed": 72.6045691659674,
+            "status": "99.1   1:12.55 01:13"
+          },
+          {
+            "elapsed": 75.60963316599373,
+            "status": "100.0   1:15.56 01:16"
+          },
+          {
+            "elapsed": 78.63386379100848,
+            "status": "100.0   1:18.58 01:19"
+          },
+          {
+            "elapsed": 81.64833679096773,
+            "status": "100.0   1:21.60 01:22"
+          },
+          {
+            "elapsed": 84.66856383299455,
+            "status": "99.0   1:24.62 01:25"
+          },
+          {
+            "elapsed": 87.68929808295798,
+            "status": "99.1   1:27.64 01:28"
+          },
+          {
+            "elapsed": 90.70720679097576,
+            "status": "100.0   1:30.66 01:31"
+          },
+          {
+            "elapsed": 93.73027162498329,
+            "status": "100.0   1:33.68 01:34"
+          },
+          {
+            "elapsed": 96.75713291601278,
+            "status": "99.7   1:36.71 01:37"
+          },
+          {
+            "elapsed": 99.77810829097871,
+            "status": "99.0   1:39.73 01:40"
+          },
+          {
+            "elapsed": 102.79472320800414,
+            "status": "100.0   1:42.74 01:43"
+          },
+          {
+            "elapsed": 105.81686891597928,
+            "status": "99.3   1:45.76 01:46"
+          },
+          {
+            "elapsed": 108.83648983296007,
+            "status": "99.7   1:48.78 01:49"
+          },
+          {
+            "elapsed": 111.85122158296872,
+            "status": "100.0   1:51.80 01:52"
+          },
+          {
+            "elapsed": 114.87403466599062,
+            "status": "100.0   1:54.82 01:55"
+          },
+          {
+            "elapsed": 117.89558187499642,
+            "status": "100.0   1:57.84 01:58"
+          },
+          {
+            "elapsed": 120.92238479095977,
+            "status": "100.0   2:00.87 02:01"
+          },
+          {
+            "elapsed": 123.94572933297604,
+            "status": "98.9   2:03.90 02:04"
+          },
+          {
+            "elapsed": 126.97429458296392,
+            "status": "99.1   2:06.94 02:07"
+          },
+          {
+            "elapsed": 129.9956500409753,
+            "status": "100.0   2:09.96 02:10"
+          },
+          {
+            "elapsed": 133.017282124958,
+            "status": "99.1   2:12.98 02:13"
+          },
+          {
+            "elapsed": 136.04436245799297,
+            "status": "100.0   2:16.01 02:16"
+          },
+          {
+            "elapsed": 139.0623327079811,
+            "status": "100.0   2:19.02 02:19"
+          },
+          {
+            "elapsed": 142.08297408296494,
+            "status": "100.0   2:22.05 02:22"
+          },
+          {
+            "elapsed": 145.10810783295892,
+            "status": "99.7   2:25.07 02:25"
+          },
+          {
+            "elapsed": 148.12820895796176,
+            "status": "100.0   2:28.09 02:28"
+          },
+          {
+            "elapsed": 151.15011412499007,
+            "status": "100.0   2:31.11 02:31"
+          },
+          {
+            "elapsed": 154.17007774999365,
+            "status": "100.0   2:34.13 02:34"
+          },
+          {
+            "elapsed": 157.19272220798302,
+            "status": "100.0   2:37.16 02:37"
+          },
+          {
+            "elapsed": 160.21696824999526,
+            "status": "100.0   2:40.18 02:40"
+          },
+          {
+            "elapsed": 163.2344504579669,
+            "status": "99.0   2:43.20 02:43"
+          },
+          {
+            "elapsed": 166.25529604096664,
+            "status": "99.7   2:46.22 02:46"
+          },
+          {
+            "elapsed": 169.27209416596452,
+            "status": "99.1   2:49.24 02:49"
+          },
+          {
+            "elapsed": 172.29152612498729,
+            "status": "99.0   2:52.25 02:52"
+          },
+          {
+            "elapsed": 175.30811508296756,
+            "status": "99.8   2:55.27 02:55"
+          },
+          {
+            "elapsed": 178.32672974996967,
+            "status": "100.0   2:58.29 02:58"
+          },
+          {
+            "elapsed": 181.34921245800797,
+            "status": "99.1   3:01.31 03:01"
+          },
+          {
+            "elapsed": 184.36256891599623,
+            "status": "100.0   3:04.33 03:04"
+          },
+          {
+            "elapsed": 187.38191779097542,
+            "status": "99.3   3:07.35 03:07"
+          },
+          {
+            "elapsed": 190.40041462500812,
+            "status": "99.3   3:10.37 03:10"
+          },
+          {
+            "elapsed": 193.42081004095962,
+            "status": "100.0   3:13.39 03:13"
+          },
+          {
+            "elapsed": 196.44408983300673,
+            "status": "100.0   3:16.41 03:16"
+          },
+          {
+            "elapsed": 199.46116916596657,
+            "status": "100.0   3:19.43 03:19"
+          },
+          {
+            "elapsed": 202.4809874999919,
+            "status": "100.0   3:22.45 03:22"
+          },
+          {
+            "elapsed": 205.50200674997177,
+            "status": "100.0   3:25.47 03:26"
+          },
+          {
+            "elapsed": 208.52005354099674,
+            "status": "99.7   3:28.49 03:29"
+          },
+          {
+            "elapsed": 211.54349849995924,
+            "status": "100.0   3:31.51 03:32"
+          },
+          {
+            "elapsed": 214.56313737499295,
+            "status": "100.0   3:34.53 03:35"
+          },
+          {
+            "elapsed": 217.57981816597749,
+            "status": "100.0   3:37.55 03:38"
+          },
+          {
+            "elapsed": 220.6020237079938,
+            "status": "99.1   3:40.57 03:41"
+          },
+          {
+            "elapsed": 223.6249644579948,
+            "status": "100.0   3:43.60 03:44"
+          },
+          {
+            "elapsed": 226.64517933299066,
+            "status": "100.0   3:46.62 03:47"
+          },
+          {
+            "elapsed": 229.66112266597338,
+            "status": "100.0   3:49.63 03:50"
+          },
+          {
+            "elapsed": 232.6828399579972,
+            "status": "100.0   3:52.65 03:53"
+          },
+          {
+            "elapsed": 235.7065267500002,
+            "status": "100.0   3:55.68 03:56"
+          },
+          {
+            "elapsed": 238.72446150000906,
+            "status": "100.0   3:58.70 03:59"
+          },
+          {
+            "elapsed": 241.74851424997905,
+            "status": "100.0   4:01.72 04:02"
+          },
+          {
+            "elapsed": 244.76709837501403,
+            "status": "100.0   4:04.74 04:05"
+          },
+          {
+            "elapsed": 247.78731604100903,
+            "status": "99.1   4:07.76 04:08"
+          },
+          {
+            "elapsed": 250.8170428329613,
+            "status": "0.1   4:08.58 04:11"
+          }
+        ],
+        "physicalFootprintMiB": 344.5,
+        "peakFootprintMiB": 404.3,
+        "attributeRunBytes": 83584240,
+        "liveMallocBytes": 176942824
+      },
+      {
+        "workload": "stress",
+        "firstObservedIdleSeconds": 15.25224345800234,
+        "statusAtMeasurement": "0.0   0:01.15 00:23",
+        "polls": [
+          {
+            "elapsed": 3.163837332976982,
+            "status": "0.2   0:01.09 00:03"
+          },
+          {
+            "elapsed": 6.184003874950577,
+            "status": "0.0   0:01.11 00:06"
+          },
+          {
+            "elapsed": 9.214404332975391,
+            "status": "0.0   0:01.12 00:09"
+          },
+          {
+            "elapsed": 12.238089916005265,
+            "status": "0.1   0:01.12 00:12"
+          },
+          {
+            "elapsed": 15.25224345800234,
+            "status": "0.0   0:01.13 00:15"
+          }
+        ],
+        "physicalFootprintMiB": 85.8,
+        "peakFootprintMiB": 89.6,
+        "attributeRunBytes": 135568,
+        "liveMallocBytes": 42349611
+      }
+    ]
+  },
+  "highWaterDiagnostics": {
+    "instrumented": true,
+    "mallocAndVMPeakMiB": 428.5,
+    "currentMallocAndVMMiB": 137.6,
+    "cumulativeAllocatedGiB": 4.51,
+    "allocationCount": 36573129,
+    "topAppOwners": [
+      {
+        "symbol": "marker #1 (_:in:) in NativeEditor.style(_:incremental:using:)",
+        "count": 21187,
+        "bytes": 103825408.0
+      },
+      {
+        "symbol": "closure #23 in NativeEditor.style(_:incremental:using:)",
+        "count": 414265,
+        "bytes": 52848230.4
+      },
+      {
+        "symbol": "NativeEditor.style(_:incremental:using:)",
+        "count": 411145,
+        "bytes": 52319959.04
+      },
+      {
+        "symbol": "MarkdownModel.init(_:mdx:)",
+        "count": 2,
+        "bytes": 49283072.0
+      },
+      {
+        "symbol": "specialized EditorTheme.adding(_:to:)",
+        "count": 687463,
+        "bytes": 48387758.08
+      },
+      {
+        "symbol": "specialized Walker.visit(_:depth:quoteDepth:)",
+        "count": 411000,
+        "bytes": 26298286.08
+      },
+      {
+        "symbol": "<system>",
+        "count": 24528,
+        "bytes": 20939038.719999965
+      },
+      {
+        "symbol": "main",
+        "count": 52661,
+        "bytes": 19724984.320000045
+      },
+      {
+        "symbol": "specialized MarkdownSourceMap.init(_:)",
+        "count": 274002,
+        "bytes": 18517852.16
+      },
+      {
+        "symbol": "closure #1 in adding #1 (bold:italic:to:) in NativeEditor.style(_:incremental:using:)",
+        "count": 274022,
+        "bytes": 14254469.120000001
+      },
+      {
+        "symbol": "MarkifyDocument.init(configuration:)",
+        "count": 12,
+        "bytes": 10004602.879999999
+      },
+      {
+        "symbol": "static MarkupParser.convertLink(_:)",
+        "count": 137000,
+        "bytes": 8766095.36
+      }
+    ],
+    "verifiedEditorBodyFont": ".NewYork-Regular 18 pt (Rendered)",
+    "temporaryDebuggerSigningRestored": true,
+    "allocatorReliefBytesReturned": 0,
+    "note": "MallocStackLogging full instrumentation; these are attribution figures, not uninstrumented footprint comparisons."
+  }
+}

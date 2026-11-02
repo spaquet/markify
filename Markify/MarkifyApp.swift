@@ -9,6 +9,8 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
     static var showsLibraryOnNextWindow = false
     static weak var startupDocument: NSDocument?
     static let libraryFolderOpened = Notification.Name("MarkifyLibraryFolderOpened")
+    /// The surviving startup view must load the opened file's lens when SwiftUI delivers its new URL.
+    static weak var startupDocumentNeedingLens: NSDocument?
     private static let openDocumentsKey = "openDocumentBookmarks"
     /// Tests launch the app as their host, next to any Markify the developer has open.
     private static let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
@@ -194,10 +196,19 @@ final class MarkifyAppDelegate: NSObject, NSApplicationDelegate {
         startupDocument = nil
         opened.close()
         startup.fileType = type
+        startupDocumentNeedingLens = startup
         startup.fileURL = url
         startup.updateChangeCount(.changeCleared)
         window.makeKeyAndOrderFront(nil)
         return true
+    }
+
+    static func takeStartupOpening(in window: NSWindow?) -> URL? {
+        guard let document = startupDocumentNeedingLens, let window,
+              document.windowControllers.contains(where: { $0.window === window }),
+              let url = document.fileURL else { return nil }
+        startupDocumentNeedingLens = nil
+        return url
     }
 
     /// Copies the bundled Welcome tour into the library (once), with the image it shows, and opens it.

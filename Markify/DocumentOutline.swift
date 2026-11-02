@@ -38,6 +38,16 @@ import MarkifyMarkdown
         return model
     }
 
+    /// The model for the inspector, or nil while a large document's parse runs in the background. A large document
+    /// is never parsed on the caller's thread here: the editor's parse starts, and the caller shows nothing until it lands.
+    func inspectorModel(in text: String, mdx: Bool, editor: MarkdownTextView?) -> MarkdownModel? {
+        if let editor, editor.needsBackgroundParse {
+            editor.parseInBackground()
+            return nil
+        }
+        return model(in: text, mdx: mdx, editor: editor)
+    }
+
     func headings(in model: MarkdownModel) -> [DocumentHeading] {
         prepare(model.source)
         if let outline { return outline }

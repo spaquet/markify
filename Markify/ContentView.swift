@@ -39,6 +39,8 @@ struct ContentView: View {
     @State private var markdownLens = false
     @State private var sidebarOpen = false
     @State private var linksOpen = false
+    /// Changes when a background parse caches the editor's model, so the inspector reads it.
+    @State private var modelRevision = 0
     @State private var chromeVisible = true
     /// How far the top controls and the page move down while the window tab bar shows (#82).
     /// The page reaches under the titlebar and the controls share its row, so the tab bar would cover them.
@@ -154,8 +156,9 @@ struct ContentView: View {
     private var wordCount: Int { derived.wordCount(in: document.text) }
     /// The document's OKF reading, when its frontmatter has a `type`.
     private var concept: OKFConcept? { conceptCache.concept(in: document.text) }
-    private var documentModel: MarkdownModel {
-        derived.model(in: document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx", editor: textView as? MarkdownTextView)
+    /// The model the inspector reads; nil while a large document's background parse is pending.
+    private var documentModel: MarkdownModel? {
+        derived.inspectorModel(in: document.text, mdx: fileURL?.pathExtension.lowercased() == "mdx", editor: textView as? MarkdownTextView)
     }
 
     var body: some View {
@@ -242,11 +245,11 @@ struct ContentView: View {
                     let model = documentModel
                     let editor = textView as? MarkdownTextView
                     DocumentInspector(
-                        headings: derived.headings(in: model), links: derived.documentLinks(in: model),
+                        headings: model.map { derived.headings(in: $0) } ?? [], links: model.map { derived.documentLinks(in: $0) } ?? [],
                         documentURL: fileURL, bundleRoot: bundleRoot, baseDirectory: reportBase,
                         readingOffset: reading.offset, readingProgress: reading.progress, accent: accent,
                         jump: { editor?.reveal($0) },
-                        hasTableOfContents: TableOfContentsBlock.find(in: model) != nil,
+                        hasTableOfContents: model.map { TableOfContentsBlock.find(in: $0) != nil } ?? false,
                         insertTableOfContents: { depth in
                             guard let editor else { return }
                             if TableOfContentsBlock.find(in: editor.model) != nil { editor.updateTableOfContents(depth: depth) }
@@ -465,7 +468,7 @@ struct ContentView: View {
         }
         .task { aiAvailability = await IntelligenceAvailability.check() }
         .onAppear {
-            markdownLens = initialLens()
+            markdownLens = initialLens(for: fileURL)
             isNewDocument = document.text.isEmpty && fileURL == nil
             if MarkifyAppDelegate.showsLibraryOnNextWindow {
                 MarkifyAppDelegate.showsLibraryOnNextWindow = false
@@ -498,6 +501,10 @@ struct ContentView: View {
             watcher.stop()
         }
         .onChange(of: fileURL, initial: true) { old, new in
+            if let url = MarkifyAppDelegate.takeStartupOpening(in: textView?.window) {
+                // Resolve the newly opened file before persisting the surviving blank window's lens.
+                markdownLens = initialLens(for: url)
+            }
             rememberDocumentLens()
             mirrorTags()
             if let old, let new, old != new { offerToUpdateLinks(movedFrom: old, to: new) }
@@ -512,6 +519,9 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: MarkifyAppDelegate.libraryFolderOpened)) { notification in
             if notification.object as? NSWindow === textView?.window { sidebarOpen = true }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: MarkdownTextView.modelReady)) { _ in
+            modelRevision += 1
         }
         .onChange(of: LibrarySearch.shared.revision) { _, _ in updateLibraryBrowse() }
         .onChange(of: libraryBookmark) { _, _ in loadLibrary() }
@@ -1628,9 +1638,9 @@ struct ContentView: View {
     }
 
     /// Per-document lens (extended attribute) when remembered, else the Settings default.
-    private func initialLens() -> Bool {
-        if fileURL == nil, document.report != nil { return false }
-        if rememberLens, let fileURL, let stored = LensMemory.read(fileURL) { return stored }
+    private func initialLens(for url: URL?) -> Bool {
+        if url == nil, document.report != nil { return false }
+        if rememberLens, let url, let stored = LensMemory.read(url) { return stored }
         return (defaultLens == "Last used" ? lastLens : defaultLens) == "Markdown"
     }
 
@@ -1867,6 +1877,7 @@ struct ContentView: View {
         }
     }
     private func isVisible(_ range: NSRange, in textView: NSTextView) -> Bool {
+        if let editor = textView as? MarkdownTextView { return editor.isVisible(range) }
         guard let storage = textView.textStorage else { return true }
         var visible = true
         storage.enumerateAttribute(.foregroundColor, in: range) { value, _, stop in

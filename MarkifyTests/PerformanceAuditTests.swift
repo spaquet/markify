@@ -1,10 +1,100 @@
 import AppKit
+import Darwin
 import MarkifyMarkdown
 import Testing
 @testable import Markify
 
 /// Manual diagnostics, excluded from normal test runs. See PERFORMANCE_AUDIT_2.5.0.md for commands and limits.
 @MainActor struct PerformanceAuditTests {
+    /// A separate test-host audit: navigate in process so an unavailable external
+    /// accessibility tree cannot silently turn a scroll measurement into an idle one.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["MARKIFY_PERFORMANCE_AUDIT"] == "1"))
+    func measureParagraphNavigation() async throws {
+        struct Sample: Codable {
+            let bytes: Int
+            let position: String
+            let footprintMiB: Double
+            let sourceAttributeRuns: Int
+            let viewportStart: Int
+            let viewportEnd: Int
+        }
+        func footprint() throws -> Double {
+            var info = task_vm_info_data_t()
+            var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+            let result = withUnsafeMutablePointer(to: &info) { pointer in
+                pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                    task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+                }
+            }
+            try #require(result == KERN_SUCCESS)
+            return Double(info.phys_footprint) / 1_048_576
+        }
+        var samples: [Sample] = []
+        for name in ["1m", "5m"] {
+            let url = URL(fileURLWithPath: "/private/tmp/markify-memory-prose-\(name).md")
+            let source = try String(contentsOf: url, encoding: .utf8)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 660),
+                                  styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            let scroll = NSScrollView(frame: window.contentView!.bounds)
+            let editor = MarkdownTextView(usingTextLayoutManager: true)
+            editor.installParagraphPresentation()
+            editor.frame = scroll.bounds
+            editor.isRichText = false
+            editor.isVerticallyResizable = true
+            editor.textContainer?.widthTracksTextView = true
+            editor.textContainerInset = NSSize(width: 0, height: 40)
+            editor.documentURL = url
+            editor.string = source
+            scroll.documentView = editor
+            window.contentView = scroll
+            defer {
+                editor.stopObserving()
+                scroll.documentView = nil
+                window.contentView = nil
+                window.close()
+            }
+            NativeEditor(text: .constant(source), fileURL: url, columnWidth: 640, markdownLens: false,
+                         findQuery: "", matchCase: false, selectedRange: .constant(NSRange(location: 0, length: 0)),
+                         textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+                .style(editor)
+            window.makeKeyAndOrderFront(nil)
+            window.makeFirstResponder(editor)
+            let storage = try #require(editor.textStorage)
+            let length = storage.length
+            func record(_ position: String, expectedOffset: Int) throws {
+                var runs = 0
+                storage.enumerateAttributes(in: NSRange(location: 0, length: length)) { _, _, _ in runs += 1 }
+                let manager = try #require(editor.textLayoutManager)
+                let content = try #require(manager.textContentManager)
+                let viewport = try #require(manager.textViewportLayoutController.viewportRange)
+                let start = content.offset(from: content.documentRange.location, to: viewport.location)
+                let end = content.offset(from: content.documentRange.location, to: viewport.endLocation)
+                #expect(start <= expectedOffset && expectedOffset <= end, "Requested source position must actually reach the viewport")
+                samples.append(Sample(bytes: source.utf8.count, position: position,
+                                      footprintMiB: try footprint(), sourceAttributeRuns: runs,
+                                      viewportStart: start, viewportEnd: end))
+                #expect(editor.string.isSameText(as: source))
+                #expect(runs <= 2)
+            }
+            try await Task.sleep(for: .seconds(2))
+            try record("initial", expectedOffset: 0)
+            for cycle in 1...3 {
+                for (position, offset) in [("middle", length / 2), ("end", length - 1), ("start", 0)] {
+                    let range = NSRange(location: offset, length: 0)
+                    editor.setSelectedRange(range)
+                    editor.scrollRangeToVisible(range)
+                    window.layoutIfNeeded()
+                    try await Task.sleep(for: .milliseconds(500))
+                    try record("\(cycle)-\(position)", expectedOffset: offset)
+                }
+            }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(samples).write(to: URL(fileURLWithPath: "/private/tmp/markify-paragraph-navigation.json"), options: .atomic)
+    }
+
     private final class AuditDocument: NSDocument {
         var text = ""
         override func fileWrapper(ofType typeName: String) throws -> FileWrapper {

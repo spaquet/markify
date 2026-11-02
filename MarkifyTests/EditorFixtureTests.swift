@@ -209,9 +209,70 @@ private final class FixtureBundle {}
         #expect(elapsed < .seconds(2), "style() took \(elapsed)")
     }
 
+    /// Opt-in like the other large audits: a synchronous multi-MB pass would block concurrent renderer deadlines.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["MARKIFY_PERFORMANCE_AUDIT"] == "1"))
+    func stylingMarkerDenseProseStaysFast() {
+        let source = "# Title\n\n" + String(repeating: "Paragraph with **bold**, *emphasis*, and [a link](https://example.com).\n\n", count: 27_400)
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = source
+        let native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                                  selectedRange: .constant(NSRange(location: 0, length: 0)),
+                                  textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+        let elapsed = ContinuousClock().measure { native.style(editor) }
+        #expect(editor.string.isSameText(as: source))
+        #expect(elapsed < .seconds(12), "Styling 2 MB of marker-dense prose took \(elapsed)")
+    }
+
+    /// A long ASCII destination should retain one kern run, rather than a run for each proportional glyph width.
+    @Test func hiddenASCIIDestinationSharesOneKernRun() throws {
+        let destination = "https://example.com/" + String(repeating: "aWi./", count: 200)
+        let source = "[link](\(destination))"
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = source
+        IncrementalStyleTests.native(source).style(editor)
+        let storage = try #require(editor.textStorage)
+        var runs = 0
+        storage.enumerateAttribute(.kern, in: (source as NSString).range(of: destination)) { value, _, _ in
+            #expect(value != nil)
+            runs += 1
+        }
+        #expect(runs == 1)
+        #expect(editor.string.isSameText(as: source))
+    }
+
+    /// The emoji's first surrogate lands on the last UTF-16 unit of an attribute batch.
+    nonisolated static var markerBatchBoundarySource: String {
+        let link = "[link](https://example.com/👩🏽‍💻/e\u{301})"
+        let offset = (link as NSString).range(of: "👩🏽‍💻").location
+        return String(repeating: "x", count: 16_383 - offset - 2) + "\n\n" + link
+    }
+
+    @Test(arguments: ["**bold**\u{FE0F}", "`a👩🏽‍💻e\u{301}`\u{FE0F}", EditorFixtureTests.markerBatchBoundarySource])
+    func hiddenMarkerKernsCoverWholeComposedCharacters(_ source: String) throws {
+        let editor = NSTextView(usingTextLayoutManager: true)
+        editor.string = source
+        IncrementalStyleTests.native(source).style(editor)
+        let storage = try #require(editor.textStorage)
+        let text = source as NSString
+        let markers = MarkdownModel(source).spans.flatMap(\.markers)
+        #expect(!markers.isEmpty)
+        for marker in markers {
+            var location = marker.location
+            while location < NSMaxRange(marker) {
+                let character = text.rangeOfComposedCharacterSequence(at: location)
+                let expected = -MarkdownTextView.hiddenAdvance(text.substring(with: character))
+                for offset in character.location..<NSMaxRange(character) {
+                    #expect(storage.attribute(.kern, at: offset, effectiveRange: nil) as? CGFloat == expected)
+                }
+                location = NSMaxRange(character)
+            }
+        }
+        #expect(editor.string.isSameText(as: source))
+    }
+
     /// Hidden syntax must not leave gaps: text after a link, emphasis or code lands where it would without the syntax.
     @Test func hiddenMarkersTakeNoRoom() {
-        func distance(_ source: String, from first: String, to last: String) -> CGFloat {
+        func distance(_ source: String, from first: String, to last: String, legacyFont: Bool = false) -> CGFloat {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 300), styleMask: [.titled], backing: .buffered, defer: true)
             let editor = NSTextView(usingTextLayoutManager: true)
             editor.frame = window.contentView!.bounds
@@ -221,13 +282,37 @@ private final class FixtureBundle {}
                          selectedRange: .constant(NSRange(location: 0, length: 0)),
                          textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
                 .style(editor)
+            if legacyFont, let storage = editor.textStorage {
+                // Reference the previous proportional 1 pt marker font, keeping all visible attributes identical.
+                let text = source as NSString
+                let font = NSFont.systemFont(ofSize: 1)
+                storage.beginEditing()
+                for marker in MarkdownModel(source).spans.flatMap(\.markers) {
+                    storage.addAttribute(.font, value: font, range: marker)
+                    var location = marker.location
+                    while location < NSMaxRange(marker) {
+                        let character = text.rangeOfComposedCharacterSequence(at: location)
+                        let advance = (text.substring(with: character) as NSString).size(withAttributes: [.font: font]).width
+                        storage.addAttribute(.kern, value: -advance, range: character)
+                        location = NSMaxRange(character)
+                    }
+                }
+                storage.endEditing()
+            }
             editor.layoutSubtreeIfNeeded()
             let ns = source as NSString
-            func x(_ needle: String) -> CGFloat { editor.firstRect(forCharacterRange: ns.range(of: needle), actualRange: nil).minX }
+            func x(_ needle: String) -> CGFloat {
+                let rect = editor.firstRect(forCharacterRange: ns.range(of: needle), actualRange: nil)
+                #expect(rect.width > 0, "Geometry must be laid out for \(needle)")
+                return rect.minX
+            }
             return x(last) - x(first)
         }
         let plain = distance("Start link end", from: "Start", to: "end")
         #expect(abs(distance("Start [link](https://example.com/a/rather/long/path.md) end", from: "Start", to: "end") - plain) < 1)
+        #expect(abs(distance("Start [link](https://example.com/👩🏽‍💻/e\u{301}) end", from: "Start", to: "end") - plain) < 1)
+        let many = "Start " + String(repeating: "[link](https://example.com/aWi/👩🏽‍💻) ", count: 30) + "end"
+        #expect(abs(distance(many, from: "Start", to: "end") - distance(many, from: "Start", to: "end", legacyFont: true)) < 1)
         let code = distance("Start `x` end", from: "Start", to: "end")
         #expect(abs(distance("Start ``x`` end", from: "Start", to: "end") - code) < 1)
         let bold = distance("Start **x** end", from: "Start", to: "end")
@@ -235,28 +320,29 @@ private final class FixtureBundle {}
     }
 
     /// Current styling per probe. Entries marked "expected to change" are known gaps the AST refactor fixes.
+    // Hidden markers use a 1 pt monospaced font so equal advances can share kern runs.
     static let renderedGolden: [String: String] = [
-        "atx marker": "1 hidden",
+        "atx marker": "1 m hidden",
         "atx text": "36 b",
         "setext text": "22 b",
-        "setext underline": "1 hidden",
-        "both marker": "1 hidden",
+        "setext underline": "1 m hidden",
+        "both marker": "1 m hidden",
         "both text": "18 b i",
-        "underscore marker": "1 hidden",
+        "underscore marker": "1 m hidden",
         "underscore text": "18 i",
         "nested strong": "18 b",
         "nested emphasis": "18 b i",
-        "strike marker": "1 hidden",
+        "strike marker": "1 m hidden",
         "strike text": "18 strike",
         "escaped star": "18",
         "escaped text": "18",
-        "escape backslash": "1 hidden",
+        "escape backslash": "1 m hidden",
         "snake": "18",
-        "code tick": "1 hidden",
+        "code tick": "1 m hidden",
         "code star": "15 m",
         "link text": "18 accent",
-        "link bracket": "1 hidden",
-        "link url": "1 hidden",
+        "link bracket": "1 m hidden",
+        "link url": "1 m hidden",
         "inline image": "12 hidden",
         "block image caption": "13",
         "remote image caption": "13",
@@ -273,24 +359,24 @@ private final class FixtureBundle {}
         "lazy line": "18",
         "table pipe": "1 hidden",
         "table cell": "1 hidden",
-        "fence open": "1 hidden",
+        "fence open": "1 m hidden",
         "fence body": "14 m fill",
-        "tilde fence": "1 hidden",
+        "tilde fence": "1 m hidden",
         "tilde body": "14 m fill",
         "indented code": "14 m fill",
         "math fence": "1 hidden",
         "math body": "1 hidden",
         "inline math": "18 i",
-        "inline math dollar": "1 hidden",
+        "inline math dollar": "1 m hidden",
         "callout token": "13 b hidden fill",
         "callout body": "15 fill",
-        "quote marker": "1 hidden",
+        "quote marker": "1 m hidden",
         "quote text": "18",
         "footnote ref": "11 b accent",
         "footnote def label": "13 b accent",
         "footnote def text": "13",
         "html block": "18 dim",
-        "thematic break": "1 hidden",
+        "thematic break": "1 m hidden",
         "frontmatter key": "1 hidden",
     ]
 

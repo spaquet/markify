@@ -31,7 +31,9 @@ public struct MarkdownModel: Sendable {
         walker.visit(document, depth: 0, quoteDepth: 0)
         var spans = walker.spans + found
         if let frontmatter { spans.append(frontmatter) }
-        self.spans = spans.sorted { $0.range.location != $1.range.location ? $0.range.location < $1.range.location : $0.range.length > $1.range.length }
+        // Keep the retained parse compact: sorting can preserve the walker's geometric spare capacity.
+        let sorted = spans.sorted { $0.range.location != $1.range.location ? $0.range.location < $1.range.location : $0.range.length > $1.range.length }
+        self.spans = sorted.withUnsafeBufferPointer { Array($0) }
         tables = walker.tables
         lists = walker.lists.sorted { $0.range.location < $1.range.location }
     }
@@ -64,6 +66,111 @@ public struct MarkdownModel: Sendable {
     private init(source: String, mdx: Bool, spans: [Span]) {
         self.source = source; self.mdx = mdx; self.spans = spans
         tables = []; lists = []
+    }
+
+    /// Indexes self-contained presentation paragraphs without retaining their attributed text.
+    /// Containers and multiline syntax stay on the contextual styling path. Entries reference
+    /// the shared span buffer; looking up a paragraph never walks the full document.
+    public struct ParagraphStyles: Sendable {
+        private struct Entry: Sendable {
+            let range: NSRange
+            let spans: Range<Int>
+        }
+        private let model: MarkdownModel
+        private let entries: [Entry]
+        /// Ranges of `model.spans` styled through the full-document path. Stored as indices, not copies.
+        private let eagerRanges: [Range<Int>]
+
+        /// The spans of contextual regions, in document order.
+        public var eagerSpans: [Span] { eagerRanges.flatMap { model.spans[$0] } }
+
+        /// A bullet list whose every line is an unindented `- `, `* ` or `+ ` item, or blank: no ordered numbers, nesting or
+        /// continuation lines, so each item's style comes from its own line.
+        private static func isPlainBulletList(_ list: MarkdownModel.List, source: NSString) -> Bool {
+            guard !list.ordered else { return false }
+            // The list a table of contents inserts is drawn as a Contents card, so it keeps the full path.
+            if list.range.location > 0,
+               TableOfContentsMarker.depth(ofOpening: source.substring(with: source.paragraphRange(for: NSRange(location: list.range.location - 1, length: 0)))) != nil {
+                return false
+            }
+            return source.substring(with: list.range).split(separator: "\n", omittingEmptySubsequences: false).allSatisfy { line in
+                line.allSatisfy(\.isWhitespace) || ["- ", "* ", "+ "].contains(where: line.hasPrefix) || line == "-" || line == "*" || line == "+"
+            }
+        }
+
+        public init(_ model: MarkdownModel) {
+            self.model = model
+            let source = model.source as NSString
+            var entries: [Entry] = []
+            var eager: [Range<Int>] = []
+            var start = 0
+            var tableIndex = 0
+            // Lists that keep their paragraphs on the full path: anything but a plain bullet list. Looking one up
+            // takes a binary search over their starts plus the furthest end before each one.
+            let blocked = model.lists.filter { !Self.isPlainBulletList($0, source: source) }.map(\.range).sorted { $0.location < $1.location }
+            var blockedEnds: [Int] = []
+            var furthest = 0
+            for range in blocked {
+                furthest = max(furthest, NSMaxRange(range))
+                blockedEnds.append(furthest)
+            }
+            func inBlockedList(_ range: NSRange) -> Bool {
+                var lower = 0, upper = blocked.count
+                while lower < upper {
+                    let middle = (lower + upper) / 2
+                    if blocked[middle].location < NSMaxRange(range) { lower = middle + 1 } else { upper = middle }
+                }
+                return lower > 0 && blockedEnds[lower - 1] > range.location
+            }
+            while start < model.spans.count {
+                let first = model.spans[start]
+                var range = source.paragraphRange(for: first.range)
+                var end = start + 1
+                // A container may span several paragraphs. Include every nested span before
+                // deciding whether this region can be styled without its surrounding blocks.
+                while end < model.spans.count, model.spans[end].range.location < NSMaxRange(range) {
+                    // Most inline spans are already inside this paragraph. Asking Foundation
+                    // for its boundaries again per span would rescan a long paragraph repeatedly.
+                    if NSMaxRange(model.spans[end].range) > NSMaxRange(range) {
+                        range = NSUnionRange(range, source.paragraphRange(for: model.spans[end].range))
+                    }
+                    end += 1
+                }
+                while tableIndex < model.tables.count, NSMaxRange(model.tables[tableIndex].range) <= range.location { tableIndex += 1 }
+                let inTable = tableIndex < model.tables.count && NSIntersectionRange(model.tables[tableIndex].range, range).length > 0
+                let single = source.paragraphRange(for: NSRange(location: range.location, length: 0)) == range
+                let simple = model.spans[start..<end].allSatisfy { span in
+                    switch span.kind {
+                    case .strong, .emphasis, .strikethrough, .inlineCode, .escape, .link, .heading(_, setext: false): return true
+                    // Items of a plain bullet list draw from their own lines; see `blocked`.
+                    case .listItem(let item): return !item.ordered && item.depth == 0
+                    default: return false
+                    }
+                }
+                if single && simple && !inTable && !inBlockedList(range) {
+                    entries.append(Entry(range: range, spans: start..<end))
+                } else {
+                    if let last = eager.last, last.upperBound == start { eager[eager.count - 1] = last.lowerBound..<end } else { eager.append(start..<end) }
+                }
+                start = end
+            }
+            self.entries = entries
+            eagerRanges = eager
+        }
+
+        public func paragraph(_ range: NSRange) -> MarkdownModel? {
+            var lower = 0, upper = entries.count
+            while lower < upper {
+                let middle = (lower + upper) / 2
+                if entries[middle].range.location < range.location { lower = middle + 1 } else { upper = middle }
+            }
+            guard lower < entries.count, entries[lower].range == range else { return nil }
+            func shifted(_ value: NSRange) -> NSRange { NSRange(location: value.location - range.location, length: value.length) }
+            let spans = model.spans[entries[lower].spans].map {
+                Span(kind: $0.kind, range: shifted($0.range), content: shifted($0.content), markers: $0.markers.map(shifted))
+            }
+            return MarkdownModel(source: (model.source as NSString).substring(with: range), mdx: model.mdx, spans: spans)
+        }
     }
 
     // MARK: Types

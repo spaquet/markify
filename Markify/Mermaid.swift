@@ -43,6 +43,7 @@ import WebKit
     /// The diagrams each view shows or is about to show; eviction never drops them for another diagram.
     private var leases: [ObjectIdentifier: Set<String>] = [:]
     private var memoryPressure: DispatchSourceMemoryPressure?
+    private var idle: DispatchWorkItem?
 
     init(disk: DiagramDiskCache? = .standard) {
         self.disk = disk
@@ -166,6 +167,31 @@ import WebKit
         }
     }
 
+    /// Releases the web view and its window after a minute with nothing to render. Disk-cached diagrams never need it,
+    /// and the next uncached render starts it again.
+    private func scheduleIdleTeardown() {
+        idle?.cancel()
+        let token = generation
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.generation == token, !self.busy, self.queue.isEmpty, self.loading.isEmpty else { return }
+            self.tearDown()
+        }
+        idle = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60, execute: work)
+    }
+
+    private func tearDown() {
+        idle = nil
+        deadline?.cancel()
+        deadline = nil
+        webView?.stopLoading()
+        webView?.navigationDelegate = nil
+        window?.contentView = nil
+        webView = nil
+        window = nil
+        ready = false
+    }
+
     private func armDeadline() {
         deadline?.cancel()
         let token = generation
@@ -196,6 +222,9 @@ import WebKit
             finishAll(.failed(String(localized: "Mermaid is missing from this build.")))
             return
         }
+        // New work cancels a pending idle teardown; an idle web view is released again once nothing renders for a while.
+        idle?.cancel()
+        idle = nil
         if webView == nil {
             let configuration = WKWebViewConfiguration()
             configuration.websiteDataStore = .nonPersistent()
@@ -212,7 +241,7 @@ import WebKit
             return
         }
         guard ready, !busy else { return }
-        guard !queue.isEmpty else { return }
+        guard !queue.isEmpty else { scheduleIdleTeardown(); return }
         busy = true
         let next = queue.removeFirst()
         currentRaster = next.key

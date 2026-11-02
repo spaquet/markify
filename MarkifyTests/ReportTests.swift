@@ -5,6 +5,47 @@ import Testing
 @testable import Markify
 
 @Suite(.serialized) @MainActor struct ReportTests {
+    @Test func openingInStartupWindowUsesTheFilesRememberedLens() async throws {
+        let defaults = UserDefaults.standard
+        let previousDefault = defaults.object(forKey: "defaultLens")
+        let previousRemember = defaults.object(forKey: "rememberLens")
+        let previousStartup = MarkifyAppDelegate.startupDocument
+        defaults.set("Markdown", forKey: "defaultLens")
+        defaults.set(true, forKey: "rememberLens")
+        defer {
+            defaults.set(previousDefault, forKey: "defaultLens")
+            defaults.set(previousRemember, forKey: "rememberLens")
+            MarkifyAppDelegate.startupDocument = previousStartup
+        }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")
+        try Data("# Remembered rendered document\n".utf8).write(to: url)
+        LensMemory.write(false, to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let startup = try NSDocumentController.shared.openUntitledDocumentAndDisplay(true)
+        defer { startup.updateChangeCount(.changeCleared); startup.close() }
+        try await Task.sleep(for: .milliseconds(300))
+        MarkifyAppDelegate.startupDocument = startup
+        let opened: NSDocument = try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.main.async {
+                NSDocumentController.shared.openDocument(withContentsOf: url, display: true) { document, _, error in
+                    if let document { continuation.resume(returning: document) }
+                    else { continuation.resume(throwing: error ?? CocoaError(.fileReadUnknown)) }
+                }
+            }
+        }
+        defer { if opened !== startup { opened.updateChangeCount(.changeCleared); opened.close() } }
+        for _ in 0..<100 {
+            if startup.fileURL == url,
+               MarkdownTextView.openEditors.allObjects.contains(where: { $0.window == startup.windowControllers.first?.window && $0.documentURL == url }) { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(startup.fileURL == url)
+        let editor = try #require(MarkdownTextView.openEditors.allObjects.first { $0.window == startup.windowControllers.first?.window && $0.documentURL == url })
+        #expect(editor.rendered, "Replacing the blank startup document must load the opened file's lens")
+        #expect(LensMemory.read(url) == false, "Opening must not overwrite the remembered lens with the blank window's lens")
+    }
+
     @Test func nativeVersionRestoreUpdatesTheDocumentAndEditor() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")
         let snapshot = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).md")

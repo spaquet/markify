@@ -89,6 +89,7 @@ struct NativeEditor: NSViewRepresentable {
         scroll.hasVerticalScroller = true
         scroll.borderType = .noBorder
         let editor = MarkdownTextView(usingTextLayoutManager: true)
+        editor.installParagraphPresentation()
         MarkdownTextView.openEditors.add(editor)
         editor.documentURL = fileURL
         editor.baseDirectory = baseDirectory
@@ -187,9 +188,23 @@ struct NativeEditor: NSViewRepresentable {
         let styling = editor as? MarkdownTextView
         styling?.observeEdits()
         if let styling, styling.isStyling { styling.restyleAfterStyling = true; return }
+        // A large document's first parse runs off the main thread; styling resumes when it arrives.
+        if reading == nil, let styling, styling.needsBackgroundParse {
+            styling.parseInBackground()
+            return
+        }
         let styleKey = StyleKey(native: self, editor: editor)
         if incremental, findQuery.isEmpty, let styling,
            let paragraph = styling.changedStyledParagraph(key: styleKey) {
+            if let presentation = styling.paragraphPresentation {
+                presentation.configure(self, model: styling.model)
+                // Invalidate the edited paragraph's text element without retaining its detailed
+                // attributes in source storage. Character edits can have inherited typing styles.
+                live.setAttributes(presentation.baseAttributes, range: paragraph.range)
+                updateTypingFont(editor)
+                styling.recordStyle(key: styleKey)
+                return
+            }
             let scratch = styling.paragraphStylingView
             scratch.string = paragraph.model.source
             style(scratch, using: paragraph.model)
@@ -227,6 +242,8 @@ struct NativeEditor: NSViewRepresentable {
         editor.typingAttributes = [.font: base, .foregroundColor: primary, .paragraphStyle: paragraph]
         let dark = editor.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         let model = reading ?? (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
+        styling?.paragraphPresentation?.configure(self, model: model)
+        styling?.paragraphPresentation?.baseAttributes = [.font: base, .foregroundColor: primary, .paragraphStyle: paragraph]
         let tableOfContents = markdownLens ? nil : TableOfContentsBlock.find(in: model)
         // Styled lines: the whole document, or only the blocks showing assets that just loaded. A partial pass leaves
         // every other line's attributes as they are; the copy made above matches the live storage outside `scope`.
@@ -237,7 +254,8 @@ struct NativeEditor: NSViewRepresentable {
             scope = region
             partial = true
         }
-        let spans = partial ? model.spans.filter { NSIntersectionRange($0.range, scope).length > 0 } : model.spans
+        let eagerSpans = styling?.paragraphPresentation?.eagerSpans ?? model.spans
+        let spans = partial ? eagerSpans.filter { NSIntersectionRange($0.range, scope).length > 0 } : eagerSpans
         let tables = partial ? model.tables.filter { NSIntersectionRange($0.range, scope).length > 0 } : model.tables
         /// Whether a location or range is styled in this pass.
         func styled(_ location: Int) -> Bool { !partial || NSLocationInRange(location, scope) }
@@ -255,19 +273,28 @@ struct NativeEditor: NSViewRepresentable {
         }
         /// Even at 1pt hidden text keeps a sliver of advance. TextKit caps a negative kern near its own glyph's advance,
         /// so each character cancels its own width and text after a hidden marker starts where it should.
-        func collapse(_ range: NSRange) {
+        func collapse(_ range: NSRange, in target: NSMutableAttributedString) {
             var index = range.location
             while index < NSMaxRange(range) {
                 let character = source.rangeOfComposedCharacterSequence(at: index)
-                storage.addAttribute(.kern, value: -MarkdownTextView.hiddenAdvance(source.substring(with: character)), range: character)
-                index = NSMaxRange(character)
+                let advance = MarkdownTextView.hiddenAdvance(source.substring(with: character))
+                var end = NSMaxRange(character)
+                // Equal advances have identical attributes. Emit their run once, including whole composed
+                // characters at either boundary, instead of allocating a bridged attribute for every character.
+                while end < NSMaxRange(range) {
+                    let next = source.rangeOfComposedCharacterSequence(at: end)
+                    guard MarkdownTextView.hiddenAdvance(source.substring(with: next)) == advance else { break }
+                    end = NSMaxRange(next)
+                }
+                target.addAttribute(.kern, value: -advance, range: NSRange(location: character.location, length: end - character.location))
+                index = end
             }
         }
-        func marker(_ range: NSRange) {
+        func marker(_ range: NSRange, in target: NSMutableAttributedString) {
             guard range.location != NSNotFound, range.length > 0 else { return }
-            storage.addAttributes([.foregroundColor: markdownLens ? dim : NSColor.clear,
-                                   .font: markdownLens ? theme.mono(14) : NSFont.systemFont(ofSize: 1)], range: range)
-            if !markdownLens { collapse(range) }
+            target.addAttributes([.foregroundColor: markdownLens ? dim : NSColor.clear,
+                                   .font: markdownLens ? theme.mono(14) : MarkdownTextView.hiddenFont], range: range)
+            if !markdownLens { collapse(range, in: target) }
         }
         if let styling, !partial {
             styling.retainHTML(Set(spans.filter { $0.kind == .htmlBlock }.map { (model.source as NSString).substring(with: $0.range) }))
@@ -313,12 +340,24 @@ struct NativeEditor: NSViewRepresentable {
         textView?.styledEditedFormula = textView?.editedFormula
         /// Markers are styled after every font, since the hidden ones measure their own width.
         func hide(_ ranges: [NSRange]) { hidden += ranges }
+        // Repeated spans reuse the same font conversion within this pass. Key by the full font,
+        // preserving descriptor attributes, and release the cache when styling finishes.
+        var boldFonts: [NSFont: NSFont] = [:]
+        var italicFonts: [NSFont: NSFont] = [:]
         func adding(bold: Bool = false, italic: Bool = false, to range: NSRange) {
             guard range.length > 0 else { return }
             storage.enumerateAttribute(.font, in: range) { value, segment, _ in
                 guard var font = value as? NSFont else { return }
-                if bold { font = theme.adding(.bold, to: font) }
-                if italic { font = theme.adding(.italic, to: font) }
+                if bold {
+                    let converted = boldFonts[font] ?? theme.adding(.bold, to: font)
+                    boldFonts[font] = converted
+                    font = converted
+                }
+                if italic {
+                    let converted = italicFonts[font] ?? theme.adding(.italic, to: font)
+                    italicFonts[font] = converted
+                    font = converted
+                }
                 storage.addAttribute(.font, value: font, range: segment)
             }
         }
@@ -541,7 +580,47 @@ struct NativeEditor: NSViewRepresentable {
             }
         }
 
-        for range in hidden { marker(range) }
+        if partial {
+            // Asset restyles touch a small region and must leave the rest of the document alone.
+            for range in hidden { marker(range, in: storage) }
+        } else if !hidden.isEmpty {
+            // Inserting markers into fragmented content shifts the remaining run array on every write.
+            // Build markers in source order, then merge into cleared storage: each write splits only its tail.
+            let overlay = NSMutableAttributedString(string: editor.string)
+            var ranges: [NSRange] = []
+            for range in hidden.filter({ $0.location != NSNotFound && $0.length > 0 }).sorted(by: { $0.location < $1.location }) {
+                if let last = ranges.last, range.location <= NSMaxRange(last) {
+                    ranges[ranges.count - 1].length = max(NSMaxRange(last), NSMaxRange(range)) - last.location
+                } else {
+                    ranges.append(range)
+                }
+            }
+            // Bound Objective-C autorelease pages without discarding the interning cache after each marker.
+            for start in stride(from: 0, to: ranges.count, by: 1024) {
+                autoreleasepool {
+                    for range in ranges[start..<min(start + 1024, ranges.count)] { marker(range, in: overlay) }
+                }
+            }
+            let original = NSAttributedString(attributedString: storage)
+            storage.setAttributes([:], range: whole)
+            // Push the pool outside enumeration so it also covers Foundation's bridged callback arguments.
+            for start in stride(from: 0, to: whole.length, by: 16_384) {
+                autoreleasepool {
+                    let batch = NSRange(location: start, length: min(16_384, whole.length - start))
+                    original.enumerateAttributes(in: batch) { content, contentRange, _ in
+                        var location = contentRange.location
+                        while location < NSMaxRange(contentRange) {
+                            var markerRange = NSRange()
+                            let markers = overlay.attributes(at: location, effectiveRange: &markerRange)
+                            let end = min(NSMaxRange(contentRange), NSMaxRange(markerRange))
+                            storage.setAttributes(content.merging(markers) { _, marker in marker },
+                                                  range: NSRange(location: location, length: end - location))
+                            location = end
+                        }
+                    }
+                }
+            }
+        }
         if let textView {
             for (location, image) in textView.inlineHTMLImages where styled(location) {
                 let first = source.rangeOfComposedCharacterSequence(at: location)
@@ -555,8 +634,8 @@ struct NativeEditor: NSViewRepresentable {
             let opening = NSRange(location: span.range.location, length: span.content.location - span.range.location)
             let closing = NSRange(location: NSMaxRange(span.content), length: NSMaxRange(span.range) - NSMaxRange(span.content))
             for (range, room) in [(opening, MarkdownTextView.chipLead), (closing, MarkdownTextView.chipTrail)] where range.length > 0 {
-                storage.addAttributes([.foregroundColor: NSColor.clear, .font: NSFont.systemFont(ofSize: 1)], range: range)
-                collapse(range)
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: MarkdownTextView.hiddenFont], range: range)
+                collapse(range, in: storage)
                 let first = source.rangeOfComposedCharacterSequence(at: range.location)
                 let kern = storage.attribute(.kern, at: first.location, effectiveRange: nil) as? CGFloat ?? 0
                 storage.addAttribute(.kern, value: kern + room * theme.scale, range: first)
@@ -650,7 +729,7 @@ struct NativeEditor: NSViewRepresentable {
                     let line = source.lineRange(for: NSRange(location: item.marker.location, length: 0))
                     var end = NSMaxRange(item.marker)
                     if end < source.length, [32, 9].contains(source.character(at: end)) { end += 1 }
-                    marker(NSRange(location: line.location, length: end - line.location))
+                    marker(NSRange(location: line.location, length: end - line.location), in: storage)
                     let depth = level(line)
                     let style = NSMutableParagraphStyle()
                     style.firstLineHeadIndent = CGFloat(depth) * step
@@ -751,6 +830,7 @@ struct NativeEditor: NSViewRepresentable {
         else { return [] }
         return regex.matches(in: editor.string, range: range).map(\.range).filter { match in
             guard !markdownLens else { return true }
+            if let editor = editor as? MarkdownTextView { return editor.isVisible(match, in: storage) }
             var visible = true
             storage.enumerateAttribute(.foregroundColor, in: match) { value, _, stop in
                 if let color = value as? NSColor, color.alphaComponent == 0 { visible = false; stop.pointee = true }
@@ -763,6 +843,7 @@ struct NativeEditor: NSViewRepresentable {
     /// shows through where one covers them) and the current matches gain theirs. Syntax attributes are left alone.
     func updateFindHighlights(_ editor: NSTextView) {
         guard let storage = editor.textStorage, let styling = editor as? MarkdownTextView else { return }
+        styling.paragraphPresentation?.configure(self, model: styling.model)
         let length = storage.length
         let code: [NSRange] = markdownLens ? styling.model.spans.compactMap { span in
             if case .codeBlock = span.kind { return span.content }
@@ -818,7 +899,12 @@ struct NativeEditor: NSViewRepresentable {
             let line = source.lineRange(for: NSRange(location: location, length: 0))
             let anchor = max(line.location, location - 1)
             var nearest = Int.max
-            storage.enumerateAttributes(in: line) { attributes, range, _ in
+            let paragraphRange = source.paragraphRange(for: NSRange(location: location, length: 0))
+            let presented = (editor as? MarkdownTextView)?.paragraphPresentation?.attributedParagraph(paragraphRange)
+            let text: NSAttributedString = presented ?? storage
+            let offset = presented == nil ? 0 : paragraphRange.location
+            text.enumerateAttributes(in: NSRange(location: line.location - offset, length: line.length)) { attributes, localRange, _ in
+                let range = NSRange(location: localRange.location + offset, length: localRange.length)
                 guard let candidate = attributes[.font] as? NSFont,
                       (attributes[.foregroundColor] as? NSColor)?.alphaComponent != 0,
                       !source.substring(with: range).trimmingCharacters(in: .newlines).isEmpty else { return }
@@ -1113,6 +1199,38 @@ class MarkdownTextView: NSTextView {
     private var styledSource: String?
     private var styleKey: StyleKey?
     lazy var paragraphStylingView = NSTextView()
+    private(set) var paragraphPresentation: ParagraphPresentation?
+
+    /// Installed for document editors. Standalone styling views and table-cell readers keep
+    /// materialized attributes, since their entire contents are deliberately requested at once.
+    func installParagraphPresentation() {
+        guard paragraphPresentation == nil, let content = textLayoutManager?.textContentManager as? NSTextContentStorage else { return }
+        let presentation = ParagraphPresentation(editor: self)
+        paragraphPresentation = presentation
+        content.delegate = presentation
+    }
+
+    /// Find and Replace must inspect the same presentation TextKit uses, including markers
+    /// hidden in transient paragraphs that are intentionally absent from source attributes.
+    func isVisible(_ range: NSRange, in styledStorage: NSAttributedString? = nil) -> Bool {
+        guard let storage = styledStorage ?? textStorage, range.location != NSNotFound, NSMaxRange(range) <= storage.length else { return false }
+        let source = string as NSString
+        var location = range.location
+        while location < NSMaxRange(range) {
+            let paragraph = source.paragraphRange(for: NSRange(location: location, length: 0))
+            let part = NSIntersectionRange(paragraph, range)
+            let presented = paragraphPresentation?.attributedParagraph(paragraph)
+            let text: NSAttributedString = presented ?? storage
+            let local = NSRange(location: part.location - (presented == nil ? 0 : paragraph.location), length: part.length)
+            var visible = true
+            text.enumerateAttribute(.foregroundColor, in: local) { value, _, stop in
+                if let color = value as? NSColor, color.alphaComponent == 0 { visible = false; stop.pointee = true }
+            }
+            if !visible { return false }
+            location = NSMaxRange(part)
+        }
+        return true
+    }
 
     func recordStyle(key: StyleKey) {
         styledSource = string
@@ -1210,6 +1328,9 @@ class MarkdownTextView: NSTextView {
 
     /// SwiftUI teardown can precede AppKit releasing its text view.
     func stopObserving() {
+        if let content = textLayoutManager?.textContentManager as? NSTextContentStorage,
+           content.delegate === paragraphPresentation { content.delegate = nil }
+        paragraphPresentation = nil
         releaseMath()
         tokenCache = [:]
         RemoteImages.shared.release(owner: self)
@@ -1245,6 +1366,9 @@ class MarkdownTextView: NSTextView {
 
     fileprivate func observeEdits() {
         textLayoutManager?.delegate = layoutDelegate
+        if let paragraphPresentation, let content = textLayoutManager?.textContentManager as? NSTextContentStorage {
+            content.delegate = paragraphPresentation
+        }
         // TextKit can replace the text network after init. Observe only our storage,
         // so styling a table cell doesn't notify every other cell in the document.
         let storage = textStorage
@@ -1271,13 +1395,84 @@ class MarkdownTextView: NSTextView {
         }
     }
 
-    /// The parsed source, shared by styling, drawing and clicks until the text changes.
+    /// The parsed source, shared by styling, drawing and clicks until the text changes. A large document whose parse is
+    /// still running reads as empty until it lands: a parse here would run a second copy on the main thread.
     var model: MarkdownModel {
         let mdx = Self.isMDX(documentURL)
-        if let modelCache, modelCache.version == textVersion, modelCache.model.mdx == mdx { return modelCache.model }
+        if let cached = cachedModel(mdx: mdx) { return cached }
+        if needsBackgroundParse {
+            parseInBackground()
+            return MarkdownModel("", mdx: mdx)
+        }
         let model = MarkdownModel(string, mdx: mdx)
         modelCache = (textVersion, model)
         return model
+    }
+
+    /// Texts at least this long (UTF-16 units) are parsed off the main thread before they are styled. A parse that long
+    /// hangs the window, and styling waits for it anyway.
+    static let backgroundParseLength = 100_000
+    /// Posted, with the editor as its object, when a background parse caches the model.
+    static let modelReady = Notification.Name("MarkdownTextView.modelReady")
+    private var backgroundParse: (version: Int, text: String, task: Task<MarkdownModel, Never>)?
+
+    /// Whether styling must wait for the current text's model, which is not cached yet and is large enough to parse in the background.
+    var needsBackgroundParse: Bool {
+        if cachedModel(mdx: Self.isMDX(documentURL)) != nil { return false }
+        return (string as NSString).length >= Self.backgroundParseLength
+    }
+
+    /// The cached model while it describes the current text. An identical re-set bumps `textVersion` without changing the
+    /// text, so the cache then adopts the new version rather than parsing the same document again.
+    private func cachedModel(mdx: Bool) -> MarkdownModel? {
+        guard let modelCache, modelCache.model.mdx == mdx else { return nil }
+        if modelCache.version == textVersion { return modelCache.model }
+        guard modelCache.model.source == string else { return nil }
+        self.modelCache = (textVersion, modelCache.model)
+        return modelCache.model
+    }
+
+    /// Parses the current text on a background task and restyles when it lands. A newer edit supersedes the parse, and its result is dropped.
+    /// Recent background parses, offered to the next editor that opens the same text: launch can create a second editor
+    /// for the document, and this keeps it from parsing again. Each offer is taken once and dropped after a few seconds.
+    private static var handoffs: [(text: String, mdx: Bool, model: MarkdownModel, token: Int)] = []
+    private static var handoffToken = 0
+
+    private static func offer(_ model: MarkdownModel, text: String, mdx: Bool) {
+        handoffToken += 1
+        let token = handoffToken
+        handoffs.append((text, mdx, model, token))
+        if handoffs.count > 4 { handoffs.removeFirst() }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            handoffs.removeAll { $0.token == token }
+        }
+    }
+
+    func parseInBackground() {
+        // Keyed by text, not version: setting the same text again bumps the version but must not start a second parse.
+        if let backgroundParse, backgroundParse.text == string { return }
+        let text = string, mdx = Self.isMDX(documentURL), version = textVersion
+        if let index = Self.handoffs.firstIndex(where: { $0.mdx == mdx && $0.text == text }) {
+            let offered = Self.handoffs.remove(at: index)
+            modelCache = (version, offered.model)
+            NotificationCenter.default.post(name: Self.modelReady, object: self)
+            DispatchQueue.main.async { [weak self] in self?.restyle?() }
+            return
+        }
+        let task = Task.detached(priority: .userInitiated) { MarkdownModel(text, mdx: mdx) }
+        backgroundParse = (version, text, task)
+        Task { [weak self] in
+            let model = await task.value
+            guard let self, self.backgroundParse?.version == version else { return }
+            self.backgroundParse = nil
+            // An edit that changed the text supersedes this parse; an identical re-set keeps its result.
+            guard self.string == text else { return }
+            self.modelCache = (self.textVersion, model)
+            Self.offer(model, text: text, mdx: mdx)
+            NotificationCenter.default.post(name: Self.modelReady, object: self)
+            self.restyle?()
+        }
     }
 
     private(set) var tablePresentations: [Int: TableCellPresentation] = [:]
@@ -2448,7 +2643,7 @@ class MarkdownTextView: NSTextView {
 
     /// The box a block image takes: the fitted image, or a full-width placeholder while it loads or is unavailable.
     func blockImageRectSize(_ path: String) -> NSSize {
-        guard case .image(let image) = image(for: path, embed: true) else { return NSSize(width: columnWidth, height: Self.imagePlaceholderHeight) }
+        guard case .image(let image) = image(for: path) else { return NSSize(width: columnWidth, height: Self.imagePlaceholderHeight) }
         return Self.blockImageSize(image.size, width: columnWidth)
     }
 
@@ -2465,7 +2660,7 @@ class MarkdownTextView: NSTextView {
             NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14).addClip()
             NSColor.quaternaryLabelColor.withAlphaComponent(0.08).setFill()
             rect.fill()
-            switch image(for: path, embed: true) {
+            switch image(for: path) {
             case .image(let image):
                 image.draw(in: rect)
             case .placeholder(let text):
@@ -2880,12 +3075,14 @@ class MarkdownTextView: NSTextView {
     static let chipLead: CGFloat = 26
     static let chipTrail: CGFloat = 9
 
+    // Equal ASCII advances let adjacent hidden characters share kern runs without changing their zero width.
+    static let hiddenFont = NSFont.monospacedSystemFont(ofSize: 1, weight: .regular)
     private static var hiddenAdvances: [String: CGFloat] = [:]
 
     /// The advance of a character in the 1pt font hidden markers use.
     static func hiddenAdvance(_ character: String) -> CGFloat {
         if let advance = hiddenAdvances[character] { return advance }
-        let advance = (character as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 1)]).width
+        let advance = (character as NSString).size(withAttributes: [.font: hiddenFont]).width
         hiddenAdvances[character] = advance
         return advance
     }
