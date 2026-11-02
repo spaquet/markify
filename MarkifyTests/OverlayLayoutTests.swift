@@ -351,14 +351,14 @@ import Testing
     }
 
     @Test func stressDocumentScrollsAndDrawsThroughCodeBlocks() async throws {
-        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/render-stress-test.md")
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("render-stress-test.md")
         let source = try String(contentsOf: fixture, encoding: .utf8)
         let (window, editor) = makeEditor()
-        editor.documentURL = fixture.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("render-stress-test.md")
+        editor.documentURL = fixture
         editor.string = source
         editor.restyle = { [weak editor] in
             guard let editor else { return }
-            self.style(editor)
+            IncrementalStyleTests.native(source).style(editor, incremental: true)
         }
         style(editor)
         let manager = try #require(editor.textLayoutManager)
@@ -369,11 +369,14 @@ import Testing
         for heading in ["### Small alignment table", "### Connection attempt with retry and failure paths", "## 6. Code blocks and long lines", "### Python", "### JSON and an intentionally long string", "## END OF STRESS TEST"] {
             let range = (source as NSString).range(of: heading)
             try #require(range.location != NSNotFound)
-            editor.settleLayout(through: NSMaxRange(range))
             editor.reveal(range)
+            #expect(editor.visibleRect.intersects(editor.textRect(range)), "Immediate first click missed \(heading)")
             try await Task.sleep(for: .milliseconds(100))
             editor.refreshTables()
             manager.ensureLayout(for: editor.visibleRect)
+            // This used to pre-settle layout before reveal(), hiding missed first clicks.
+            editor.settleLayout(through: NSMaxRange(range))
+            #expect(editor.visibleRect.intersects(editor.textRect(range)), "First click missed \(heading)")
             let elapsed = ContinuousClock().measure {
                 NSGraphicsContext.saveGraphicsState()
                 NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
@@ -709,6 +712,34 @@ extension OverlayLayoutTests {
         #expect(reading.string.hasSuffix(" after"))
         row.mouseExited(with: event)
         #expect(reading.previewPopover == nil)
+        #expect(editor.string == source)
+    }
+}
+
+extension OverlayLayoutTests {
+    @Test func outlineNavigationRevealsDistantHeadingsOnTheFirstClick() async throws {
+        let prefix = (0..<120).map { "## Section \($0)\n\nParagraph with **bold text** and enough words to wrap when the window is narrow.\n\n```swift\nlet value = \($0)\nprint(value)\n```\n\n" }.joined()
+        let source = prefix + "## Target heading\n\n" + String(repeating: "Trailing paragraph.\n\n", count: 80)
+        let target = (source as NSString).range(of: "## Target heading")
+        let (window, editor) = makeEditor()
+        defer { editor.stopObserving(); window.contentView = nil }
+        editor.installParagraphPresentation()
+        editor.string = source
+        style(editor)
+        let manager = try #require(editor.textLayoutManager)
+        // Only the initial viewport has laid out when a reader first opens the inspector.
+        manager.textViewportLayoutController.layoutViewport()
+        editor.reveal(NSRange(location: target.location, length: 0))
+        // Layout after the click must not move the requested heading off the page.
+        editor.settleLayout(through: NSMaxRange(target))
+        manager.textViewportLayoutController.layoutViewport()
+        let rect = editor.textRect(target)
+        #expect(editor.visibleRect.intersects(rect), "First click missed the target: \(rect), viewport: \(editor.visibleRect)")
+        #expect(abs(rect.minY - editor.visibleRect.minY - 24) < 2)
+        try await Task.sleep(for: .milliseconds(100))
+        editor.settleLayout(through: NSMaxRange(target))
+        #expect(editor.visibleRect.intersects(editor.textRect(target)))
+        #expect(editor.selectedRange().location == target.location)
         #expect(editor.string == source)
     }
 }
