@@ -13,6 +13,7 @@ public struct MarkdownModel: Sendable {
     public let spans: [Span]
     public let tables: [Table]
     public let lists: [List]
+    public let details: [Details]
 
     /// `mdx` also recognizes MDX's `import`/`export` lines and JSX blocks, which are kept as written.
     public init(_ source: String, mdx: Bool = false) {
@@ -34,6 +35,7 @@ public struct MarkdownModel: Sendable {
         // Keep the retained parse compact: sorting can preserve the walker's geometric spare capacity.
         let sorted = spans.sorted { $0.range.location != $1.range.location ? $0.range.location < $1.range.location : $0.range.length > $1.range.length }
         self.spans = sorted.withUnsafeBufferPointer { Array($0) }
+        details = Details.find(in: ns, spans: self.spans)
         tables = walker.tables
         lists = walker.lists.sorted { $0.range.location < $1.range.location }
     }
@@ -44,6 +46,7 @@ public struct MarkdownModel: Sendable {
     public func styledParagraph(_ range: NSRange) -> MarkdownModel? {
         let source = source as NSString
         guard range.location >= 0, NSMaxRange(range) <= source.length else { return nil }
+        guard !details.contains(where: { NSIntersectionRange($0.range, range).length > 0 }) else { return nil }
         guard !tables.contains(where: { NSIntersectionRange($0.range, range).length > 0 }) else { return nil }
         var selected: [Span] = []
         for span in spans where NSIntersectionRange(span.range, range).length > 0 {
@@ -65,7 +68,7 @@ public struct MarkdownModel: Sendable {
 
     private init(source: String, mdx: Bool, spans: [Span]) {
         self.source = source; self.mdx = mdx; self.spans = spans
-        tables = []; lists = []
+        tables = []; lists = []; details = []
     }
 
     /// Indexes self-contained presentation paragraphs without retaining their attributed text.
@@ -114,7 +117,8 @@ public struct MarkdownModel: Sendable {
                     default: return false
                     }
                 }
-                if single && simple && !inTable {
+                let inDetails = model.details.contains { NSIntersectionRange($0.range, range).length > 0 }
+                if single && simple && !inTable && !inDetails {
                     entries.append(Entry(range: range, spans: start..<end))
                 } else {
                     if let last = eager.last, last.upperBound == start { eager[eager.count - 1] = last.lowerBound..<end } else { eager.append(start..<end) }

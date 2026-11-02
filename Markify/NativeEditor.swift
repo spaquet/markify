@@ -244,12 +244,21 @@ struct NativeEditor: NSViewRepresentable {
         let model = reading ?? (editor as? MarkdownTextView)?.model ?? MarkdownModel(editor.string, mdx: MarkdownTextView.isMDX(fileURL))
         styling?.paragraphPresentation?.configure(self, model: model)
         styling?.paragraphPresentation?.baseAttributes = [.font: base, .foregroundColor: primary, .paragraphStyle: paragraph]
+        if let styling {
+            if !markdownLens {
+                _ = styling.revealDetails(containing: editor.selectedRange())
+                if let currentMatch, styling.detailsFindMatch != currentMatch {
+                    _ = styling.revealDetails(containing: currentMatch)
+                }
+            }
+            styling.detailsFindMatch = markdownLens ? nil : currentMatch
+        }
         let tableOfContents = markdownLens ? nil : TableOfContentsBlock.find(in: model)
         // Styled lines: the whole document, or only the blocks showing assets that just loaded. A partial pass leaves
         // every other line's attributes as they are; the copy made above matches the live storage outside `scope`.
         var scope = whole
         var partial = false
-        if incremental, let assets, !assets.isEmpty, styling?.canRestyleRegion(key: styleKey) == true,
+        if incremental, model.details.isEmpty, let assets, !assets.isEmpty, styling?.canRestyleRegion(key: styleKey) == true,
            let region = styling?.assetScope(assets, model: model, dark: dark, extra: tableOfContents.map { [$0.range] } ?? []) {
             scope = region
             partial = true
@@ -435,6 +444,8 @@ struct NativeEditor: NSViewRepresentable {
                     guard let color = theme.code(kind) else { continue }
                     storage.addAttribute(.foregroundColor, value: color, range: NSRange(location: span.content.location + token.location, length: token.length))
                 }
+            case .htmlBlock where !markdownLens && model.details.contains(where: { NSIntersectionRange($0.range, span.range).length > 0 && !NSLocationInRange(span.range.location, $0.body) }):
+                break
             case .htmlBlock where !markdownLens && MarkdownTextView.isInvisibleHTML(source.substring(with: span.range)):
                 // Comments and bare tags such as `</details>` show nothing in a browser, so they take no room.
                 let collapsed = NSMutableParagraphStyle()
@@ -809,6 +820,7 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.paragraphStyle, value: row, range: source.lineRange(for: NSRange(location: frontmatter.range.location, length: 0)))
             }
         }
+        if !markdownLens { styleDetails(model, editor: editor, storage: storage, base: base, paragraph: paragraph, marker: marker) }
         let found = findMatches(in: editor, storage: storage, within: scope)
         for range in found { storage.addAttribute(.backgroundColor, value: range == currentMatch ? NSColor.findCurrent : NSColor.findMatch, range: range) }
         // A partial pass replaces only the highlights in its lines.
@@ -819,6 +831,7 @@ struct NativeEditor: NSViewRepresentable {
         updateTypingFont(editor)
         if let editor = editor as? MarkdownTextView {
             editor.forgetImages()
+            editor.updateDetailsAccessibility()
             DispatchQueue.main.async { [weak editor] in editor?.refreshTables() }
         }
     }
@@ -997,6 +1010,8 @@ struct NativeEditor: NSViewRepresentable {
                 DispatchQueue.main.async { [weak self] in self?.textViewDidChangeSelection(notification) }
                 return
             }
+            if let markdown = editor as? MarkdownTextView, markdown.rendered,
+               markdown.revealDetails(containing: editor.selectedRange()) { parent.style(editor) }
             parent.selectedRange = editor.selectedRange()
             let slash = SlashContext.detect(in: editor.string, selection: editor.selectedRange())
             parent.onSlash(slash?.range.location == dismissedSlashLocation ? nil : slash?.query)
@@ -1063,6 +1078,8 @@ class MarkdownTextView: NSTextView {
     var linkTargets: [String] = []
     private var isCompletingLink = false
     var columnWidth: CGFloat = 640
+    var detailsOpen: [Int: Bool] = [:]
+    var detailsFindMatch: NSRange?
     var rendered = true
     var tableReadingOnly = false
     weak var tableDocument: MarkdownTextView?
@@ -1388,6 +1405,12 @@ class MarkdownTextView: NSTextView {
             MainActor.assumeIsolated {
                 guard let self, let current = self.textStorage, ObjectIdentifier(current) == edited else { return }
                 if self.pendingCharacterEdit != nil { self.multipleCharacterEdits = true }
+                let oldEnd = NSMaxRange(range) - delta
+                self.detailsOpen = Dictionary(uniqueKeysWithValues: self.detailsOpen.compactMap { location, open in
+                    if location < range.location { return (location, open) }
+                    if location >= oldEnd { return (location + delta, open) }
+                    return nil
+                })
                 self.pendingCharacterEdit = (range, delta)
                 self.textVersion += 1
                 self.scheduleTableOfContentsUpdate()
@@ -1683,8 +1706,8 @@ class MarkdownTextView: NSTextView {
             } : []
             tableRowsCache = (textVersion, rendered, rows, Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) }))
         }
-        let rows = tableRowsCache?.rows ?? []
-        tableRowIndices = tableRowsCache?.indices ?? [:]
+        let rows = (tableRowsCache?.rows ?? []).filter { !isInClosedDetails($0.0.start) }
+        tableRowIndices = Dictionary(uniqueKeysWithValues: rows.enumerated().map { ($0.element.0.start, $0.offset) })
         var wanted = Set(rows.indices)
         if rows.count > 32, let manager = textLayoutManager, let content = manager.textContentManager {
             manager.ensureLayout(for: visibleRect.insetBy(dx: 0, dy: -200))
@@ -1816,6 +1839,11 @@ class MarkdownTextView: NSTextView {
 
     override func shouldChangeText(inRanges affectedRanges: [NSValue], replacementStrings: [String]?) -> Bool {
         guard super.shouldChangeText(inRanges: affectedRanges, replacementStrings: replacementStrings) else { return false }
+        if rendered {
+            var revealed = false
+            for range in affectedRanges { revealed = revealDetails(containing: range.rangeValue) || revealed }
+            if revealed { restyle?() }
+        }
         if !isRenumbering {
             // Remember list structure so a list that loses its first item keeps its start number.
             if affectedRanges.count == 1, let replacement = replacementStrings?.first {
@@ -2154,7 +2182,7 @@ class MarkdownTextView: NSTextView {
     private func tasks(in spans: [MarkdownModel.Span]? = nil) -> [MarkdownModel.ListItem] {
         guard rendered else { return [] }
         return (spans ?? model.spans).compactMap { span in
-            if case .listItem(let item) = span.kind, item.checkbox != nil { item } else { nil }
+            if case .listItem(let item) = span.kind, item.checkbox != nil, !isInClosedDetails(item.marker.location) { item } else { nil }
         }
     }
 
@@ -2620,7 +2648,8 @@ class MarkdownTextView: NSTextView {
             low += 1
         }
         // Rich table cells own their decorations; the hidden source row must not paint them again.
-        spans.removeAll { span in model.tables.contains { NSLocationInRange(span.range.location, $0.range) } }
+        spans.removeAll { span in isInClosedDetails(span.range.location) || model.tables.contains { NSLocationInRange(span.range.location, $0.range) } }
+        drawDetails(anchoredIn: range)
         guard !spans.isEmpty else { return }
         drawingSpans = spans
         defer { drawingSpans = [] }
@@ -2969,7 +2998,7 @@ class MarkdownTextView: NSTextView {
         // The button sits in the padding above the first line of code, so only the blocks at or just below the point qualify.
         let near = [point, NSPoint(x: point.x, y: point.y + 20 * theme.scale)].map { characterIndexForInsertion(at: $0) }
         return model.spans.first { span in
-            guard case .codeBlock = span.kind, near.contains(where: { NSLocationInRange($0, span.range) }) else { return false }
+            guard !isInClosedDetails(span.range.location), case .codeBlock = span.kind, near.contains(where: { NSLocationInRange($0, span.range) }) else { return false }
             return codeCopyButtonRect(span)?.insetBy(dx: -4, dy: -4).contains(point) == true
         }
     }
@@ -3097,7 +3126,7 @@ class MarkdownTextView: NSTextView {
     }
 
     private var hoverArea: NSTrackingArea?
-    private var previewPopover: NSPopover?
+    private(set) var previewPopover: NSPopover?
     private var previewSpan: MarkdownModel.Span?
 
     override func updateTrackingAreas() {
@@ -3111,11 +3140,7 @@ class MarkdownTextView: NSTextView {
     override func mouseMoved(with event: NSEvent) {
         super.mouseMoved(with: event)
         let point = convert(event.locationInWindow, from: nil)
-        let hit = model.spans.first { span in
-            guard case .image(_, false) = span.kind else { return false }
-            return inlineImageChipFrame(span)?.contains(point) == true
-        }
-        if let hit { showImagePreview(for: hit) } else { closeImagePreview() }
+        updateImagePreview(at: point)
         let code = codeBlock(withCopyButtonAt: point)?.range.location
         if code != nil { NSCursor.pointingHand.set() }
         if code != hoveredCodeBlock {
@@ -3124,6 +3149,14 @@ class MarkdownTextView: NSTextView {
             redrawCodeHeader(previous)
             redrawCodeHeader(code)
         }
+    }
+
+    fileprivate func updateImagePreview(at point: NSPoint) {
+        let hit = model.spans.first { span in
+            guard !isInClosedDetails(span.range.location), case .image(_, false) = span.kind else { return false }
+            return inlineImageChipFrame(span)?.contains(point) == true
+        }
+        if let hit { showImagePreview(for: hit) } else { closeImagePreview() }
     }
 
     override func mouseExited(with event: NSEvent) {
@@ -3168,7 +3201,7 @@ class MarkdownTextView: NSTextView {
         previewSpan = span
     }
 
-    private func closeImagePreview() {
+    fileprivate func closeImagePreview() {
         previewPopover?.close()
         previewPopover = nil
         previewSpan = nil
@@ -3282,6 +3315,10 @@ class MarkdownTextView: NSTextView {
     override func mouseDown(with event: NSEvent) {
         closeImagePreview()
         let point = convert(event.locationInWindow, from: nil)
+        if rendered, let section = model.details.first(where: { !isInClosedDetails($0.summary.location) && detailsRect($0).contains(point) }) {
+            toggleDetails(section)
+            return
+        }
         if rendered, let frontmatter = Frontmatter.parse(string),
            let hit = frontmatterChips(frontmatter).first(where: { $0.frame.contains(point) }) {
             if let link = hit.chip.link { return Knowledge.follow(link, title: nil, from: documentURL, bundleRoot: bundleRoot, baseDirectory: baseDirectory) }
@@ -3974,6 +4011,7 @@ final class TableRowView: NSView {
     override func mouseExited(with event: NSEvent) {
         pointerInside = false
         hoveredColumn = nil
+        for case let presentation as TableCellPresentation in subviews { presentation.reading.closeImagePreview() }
         needsDisplay = true
         onHover?(false)
     }
@@ -4042,6 +4080,14 @@ final class TableRowView: NSView {
         let x = convert(event.locationInWindow, from: nil).x
         var end: CGFloat = 0
         hoveredColumn = widths.firstIndex { width in end += width; return x < end }
+        // The row owns an overlapping tracking area. Keep cell previews working when AppKit
+        // delivers the movement here rather than to the nested text view.
+        for case let presentation as TableCellPresentation in subviews {
+            let reading = presentation.reading
+            if !presentation.isHidden, !reading.isHidden {
+                reading.updateImagePreview(at: reading.convert(event.locationInWindow, from: nil))
+            }
+        }
         needsDisplay = true
     }
 
