@@ -1068,7 +1068,7 @@
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.10.0;
+				minimumVersion = 2.10.1;
 			};
 		};
 		76A591122DC953870033A6AC /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
@@ -1092,7 +1092,7 @@
 			repositoryURL = "https://github.com/getsentry/sentry-cocoa/";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 9.31.0;
+				minimumVersion = 9.32.0;
 			};
 			traits = (
 			);
