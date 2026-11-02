@@ -1,0 +1,1504 @@
+{
+  "baseline": {
+    "version": "2.5.7",
+    "build": "371",
+    "executableSHA256": "14c1c40ccdfc946fdc0526f6d82fa6856dbd04ba9921a2e389185eb9bd7590a7",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.2\nBuildVersion:\t\t26B118\n",
+    "samples": [
+      {
+        "workload": "blank",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.21568133297842,
+        "status": "0.0   0:00.51 00:23",
+        "polls": [
+          {
+            "seconds": 3.131713083013892,
+            "status": "0.5   0:00.45 00:03"
+          },
+          {
+            "seconds": 6.1515062500257045,
+            "status": "1.3   0:00.47 00:06"
+          },
+          {
+            "seconds": 9.177541917015333,
+            "status": "0.0   0:00.49 00:09"
+          },
+          {
+            "seconds": 12.203701750026084,
+            "status": "0.1   0:00.49 00:12"
+          },
+          {
+            "seconds": 15.21566879202146,
+            "status": "0.0   0:00.49 00:15"
+          }
+        ],
+        "documents": [],
+        "initial": {
+          "physicalFootprintMiB": 39.3,
+          "peakFootprintMiB": 40.4,
+          "attributeRunBytes": 6960,
+          "liveMallocBytes": 19261501
+        }
+      },
+      {
+        "workload": "stress-2",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.231191458995454,
+        "status": "0.0   0:01.08 00:23",
+        "polls": [
+          {
+            "seconds": 3.1574873339850456,
+            "status": "1.0   0:00.97 00:03"
+          },
+          {
+            "seconds": 6.173242499993648,
+            "status": "0.0   0:01.06 00:06"
+          },
+          {
+            "seconds": 9.188915584003553,
+            "status": "0.0   0:01.06 00:09"
+          },
+          {
+            "seconds": 12.215857499977574,
+            "status": "0.0   0:01.06 00:12"
+          },
+          {
+            "seconds": 15.231179249996785,
+            "status": "0.0   0:01.07 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test-2.md",
+            "bytes": 3461,
+            "sha256": "da6ad49b203f6b0656d0c2bbb022f63c43eeb7b2089431c5e909b0423d8a223f"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 71.2,
+          "peakFootprintMiB": 72.4,
+          "attributeRunBytes": 32896,
+          "liveMallocBytes": 26963718
+        },
+        "afterScrollStatus": "0.0   0:01.34 00:54",
+        "afterScroll": {
+          "physicalFootprintMiB": 72.7,
+          "peakFootprintMiB": 73.8,
+          "attributeRunBytes": 32976,
+          "liveMallocBytes": 28708774
+        }
+      },
+      {
+        "workload": "stress-1",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.248578917002305,
+        "status": "2.1   0:01.10 00:23",
+        "polls": [
+          {
+            "seconds": 3.1530780000030063,
+            "status": "0.0   0:00.93 00:03"
+          },
+          {
+            "seconds": 6.174743333016522,
+            "status": "1.3   0:00.95 00:06"
+          },
+          {
+            "seconds": 9.195186791999731,
+            "status": "0.2   0:01.03 00:09"
+          },
+          {
+            "seconds": 12.222187125007622,
+            "status": "0.1   0:01.07 00:12"
+          },
+          {
+            "seconds": 15.248554292018525,
+            "status": "0.0   0:01.07 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test.md",
+            "bytes": 75402,
+            "sha256": "0476bb3ef57af0ebffd636f2de0172a92b09e4918529be44af29d190ae479dcf"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 87.9,
+          "peakFootprintMiB": 95.0,
+          "attributeRunBytes": 47600,
+          "liveMallocBytes": 41013074
+        },
+        "afterScrollStatus": "0.0   0:03.91 00:54",
+        "afterScroll": {
+          "physicalFootprintMiB": 194.9,
+          "peakFootprintMiB": 724.3,
+          "attributeRunBytes": 173904,
+          "liveMallocBytes": 124574978
+        }
+      },
+      {
+        "workload": "prose-1m",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.257017375028227,
+        "status": "0.2   0:04.10 00:23",
+        "polls": [
+          {
+            "seconds": 3.158677334024105,
+            "status": "100.0   0:03.10 00:03"
+          },
+          {
+            "seconds": 6.184246084012557,
+            "status": "0.2   0:03.87 00:06"
+          },
+          {
+            "seconds": 9.211012375017162,
+            "status": "0.4   0:03.90 00:09"
+          },
+          {
+            "seconds": 12.230776125041302,
+            "status": "0.5   0:03.92 00:12"
+          },
+          {
+            "seconds": 15.256999625009485,
+            "status": "0.6   0:03.95 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-1m.md",
+            "bytes": 1000109,
+            "sha256": "b564051a7c0df90558414e20eac961ee73ecb65ba1d44e4a8241cce146014096"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 128.0,
+          "peakFootprintMiB": 128.0,
+          "attributeRunBytes": 6317136,
+          "liveMallocBytes": 54709426
+        },
+        "afterScrollStatus": "0.0   0:04.31 00:53",
+        "afterScroll": {
+          "physicalFootprintMiB": 126.5,
+          "peakFootprintMiB": 129.3,
+          "attributeRunBytes": 3160768,
+          "liveMallocBytes": 38101824
+        }
+      },
+      {
+        "workload": "prose-5m",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 18.24302420899039,
+        "status": "0.3   0:17.09 00:26",
+        "polls": [
+          {
+            "seconds": 3.139334749954287,
+            "status": "100.3   0:03.12 00:03"
+          },
+          {
+            "seconds": 6.164351166982669,
+            "status": "100.0   0:06.15 00:06"
+          },
+          {
+            "seconds": 9.178518417000305,
+            "status": "99.2   0:09.15 00:09"
+          },
+          {
+            "seconds": 12.188481166958809,
+            "status": "99.4   0:12.17 00:12"
+          },
+          {
+            "seconds": 15.21558316698065,
+            "status": "98.7   0:15.19 00:15"
+          },
+          {
+            "seconds": 18.243015166954137,
+            "status": "3.1   0:17.05 00:18"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-5m.md",
+            "bytes": 5000509,
+            "sha256": "31b1f0b9e735a16b40aac5fb7134e46fc65fbe23560c17a7e31ef8bb6950d3a0"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 340.3,
+          "peakFootprintMiB": 386.3,
+          "attributeRunBytes": 26470016,
+          "liveMallocBytes": 165193378
+        },
+        "afterScrollStatus": "0.0   0:17.37 00:57",
+        "afterScroll": {
+          "physicalFootprintMiB": 339.7,
+          "peakFootprintMiB": 386.3,
+          "attributeRunBytes": 13236688,
+          "liveMallocBytes": 96696586
+        }
+      },
+      {
+        "workload": "blank",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.202769374998752,
+        "status": "0.0   0:00.49 00:23",
+        "polls": [
+          {
+            "seconds": 3.109445875044912,
+            "status": "0.0   0:00.46 00:03"
+          },
+          {
+            "seconds": 6.13093220803421,
+            "status": "0.0   0:00.47 00:06"
+          },
+          {
+            "seconds": 9.155620208010077,
+            "status": "0.0   0:00.48 00:09"
+          },
+          {
+            "seconds": 12.17857600003481,
+            "status": "0.0   0:00.48 00:12"
+          },
+          {
+            "seconds": 15.202742791036144,
+            "status": "0.0   0:00.48 00:15"
+          }
+        ],
+        "documents": [],
+        "initial": {
+          "physicalFootprintMiB": 41.8,
+          "peakFootprintMiB": 42.8,
+          "attributeRunBytes": 9200,
+          "liveMallocBytes": 20085779
+        }
+      },
+      {
+        "workload": "stress-2",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.256279958004598,
+        "status": "0.0   0:00.89 00:24",
+        "polls": [
+          {
+            "seconds": 3.154701291001402,
+            "status": "0.0   0:00.85 00:04"
+          },
+          {
+            "seconds": 6.182095249998383,
+            "status": "0.0   0:00.86 00:07"
+          },
+          {
+            "seconds": 9.20632629096508,
+            "status": "0.0   0:00.87 00:10"
+          },
+          {
+            "seconds": 12.229341875005048,
+            "status": "0.1   0:00.88 00:13"
+          },
+          {
+            "seconds": 15.256259499990847,
+            "status": "0.0   0:00.88 00:16"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test-2.md",
+            "bytes": 3461,
+            "sha256": "da6ad49b203f6b0656d0c2bbb022f63c43eeb7b2089431c5e909b0423d8a223f"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 59.8,
+          "peakFootprintMiB": 64.6,
+          "attributeRunBytes": 53552,
+          "liveMallocBytes": 28616428
+        },
+        "afterScrollStatus": "0.0   0:01.99 00:54",
+        "afterScroll": {
+          "physicalFootprintMiB": 73.8,
+          "peakFootprintMiB": 321.1,
+          "attributeRunBytes": 50256,
+          "liveMallocBytes": 36261212
+        }
+      },
+      {
+        "workload": "stress-1",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.25610699999379,
+        "status": "0.0   0:00.90 00:24",
+        "polls": [
+          {
+            "seconds": 3.1553478749701753,
+            "status": "0.0   0:00.86 00:04"
+          },
+          {
+            "seconds": 6.179452917014714,
+            "status": "0.0   0:00.87 00:07"
+          },
+          {
+            "seconds": 9.205213791981805,
+            "status": "0.0   0:00.88 00:10"
+          },
+          {
+            "seconds": 12.22809441696154,
+            "status": "0.1   0:00.88 00:13"
+          },
+          {
+            "seconds": 15.256082749983761,
+            "status": "0.0   0:00.88 00:16"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test.md",
+            "bytes": 75402,
+            "sha256": "0476bb3ef57af0ebffd636f2de0172a92b09e4918529be44af29d190ae479dcf"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 87.1,
+          "peakFootprintMiB": 95.4,
+          "attributeRunBytes": 87040,
+          "liveMallocBytes": 41867436
+        },
+        "afterScrollStatus": "0.0   0:03.81 00:54",
+        "afterScroll": {
+          "physicalFootprintMiB": 170.3,
+          "peakFootprintMiB": 726.0,
+          "attributeRunBytes": 172688,
+          "liveMallocBytes": 124637404
+        }
+      },
+      {
+        "workload": "prose-1m",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.287454499979503,
+        "status": "0.0   0:04.05 00:24",
+        "polls": [
+          {
+            "seconds": 3.1675265000085346,
+            "status": "99.0   0:03.08 00:03"
+          },
+          {
+            "seconds": 6.185884458012879,
+            "status": "0.1   0:03.95 00:06"
+          },
+          {
+            "seconds": 9.21913154196227,
+            "status": "0.0   0:03.95 00:09"
+          },
+          {
+            "seconds": 12.258958249993157,
+            "status": "0.0   0:03.95 00:13"
+          },
+          {
+            "seconds": 15.28743637498701,
+            "status": "2.8   0:04.03 00:16"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-1m.md",
+            "bytes": 1000109,
+            "sha256": "b564051a7c0df90558414e20eac961ee73ecb65ba1d44e4a8241cce146014096"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 118.4,
+          "peakFootprintMiB": 122.0,
+          "attributeRunBytes": 3160928,
+          "liveMallocBytes": 36263090
+        },
+        "afterScrollStatus": "0.0   0:05.81 00:54",
+        "afterScroll": {
+          "physicalFootprintMiB": 81.9,
+          "peakFootprintMiB": 122.0,
+          "attributeRunBytes": 3293296,
+          "liveMallocBytes": 42591314
+        }
+      },
+      {
+        "workload": "prose-5m",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 21.270006959035527,
+        "status": "0.0   0:17.23 00:30",
+        "polls": [
+          {
+            "seconds": 3.1710081250057556,
+            "status": "99.0   0:03.12 00:03"
+          },
+          {
+            "seconds": 6.186268999997992,
+            "status": "99.9   0:06.13 00:06"
+          },
+          {
+            "seconds": 9.200931125029456,
+            "status": "99.4   0:09.15 00:09"
+          },
+          {
+            "seconds": 12.21775695902761,
+            "status": "100.0   0:12.17 00:12"
+          },
+          {
+            "seconds": 15.231342917017173,
+            "status": "99.0   0:15.18 00:15"
+          },
+          {
+            "seconds": 18.253988500044215,
+            "status": "6.5   0:17.22 00:18"
+          },
+          {
+            "seconds": 21.269997209019493,
+            "status": "0.0   0:17.22 00:22"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-5m.md",
+            "bytes": 5000509,
+            "sha256": "31b1f0b9e735a16b40aac5fb7134e46fc65fbe23560c17a7e31ef8bb6950d3a0"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 340.7,
+          "peakFootprintMiB": 388.5,
+          "attributeRunBytes": 26466256,
+          "liveMallocBytes": 113214640
+        },
+        "afterScrollStatus": "0.0   0:20.35 01:04",
+        "afterScroll": {
+          "physicalFootprintMiB": 276.3,
+          "peakFootprintMiB": 388.5,
+          "attributeRunBytes": 13368816,
+          "liveMallocBytes": 101221728
+        }
+      },
+      {
+        "workload": "blank",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.263436209002975,
+        "status": "0.0   0:00.60 00:24",
+        "polls": [
+          {
+            "seconds": 3.1386232499498874,
+            "status": "1.8   0:00.50 00:03"
+          },
+          {
+            "seconds": 6.170868208981119,
+            "status": "0.0   0:00.55 00:06"
+          },
+          {
+            "seconds": 9.20880737499101,
+            "status": "0.0   0:00.55 00:09"
+          },
+          {
+            "seconds": 12.235084249987267,
+            "status": "0.0   0:00.56 00:13"
+          },
+          {
+            "seconds": 15.263415249995887,
+            "status": "0.0   0:00.56 00:16"
+          }
+        ],
+        "documents": [],
+        "initial": {
+          "physicalFootprintMiB": 41.6,
+          "peakFootprintMiB": 43.0,
+          "attributeRunBytes": 9440,
+          "liveMallocBytes": 20136673
+        }
+      },
+      {
+        "workload": "stress-2",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.278190875018481,
+        "status": "0.0   0:01.22 00:23",
+        "polls": [
+          {
+            "seconds": 3.162685875024181,
+            "status": "8.5   0:01.06 00:03"
+          },
+          {
+            "seconds": 6.188026917050593,
+            "status": "0.0   0:01.08 00:06"
+          },
+          {
+            "seconds": 9.214694207999855,
+            "status": "0.0   0:01.08 00:09"
+          },
+          {
+            "seconds": 12.24536366702523,
+            "status": "0.1   0:01.09 00:12"
+          },
+          {
+            "seconds": 15.27817425003741,
+            "status": "0.0   0:01.09 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test-2.md",
+            "bytes": 3461,
+            "sha256": "da6ad49b203f6b0656d0c2bbb022f63c43eeb7b2089431c5e909b0423d8a223f"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 71.4,
+          "peakFootprintMiB": 72.8,
+          "attributeRunBytes": 38608,
+          "liveMallocBytes": 27420534
+        },
+        "afterScrollStatus": "0.0   0:01.64 00:54",
+        "afterScroll": {
+          "physicalFootprintMiB": 73.0,
+          "peakFootprintMiB": 74.1,
+          "attributeRunBytes": 33216,
+          "liveMallocBytes": 28836662
+        }
+      },
+      {
+        "workload": "stress-1",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.268755375000183,
+        "status": "0.0   0:01.02 00:24",
+        "polls": [
+          {
+            "seconds": 3.1664471669937484,
+            "status": "0.6   0:00.94 00:04"
+          },
+          {
+            "seconds": 6.18721733399434,
+            "status": "0.0   0:00.95 00:07"
+          },
+          {
+            "seconds": 9.23497866699472,
+            "status": "0.0   0:00.96 00:10"
+          },
+          {
+            "seconds": 12.256616375001613,
+            "status": "0.2   0:00.97 00:13"
+          },
+          {
+            "seconds": 15.26875004201429,
+            "status": "0.0   0:00.97 00:16"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test.md",
+            "bytes": 75402,
+            "sha256": "0476bb3ef57af0ebffd636f2de0172a92b09e4918529be44af29d190ae479dcf"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 86.6,
+          "peakFootprintMiB": 94.7,
+          "attributeRunBytes": 47760,
+          "liveMallocBytes": 41009672
+        },
+        "afterScrollStatus": "0.0   0:04.12 00:54",
+        "afterScroll": {
+          "physicalFootprintMiB": 194.8,
+          "peakFootprintMiB": 776.3,
+          "attributeRunBytes": 172688,
+          "liveMallocBytes": 124886856
+        }
+      },
+      {
+        "workload": "prose-1m",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.265723125019576,
+        "status": "1.8   0:04.09 00:23",
+        "polls": [
+          {
+            "seconds": 3.1528097090194933,
+            "status": "99.0   0:03.10 00:03"
+          },
+          {
+            "seconds": 6.178745249984786,
+            "status": "0.0   0:03.97 00:06"
+          },
+          {
+            "seconds": 9.211897708999459,
+            "status": "0.0   0:04.03 00:09"
+          },
+          {
+            "seconds": 12.239790541992988,
+            "status": "0.0   0:04.04 00:12"
+          },
+          {
+            "seconds": 15.265704624995124,
+            "status": "0.0   0:04.05 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-1m.md",
+            "bytes": 1000109,
+            "sha256": "b564051a7c0df90558414e20eac961ee73ecb65ba1d44e4a8241cce146014096"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 116.7,
+          "peakFootprintMiB": 122.0,
+          "attributeRunBytes": 3161008,
+          "liveMallocBytes": 36221650
+        },
+        "afterScrollStatus": "0.0   0:05.96 00:53",
+        "afterScroll": {
+          "physicalFootprintMiB": 122.8,
+          "peakFootprintMiB": 125.8,
+          "attributeRunBytes": 3293296,
+          "liveMallocBytes": 42664466
+        }
+      },
+      {
+        "workload": "prose-5m",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 18.288624875014648,
+        "status": "0.0   0:16.99 00:26",
+        "polls": [
+          {
+            "seconds": 3.1589237499865703,
+            "status": "99.2   0:03.09 00:03"
+          },
+          {
+            "seconds": 6.192933084035758,
+            "status": "99.3   0:06.12 00:06"
+          },
+          {
+            "seconds": 9.222026250034105,
+            "status": "99.4   0:09.16 00:09"
+          },
+          {
+            "seconds": 12.239057208993472,
+            "status": "99.5   0:12.18 00:12"
+          },
+          {
+            "seconds": 15.27883591700811,
+            "status": "100.0   0:15.22 00:15"
+          },
+          {
+            "seconds": 18.288618916994892,
+            "status": "2.2   0:16.98 00:18"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-5m.md",
+            "bytes": 5000509,
+            "sha256": "31b1f0b9e735a16b40aac5fb7134e46fc65fbe23560c17a7e31ef8bb6950d3a0"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 341.5,
+          "peakFootprintMiB": 388.0,
+          "attributeRunBytes": 26465536,
+          "liveMallocBytes": 113325922
+        },
+        "afterScrollStatus": "0.0   0:20.15 00:56",
+        "afterScroll": {
+          "physicalFootprintMiB": 349.0,
+          "peakFootprintMiB": 388.0,
+          "attributeRunBytes": 13368976,
+          "liveMallocBytes": 101278226
+        }
+      }
+    ],
+    "navigationFocusVerified": false
+  },
+  "candidate": {
+    "version": "2.5.7",
+    "build": "372",
+    "executableSHA256": "0e1c6f0932c479c47b91191286bd5e06a5424259b36fc78861e1e8c283f20f38",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.2\nBuildVersion:\t\t26B118\n",
+    "navigationFocusChecked": true,
+    "samples": [
+      {
+        "workload": "blank",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.207295916043222,
+        "status": "0.0   0:00.61 00:23",
+        "polls": [
+          {
+            "seconds": 3.1305945410276763,
+            "status": "9.0   0:00.50 00:03"
+          },
+          {
+            "seconds": 6.1517563330125995,
+            "status": "6.1   0:00.55 00:06"
+          },
+          {
+            "seconds": 9.17208087502513,
+            "status": "0.1   0:00.59 00:09"
+          },
+          {
+            "seconds": 12.188577916007489,
+            "status": "0.0   0:00.60 00:12"
+          },
+          {
+            "seconds": 15.207280333037488,
+            "status": "0.0   0:00.60 00:15"
+          }
+        ],
+        "documents": [],
+        "initial": {
+          "physicalFootprintMiB": 42.0,
+          "peakFootprintMiB": 43.2,
+          "attributeRunBytes": 9440,
+          "liveMallocBytes": 20286065
+        }
+      },
+      {
+        "workload": "stress-2",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.250897665973753,
+        "status": "0.0   0:00.91 00:23",
+        "polls": [
+          {
+            "seconds": 3.1570188750047237,
+            "status": "0.0   0:00.85 00:03"
+          },
+          {
+            "seconds": 6.180936541000847,
+            "status": "0.1   0:00.87 00:06"
+          },
+          {
+            "seconds": 9.203380124992691,
+            "status": "0.0   0:00.87 00:09"
+          },
+          {
+            "seconds": 12.226464000006672,
+            "status": "0.1   0:00.88 00:12"
+          },
+          {
+            "seconds": 15.2508617080166,
+            "status": "0.0   0:00.88 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test-2.md",
+            "bytes": 3461,
+            "sha256": "da6ad49b203f6b0656d0c2bbb022f63c43eeb7b2089431c5e909b0423d8a223f"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 59.7,
+          "peakFootprintMiB": 65.1,
+          "attributeRunBytes": 57600,
+          "liveMallocBytes": 28759340
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "stress-1",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.259728875011206,
+        "status": "0.8   0:01.13 00:23",
+        "polls": [
+          {
+            "seconds": 3.1426742089679465,
+            "status": "1.2   0:00.95 00:03"
+          },
+          {
+            "seconds": 6.170934916997794,
+            "status": "0.7   0:00.98 00:06"
+          },
+          {
+            "seconds": 9.198950749996584,
+            "status": "0.6   0:01.01 00:09"
+          },
+          {
+            "seconds": 12.230290792009328,
+            "status": "0.8   0:01.04 00:12"
+          },
+          {
+            "seconds": 15.259704333962873,
+            "status": "0.5   0:01.07 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test.md",
+            "bytes": 75402,
+            "sha256": "0476bb3ef57af0ebffd636f2de0172a92b09e4918529be44af29d190ae479dcf"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 98.0,
+          "peakFootprintMiB": 102.6,
+          "attributeRunBytes": 96976,
+          "liveMallocBytes": 47339522
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "prose-1m",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.327122124959715,
+        "status": "0.0   0:02.37 00:23",
+        "polls": [
+          {
+            "seconds": 3.2244269580114633,
+            "status": "11.3   0:02.16 00:03"
+          },
+          {
+            "seconds": 6.244342707970645,
+            "status": "0.0   0:02.31 00:06"
+          },
+          {
+            "seconds": 9.270651958009694,
+            "status": "0.0   0:02.31 00:09"
+          },
+          {
+            "seconds": 12.306731040996965,
+            "status": "0.0   0:02.32 00:12"
+          },
+          {
+            "seconds": 15.327109250007197,
+            "status": "0.0   0:02.32 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-1m.md",
+            "bytes": 1000109,
+            "sha256": "b564051a7c0df90558414e20eac961ee73ecb65ba1d44e4a8241cce146014096"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 116.5,
+          "peakFootprintMiB": 121.4,
+          "attributeRunBytes": 37904,
+          "liveMallocBytes": 33685440
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "prose-5m",
+        "repeat": 1,
+        "firstObservedIdleSeconds": 15.255205999943428,
+        "status": "1.4   0:07.41 00:23",
+        "polls": [
+          {
+            "seconds": 3.1623024579603225,
+            "status": "100.2   0:03.12 00:03"
+          },
+          {
+            "seconds": 6.179925499949604,
+            "status": "100.9   0:06.12 00:06"
+          },
+          {
+            "seconds": 9.20835149998311,
+            "status": "0.9   0:07.39 00:09"
+          },
+          {
+            "seconds": 12.231662041973323,
+            "status": "0.3   0:07.40 00:12"
+          },
+          {
+            "seconds": 15.255194874946028,
+            "status": "0.0   0:07.40 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-5m.md",
+            "bytes": 5000509,
+            "sha256": "31b1f0b9e735a16b40aac5fb7134e46fc65fbe23560c17a7e31ef8bb6950d3a0"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 274.3,
+          "peakFootprintMiB": 389.1,
+          "attributeRunBytes": 67056,
+          "liveMallocBytes": 88594048
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "blank",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.250395792012569,
+        "status": "0.0   0:00.63 00:23",
+        "polls": [
+          {
+            "seconds": 3.1369916669791564,
+            "status": "1.1   0:00.57 00:03"
+          },
+          {
+            "seconds": 6.165022625005804,
+            "status": "0.0   0:00.57 00:06"
+          },
+          {
+            "seconds": 9.191333167022094,
+            "status": "0.0   0:00.58 00:09"
+          },
+          {
+            "seconds": 12.219535749987699,
+            "status": "0.0   0:00.58 00:12"
+          },
+          {
+            "seconds": 15.250367707980331,
+            "status": "0.0   0:00.58 00:15"
+          }
+        ],
+        "documents": [],
+        "initial": {
+          "physicalFootprintMiB": 42.0,
+          "peakFootprintMiB": 43.3,
+          "attributeRunBytes": 9360,
+          "liveMallocBytes": 20229621
+        }
+      },
+      {
+        "workload": "stress-2",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.292406124994159,
+        "status": "0.0   0:01.11 00:24",
+        "polls": [
+          {
+            "seconds": 3.186973958974704,
+            "status": "0.9   0:00.96 00:04"
+          },
+          {
+            "seconds": 6.225087083992548,
+            "status": "0.1   0:01.00 00:07"
+          },
+          {
+            "seconds": 9.253851083980408,
+            "status": "0.0   0:01.01 00:10"
+          },
+          {
+            "seconds": 12.278040291974321,
+            "status": "0.0   0:01.02 00:13"
+          },
+          {
+            "seconds": 15.292396917007864,
+            "status": "0.0   0:01.02 00:16"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test-2.md",
+            "bytes": 3461,
+            "sha256": "da6ad49b203f6b0656d0c2bbb022f63c43eeb7b2089431c5e909b0423d8a223f"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 59.8,
+          "peakFootprintMiB": 64.9,
+          "attributeRunBytes": 34672,
+          "liveMallocBytes": 27361314
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "stress-1",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.26357695797924,
+        "status": "0.0   0:01.22 00:23",
+        "polls": [
+          {
+            "seconds": 3.1541857499978505,
+            "status": "20.8   0:01.14 00:03"
+          },
+          {
+            "seconds": 6.187589292007033,
+            "status": "0.0   0:01.15 00:06"
+          },
+          {
+            "seconds": 9.212160792027134,
+            "status": "0.0   0:01.15 00:09"
+          },
+          {
+            "seconds": 12.2354202499846,
+            "status": "0.1   0:01.16 00:12"
+          },
+          {
+            "seconds": 15.263560999999754,
+            "status": "0.0   0:01.16 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test.md",
+            "bytes": 75402,
+            "sha256": "0476bb3ef57af0ebffd636f2de0172a92b09e4918529be44af29d190ae479dcf"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 98.0,
+          "peakFootprintMiB": 103.8,
+          "attributeRunBytes": 55328,
+          "liveMallocBytes": 41003152
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "prose-1m",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.28408691601362,
+        "status": "0.0   0:02.07 00:23",
+        "polls": [
+          {
+            "seconds": 3.1595001249806955,
+            "status": "4.9   0:02.00 00:03"
+          },
+          {
+            "seconds": 6.189638625015505,
+            "status": "0.0   0:02.01 00:06"
+          },
+          {
+            "seconds": 9.21721533301752,
+            "status": "0.0   0:02.01 00:09"
+          },
+          {
+            "seconds": 12.258779250027146,
+            "status": "1.2   0:02.02 00:12"
+          },
+          {
+            "seconds": 15.284066500025801,
+            "status": "0.0   0:02.02 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-1m.md",
+            "bytes": 1000109,
+            "sha256": "b564051a7c0df90558414e20eac961ee73ecb65ba1d44e4a8241cce146014096"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 103.5,
+          "peakFootprintMiB": 114.7,
+          "attributeRunBytes": 67296,
+          "liveMallocBytes": 35373714
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "prose-5m",
+        "repeat": 2,
+        "firstObservedIdleSeconds": 15.286818041990045,
+        "status": "0.0   0:07.21 00:23",
+        "polls": [
+          {
+            "seconds": 3.1673169169807807,
+            "status": "100.2   0:03.11 00:03"
+          },
+          {
+            "seconds": 6.192497374955565,
+            "status": "100.6   0:06.12 00:06"
+          },
+          {
+            "seconds": 9.22485533397412,
+            "status": "0.0   0:07.15 00:09"
+          },
+          {
+            "seconds": 12.256264416966587,
+            "status": "0.1   0:07.15 00:12"
+          },
+          {
+            "seconds": 15.286802166956477,
+            "status": "0.0   0:07.16 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-5m.md",
+            "bytes": 5000509,
+            "sha256": "31b1f0b9e735a16b40aac5fb7134e46fc65fbe23560c17a7e31ef8bb6950d3a0"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 258.0,
+          "peakFootprintMiB": 387.8,
+          "attributeRunBytes": 67136,
+          "liveMallocBytes": 88727346
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "blank",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.26144887501141,
+        "status": "0.0   0:00.58 00:23",
+        "polls": [
+          {
+            "seconds": 3.1368792909779586,
+            "status": "0.4   0:00.53 00:03"
+          },
+          {
+            "seconds": 6.171389582974371,
+            "status": "0.0   0:00.53 00:06"
+          },
+          {
+            "seconds": 9.21054825000465,
+            "status": "0.0   0:00.54 00:09"
+          },
+          {
+            "seconds": 12.235528790974058,
+            "status": "0.0   0:00.54 00:12"
+          },
+          {
+            "seconds": 15.26143333298387,
+            "status": "0.0   0:00.54 00:15"
+          }
+        ],
+        "documents": [],
+        "initial": {
+          "physicalFootprintMiB": 42.2,
+          "peakFootprintMiB": 43.6,
+          "attributeRunBytes": 9440,
+          "liveMallocBytes": 20192049
+        }
+      },
+      {
+        "workload": "stress-2",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.283293042040896,
+        "status": "0.0   0:01.12 00:24",
+        "polls": [
+          {
+            "seconds": 3.151738499989733,
+            "status": "9.1   0:00.98 00:03"
+          },
+          {
+            "seconds": 6.1875070839887485,
+            "status": "0.1   0:00.99 00:06"
+          },
+          {
+            "seconds": 9.22298854199471,
+            "status": "0.0   0:01.00 00:10"
+          },
+          {
+            "seconds": 12.252326667017769,
+            "status": "0.1   0:01.01 00:13"
+          },
+          {
+            "seconds": 15.2832657090039,
+            "status": "0.0   0:01.01 00:16"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test-2.md",
+            "bytes": 3461,
+            "sha256": "da6ad49b203f6b0656d0c2bbb022f63c43eeb7b2089431c5e909b0423d8a223f"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 59.8,
+          "peakFootprintMiB": 65.3,
+          "attributeRunBytes": 35072,
+          "liveMallocBytes": 27338568
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "stress-1",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.260688124981243,
+        "status": "0.0   0:01.02 00:23",
+        "polls": [
+          {
+            "seconds": 3.1773899580002762,
+            "status": "0.2   0:00.96 00:03"
+          },
+          {
+            "seconds": 6.197493915969972,
+            "status": "0.0   0:00.97 00:06"
+          },
+          {
+            "seconds": 9.213292499945965,
+            "status": "0.0   0:00.97 00:09"
+          },
+          {
+            "seconds": 12.239078540995251,
+            "status": "0.1   0:00.98 00:12"
+          },
+          {
+            "seconds": 15.260672624979634,
+            "status": "0.0   0:00.98 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/Users/spaquet/Sites/Markify/render-stress-test.md",
+            "bytes": 75402,
+            "sha256": "0476bb3ef57af0ebffd636f2de0172a92b09e4918529be44af29d190ae479dcf"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 88.8,
+          "peakFootprintMiB": 96.9,
+          "attributeRunBytes": 50848,
+          "liveMallocBytes": 41175634
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "prose-1m",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.264077833038755,
+        "status": "0.0   0:02.05 00:24",
+        "polls": [
+          {
+            "seconds": 3.1663398329983465,
+            "status": "7.7   0:01.99 00:03"
+          },
+          {
+            "seconds": 6.1958332500071265,
+            "status": "0.0   0:02.00 00:06"
+          },
+          {
+            "seconds": 9.21771441603778,
+            "status": "0.0   0:02.01 00:09"
+          },
+          {
+            "seconds": 12.23477812501369,
+            "status": "0.4   0:02.01 00:12"
+          },
+          {
+            "seconds": 15.264071291021537,
+            "status": "0.0   0:02.01 00:16"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-1m.md",
+            "bytes": 1000109,
+            "sha256": "b564051a7c0df90558414e20eac961ee73ecb65ba1d44e4a8241cce146014096"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 103.5,
+          "peakFootprintMiB": 114.5,
+          "attributeRunBytes": 38144,
+          "liveMallocBytes": 33939906
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      },
+      {
+        "workload": "prose-5m",
+        "repeat": 3,
+        "firstObservedIdleSeconds": 15.261346792045515,
+        "status": "0.1   0:07.24 00:23",
+        "polls": [
+          {
+            "seconds": 3.1641629590303637,
+            "status": "100.0   0:03.12 00:03"
+          },
+          {
+            "seconds": 6.186942459025886,
+            "status": "100.9   0:06.14 00:06"
+          },
+          {
+            "seconds": 9.208926459017675,
+            "status": "0.0   0:07.19 00:09"
+          },
+          {
+            "seconds": 12.232339459005743,
+            "status": "0.0   0:07.19 00:12"
+          },
+          {
+            "seconds": 15.261326917039696,
+            "status": "0.0   0:07.19 00:15"
+          }
+        ],
+        "documents": [
+          {
+            "path": "/private/tmp/markify-memory-prose-5m.md",
+            "bytes": 5000509,
+            "sha256": "31b1f0b9e735a16b40aac5fb7134e46fc65fbe23560c17a7e31ef8bb6950d3a0"
+          }
+        ],
+        "initial": {
+          "physicalFootprintMiB": 212.7,
+          "peakFootprintMiB": 388.0,
+          "attributeRunBytes": 66976,
+          "liveMallocBytes": 88544984
+        },
+        "navigationFocusVerified": false,
+        "navigationError": "osascript failed (1): 1013:1040: execution error: No editor text area found (-2700)\n"
+      }
+    ]
+  },
+  "comparison": "Initial settled physical footprint; baseline post-key events were not focus-verified; external candidate navigation failed focus verification and is excluded.",
+  "navigationAudit": {
+    "environment": "Isolated Debug test host, build 372; task_info TASK_VM_INFO phys_footprint; not directly comparable with standalone Release process samples. Viewport source offsets asserted after each navigation; 500 ms between navigation samples.",
+    "samples": [
+      {
+        "bytes": 1000109,
+        "footprintMiB": 84.8448486328125,
+        "position": "initial",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 88.0792236328125,
+        "position": "1-middle",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 500278,
+        "viewportStart": 499547
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 88.0323486328125,
+        "position": "1-end",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 1000109,
+        "viewportStart": 999451
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 88.0792236328125,
+        "position": "1-start",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 88.5635986328125,
+        "position": "2-middle",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 500424,
+        "viewportStart": 499621
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 85.5635986328125,
+        "position": "2-end",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 1000109,
+        "viewportStart": 999451
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 89.1573486328125,
+        "position": "2-start",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 99.70426940917969,
+        "position": "3-middle",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 500424,
+        "viewportStart": 499621
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 98.15739440917969,
+        "position": "3-end",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 1000109,
+        "viewportStart": 999451
+      },
+      {
+        "bytes": 1000109,
+        "footprintMiB": 98.29801940917969,
+        "position": "3-start",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 245.53264617919922,
+        "position": "initial",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 253.32952117919922,
+        "position": "1-middle",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 2500478,
+        "viewportStart": 2499747
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 253.61077117919922,
+        "position": "1-end",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 5000509,
+        "viewportStart": 4999851
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 251.25139617919922,
+        "position": "1-start",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 254.28264617919922,
+        "position": "2-middle",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 2500624,
+        "viewportStart": 2499821
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 253.72014617919922,
+        "position": "2-end",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 5000509,
+        "viewportStart": 4999851
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 253.86077117919922,
+        "position": "2-start",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 251.70452117919922,
+        "position": "3-middle",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 2500624,
+        "viewportStart": 2499821
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 253.72014617919922,
+        "position": "3-end",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 5000509,
+        "viewportStart": 4999851
+      },
+      {
+        "bytes": 5000509,
+        "footprintMiB": 253.75139617919922,
+        "position": "3-start",
+        "sourceAttributeRuns": 1,
+        "viewportEnd": 666,
+        "viewportStart": 0
+      }
+    ]
+  }
+}
