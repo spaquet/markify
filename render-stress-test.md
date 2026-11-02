@@ -610,7 +610,7 @@ Nullam id dolor id nibh ultricies vehicula ut id elit. Morbi leo risus, porta ac
 
 ---
 
-## Foldable HTML sections
+## 9. Foldable HTML sections
 
 <details>
 <summary>Closed by default — click the disclosure triangle</summary>
