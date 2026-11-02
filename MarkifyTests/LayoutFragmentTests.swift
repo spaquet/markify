@@ -525,6 +525,7 @@ extension LayoutFragmentTests {
         scroll.reflectScrolledClipView(clip)
         let offset = editor.detailsRect(section).minY - clip.bounds.minY
         // Leave the caret at the top, as when a reader scrolls down without clicking text.
+        editor.setSelectedRange(NSRange(location: 0, length: 0))
         #expect(editor.selectedRange().location == 0)
         for _ in 0..<4 {
             editor.toggleDetails(section)
