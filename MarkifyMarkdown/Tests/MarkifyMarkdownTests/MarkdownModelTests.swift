@@ -232,3 +232,51 @@ struct EdgeModelTests {
         #expect(elapsed < .seconds(1), "model took \(elapsed)")
     }
 }
+
+struct DetailsModelTests {
+    @Test func pairsNestedSectionsAndOpenAttribute() {
+        let source = "<details open>\n<summary>Outer</summary>\n\nText.\n\n<details>\n<summary>Inner</summary>\n\nHidden.\n\n</details>\n\n</details>\n"
+        let model = MarkdownModel(source)
+        #expect(model.details.count == 2)
+        #expect(model.details.map(\.initiallyOpen) == [true, false])
+        #expect(model.details.map { (source as NSString).substring(with: $0.summary) } == ["Outer", "Inner"])
+        #expect(NSIntersectionRange(model.details[0].body, model.details[1].range) == model.details[1].range)
+    }
+
+    @Test func ignoresCodeCommentsAndUnmatchedTags() {
+        let source = "```html\n<details><summary>Example</summary></details>\n```\n\n<!-- <details><summary>Comment</summary></details> -->\n\n<details>\n<summary>Unmatched</summary>\n"
+        #expect(MarkdownModel(source).details.isEmpty)
+    }
+
+    @Test func sameLineAndFalseValuedBooleanAttribute() {
+        let model = MarkdownModel("<details open=\"false\"><summary>Title</summary>Body</details>\n")
+        #expect(model.details.count == 1)
+        #expect(model.details.first?.initiallyOpen == true)
+    }
+}
+
+
+extension DetailsModelTests {
+    @Test func foldedParagraphsStayOnContextualStylingPath() {
+        let source = "<details>\n<summary>Title</summary>\n\n**Hidden** text.\n\n</details>\n\n**Visible** text.\n"
+        let ns = source as NSString
+        let model = MarkdownModel(source)
+        let hidden = ns.paragraphRange(for: ns.range(of: "Hidden"))
+        let visible = ns.paragraphRange(for: ns.range(of: "Visible"))
+        let index = MarkdownModel.ParagraphStyles(model)
+        #expect(index.paragraph(hidden) == nil)
+        #expect(index.paragraph(visible) != nil)
+        #expect(model.styledParagraph(hidden) == nil)
+        #expect(model.styledParagraph(visible) != nil)
+    }
+}
+
+
+extension DetailsModelTests {
+    @Test func quotedAttributesAndEmbeddedCommentsDoNotChangePairing() {
+        let source = "<details title=\"keep > open here\">\n<summary>Title</summary>\n<!-- <details><summary>Ignored</summary></details> -->\n\nBody\n\n</details>\n"
+        let model = MarkdownModel(source)
+        #expect(model.details.count == 1)
+        #expect(model.details.first?.initiallyOpen == false)
+    }
+}

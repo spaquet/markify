@@ -35,6 +35,12 @@ Markify reads Markdown the way GitHub does: it follows [CommonMark](https://comm
 
 Markify does not run scripts from a document. The Rendered lens shows the HTML's text, images and tables, and scripts do not run. HTML and PDF exports, and Quick Look, carry a Content-Security-Policy that blocks scripts and event handlers, so an exported file does not run them when you open it. Markify does not filter HTML by an allowlist of tags or attributes, so the exported page keeps the HTML as written, just without running it. Remote images load only when **Load remote images** is on in Settings; it is on by default, and the exported page allows remote images only when it is on.
 
+### Foldable sections
+
+In the Rendered lens, HTML `<details>` sections show a disclosure triangle beside their `<summary>`. Click the triangle to expand or collapse the content. Sections start collapsed unless the opening tag includes `open`; nested sections fold independently. Moving the caret or the current find result into collapsed content reveals it automatically.
+
+Folding changes only the view, never the document. The Markdown lens always shows the complete source.
+
 ## Callouts
 
 GitHub-style alerts render as colored boxes:

@@ -674,3 +674,41 @@ import Testing
         withExtendedLifetime(undoDelegate) {}
     }
 }
+
+extension OverlayLayoutTests {
+    @Test func expandedTableInlineImagePreviewsOnRowMouseMovement() async throws {
+        let (window, editor) = makeEditor()
+        defer { editor.stopObserving(); window.orderOut(nil); window.contentView = nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 80, pixelsHigh: 50, bitsPerSample: 8,
+                                                 samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        try #require(bitmap.representation(using: .png, properties: [:])).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let source = "| ID | Image |\n| --- | --- |\n| 4 | Before ![Small icon](" + url.path + ") after |\n"
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        editor.hoverTableRow(editor.model.tables[0].rows[2].start)
+        try await Task.sleep(for: .milliseconds(450))
+        let row = try #require(editor.tableOverlays[1])
+        let field = try #require(row.fields.last)
+        let presentation = try #require(editor.tablePresentations[field.sourceRange.location])
+        let reading = presentation.reading
+        for _ in 0..<100 where presentation.thumbnail.image == nil { try await Task.sleep(for: .milliseconds(20)) }
+        let span = try #require(reading.model.spans.first { if case .image = $0.kind { return true }; return false })
+        let chip = try #require(reading.inlineImageChipFrame(span))
+        let point = reading.convert(NSPoint(x: chip.midX, y: chip.midY), to: nil)
+        let event = try #require(NSEvent.mouseEvent(with: .mouseMoved, location: point, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0))
+        window.makeKeyAndOrderFront(nil)
+        row.mouseMoved(with: event)
+        let popover = try #require(reading.previewPopover)
+        for _ in 0..<30 where !popover.isShown { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(popover.isShown)
+        #expect(popover.contentViewController?.view.subviews.contains { ($0 as? NSImageView)?.image != nil } == true)
+        #expect(reading.string.hasPrefix("Before "))
+        #expect(reading.string.hasSuffix(" after"))
+        row.mouseExited(with: event)
+        #expect(reading.previewPopover == nil)
+        #expect(editor.string == source)
+    }
+}

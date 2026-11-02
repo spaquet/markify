@@ -427,3 +427,119 @@ import Testing
         #expect(editor.inlineFormulas[(Self.source as NSString).range(of: "$x^2$").location] != nil, "Other formulas stay typeset")
     }
 }
+
+extension LayoutFragmentTests {
+    @Test func detailsCollapseToggleAndMarkdownLens() throws {
+        let source = "<details>\n<summary>Contents</summary>\n\nHidden paragraph.\n\n</details>\n\nAfter.\n"
+        let (window, editor) = Self.makeEditor(source)
+        let section = try #require(editor.model.details.first)
+        let body = (source as NSString).range(of: "Hidden paragraph.")
+        let after = (source as NSString).range(of: "After.")
+        let native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                                  selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+        editor.restyle = { native.style(editor) }
+        defer { editor.restyle = nil }
+        #expect(editor.isInClosedDetails(body.location))
+        #expect((editor.textStorage!.attribute(.paragraphStyle, at: body.location, effectiveRange: nil) as? NSParagraphStyle)?.maximumLineHeight == 0.01)
+        let closedY = editor.textRect(after).minY
+        let hit = editor.detailsRect(section)
+        let point = editor.convert(NSPoint(x: hit.midX, y: hit.midY), to: nil)
+        let click = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: point, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        editor.mouseDown(with: click)
+        #expect(editor.detailsIsOpen(section))
+        editor.textLayoutManager!.ensureLayout(for: editor.textLayoutManager!.documentRange)
+        #expect(editor.textRect(after).minY > closedY + 10)
+        #expect(editor.string == source)
+        editor.toggleDetails(section)
+        #expect(editor.revealDetails(containing: body))
+        native.style(editor)
+        #expect(!editor.isInClosedDetails(body.location))
+        let (markdownWindow, markdown) = Self.makeEditor(source, markdownLens: true)
+        _ = markdownWindow
+        #expect(!markdown.isInClosedDetails(body.location))
+        #expect((markdown.textStorage!.attribute(.font, at: body.location, effectiveRange: nil) as? NSFont)?.pointSize == 14)
+    }
+
+    @Test func nestedDetailsRevealAncestorsAndFindMatch() throws {
+        let source = "<details>\n<summary>Outer</summary>\n\n<details>\n<summary>Inner</summary>\n\nNeedle\n\n</details>\n\n</details>\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let needle = (source as NSString).range(of: "Needle")
+        #expect(editor.model.details.count == 2)
+        var native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "Needle", matchCase: false,
+                                  selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+        native.currentMatch = needle
+        native.style(editor)
+        #expect(editor.model.details.allSatisfy { editor.detailsIsOpen($0) })
+        #expect((editor.textStorage!.attribute(.font, at: needle.location, effectiveRange: nil) as? NSFont)?.pointSize == 18)
+        let outer = try #require(editor.model.details.first)
+        editor.toggleDetails(outer)
+        native.style(editor)
+        #expect(!editor.detailsIsOpen(outer), "An unchanged find result must not prevent manually collapsing a section")
+        #expect(editor.shouldChangeText(inRanges: [NSValue(range: needle)], replacementStrings: ["Replacement"]))
+        #expect(editor.model.details.allSatisfy { editor.detailsIsOpen($0) })
+    }
+
+    @Test func foldStateFollowsEditsBeforeSection() throws {
+        let source = "Intro\n\n<details>\n<summary>Title</summary>\n\nBody\n\n</details>\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let section = try #require(editor.model.details.first)
+        editor.toggleDetails(section)
+        editor.textStorage!.replaceCharacters(in: NSRange(location: 0, length: 0), with: "Prefix\n")
+        let shifted = try #require(editor.model.details.first)
+        #expect(shifted.range.location == section.range.location + 7)
+        #expect(editor.detailsIsOpen(shifted))
+    }
+
+    @Test func fragmentDrawsDetailsDisclosure() throws {
+        let source = "<details>\n<summary>Contents</summary>\n\nBody\n\n</details>\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let section = try #require(editor.model.details.first)
+        let fragment = try #require(Self.fragment(editor, at: section.summary.location))
+        let (rep, point) = Self.render(fragment)
+        let origin = editor.textContainerOrigin
+        let frame = fragment.layoutFragmentFrame
+        let rect = editor.detailsRect(section).offsetBy(dx: point.x - frame.minX - origin.x, dy: point.y - frame.minY - origin.y)
+        #expect(Self.inked(rep, in: rect) > 10)
+    }
+}
+
+extension LayoutFragmentTests {
+    @Test func foldingKeepsTheClickedSummaryAtItsViewportPosition() async throws {
+        let prefix = (0..<180).map { "Paragraph \($0) with **bold** text.\n\n" }.joined()
+        let body = (0..<50).map { "Folded paragraph \($0).\n\n" }.joined()
+        let tail = (0..<100).map { "Following paragraph \($0).\n\n" }.joined()
+        let source = prefix + "<details>\n<summary>Stay here</summary>\n\n" + body + "</details>\n\n" + tail
+        let (window, editor) = Self.makeEditor(source)
+        defer { editor.restyle = nil; editor.stopObserving(); window.contentView = nil }
+        let section = try #require(editor.model.details.first)
+        let scroll = try #require(editor.enclosingScrollView)
+        let clip = scroll.contentView
+        let native = NativeEditor(text: .constant(source), fileURL: nil, columnWidth: 640, markdownLens: false, findQuery: "", matchCase: false,
+                                  selectedRange: .constant(NSRange(location: 0, length: 0)), textView: .constant(nil), onType: {}, onSlash: { _ in }, onSlashKey: { _, _ in false }, onSelectionRect: { _ in })
+        editor.restyle = { native.style(editor, incremental: true) }
+        editor.settleLayout(through: NSMaxRange(section.range))
+        clip.scroll(to: NSPoint(x: 0, y: editor.detailsRect(section).minY - 160))
+        scroll.reflectScrolledClipView(clip)
+        let offset = editor.detailsRect(section).minY - clip.bounds.minY
+        // Leave the caret at the top, as when a reader scrolls down without clicking text.
+        #expect(editor.selectedRange().location == 0)
+        for _ in 0..<4 {
+            editor.toggleDetails(section)
+            #expect(abs(editor.detailsRect(section).minY - clip.bounds.minY - offset) < 2)
+            // Also check the queued overlay/viewport pass, not just the immediate restyle.
+            try await Task.sleep(for: .milliseconds(30))
+            #expect(abs(editor.detailsRect(section).minY - clip.bounds.minY - offset) < 2)
+        }
+        // Closing a section containing the caret moves the caret to the summary, with no page jump.
+        editor.toggleDetails(section)
+        editor.setSelectedRange(NSRange(location: section.body.location + 2, length: 0))
+        editor.toggleDetails(section)
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(editor.selectedRange().location == section.summary.location)
+        #expect(abs(editor.detailsRect(section).minY - clip.bounds.minY - offset) < 2)
+        #expect(editor.string == source)
+    }
+}

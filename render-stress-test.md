@@ -610,6 +610,42 @@ Nullam id dolor id nibh ultricies vehicula ut id elit. Morbi leo risus, porta ac
 
 ---
 
+## Foldable HTML sections
+
+<details>
+<summary>Closed by default — click the disclosure triangle</summary>
+
+This paragraph should occupy no space until expanded. Find **folded-needle-78** to reveal it.
+
+- [Top of this document](#render-stress-test)
+- A second item with **bold** and *italic* text.
+
+<details>
+<summary>Nested section</summary>
+
+The inner section keeps its own folding state when the outer section is toggled.
+
+| Item | Value |
+| --- | --- |
+| Nested table | Hidden with its section |
+
+</details>
+
+</details>
+
+<details open>
+<summary>Initially open section</summary>
+
+This content starts visible. Collapse it, then switch between Rendered and Markdown lenses.
+
+```swift
+let sourceStaysUnchanged = true
+```
+
+</details>
+
+Text after the foldable sections stays visible.
+
 ## END OF STRESS TEST
 
 You reached the end. Confirm this sentence remains visible after resizing, changing appearance, switching lenses, and editing a table near the bottom. There should be no missing tail text, overlapping decorations, or extra diagram error messages.
