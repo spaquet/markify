@@ -39,21 +39,6 @@ struct ParagraphStylesTests {
         #expect(index.eagerSpans == model.spans)
     }
 
-    @Test func plainListItemsAreDeferredButOrderedAndNestedItemsAreNot() throws {
-        let source = "- **bullet** item\n- [ ] task\n\n1. ordered\n2. more\n\n- parent\n  - child\n"
-        let model = MarkdownModel(source)
-        let index = MarkdownModel.ParagraphStyles(model)
-        let ns = source as NSString
-        for needle in ["- **bullet**", "- [ ] task"] {
-            let range = ns.paragraphRange(for: ns.range(of: needle))
-            #expect(try #require(index.paragraph(range)).source == ns.substring(with: range))
-        }
-        // Ordered numbers and nested guides depend on the surrounding list, so these stay on the full path.
-        for needle in ["1. ordered", "2. more", "- parent", "  - child"] {
-            #expect(index.paragraph(ns.paragraphRange(for: ns.range(of: needle))) == nil)
-        }
-    }
-
     @Test func aBlockDoesNotPreventFollowingProseFromBeingDeferred() throws {
         let source = "```swift\nlet x = 1\n```\n\n**prose**\n\n- item\n\n# Heading\n"
         let model = MarkdownModel(source)

@@ -55,22 +55,6 @@ import Testing
         #expect(lazy.string == source)
     }
 
-    @Test(arguments: [false, true]) func plainListItemsMatchMaterializedStyles(markdown: Bool) throws {
-        let source = "# List\n\n- **bullet** with [link](https://example.com)\n- [x] done *task*\n- `code` item\n\n1. ordered stays eager\n2. second\n\n- parent\n  - nested stays eager\n"
-        let eager = MarkdownTextView(usingTextLayoutManager: true)
-        eager.string = source
-        let lazy = MarkdownTextView(usingTextLayoutManager: true)
-        lazy.installParagraphPresentation()
-        lazy.string = source
-        let style = native(source, markdown: markdown)
-        style.style(eager)
-        style.style(lazy)
-        let output = try presented(lazy)
-        #expect(output.string == source)
-        let expected = try #require(eager.textStorage)
-        #expect(resolved(output).isEqual(to: resolved(expected)))
-    }
-
     @Test func distantParagraphsDoNotMaterializeSourceAttributes() throws {
         let source = "# Title\n\n" + String(repeating: "Paragraph **bold** *italic* [link](https://example.com).\n\n", count: 1000)
         let editor = MarkdownTextView(usingTextLayoutManager: true)

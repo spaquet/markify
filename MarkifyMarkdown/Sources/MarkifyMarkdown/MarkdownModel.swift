@@ -84,20 +84,6 @@ public struct MarkdownModel: Sendable {
         /// The spans of contextual regions, in document order.
         public var eagerSpans: [Span] { eagerRanges.flatMap { model.spans[$0] } }
 
-        /// A bullet list whose every line is an unindented `- `, `* ` or `+ ` item, or blank: no ordered numbers, nesting or
-        /// continuation lines, so each item's style comes from its own line.
-        private static func isPlainBulletList(_ list: MarkdownModel.List, source: NSString) -> Bool {
-            guard !list.ordered else { return false }
-            // The list a table of contents inserts is drawn as a Contents card, so it keeps the full path.
-            if list.range.location > 0,
-               TableOfContentsMarker.depth(ofOpening: source.substring(with: source.paragraphRange(for: NSRange(location: list.range.location - 1, length: 0)))) != nil {
-                return false
-            }
-            return source.substring(with: list.range).split(separator: "\n", omittingEmptySubsequences: false).allSatisfy { line in
-                line.allSatisfy(\.isWhitespace) || ["- ", "* ", "+ "].contains(where: line.hasPrefix) || line == "-" || line == "*" || line == "+"
-            }
-        }
-
         public init(_ model: MarkdownModel) {
             self.model = model
             let source = model.source as NSString
@@ -105,23 +91,6 @@ public struct MarkdownModel: Sendable {
             var eager: [Range<Int>] = []
             var start = 0
             var tableIndex = 0
-            // Lists that keep their paragraphs on the full path: anything but a plain bullet list. Looking one up
-            // takes a binary search over their starts plus the furthest end before each one.
-            let blocked = model.lists.filter { !Self.isPlainBulletList($0, source: source) }.map(\.range).sorted { $0.location < $1.location }
-            var blockedEnds: [Int] = []
-            var furthest = 0
-            for range in blocked {
-                furthest = max(furthest, NSMaxRange(range))
-                blockedEnds.append(furthest)
-            }
-            func inBlockedList(_ range: NSRange) -> Bool {
-                var lower = 0, upper = blocked.count
-                while lower < upper {
-                    let middle = (lower + upper) / 2
-                    if blocked[middle].location < NSMaxRange(range) { lower = middle + 1 } else { upper = middle }
-                }
-                return lower > 0 && blockedEnds[lower - 1] > range.location
-            }
             while start < model.spans.count {
                 let first = model.spans[start]
                 var range = source.paragraphRange(for: first.range)
@@ -142,12 +111,10 @@ public struct MarkdownModel: Sendable {
                 let simple = model.spans[start..<end].allSatisfy { span in
                     switch span.kind {
                     case .strong, .emphasis, .strikethrough, .inlineCode, .escape, .link, .heading(_, setext: false): return true
-                    // Items of a plain bullet list draw from their own lines; see `blocked`.
-                    case .listItem(let item): return !item.ordered && item.depth == 0
                     default: return false
                     }
                 }
-                if single && simple && !inTable && !inBlockedList(range) {
+                if single && simple && !inTable {
                     entries.append(Entry(range: range, spans: start..<end))
                 } else {
                     if let last = eager.last, last.upperBound == start { eager[eager.count - 1] = last.lowerBound..<end } else { eager.append(start..<end) }
