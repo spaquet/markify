@@ -3752,9 +3752,15 @@ final class TableCellPresentation: NSView {
         theme = nil
     }
 
+    /// The cell's text as the reading shows it. A cell's HTML list becomes Markdown bullets: a cell has no
+    /// document to render an HTML block into, so its raw tags would otherwise show as text.
     static func documentSource(_ source: String) -> String {
-        source.replacingOccurrences(of: "<br\\s*/?>", with: "\n", options: .regularExpression)
+        source.replacingOccurrences(of: "<li>", with: "\n- ", options: .caseInsensitive)
+            .replacingOccurrences(of: "</?(ul|ol)>", with: "\n", options: [.regularExpression, .caseInsensitive])
+            .replacingOccurrences(of: "</li>", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "<br\\s*/?>", with: "\n", options: .regularExpression)
             .replacingOccurrences(of: "\\|", with: "|")
+            .trimmingCharacters(in: .newlines)
     }
 
     func update(source: String, width: CGFloat, owner: MarkdownTextView, header: Bool, alignment: NSTextAlignment) {
