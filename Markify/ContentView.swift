@@ -283,6 +283,11 @@ struct ContentView: View {
                             Button("Rename…") { NSDocumentController.shared.currentDocument?.rename(nil) }
                             Button("Move To…") { NSDocumentController.shared.currentDocument?.move(nil) }
                             Button("Browse All Versions…") { NSDocumentController.shared.currentDocument?.browseVersions(nil) }
+                            Divider()
+                            Button("Show in Finder") {
+                                if let url = NSDocumentController.shared.currentDocument?.fileURL { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                            }
+                            .disabled(NSDocumentController.shared.currentDocument?.fileURL == nil)
                         } label: {
                             HStack(spacing: 6) {
                                 Text(title).font(.system(size: 13, weight: .semibold))
