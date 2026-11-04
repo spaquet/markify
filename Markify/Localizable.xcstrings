@@ -26671,6 +26671,14 @@
         }
       }
     },
+    "Rename “%@”" : {
+    },
+    "Rename" : {
+    },
+    "That name isn’t valid." : {
+    },
+    "“%@” already exists." : {
+    },
     "Rename…" : {
       "localizations" : {
         "de" : {
