@@ -258,6 +258,35 @@ import Testing
         _ = after
     }
 
+    /// A callout's box keeps its top padding whether it opens the document or follows text.
+    @Test(arguments: ["", "Intro\n\n"]) func calloutBoxFillsItsTopPaddingAtAnyPosition(prefix: String) {
+        let source = prefix + "> [!TIP]\n> Tip body\n\nAfter\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let location = (source as NSString).range(of: "[!TIP]").location
+        let fragment = Self.fragment(editor, at: location)!
+        // The box's top edge sits the padding above its first line, whether TextKit spaces the line or the box lifts over it.
+        let token = editor.textRect(NSRange(location: location, length: 6))
+        let lift = (editor.textStorage!.attribute(.markifyBlockFill, at: location, effectiveRange: nil) as? MarkdownBlockFill)?.lift ?? 0
+        let boxTop = fragment.layoutFragmentFrame.minY + editor.textContainerOrigin.y - lift
+        #expect(token.minY - boxTop >= 14, "callout top padding above its first line (prefix: \(prefix.debugDescription))")
+    }
+
+    /// A callout's `>` markers stay visible in the Rendered lens; a plain quote's stay hidden.
+    @Test func calloutKeepsItsQuoteMarkersVisibleInRenderedLens() {
+        let source = "> [!TIP]\n> Tip body\n\n> Plain quote\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let ns = source as NSString
+        let storage = editor.textStorage!
+        let first = storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
+        let second = storage.attribute(.foregroundColor, at: ns.range(of: "> Tip body").location, effectiveRange: nil) as? NSColor
+        let plain = storage.attribute(.foregroundColor, at: ns.range(of: "> Plain quote").location, effectiveRange: nil) as? NSColor
+        #expect(first != NSColor.clear && first != nil, "callout's first marker is visible")
+        #expect(second != NSColor.clear && second != nil, "callout's second marker is visible")
+        #expect(plain == NSColor.clear, "plain quote marker stays hidden")
+    }
+
     @Test func codeBlocksDrawACopyButtonLeftOfNoLabelOrTheirLabel() throws {
         let long = "typescriptreact-with-an-unusually-long-language-name-that-would-run-into-the-code"
         let source = "Intro\n\n```swift\nlet a = 1\n```\n\n```\nplain\n```\n\n    indented\n\n```\(long)\nlong\n```\n"

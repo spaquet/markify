@@ -63,22 +63,27 @@ final class MarkdownBlockFill: NSObject {
     let padding: NSSize
     let first: Bool
     let last: Bool
+    /// How far the first line's box rises above its fragment, zoom included. TextKit gives the document's first
+    /// paragraph no paragraph spacing, so a box that opens the document lifts its top edge over the padding instead.
+    let lift: CGFloat
 
-    init(color: NSColor, radius: CGFloat, padding: NSSize, first: Bool = true, last: Bool = true) {
+    init(color: NSColor, radius: CGFloat, padding: NSSize, first: Bool = true, last: Bool = true, lift: CGFloat = 0) {
         self.color = color
         self.radius = radius
         self.padding = padding
         self.first = first
         self.last = last
+        self.lift = lift
     }
 
-    func edge(first: Bool, last: Bool) -> MarkdownBlockFill {
-        MarkdownBlockFill(color: color, radius: radius, padding: padding, first: first, last: last)
+    func edge(first: Bool, last: Bool, lift: CGFloat = 0) -> MarkdownBlockFill {
+        MarkdownBlockFill(color: color, radius: radius, padding: padding, first: first, last: last, lift: lift)
     }
 
     override func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? MarkdownBlockFill else { return false }
         return color == other.color && radius == other.radius && padding == other.padding && first == other.first && last == other.last
+            && lift == other.lift
     }
 
     override var hash: Int { radius.hashValue ^ first.hashValue ^ (last.hashValue << 1) }
@@ -104,6 +109,10 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
     override var renderingSurfaceBounds: CGRect {
         // Also the paragraph spacing around the lines: block images, the footnotes rule and a diagram's error draw there.
         var bounds = super.renderingSurfaceBounds.union(CGRect(origin: .zero, size: layoutFragmentFrame.size))
+        if let storage = textStorage, let range = documentRange, range.length > 0, NSMaxRange(range) <= storage.length,
+           let fill = storage.attribute(.markifyBlockFill, at: range.location, effectiveRange: nil) as? MarkdownBlockFill, fill.lift > 0 {
+            bounds = bounds.union(CGRect(x: 0, y: -fill.lift, width: 1, height: fill.lift))
+        }
         if let width = textLayoutManager?.textContainer?.size.width {
             bounds.origin.x = -layoutFragmentFrame.minX
             bounds.size.width = max(bounds.width, width)
@@ -176,7 +185,7 @@ final class MarkdownLayoutFragment: NSTextLayoutFragment {
     /// leaving any selected text uncovered so its highlight, drawn underneath, stays visible.
     private func drawFill(_ fill: MarkdownBlockFill, at point: CGPoint) {
         let width = textLayoutManager?.textContainer?.size.width ?? layoutFragmentFrame.width
-        let box = CGRect(x: point.x - layoutFragmentFrame.minX, y: point.y, width: width, height: layoutFragmentFrame.height)
+        let box = CGRect(x: point.x - layoutFragmentFrame.minX, y: point.y - fill.lift, width: width, height: layoutFragmentFrame.height + fill.lift)
         let radius = min(fill.radius, box.height / 2, box.width / 2)
         let path = NSBezierPath()
         path.move(to: NSPoint(x: box.minX, y: box.midY))
