@@ -743,6 +743,29 @@ extension OverlayLayoutTests {
         #expect(editor.string == source)
     }
 
+    /// A cell's HTML list reads as bullets at body size, not as raw tags or an HTML block drawn small.
+    @Test func tableCellHTMLListReadsAsBulletsAtBodySize() async throws {
+        #expect(TableCellPresentation.documentSource("<ul><li>Append only.</li><li>A hold<br>is a row.</li></ul>") == "- Append only.\n- A hold\nis a row.")
+        let (window, editor) = makeEditor()
+        defer { window.contentView = nil }
+        let source = "| Class | Design |\n| --- | --- |\n| Money | <ul><li>Append only.</li><li>A hold is a row.</li></ul> |"
+        editor.string = source
+        style(editor)
+        editor.refreshTables()
+        let row = try #require(editor.model.tables.first?.rows[1])
+        editor.hoverTableRow(row.start)
+        try await Task.sleep(for: .milliseconds(450))
+        let field = try #require(editor.tableOverlays[1]?.fields.last)
+        let presentation = try #require(editor.tablePresentations[field.sourceRange.location])
+        let storage = try #require(presentation.reading.textStorage)
+        #expect(!presentation.reading.string.contains("<"))
+        let visible = (presentation.reading.string as NSString).range(of: "A hold is a row.")
+        #expect(visible.location != NSNotFound)
+        let font = try #require(storage.attribute(.font, at: visible.location, effectiveRange: nil) as? NSFont)
+        #expect(font.pointSize >= 13)
+        #expect(editor.string == source)
+    }
+
     /// A document past the background-parse length shows its tables on first open, with no refresh requested by hand.
     /// The model parses in the background and styling restarts with the result; the table rows must follow it.
     @Test func tablesOfALargeDocumentAppearWhenItsBackgroundParseFinishes() async throws {
