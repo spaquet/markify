@@ -1436,6 +1436,7 @@ class MarkdownTextView: NSTextView {
         let model = MarkdownModel(string, mdx: mdx)
         modelCache = (textVersion, model)
         tableRowsCache = nil
+        anchorCache = nil
         return model
     }
 
@@ -1487,6 +1488,7 @@ class MarkdownTextView: NSTextView {
             let offered = Self.handoffs.remove(at: index)
             modelCache = (version, offered.model)
             tableRowsCache = nil
+            anchorCache = nil
             NotificationCenter.default.post(name: Self.modelReady, object: self)
             DispatchQueue.main.async { [weak self] in self?.restyle?() }
             return
@@ -1501,6 +1503,7 @@ class MarkdownTextView: NSTextView {
             guard self.string == text else { return }
             self.modelCache = (self.textVersion, model)
             self.tableRowsCache = nil
+            self.anchorCache = nil
             Self.offer(model, text: text, mdx: mdx)
             NotificationCenter.default.post(name: Self.modelReady, object: self)
             self.restyle?()
@@ -2630,7 +2633,7 @@ class MarkdownTextView: NSTextView {
     }
 
     /// Where each decoration is drawn from, sorted: the character whose layout fragment draws it.
-    private var decorationAnchors: [(location: Int, span: MarkdownModel.Span)] {
+    var decorationAnchors: [(location: Int, span: MarkdownModel.Span)] {
         let model = self.model
         if let anchorCache, anchorCache.version == textVersion, anchorCache.mdx == model.mdx { return anchorCache.anchors }
         var anchors: [(location: Int, span: MarkdownModel.Span)] = []
