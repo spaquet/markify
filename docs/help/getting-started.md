@@ -16,7 +16,7 @@ Markify saves automatically, like other Mac apps. Once an edit has autosaved, re
 
 ### Recover an earlier version
 
-Save a document to a file before using version history. Choose **File › Revert To › Browse All Versions…**, or click the document's title and choose **Browse All Versions…**. Select an earlier version and click **Restore** to make it current. Hold **Option** to choose **Restore a Copy**, keeping the current document intact. Choose **Done** to leave without restoring.
+Save a document to a file before using version history. Choose **File › Revert To › Browse All Versions…**, or click the document's title and choose **Browse All Versions…**. To find a saved file on disk, click the document's title and choose **Show in Finder**. Select an earlier version and click **Restore** to make it current. Hold **Option** to choose **Restore a Copy**, keeping the current document intact. Choose **Done** to leave without restoring.
 
 macOS manages version checkpoints and their storage; history does not capture every keystroke. Markify does not create a separate backup folder. Versions recover the Markdown text, including image paths, but do not restore changes to linked images or other files. Available history depends on the file's storage location; keep backups for long-term recovery.
 

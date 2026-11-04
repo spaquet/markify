@@ -765,4 +765,35 @@ extension OverlayLayoutTests {
         #expect(font.pointSize >= 13)
         #expect(editor.string == source)
     }
+
+    /// A document past the background-parse length shows its tables on first open, with no refresh requested by hand.
+    /// The model parses in the background and styling restarts with the result; the table rows must follow it.
+    @Test func tablesOfALargeDocumentAppearWhenItsBackgroundParseFinishes() async throws {
+        let prose = String(repeating: "Some prose that lays out as ordinary paragraph text. ", count: 14)
+        let table = "| ID | Notes |\n| --- | --- |\n| 1 | First row |\n| 2 | Second row |\n| 3 | Third row |\n\n"
+        let diagram = "```mermaid\nflowchart TB\n  A --> B\n```\n\n"
+        let source = (0..<120).map { "## Section \($0)\n\n\(prose)\n\n" + table }.joined() + diagram
+        #expect((source as NSString).length >= MarkdownTextView.backgroundParseLength)
+        let (window, editor) = makeEditor()
+        defer { window.contentView = nil }
+        editor.string = source
+        let restyle = { [weak editor] in
+            guard let editor else { return }
+            IncrementalStyleTests.native(source).style(editor)
+        }
+        editor.restyle = restyle
+        restyle()
+        for _ in 0..<250 where editor.tableOverlays.isEmpty {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let count = editor.tableOverlays.count
+        #expect(count > 0, Comment(rawValue: "overlays=\(count) tables=\(editor.model.tables.count)"))
+        // Decorations such as a diagram's image are drawn from these anchors, so they must follow the background parse too.
+        let hasDiagramAnchor = editor.decorationAnchors.contains { anchor in
+            if case .codeBlock(let language?, true) = anchor.span.kind { return language.lowercased() == "mermaid" }
+            return false
+        }
+        #expect(hasDiagramAnchor)
+        #expect(editor.string == source)
+    }
 }

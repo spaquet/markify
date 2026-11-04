@@ -26671,6 +26671,14 @@
         }
       }
     },
+    "Rename “%@”" : {
+    },
+    "Rename" : {
+    },
+    "That name isn’t valid." : {
+    },
+    "“%@” already exists." : {
+    },
     "Rename…" : {
       "localizations" : {
         "de" : {
@@ -29443,6 +29451,8 @@
           }
         }
       }
+    },
+    "Show in Finder" : {
     },
     "Show Library" : {
       "localizations" : {

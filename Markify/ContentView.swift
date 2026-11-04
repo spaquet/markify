@@ -280,9 +280,14 @@ struct ContentView: View {
                             .chromeGlass(in: .circle)
                             .accessibilityLabel(sidebarOpen ? "Hide Library" : "Show Library")
                         Menu {
-                            Button("Rename…") { NSDocumentController.shared.currentDocument?.rename(nil) }
+                            Button("Rename…") { renameFile() }
                             Button("Move To…") { NSDocumentController.shared.currentDocument?.move(nil) }
                             Button("Browse All Versions…") { NSDocumentController.shared.currentDocument?.browseVersions(nil) }
+                            Divider()
+                            Button("Show in Finder") {
+                                if let url = NSDocumentController.shared.currentDocument?.fileURL { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                            }
+                            .disabled(NSDocumentController.shared.currentDocument?.fileURL == nil)
                         } label: {
                             HStack(spacing: 6) {
                                 Text(title).font(.system(size: 13, weight: .semibold))
@@ -1754,6 +1759,40 @@ struct ContentView: View {
         let entry = "generated: " + OKFEditing.render(OKFStamp(by: actor, at: Date()))
         editFrontmatter(quiet: true) { OKFEditing.setting("generated", to: entry, in: $0) }
         stampedBody = FrontmatterBlock.body(of: textView?.string ?? document.text)
+    }
+
+    /// Renames the file on disk. The standard rename sheet is anchored to the window's title bar, which this window hides,
+    /// so the name is asked for here. Moving the document updates `fileURL`, which then offers the link update.
+    private func renameFile() {
+        guard let document = NSDocumentController.shared.currentDocument, let url = document.fileURL else { return }
+        let field = NSTextField(string: url.deletingPathExtension().lastPathComponent)
+        field.frame = NSRect(x: 0, y: 0, width: 260, height: 24)
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Rename “\(url.lastPathComponent)”")
+        alert.accessoryView = field
+        alert.addButton(withTitle: String(localized: "Rename"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, !name.contains("/"), !name.hasPrefix(".") else {
+            let refusal = NSAlert()
+            refusal.messageText = String(localized: "That name isn’t valid.")
+            refusal.runModal()
+            return
+        }
+        let target = url.deletingLastPathComponent().appendingPathComponent(name).appendingPathExtension(url.pathExtension)
+        guard target != url else { return }
+        guard !FileManager.default.fileExists(atPath: target.path) else {
+            let clash = NSAlert()
+            clash.messageText = String(localized: "“\(target.lastPathComponent)” already exists.")
+            clash.runModal()
+            return
+        }
+        document.move(to: target) { error in
+            guard let error else { return }
+            NSAlert(error: error).runModal()
+        }
     }
 
     /// After Rename or Move To, offers to update links in the bundle that pointed at the old location (§6).
