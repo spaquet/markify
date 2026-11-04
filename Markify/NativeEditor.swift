@@ -416,8 +416,16 @@ struct NativeEditor: NSViewRepresentable {
                 guard !markdownLens else { storage.addAttribute(.foregroundColor, value: color, range: name); continue }
                 storage.addAttribute(.font, value: theme.ui(15), range: span.range)
                 boxes.append((span.range, MarkdownBlockFill(color: NSColor.calloutFill(color), radius: 14 * theme.scale, padding: NSSize(width: 18, height: 14))))
-                // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
-                storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: token)
+                // The type token is hidden; MarkdownTextView draws its title ("Note") in its place. The title's width and a gap
+                // are the room the token leaves, so the body text starts after the title as it does on the other lines.
+                let title = Callout.title(type) as NSString
+                let titleWidth = title.size(withAttributes: [.font: theme.ui(13, weight: .semibold)]).width
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: MarkdownTextView.hiddenFont], range: token)
+                collapse(token, in: storage)
+                // A kern on the first character of a run is applied in full, so the room goes there (as for inline image chips).
+                let first = source.rangeOfComposedCharacterSequence(at: token.location)
+                let kern = storage.attribute(.kern, at: first.location, effectiveRange: nil) as? CGFloat ?? 0
+                storage.addAttribute(.kern, value: kern + titleWidth + 10 * theme.scale, range: first)
             case .listItem(let item):
                 let spaced = NSMaxRange(item.checkbox ?? item.marker) < source.length && [32, 9].contains(source.character(at: NSMaxRange(item.checkbox ?? item.marker)))
                 let prefix = NSRange(location: item.marker.location, length: NSMaxRange(item.checkbox ?? item.marker) - item.marker.location + (spaced ? 1 : 0))

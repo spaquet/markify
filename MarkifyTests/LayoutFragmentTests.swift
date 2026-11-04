@@ -287,6 +287,21 @@ import Testing
         #expect(plain == NSColor.clear, "plain quote marker stays hidden")
     }
 
+    /// The room a callout's hidden type token leaves is the drawn title's width plus a gap, so the body starts after the title.
+    @Test func calloutTitleReservesItsWidthBeforeTheBodyText() {
+        let source = "> [!TIP] We are a tip\n> second line\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let ns = source as NSString
+        let token = editor.textRect(NSRange(location: 2, length: 6))
+        let body = editor.textRect(NSRange(location: ns.range(of: "We").location, length: 1))
+        let title = ("Tip" as NSString).size(withAttributes: [.font: editor.theme.ui(13, weight: .semibold)]).width
+        // The room is the title and a gap; the source's space after the token is body text, so it adds its own width.
+        let space = (" " as NSString).size(withAttributes: [.font: editor.theme.ui(15)]).width
+        let gap = body.minX - token.minX
+        #expect(abs(gap - (title + 10 * editor.theme.scale + space)) < 1.5, "body starts after the title and a gap (gap: \(gap))")
+    }
+
     @Test func codeBlocksDrawACopyButtonLeftOfNoLabelOrTheirLabel() throws {
         let long = "typescriptreact-with-an-unusually-long-language-name-that-would-run-into-the-code"
         let source = "Intro\n\n```swift\nlet a = 1\n```\n\n```\nplain\n```\n\n    indented\n\n```\(long)\nlong\n```\n"
