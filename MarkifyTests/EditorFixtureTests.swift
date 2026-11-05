@@ -368,7 +368,7 @@ private final class FixtureBundle {}
         "math body": "1 hidden",
         "inline math": "18 i",
         "inline math dollar": "1 m hidden",
-        "callout token": "13 b hidden fill",
+        "callout token": "1 m hidden fill",
         "callout body": "15 fill",
         "quote marker": "1 m hidden",
         "quote text": "18",

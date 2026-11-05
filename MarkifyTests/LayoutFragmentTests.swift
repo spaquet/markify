@@ -272,19 +272,33 @@ import Testing
         #expect(token.minY - boxTop >= 14, "callout top padding above its first line (prefix: \(prefix.debugDescription))")
     }
 
-    /// A callout's `>` markers stay visible in the Rendered lens; a plain quote's stay hidden.
-    @Test func calloutKeepsItsQuoteMarkersVisibleInRenderedLens() {
+    /// Callout and plain quote markers are hidden in the Rendered lens and dimmed in the Markdown lens, as the source is.
+    @Test(arguments: [false, true]) func calloutQuoteMarkersFollowTheQuoteRule(markdownLens: Bool) {
         let source = "> [!TIP]\n> Tip body\n\n> Plain quote\n"
-        let (window, editor) = Self.makeEditor(source)
+        let (window, editor) = Self.makeEditor(source, markdownLens: markdownLens)
         _ = window
         let ns = source as NSString
         let storage = editor.textStorage!
-        let first = storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
-        let second = storage.attribute(.foregroundColor, at: ns.range(of: "> Tip body").location, effectiveRange: nil) as? NSColor
-        let plain = storage.attribute(.foregroundColor, at: ns.range(of: "> Plain quote").location, effectiveRange: nil) as? NSColor
-        #expect(first != NSColor.clear && first != nil, "callout's first marker is visible")
-        #expect(second != NSColor.clear && second != nil, "callout's second marker is visible")
-        #expect(plain == NSColor.clear, "plain quote marker stays hidden")
+        let markers = [0, ns.range(of: "> Tip body").location, ns.range(of: "> Plain quote").location]
+        for location in markers {
+            let color = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
+            #expect(color == NSColor.clear || markdownLens && color != nil, "quote marker at \(location) follows the lens rule")
+        }
+    }
+
+    /// The room a callout's hidden type token leaves is the drawn title's width plus a gap, so the body starts after the title.
+    @Test func calloutTitleReservesItsWidthBeforeTheBodyText() {
+        let source = "> [!TIP] We are a tip\n> second line\n"
+        let (window, editor) = Self.makeEditor(source)
+        _ = window
+        let ns = source as NSString
+        let token = editor.textRect(NSRange(location: 2, length: 6))
+        let body = editor.textRect(NSRange(location: ns.range(of: "We").location, length: 1))
+        let title = ("Tip" as NSString).size(withAttributes: [.font: editor.theme.ui(13, weight: .semibold)]).width
+        // The room is the title and a gap; the source's space after the token is body text, so it adds its own width.
+        let space = (" " as NSString).size(withAttributes: [.font: editor.theme.ui(15)]).width
+        let gap = body.minX - token.minX
+        #expect(abs(gap - (title + 10 * editor.theme.scale + space)) < 1.5, "body starts after the title and a gap (gap: \(gap))")
     }
 
     @Test func codeBlocksDrawACopyButtonLeftOfNoLabelOrTheirLabel() throws {
