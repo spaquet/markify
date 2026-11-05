@@ -342,11 +342,6 @@ struct NativeEditor: NSViewRepresentable {
         var failedDiagrams: [MarkdownModel.Span] = []
         /// Code blocks and callouts in the Rendered lens: the lines they cover and the rounded box drawn behind them.
         var boxes: [(range: NSRange, fill: MarkdownBlockFill)] = []
-        /// Callouts' quote ranges: their `>` markers stay visible in the Rendered lens.
-        let calloutRanges = Set(spans.compactMap { span -> NSRange? in
-            if case .callout = span.kind { return span.range }
-            return nil
-        })
         let textView = editor as? MarkdownTextView
         textView?.inlineFormulas = textView?.inlineFormulas.filter { !styled($0.key) } ?? [:]
         textView?.htmlBlocks = textView?.htmlBlocks.filter { !styled($0.key) } ?? [:]
@@ -404,12 +399,7 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.font, value: markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true), range: span.content)
                 hide(span.markers)
             case .blockQuote:
-                // A callout's `>` stays visible in the Rendered lens, in the secondary tone, so the box reads as it is written.
-                if !markdownLens, calloutRanges.contains(span.range) {
-                    for marker in span.markers { storage.addAttribute(.foregroundColor, value: secondary, range: marker) }
-                } else {
-                    hide(span.markers)
-                }
+                hide(span.markers)
             case .callout(let type, let token):
                 let color = Callout.color(type, accent: accent)
                 let name = NSRange(location: token.location + 2, length: token.length - 3)

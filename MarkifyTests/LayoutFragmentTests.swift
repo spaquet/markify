@@ -272,19 +272,18 @@ import Testing
         #expect(token.minY - boxTop >= 14, "callout top padding above its first line (prefix: \(prefix.debugDescription))")
     }
 
-    /// A callout's `>` markers stay visible in the Rendered lens; a plain quote's stay hidden.
-    @Test func calloutKeepsItsQuoteMarkersVisibleInRenderedLens() {
+    /// Callout and plain quote markers are hidden in the Rendered lens and dimmed in the Markdown lens, as the source is.
+    @Test(arguments: [false, true]) func calloutQuoteMarkersFollowTheQuoteRule(markdownLens: Bool) {
         let source = "> [!TIP]\n> Tip body\n\n> Plain quote\n"
-        let (window, editor) = Self.makeEditor(source)
+        let (window, editor) = Self.makeEditor(source, markdownLens: markdownLens)
         _ = window
         let ns = source as NSString
         let storage = editor.textStorage!
-        let first = storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
-        let second = storage.attribute(.foregroundColor, at: ns.range(of: "> Tip body").location, effectiveRange: nil) as? NSColor
-        let plain = storage.attribute(.foregroundColor, at: ns.range(of: "> Plain quote").location, effectiveRange: nil) as? NSColor
-        #expect(first != NSColor.clear && first != nil, "callout's first marker is visible")
-        #expect(second != NSColor.clear && second != nil, "callout's second marker is visible")
-        #expect(plain == NSColor.clear, "plain quote marker stays hidden")
+        let markers = [0, ns.range(of: "> Tip body").location, ns.range(of: "> Plain quote").location]
+        for location in markers {
+            let color = storage.attribute(.foregroundColor, at: location, effectiveRange: nil) as? NSColor
+            #expect(color == NSColor.clear || markdownLens && color != nil, "quote marker at \(location) follows the lens rule")
+        }
     }
 
     /// The room a callout's hidden type token leaves is the drawn title's width plus a gap, so the body starts after the title.
