@@ -212,6 +212,26 @@ import Testing
         #expect(edited.contains { $0.location == 0 })
     }
 
+    /// A list line takes the full incremental pass. Callouts and code above it are unchanged, so they must keep their layout (#168).
+    @Test func typingInAListLeavesCalloutsAboveUntouched() {
+        let source = "> [!TIP]\n> A callout above the list.\n\n> [!WARNING]\n> Another one.\n\n```swift\n// A comment\nlet name = \"value\"\n```\n\nSome text.\n\n- [ ] one\n- [ ] two\n"
+        let (window, editor) = LayoutFragmentTests.makeEditor(source)
+        _ = window
+        let storage = editor.textStorage!
+        let list = (source as NSString).range(of: "- [ ] one").location
+        storage.replaceCharacters(in: NSRange(location: list + 9, length: 0), with: "x")
+        var edited: [NSRange] = []
+        let watched = ObjectIdentifier(storage)
+        let observer = NotificationCenter.default.addObserver(forName: NSTextStorage.didProcessEditingNotification, object: nil, queue: nil) { notification in
+            guard let changed = notification.object as? NSTextStorage, ObjectIdentifier(changed) == watched else { return }
+            let range = changed.editedRange
+            MainActor.assumeIsolated { edited.append(range) }
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        Self.native(editor.string).style(editor, incremental: true)
+        #expect(edited.allSatisfy { $0.location == NSNotFound || $0.location >= list })
+    }
+
     /// The page doesn't move while typing below a table of contents and a table: the document keeps its height and
     /// the scroll position stays, as in an editor.
     @Test func typingKeepsThePageStill() {

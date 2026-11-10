@@ -155,19 +155,13 @@ struct NativeEditor: NSViewRepresentable {
         let findChanged = context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
             || context.coordinator.lastCurrentMatch != currentMatch
         if sourceChanged || styleChanged {
-            let topOffset = editor.characterIndexForInsertion(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
-            let anchor = SourceAnchor(source: editor.string, selection: editor.selectedRange(), topOffset: topOffset)
-            let before = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
-            context.coordinator.isUpdating = true
-            if sourceChanged { editor.string = text }
-            style(editor)
-            editor.setSelectedRange(anchor.selection(in: editor.string))
-            context.coordinator.isUpdating = false
-            editor.layoutSubtreeIfNeeded()
-            let after = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
-            let newY = max(0, scroll.contentView.bounds.minY + before.minY - after.minY)
-            scroll.contentView.scroll(to: NSPoint(x: 0, y: newY))
-            scroll.reflectScrolledClipView(scroll.contentView)
+            (editor as? MarkdownTextView)?.preservingTopLine { anchor in
+                context.coordinator.isUpdating = true
+                if sourceChanged { editor.string = text }
+                style(editor)
+                editor.setSelectedRange(anchor.selection(in: editor.string))
+                context.coordinator.isUpdating = false
+            }
         } else if findChanged {
             updateFindHighlights(editor)
         }
@@ -2333,6 +2327,25 @@ class MarkdownTextView: NSTextView {
         bounds.origin.y = max(0, top)
         clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
         scroll.reflectScrolledClipView(clip)
+    }
+
+    /// Runs `update`, which restyles or replaces the whole text, and keeps the source line at the top of the page where
+    /// it was. Restyling discards the layout of every line, so the lines above are settled before the line is read (#168).
+    func preservingTopLine(_ update: (SourceAnchor) -> Void) {
+        guard let clip = enclosingScrollView?.contentView, clip.documentView === self else {
+            return update(SourceAnchor(source: string, selection: selectedRange(), topOffset: 0))
+        }
+        let topOffset = characterIndexForInsertion(at: NSPoint(x: 0, y: clip.bounds.minY))
+        let anchor = SourceAnchor(source: string, selection: selectedRange(), topOffset: topOffset)
+        let line = NSRange(location: anchor.topLine.location, length: 0)
+        let offset = textRect(line).minY - clip.bounds.minY
+        update(anchor)
+        layoutSubtreeIfNeeded()
+        settleLayout(through: line.location)
+        var bounds = clip.bounds
+        bounds.origin.y = textRect(line).minY - offset
+        clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
+        enclosingScrollView?.reflectScrolledClipView(clip)
     }
 
     /// Asset and table heights can change after a Contents jump. Keep a visible caret's
