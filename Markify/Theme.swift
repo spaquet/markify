@@ -72,12 +72,18 @@ enum CodeToken: String {
         return patterns.flatMap { regex, kind in regex.matches(in: code, range: whole).map { ($0.range, kind) } }
     }
 
+    // One object per kind: two dynamic colors never compare equal, so fresh ones would make every token look changed (#168).
+    private static let keywordColor = NSColor.token(light: 0xAD3DA4, dark: 0xFF7AB2)
+    private static let typeColor = NSColor.token(light: 0x3F6E74, dark: 0x78C2B3)
+    private static let literalColor = NSColor.token(light: 0xC41A16, dark: 0xD9C97C)
+    private static let commentColor = NSColor.token(light: 0x8A8F96, dark: 0x7F8C98)
+
     var color: NSColor {
         switch self {
-        case .keyword: .token(light: 0xAD3DA4, dark: 0xFF7AB2)
-        case .type: .token(light: 0x3F6E74, dark: 0x78C2B3)
-        case .literal: .token(light: 0xC41A16, dark: 0xD9C97C)
-        case .comment: .token(light: 0x8A8F96, dark: 0x7F8C98)
+        case .keyword: Self.keywordColor
+        case .type: Self.typeColor
+        case .literal: Self.literalColor
+        case .comment: Self.commentColor
         }
     }
 }
@@ -97,8 +103,19 @@ extension NSColor {
     static let findCurrent = token(light: 0xFF9F0A, dark: 0xFF9F0A, lightAlpha: 0.70, darkAlpha: 0.65)
     static let codeFill = token(light: 0xF3F1ED, dark: 0x2A2A2D)
 
-    /// The callout fill recipe: the type's color at a low alpha.
-    static func calloutFill(_ color: NSColor) -> NSColor {
+    @MainActor private static var calloutFills: [NSColor: NSColor] = [:]
+
+    /// The callout fill for a type's color, one object per color. Two dynamic colors never compare equal, so a fresh
+    /// one on each style pass would make every callout look changed and throw away the layout around it (#168).
+    @MainActor static func calloutFill(_ color: NSColor) -> NSColor {
+        if let fill = calloutFills[color] { return fill }
+        let fill = makeCalloutFill(color)
+        calloutFills[color] = fill
+        return fill
+    }
+
+    /// The callout fill recipe: the type's color at a low alpha. Not actor-isolated, because AppKit may resolve it while drawing.
+    private nonisolated static func makeCalloutFill(_ color: NSColor) -> NSColor {
         NSColor(name: nil) { appearance in
             color.withAlphaComponent(appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? 0.14 : 0.07)
         }
