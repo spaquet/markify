@@ -155,19 +155,13 @@ struct NativeEditor: NSViewRepresentable {
         let findChanged = context.coordinator.lastQuery != findQuery || context.coordinator.lastMatchCase != matchCase
             || context.coordinator.lastCurrentMatch != currentMatch
         if sourceChanged || styleChanged {
-            let topOffset = editor.characterIndexForInsertion(at: NSPoint(x: 0, y: scroll.contentView.bounds.minY))
-            let anchor = SourceAnchor(source: editor.string, selection: editor.selectedRange(), topOffset: topOffset)
-            let before = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
-            context.coordinator.isUpdating = true
-            if sourceChanged { editor.string = text }
-            style(editor)
-            editor.setSelectedRange(anchor.selection(in: editor.string))
-            context.coordinator.isUpdating = false
-            editor.layoutSubtreeIfNeeded()
-            let after = editor.firstRect(forCharacterRange: anchor.topLine, actualRange: nil)
-            let newY = max(0, scroll.contentView.bounds.minY + before.minY - after.minY)
-            scroll.contentView.scroll(to: NSPoint(x: 0, y: newY))
-            scroll.reflectScrolledClipView(scroll.contentView)
+            (editor as? MarkdownTextView)?.preservingTopLine { anchor in
+                context.coordinator.isUpdating = true
+                if sourceChanged { editor.string = text }
+                style(editor)
+                editor.setSelectedRange(anchor.selection(in: editor.string))
+                context.coordinator.isUpdating = false
+            }
         } else if findChanged {
             updateFindHighlights(editor)
         }
@@ -342,11 +336,6 @@ struct NativeEditor: NSViewRepresentable {
         var failedDiagrams: [MarkdownModel.Span] = []
         /// Code blocks and callouts in the Rendered lens: the lines they cover and the rounded box drawn behind them.
         var boxes: [(range: NSRange, fill: MarkdownBlockFill)] = []
-        /// Callouts' quote ranges: their `>` markers stay visible in the Rendered lens.
-        let calloutRanges = Set(spans.compactMap { span -> NSRange? in
-            if case .callout = span.kind { return span.range }
-            return nil
-        })
         let textView = editor as? MarkdownTextView
         textView?.inlineFormulas = textView?.inlineFormulas.filter { !styled($0.key) } ?? [:]
         textView?.htmlBlocks = textView?.htmlBlocks.filter { !styled($0.key) } ?? [:]
@@ -404,20 +393,23 @@ struct NativeEditor: NSViewRepresentable {
                 storage.addAttribute(.font, value: markdownLens ? theme.mono(size, weight: .bold) : theme.prose(size, bold: true), range: span.content)
                 hide(span.markers)
             case .blockQuote:
-                // A callout's `>` stays visible in the Rendered lens, in the secondary tone, so the box reads as it is written.
-                if !markdownLens, calloutRanges.contains(span.range) {
-                    for marker in span.markers { storage.addAttribute(.foregroundColor, value: secondary, range: marker) }
-                } else {
-                    hide(span.markers)
-                }
+                hide(span.markers)
             case .callout(let type, let token):
                 let color = Callout.color(type, accent: accent)
                 let name = NSRange(location: token.location + 2, length: token.length - 3)
                 guard !markdownLens else { storage.addAttribute(.foregroundColor, value: color, range: name); continue }
                 storage.addAttribute(.font, value: theme.ui(15), range: span.range)
                 boxes.append((span.range, MarkdownBlockFill(color: NSColor.calloutFill(color), radius: 14 * theme.scale, padding: NSSize(width: 18, height: 14))))
-                // The type token is hidden; MarkdownTextView draws its title ("Note") in its place.
-                storage.addAttributes([.foregroundColor: NSColor.clear, .font: theme.ui(13, weight: .semibold)], range: token)
+                // The type token is hidden; MarkdownTextView draws its title ("Note") in its place. The title's width and a gap
+                // are the room the token leaves, so the body text starts after the title as it does on the other lines.
+                let title = Callout.title(type) as NSString
+                let titleWidth = title.size(withAttributes: [.font: theme.ui(13, weight: .semibold)]).width
+                storage.addAttributes([.foregroundColor: NSColor.clear, .font: MarkdownTextView.hiddenFont], range: token)
+                collapse(token, in: storage)
+                // A kern on the first character of a run is applied in full, so the room goes there (as for inline image chips).
+                let first = source.rangeOfComposedCharacterSequence(at: token.location)
+                let kern = storage.attribute(.kern, at: first.location, effectiveRange: nil) as? CGFloat ?? 0
+                storage.addAttribute(.kern, value: kern + titleWidth + 10 * theme.scale, range: first)
             case .listItem(let item):
                 let spaced = NSMaxRange(item.checkbox ?? item.marker) < source.length && [32, 9].contains(source.character(at: NSMaxRange(item.checkbox ?? item.marker)))
                 let prefix = NSRange(location: item.marker.location, length: NSMaxRange(item.checkbox ?? item.marker) - item.marker.location + (spaced ? 1 : 0))
@@ -2333,6 +2325,25 @@ class MarkdownTextView: NSTextView {
         bounds.origin.y = max(0, top)
         clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
         scroll.reflectScrolledClipView(clip)
+    }
+
+    /// Runs `update`, which restyles or replaces the whole text, and keeps the source line at the top of the page where
+    /// it was. Restyling discards the layout of every line, so the lines above are settled before the line is read (#168).
+    func preservingTopLine(_ update: (SourceAnchor) -> Void) {
+        guard let clip = enclosingScrollView?.contentView, clip.documentView === self else {
+            return update(SourceAnchor(source: string, selection: selectedRange(), topOffset: 0))
+        }
+        let topOffset = characterIndexForInsertion(at: NSPoint(x: 0, y: clip.bounds.minY))
+        let anchor = SourceAnchor(source: string, selection: selectedRange(), topOffset: topOffset)
+        let line = NSRange(location: anchor.topLine.location, length: 0)
+        let offset = textRect(line).minY - clip.bounds.minY
+        update(anchor)
+        layoutSubtreeIfNeeded()
+        settleLayout(through: line.location)
+        var bounds = clip.bounds
+        bounds.origin.y = textRect(line).minY - offset
+        clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
+        enclosingScrollView?.reflectScrolledClipView(clip)
     }
 
     /// Asset and table heights can change after a Contents jump. Keep a visible caret's

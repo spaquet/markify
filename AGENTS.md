@@ -90,6 +90,7 @@ xcodebuild -project Markify.xcodeproj -scheme Markify -only-testing MarkifyUITes
 3. **Decorations belong to layout fragments.** `style()` marks what to draw with Markify rendering attributes (`.markifyBullet`, `.markifyTaskBox`, `.markifyBlockFill`, …) or the decoration's anchor character; the fragment that lays out that text draws it. Drawing and hit-testing share geometry functions (e.g. `MarkdownLayoutFragment.checkboxRect`). Never position drawing from `firstRect(forCharacterRange:)`: it answers only inside the viewport; use `MarkdownTextView.textRect` for views such as table cells.
 4. **Hidden markers take no room.** A hidden marker uses a 1pt clear font and kerns each character by its own advance; TextKit caps a negative kern near its glyph's advance, and a kern on the last character of a run is only partly applied.
 5. **Relative paths.** Images and note links use paths relative to the document (bundle-absolute `/…` inside an OKF bundle), falling back to absolute paths for unsaved documents.
+6. **Defaults for small settings, files for the rest.** Toggles and small settings go in `UserDefaults`. Anything that grows with the number of notes, or is written during indexing, goes in a file under Application Support (e.g. `SpotlightWorker`'s fingerprints). Large or frequent defaults writes are slow cfprefsd round trips and post `didChangeNotification` to the main thread (MARKIFY-69).
 
 ## Key Implementation Details
 
