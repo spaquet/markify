@@ -69,7 +69,7 @@ final class PointerUITests: XCTestCase {
             if popover.waitForExistence(timeout: 0.5) { hovered = true; break }
         }
         XCTAssertTrue(hovered, "Hovering an inline image chip should show its preview")
-        XCTAssertTrue(popover.staticTexts["image — missing-image.png"].exists, "A missing image previews as its placeholder")
+        XCTAssertTrue(popover.staticTexts["Image unavailable — missing-image.png"].exists, "A missing image previews as its placeholder")
 
         app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.01)).hover()
         XCTAssertTrue(popover.waitForNonExistence(timeout: 2), "Leaving the chip should close the preview")

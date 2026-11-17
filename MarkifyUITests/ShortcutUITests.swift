@@ -109,17 +109,31 @@ final class ShortcutUITests: XCTestCase {
 
     func testZoom() {
         reset(Array(repeating: "A line of text to measure zoom.", count: 40).joined(separator: "\n"))
-        // The scroller thumb shrinks as the text grows taller.
+        // The scroller thumb shrinks as the text grows taller. TextKit lays out lazily and keeps refining its height
+        // estimate for a moment after each change, so read the thumb only once it stops moving.
         let thumb = app.scrollViews.containing(.textView, identifier: nil).firstMatch.scrollBars.firstMatch.valueIndicators.firstMatch
+        func settledHeight() -> CGFloat {
+            // The same caret and scroll position each time, so the extent is comparable between readings.
+            editor.typeKey(.downArrow, modifierFlags: .command)
+            editor.typeKey(.upArrow, modifierFlags: .command)
+            var last = thumb.frame.height
+            for _ in 0..<20 {
+                Thread.sleep(forTimeInterval: 0.4)
+                let now = thumb.frame.height
+                if now == last { return now }
+                last = now
+            }
+            return last
+        }
         editor.typeKey("0", modifierFlags: .command)
-        let base = thumb.frame.height
+        let base = settledHeight()
         editor.typeKey("=", modifierFlags: .command)
         editor.typeKey("=", modifierFlags: .command)
-        XCTAssertLessThan(thumb.frame.height, base, "⌘= should zoom in")
+        XCTAssertLessThan(settledHeight(), base, "⌘= should zoom in")
         editor.typeKey("0", modifierFlags: .command)
-        XCTAssertEqual(thumb.frame.height, base, accuracy: 1, "⌘0 should restore")
+        XCTAssertEqual(settledHeight(), base, accuracy: 1, "⌘0 should restore")
         editor.typeKey("-", modifierFlags: .command)
-        XCTAssertGreaterThan(thumb.frame.height, base, "⌘- should zoom out")
+        XCTAssertGreaterThan(settledHeight(), base, "⌘- should zoom out")
         editor.typeKey("0", modifierFlags: .command)
     }
 
