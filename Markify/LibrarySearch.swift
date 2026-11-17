@@ -224,7 +224,30 @@ actor SpotlightWorker {
         index = CSSearchableIndex(name: name)
         self.domain = domain
         self.persistenceKey = persistenceKey
-        fingerprints = persistenceKey.flatMap { UserDefaults.standard.dictionary(forKey: $0) as? [String: String] } ?? [:]
+        fingerprints = Self.loadFingerprints(persistenceKey)
+    }
+
+    /// Fingerprints are one entry per note, so they live in a file rather than UserDefaults: a large
+    /// defaults value makes every write a slow cfprefsd round trip and posts `didChangeNotification` to
+    /// the main thread (MARKIFY-69). A value still in defaults is moved to the file once.
+    private static func fingerprintsURL(_ key: String) -> URL? {
+        try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            .appendingPathComponent("Markify", isDirectory: true).appendingPathComponent("\(key).plist")
+    }
+    private static func loadFingerprints(_ key: String?) -> [String: String] {
+        guard let key, let url = fingerprintsURL(key) else { return [:] }
+        if let data = try? Data(contentsOf: url),
+           let stored = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String] { return stored }
+        guard let legacy = UserDefaults.standard.dictionary(forKey: key) as? [String: String] else { return [:] }
+        write(legacy, to: url)
+        UserDefaults.standard.removeObject(forKey: key)
+        return legacy
+    }
+    private static func write(_ fingerprints: [String: String], to url: URL) {
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        if let data = try? PropertyListSerialization.data(fromPropertyList: fingerprints, format: .binary, options: 0) {
+            try? data.write(to: url, options: .atomic)
+        }
     }
 
     func refresh(folders: [SearchFolder], options: SearchOptions, rebuild: Bool,
@@ -329,7 +352,9 @@ actor SpotlightWorker {
         ResolvedPaths.replace(with: folders.map { URL(fileURLWithPath: $0.path) } + snapshot.subfolders + snapshot.notes.map(\.url))
         return snapshot
     }
-    private func persist() { if let persistenceKey { UserDefaults.standard.set(fingerprints, forKey: persistenceKey) } }
+    private func persist() {
+        if let persistenceKey, let url = Self.fingerprintsURL(persistenceKey) { Self.write(fingerprints, to: url) }
+    }
     func delete() async throws {
         try await index.deleteSearchableItems(withDomainIdentifiers: [domain])
         fingerprints = [:]; cachedNotes = [:]; persist()
