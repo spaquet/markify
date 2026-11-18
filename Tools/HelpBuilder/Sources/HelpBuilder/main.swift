@@ -320,8 +320,9 @@ func webPage(_ page: Page, index: Int) -> String {
     <meta name="twitter:title" content="\(MarkdownHTML.escape(docTitle))">
     <meta name="twitter:description" content="\(MarkdownHTML.escape(page.description))">
     <meta name="twitter:image" content="\(site)images/og-image.jpg">
-    <link rel="icon" type="image/png" sizes="64x64" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/favicon.png?v=2">
-    <link rel="apple-touch-icon" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/app-icon.png?v=2">
+    <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="\(up.replacingOccurrences(of: "index.html", with: ""))favicon.ico?v=3">
+    <link rel="icon" type="image/svg+xml" sizes="any" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/logo.svg?v=3">
+    <link rel="apple-touch-icon" href="\(up.replacingOccurrences(of: "index.html", with: ""))images/app-icon.png?v=3">
     <link rel="alternate" type="text/markdown" href="\(site)\(page.markdown)" title="Markdown version">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -417,7 +418,7 @@ func webPage(_ page: Page, index: Int) -> String {
     <a class="skip" href="#content">Skip to content</a>
     <header class="nav">
       <nav class="cap glass" aria-label="Main">
-        <a class="brand" href="\(up)"><img src="\(assetBase)images/app-icon.png?v=2" alt="" width="30" height="30">Markify</a>
+        <a class="brand" href="\(up)"><img src="\(assetBase)images/logo.svg?v=3" alt="" width="30" height="30">Markify</a>
         <a class="link" href="\(helpHome)"\(page.web.hasPrefix("help/") ? " aria-current=\"true\"" : "")>Help</a>
         <a class="link hide-s" href="\(relative("faq.html", from: page.web))"\(page.web == "faq.html" ? " aria-current=\"page\"" : "")>FAQ</a>
         <a class="link hide-s" href="\(relative("compare.html", from: page.web))">Compare</a>

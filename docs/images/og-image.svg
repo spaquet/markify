@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Markify — Markdown, without the markup.</title>
+  <desc id="desc">Markify’s blue M-arrow icon beside its name and tagline on a light background.</desc>
+  <rect width="1280" height="640" fill="#f4f3ef"/>
+  <text x="80" y="132" fill="#292d32" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="40" font-weight="600" letter-spacing="-1">Markify</text>
+  <g fill="#20262e" font-family="Georgia, serif" font-size="76" letter-spacing="-2">
+    <text x="76" y="278">Markdown,</text>
+    <text x="76" y="370" font-style="italic">without the markup.</text>
+  </g>
+  <text x="80" y="548" fill="#5b6470" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="25">A native Markdown editor for Mac.</text>
+  <!-- BRAND_MARK_START -->
+  <svg x="858" y="160" width="340" height="340" viewBox="0 0 1024 1024">
+
+<defs><linearGradient id="ink" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#4689ED"/><stop offset="1" stop-color="#345AD9"/></linearGradient></defs>
+<g id="surface"><rect x="52" y="52" width="920" height="920" rx="210" fill="#F4F5F7"/></g>
+<g id="monogram" fill="url(#ink)"><path d="M252 706V319Q252 298 273 298H322Q335 298 345 311L501 501L657 311Q667 298 681 298H728Q749 298 749 319V611H801Q812 611 804 621L714 722Q705 732 696 722L606 621Q598 611 610 611H659V447L520 613Q501 636 482 613L342 447V706Q342 722 326 722H268Q252 722 252 706Z"/></g>
+</svg>
+  <!-- BRAND_MARK_END -->
+</svg>
