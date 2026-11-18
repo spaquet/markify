@@ -36,7 +36,7 @@ extension MarkdownTextView {
         detailsOpen[section.range.location] = !open
         restyle?()
         refreshTables()
-        let keepSummary = { [weak self, weak clip] in
+        let keepSummary: @MainActor @Sendable () -> Void = { [weak self, weak clip] in
             guard let self, let clip, let offset, self.textVersion == version,
                   self.detailsIsOpen(section) == !open else { return }
             self.settleLayout(through: NSMaxRange(section.range))

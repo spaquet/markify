@@ -230,9 +230,9 @@ struct ContentView: View {
                         .contentShape(.rect)
                         .onTapGesture { toggleSidebar() }
                         .zIndex(1)
+                    // Reaches up and left so the traffic lights sit inside the panel, clear of its edges.
                     sidebar
-                        .padding(12)
-                        .padding(.top, tabBarInset)
+                        .padding(EdgeInsets(top: 4 + tabBarInset, leading: 2, bottom: 12, trailing: 12))
                         .ignoresSafeArea(.container, edges: .top)
                         .transition(.move(edge: .leading))
                         .zIndex(2)
@@ -271,14 +271,14 @@ struct ContentView: View {
                     HStack(spacing: 10) {
                         Button { toggleSidebar() } label: {
                             Image(systemName: "sidebar.left")
-                                .foregroundStyle(sidebarOpen ? accent : .primary)
+                                .foregroundStyle(.primary)
                                 .frame(width: 36, height: 36)
-                                .background(sidebarOpen ? accentSoft : .clear, in: .circle)
                                 .contentShape(.circle)
                         }
                             .buttonStyle(.plain)
                             .chromeGlass(in: .circle)
                             .accessibilityLabel(sidebarOpen ? "Hide Library" : "Show Library")
+                            .offset(x: sidebarOpen ? 220 : 0)
                         Menu {
                             Button("Rename…") { renameFile() }
                             Button("Move To…") { NSDocumentController.shared.currentDocument?.move(nil) }
@@ -583,7 +583,7 @@ struct ContentView: View {
 
     private var sidebar: some View {
         LibrarySearchPanel(library: libraryFolder, currentBundle: bundleRoot, currentFile: fileURL,
-                           browse: AnyView(libraryBrowse), close: toggleSidebar)
+                           browse: AnyView(libraryBrowse))
     }
 
     private var libraryBrowse: some View {

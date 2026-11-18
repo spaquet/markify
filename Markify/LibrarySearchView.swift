@@ -72,7 +72,6 @@ struct LibrarySearchPanel: View {
     let currentBundle: URL?
     let currentFile: URL?
     let browse: AnyView
-    let close: () -> Void
     @AppStorage(Shortcuts.storageKey) private var shortcutOverrides = ""
     @State private var service = LibrarySearch.shared
     @State private var session = SearchSession()
@@ -114,7 +113,6 @@ struct LibrarySearchPanel: View {
             HStack {
                 Text("Library").font(.system(size: 15, weight: .bold))
                 Spacer()
-                Button(action: close) { Image(systemName: "sidebar.left") }.help("Hide Library")
                 Button { NSDocumentController.shared.newDocument(nil) } label: { Image(systemName: "plus") }.help("New Document")
                 Menu {
                     Button("Refresh") { service.refresh() }
