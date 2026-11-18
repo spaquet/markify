@@ -1,0 +1,38 @@
+{
+  "fill": {
+    "solid": "srgb:0.95686,0.96078,0.96863,1.00000"
+  },
+  "groups": [
+    {
+      "name": "Monogram",
+      "layers": [
+        {
+          "name": "M down",
+          "image-name": "Monogram.svg",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.18
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.12
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  },
+  "fill-specializations": [
+    {
+      "appearance": "dark",
+      "value": {
+        "solid": "srgb:0.14118,0.16078,0.18824,1.00000"
+      }
+    }
+  ]
+}

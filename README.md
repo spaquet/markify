@@ -9,7 +9,7 @@
   <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2+-orange" alt="Swift 6.2+"></a>
 </p>
 
-# <img src="docs/images/app-icon.png" alt="" width="36" align="top"> Markify
+# <img src="docs/images/logo.svg" alt="" width="36" align="top"> Markify
 
 A quiet Markdown editor for macOS 15.6. Write on one rendered page, press <kbd>⌘/</kbd> to see the same text as plain Markdown, and let on-device Apple Intelligence proofread and rewrite. No split preview pane.
 

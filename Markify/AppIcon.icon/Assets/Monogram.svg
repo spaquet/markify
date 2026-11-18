@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+<title id="title">Markify — M / down · blue</title><desc id="desc">A bold custom M whose right stem ends in a downward arrow, on a quiet rounded tile.</desc>
+<defs><linearGradient id="ink" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#4689ED"/><stop offset="1" stop-color="#345AD9"/></linearGradient></defs>
+
+<g id="monogram" fill="url(#ink)"><path d="M252 706V319Q252 298 273 298H322Q335 298 345 311L501 501L657 311Q667 298 681 298H728Q749 298 749 319V611H801Q812 611 804 621L714 722Q705 732 696 722L606 621Q598 611 610 611H659V447L520 613Q501 636 482 613L342 447V706Q342 722 326 722H268Q252 722 252 706Z"/></g>
+</svg>
