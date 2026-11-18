@@ -2333,17 +2333,34 @@ class MarkdownTextView: NSTextView {
         guard let clip = enclosingScrollView?.contentView, clip.documentView === self else {
             return update(SourceAnchor(source: string, selection: selectedRange(), topOffset: 0))
         }
-        let topOffset = characterIndexForInsertion(at: NSPoint(x: 0, y: clip.bounds.minY))
+        var topOffset = characterIndexForInsertion(at: NSPoint(x: 0, y: clip.bounds.minY))
+        // A code fence is a line in the Markdown lens and no line in the Rendered one, so a fence at the top cannot be
+        // held in place across both; hold the code line beside it instead.
+        for span in model.spans {
+            guard case .codeBlock = span.kind, span.content.length > 0,
+                  let fence = span.markers.first(where: { NSLocationInRange(topOffset, $0) }) else { continue }
+            topOffset = fence.location < span.content.location ? span.content.location : NSMaxRange(span.content) - 1
+            break
+        }
         let anchor = SourceAnchor(source: string, selection: selectedRange(), topOffset: topOffset)
-        let line = NSRange(location: anchor.topLine.location, length: 0)
+        // The visual line at the top, not its source line: a long paragraph wraps differently in the other lens, so
+        // its first line would put a different sentence at the top.
+        let line = NSRange(location: anchor.topOffset, length: 0)
         let offset = textRect(line).minY - clip.bounds.minY
         update(anchor)
         layoutSubtreeIfNeeded()
         settleLayout(through: line.location)
-        var bounds = clip.bounds
-        bounds.origin.y = textRect(line).minY - offset
-        clip.scroll(to: clip.constrainBoundsRect(bounds).origin)
-        enclosingScrollView?.reflectScrolledClipView(clip)
+        // Laying out the viewport after the jump can move the clip again (TextKit corrects its estimated heights),
+        // so keep pinning the line until the page stops moving.
+        for _ in 0..<5 {
+            var bounds = clip.bounds
+            bounds.origin.y = textRect(line).minY - offset
+            let target = clip.constrainBoundsRect(bounds).origin
+            if abs(target.y - clip.bounds.minY) < 0.5 { break }
+            clip.scroll(to: target)
+            enclosingScrollView?.reflectScrolledClipView(clip)
+            textLayoutManager?.textViewportLayoutController.layoutViewport()
+        }
     }
 
     /// Asset and table heights can change after a Contents jump. Keep a visible caret's
@@ -4681,10 +4698,13 @@ struct MarkdownTable {
 struct SourceAnchor {
     let selection: NSRange
     let topLine: NSRange
+    /// The first character of the visual line at the top of the page.
+    let topOffset: Int
 
     init(source: String, selection: NSRange, topOffset: Int) {
         self.selection = selection
         let string = source as NSString
+        self.topOffset = min(topOffset, string.length)
         topLine = string.lineRange(for: NSRange(location: min(topOffset, string.length), length: 0))
     }
 
